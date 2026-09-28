@@ -1,0 +1,35 @@
+namespace Marshal.Core.Mcp;
+
+/// <summary>
+/// One <c>/config/mcp/*.yaml</c> file as written (camelCase keys, unknown keys are errors).
+/// </summary>
+public sealed class McpServerFile
+{
+    public string? Id { get; set; }
+
+    /// <summary><c>stdio</c> or <c>http</c> (streamable HTTP).</summary>
+    public string? Transport { get; set; }
+
+    public string? Url { get; set; }
+
+    public string? Command { get; set; }
+
+    public List<string> Args { get; set; } = [];
+
+    public string? ToolPrefix { get; set; }
+
+    public string? AuthTokenSecret { get; set; }
+
+    /// <summary>Environment variables of a stdio server taken from secrets.</summary>
+    public List<EnvironmentSecret> EnvSecrets { get; set; } = [];
+
+    public bool Untrusted { get; set; }
+
+    /// <summary>A <c>variable</c> filled from a <c>secret</c> name.</summary>
+    public sealed class EnvironmentSecret
+    {
+        public string? Variable { get; set; }
+
+        public string? Secret { get; set; }
+    }
+}

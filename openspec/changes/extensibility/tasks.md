@@ -5,8 +5,8 @@
 
 ## 2. MCP client
 
-- [ ] 2.1 Write catalog tests: YAML parsing, id / `toolPrefix` validation, `authTokenSecret` via `ISecretStore`, reserved namespace rejection, hot reload
-- [ ] 2.2 Implement `YamlMcpServerCatalog`
+- [x] 2.1 Write catalog tests: YAML parsing, id / `toolPrefix` validation, `authTokenSecret` via `ISecretStore`, reserved namespace rejection, hot reload
+- [x] 2.2 Implement `YamlMcpServerCatalog`
 - [ ] 2.3 Write `McpToolSource` tests with an in-process fake MCP server: discovery, flat namespace, sanitizing, collision rejection, `list_changed`, disconnect hides tools, reconnect restores, untrusted flag taints
 - [ ] 2.4 Implement `McpToolSource` (stdio + streamable HTTP)
 - [ ] 2.5 Write registry tests: source register / unregister as a unit, unmatched external tool defaults to confirm
