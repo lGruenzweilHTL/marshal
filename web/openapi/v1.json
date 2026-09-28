@@ -1,0 +1,1937 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Marshal API | v1",
+    "description": "",
+    "version": "1.0"
+  },
+  "paths": {
+    "/api/v1/auth/providers": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Lists the active login providers.",
+        "operationId": "ListLoginProviders",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LoginProviderInfo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login/{provider}": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Starts a login with the provider and redirects back to returnUrl (an app-relative path) afterwards.",
+        "operationId": "StartLogin",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "returnUrl",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Ends the session (and the IdP session for OIDC logins) and redirects to the login page.",
+        "operationId": "Logout",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/local/setup": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "200 while the instance owner is unclaimed and the first-run setup is available, otherwise 404.",
+        "operationId": "GetLocalSetup",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalSetupStatus"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Claims the instance owner: sets user name, display name and password, grants admin and signs in.",
+        "operationId": "CompleteLocalSetup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocalSetupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/local/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Signs in with user name and password.",
+        "operationId": "LocalPasswordLogin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocalLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/local/passkey/options": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "WebAuthn request options (PublicKeyCredentialRequestOptions JSON) for passkey login.",
+        "operationId": "LocalPasskeyRequestOptions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PasskeyOptionsRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/local/passkey": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Signs in with a passkey assertion (PublicKeyCredential JSON).",
+        "operationId": "LocalPasskeyLogin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyCredentialRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/local/passkeys/creation-options": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "WebAuthn creation options (PublicKeyCredentialCreationOptions JSON) to add a passkey to the signed-in user.",
+        "operationId": "LocalPasskeyCreationOptions",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/local/passkeys": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Stores a passkey attestation for the signed-in user.",
+        "operationId": "RegisterLocalPasskey",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "The current user: id, display name, roles and scopes.",
+        "operationId": "GetMe",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/antiforgery": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "A token for the X-XSRF-TOKEN header of state-changing requests. Fetch a new one after login or logout.",
+        "operationId": "GetAntiforgeryToken",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AntiforgeryToken"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events": {
+      "get": {
+        "tags": [
+          "Events"
+        ],
+        "summary": "Server-sent live updates for the comma-separated topics (event name = event type, data = LiveEventMessage).",
+        "operationId": "SubscribeLiveEvents",
+        "parameters": [
+          {
+            "name": "topics",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/SseItemOfLiveEventMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs": {
+      "get": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "The user\u0027s runs (voice, web, task, api), newest first; filter by source, outcome and minimum cost, page with before.",
+        "operationId": "ListRuns",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outcome",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "minCost",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "double"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RunSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{id}": {
+      "get": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "One run: context build, model calls, tool calls with guard decisions, taint sources and the reply.",
+        "operationId": "GetRun",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cost": {
+      "get": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Cost per day and tier in the user\u0027s time zone, advisor separately (default: the last 30 days).",
+        "operationId": "GetCost",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversation/turns": {
+      "post": {
+        "tags": [
+          "Marshal"
+        ],
+        "summary": "Runs one conversation turn and streams the reply as server-sent events (delta, status, final).",
+        "operationId": "CreateConversationTurn",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationTurnRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/SseItemOfObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/tokens": {
+      "get": {
+        "tags": [
+          "Tokens"
+        ],
+        "summary": "The user\u0027s API tokens without secrets; executor callback tokens are read-only.",
+        "operationId": "ListApiTokens",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApiTokenResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Tokens"
+        ],
+        "summary": "Creates a token with scopes the user holds; the plaintext is returned only in this response.",
+        "operationId": "CreateApiToken",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApiTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedApiTokenResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/tokens/{id}": {
+      "delete": {
+        "tags": [
+          "Tokens"
+        ],
+        "summary": "Revokes one of the user\u0027s tokens.",
+        "operationId": "RevokeApiToken",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/me/secrets": {
+      "get": {
+        "tags": [
+          "Secrets"
+        ],
+        "summary": "Every secret visible to the user (own, instance, environment) without values, plus unresolved references.",
+        "operationId": "GetSecretOverview",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecretOverview"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/secrets/{name}": {
+      "put": {
+        "tags": [
+          "Secrets"
+        ],
+        "summary": "Creates or replaces one of the user\u0027s secrets.",
+        "operationId": "SetOwnSecret",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecretValueRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Secrets"
+        ],
+        "summary": "Deletes one of the user\u0027s secrets.",
+        "operationId": "DeleteOwnSecret",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/secrets/instance": {
+      "get": {
+        "tags": [
+          "Secrets"
+        ],
+        "summary": "Instance secrets (database and environment) without values.",
+        "operationId": "ListInstanceSecrets",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SecretItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/secrets/instance/{name}": {
+      "put": {
+        "tags": [
+          "Secrets"
+        ],
+        "summary": "Creates or replaces an instance secret.",
+        "operationId": "SetInstanceSecret",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecretValueRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Secrets"
+        ],
+        "summary": "Deletes an instance secret.",
+        "operationId": "DeleteInstanceSecret",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/me/preferences": {
+      "get": {
+        "tags": [
+          "Preferences"
+        ],
+        "summary": "Language, time zone, quiet hours, notification targets and do-not-disturb of the user.",
+        "operationId": "GetPreferences",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPreferencesResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Preferences"
+        ],
+        "summary": "Replaces the user\u0027s preferences.",
+        "operationId": "UpdatePreferences",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserPreferencesResponse"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AntiforgeryToken": {
+        "required": [
+          "token"
+        ],
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "description": "Value for the \u0060X-XSRF-TOKEN\u0060 header."
+      },
+      "ApiTokenId": {},
+      "ApiTokenKind": {
+        "enum": [
+          "standard",
+          "executorCallback"
+        ]
+      },
+      "ApiTokenResponse": {
+        "required": [
+          "id",
+          "name",
+          "scopes",
+          "kind",
+          "createdAt",
+          "expiresAt",
+          "revokedAt",
+          "readOnly"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Token id.",
+            "$ref": "#/components/schemas/ApiTokenId"
+          },
+          "name": {
+            "type": "string",
+            "description": "Label."
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Granted scopes."
+          },
+          "kind": {
+            "description": "\u0060standard\u0060 or \u0060executorCallback\u0060.",
+            "$ref": "#/components/schemas/ApiTokenKind"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation time.",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Expiry, if any.",
+            "format": "date-time"
+          },
+          "revokedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Revocation time, if revoked.",
+            "format": "date-time"
+          },
+          "readOnly": {
+            "type": "boolean",
+            "description": "True for tokens users cannot manage (executor callback tokens)."
+          }
+        },
+        "description": "A machine token without its secret."
+      },
+      "ConfirmationReason": {
+        "required": [
+          "code",
+          "sentence"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ConfirmationReasonCode"
+          },
+          "sentence": {
+            "type": "string"
+          }
+        }
+      },
+      "ConfirmationReasonCode": {
+        "enum": [
+          "rule",
+          "unresolvedTarget",
+          "taint",
+          "quietHoursOverride"
+        ]
+      },
+      "ConversationTurnRequest": {
+        "required": [
+          "conversationId",
+          "text",
+          "language",
+          "deviceId",
+          "satelliteId",
+          "areaId",
+          "haUserId",
+          "inputMode",
+          "followupRef"
+        ],
+        "type": "object",
+        "properties": {
+          "conversationId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Token clients: their own conversation id (required). Browser sessions: Marshal\u0027s session id\nfrom an earlier final event; omitted starts a new conversation."
+          },
+          "text": {
+            "type": "string",
+            "description": "What the user said or typed."
+          },
+          "language": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Request language (\u0060de\u0060 or \u0060en\u0060); the reply uses it."
+          },
+          "deviceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Home Assistant device id."
+          },
+          "satelliteId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Satellite entity id, e.g. \u0060assist_satellite.kitchen\u0060."
+          },
+          "areaId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Area id of the satellite."
+          },
+          "haUserId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Home Assistant user id, if known."
+          },
+          "inputMode": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InputMode"
+              }
+            ],
+            "description": "\u0060voice\u0060 when the turn went through speech-to-text, otherwise \u0060text\u0060."
+          },
+          "followupRef": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Opaque reference from a voice follow-up; unknown values are ignored."
+          }
+        },
+        "description": "A conversation turn."
+      },
+      "CostReport": {
+        "required": [
+          "timeZone",
+          "from",
+          "to",
+          "days",
+          "total",
+          "byTier",
+          "advisor"
+        ],
+        "type": "object",
+        "properties": {
+          "timeZone": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "format": "date"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyCost"
+            }
+          },
+          "total": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "byTier": {
+            "type": "object",
+            "additionalProperties": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "double"
+            }
+          },
+          "advisor": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "CreateApiTokenRequest": {
+        "required": [
+          "name",
+          "scopes",
+          "expiresAt",
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Label, e.g. the client using it."
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Scopes to grant; each must be one the user holds."
+          },
+          "expiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional expiry.",
+            "format": "date-time"
+          },
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ApiTokenKind"
+              }
+            ],
+            "description": "Only \u0060standard\u0060 can be created."
+          }
+        },
+        "description": "A new token."
+      },
+      "CreatedApiTokenResponse": {
+        "required": [
+          "info",
+          "token"
+        ],
+        "type": "object",
+        "properties": {
+          "info": {
+            "description": "The stored token.",
+            "$ref": "#/components/schemas/ApiTokenResponse"
+          },
+          "token": {
+            "type": "string",
+            "description": "The plaintext; shown only in this response."
+          }
+        },
+        "description": "A created token."
+      },
+      "DailyCost": {
+        "required": [
+          "date",
+          "total",
+          "byTier",
+          "advisor"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "total": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "byTier": {
+            "type": "object",
+            "additionalProperties": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "double"
+            }
+          },
+          "advisor": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "DayOfWeek": {
+        "enum": [
+          "sunday",
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday"
+        ]
+      },
+      "GuardDecision": {
+        "enum": [
+          "safe",
+          "pending",
+          "confirmedByKeyword",
+          "judgePositive",
+          "judgeNeutral",
+          "judgeNegative",
+          "escalatedByTaint",
+          "denied",
+          "expired",
+          null
+        ]
+      },
+      "InputMode": {
+        "enum": [
+          "text",
+          "voice",
+          null
+        ]
+      },
+      "LiveEventMessage": {
+        "required": [
+          "topic",
+          "type",
+          "id",
+          "payload"
+        ],
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string",
+            "description": "Topic, e.g. \u0060runs\u0060."
+          },
+          "type": {
+            "type": "string",
+            "description": "Event type, e.g. \u0060run.completed\u0060 (also the SSE event name)."
+          },
+          "id": {
+            "type": "string",
+            "description": "Unique event id."
+          },
+          "payload": {
+            "description": "Topic-specific data (see \u0060web/src/live/events.ts\u0060)."
+          }
+        },
+        "description": "One live update."
+      },
+      "LocalLoginRequest": {
+        "required": [
+          "userName",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "userName": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "description": "Password login."
+      },
+      "LocalSetupRequest": {
+        "required": [
+          "userName",
+          "displayName",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "userName": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "description": "First-run setup: the instance owner\u0027s login."
+      },
+      "LocalSetupStatus": {
+        "required": [
+          "available"
+        ],
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          }
+        },
+        "description": "Whether the first-run setup is available."
+      },
+      "LoginProviderInfo": {
+        "required": [
+          "name",
+          "type",
+          "displayName"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Id used in \u0060/api/v1/auth/login/{name}\u0060."
+          },
+          "type": {
+            "type": "string",
+            "description": "\u0060oidc\u0060 or \u0060local\u0060."
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Button label."
+          }
+        },
+        "description": "A login provider as shown on the login page."
+      },
+      "MeResponse": {
+        "required": [
+          "id",
+          "displayName",
+          "roles",
+          "scopes"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Owner id of the user.",
+            "$ref": "#/components/schemas/OwnerId"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Name used in the UI and the system prompt."
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Roles (empty for token principals)."
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Scopes: granted by the roles for cookie sessions, the token\u0027s own for tokens."
+          }
+        },
+        "description": "The current user."
+      },
+      "NotificationTargets": {
+        "required": [
+          "person",
+          "push"
+        ],
+        "type": "object",
+        "properties": {
+          "person": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "push": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "OwnerId": {},
+      "PasskeyCredentialRequest": {
+        "required": [
+          "credentialJson"
+        ],
+        "type": "object",
+        "properties": {
+          "credentialJson": {
+            "type": "string"
+          }
+        },
+        "description": "A \u0060PublicKeyCredential\u0060 serialized with \u0060toJSON()\u0060."
+      },
+      "PasskeyOptionsRequest": {
+        "required": [
+          "userName"
+        ],
+        "type": "object",
+        "properties": {
+          "userName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Passkey login options; without a user name the options allow any discoverable passkey."
+      },
+      "PasskeyRegistrationRequest": {
+        "required": [
+          "credentialJson",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "credentialJson": {
+            "type": "string"
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A new passkey for the signed-in user."
+      },
+      "QuietHoursWindow": {
+        "required": [
+          "day",
+          "start",
+          "end"
+        ],
+        "type": "object",
+        "properties": {
+          "day": {
+            "$ref": "#/components/schemas/DayOfWeek"
+          },
+          "start": {
+            "type": "string",
+            "format": "time"
+          },
+          "end": {
+            "type": "string",
+            "format": "time"
+          }
+        }
+      },
+      "RiskTier": {
+        "enum": [
+          "safe",
+          "confirm",
+          "forbidden",
+          null
+        ]
+      },
+      "RunDetail": {
+        "required": [
+          "run",
+          "language",
+          "taintSources",
+          "steps"
+        ],
+        "type": "object",
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/RunSummary"
+          },
+          "language": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "taintSources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaintSource"
+            }
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunStepDetail"
+            }
+          }
+        }
+      },
+      "RunId": {},
+      "RunOutcome": {
+        "enum": [
+          "ok",
+          "error",
+          "backgrounded",
+          "cancelled"
+        ]
+      },
+      "RunStepDetail": {
+        "required": [
+          "sequence",
+          "kind",
+          "model",
+          "tier",
+          "tokensIn",
+          "tokensOut",
+          "tokensCached",
+          "firstTokenMs",
+          "durationMs",
+          "cost",
+          "tool",
+          "riskTier",
+          "guardDecision",
+          "reasons",
+          "input",
+          "content",
+          "arguments",
+          "reference",
+          "continueConversation",
+          "error"
+        ],
+        "type": "object",
+        "properties": {
+          "sequence": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RunStepKind"
+          },
+          "model": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tier": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tokensIn": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "tokensOut": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "tokensCached": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "firstTokenMs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "durationMs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "cost": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "tool": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "riskTier": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RiskTier"
+              }
+            ]
+          },
+          "guardDecision": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/GuardDecision"
+              }
+            ]
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConfirmationReason"
+            }
+          },
+          "input": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "content": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "arguments": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reference": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "continueConversation": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RunStepKind": {
+        "enum": [
+          "context",
+          "modelCall",
+          "toolCall",
+          "reply"
+        ]
+      },
+      "RunSummary": {
+        "required": [
+          "id",
+          "sessionId",
+          "source",
+          "inputMode",
+          "trigger",
+          "satelliteId",
+          "startedAt",
+          "endedAt",
+          "outcome",
+          "outcomeReason",
+          "tainted",
+          "cost"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/RunId"
+          },
+          "sessionId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SessionId"
+              }
+            ]
+          },
+          "source": {
+            "$ref": "#/components/schemas/SessionSource"
+          },
+          "inputMode": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InputMode"
+              }
+            ]
+          },
+          "trigger": {
+            "type": "string"
+          },
+          "satelliteId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/RunOutcome"
+          },
+          "outcomeReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tainted": {
+            "type": "boolean"
+          },
+          "cost": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "SecretItem": {
+        "required": [
+          "name",
+          "scope",
+          "origin",
+          "updatedAt",
+          "readOnly"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Secret name."
+          },
+          "scope": {
+            "type": "string",
+            "description": "\u0060user\u0060 or \u0060instance\u0060."
+          },
+          "origin": {
+            "description": "\u0060database\u0060 (UI-managed) or \u0060environment\u0060 (variable or \u0060/run/secrets\u0060 file).",
+            "$ref": "#/components/schemas/SecretOrigin"
+          },
+          "updatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Last change of a database secret.",
+            "format": "date-time"
+          },
+          "readOnly": {
+            "type": "boolean",
+            "description": "True when the current user cannot change it here."
+          }
+        },
+        "description": "A secret without its value."
+      },
+      "SecretOrigin": {
+        "enum": [
+          "environment",
+          "database"
+        ]
+      },
+      "SecretOverview": {
+        "required": [
+          "secrets",
+          "unresolved"
+        ],
+        "type": "object",
+        "properties": {
+          "secrets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SecretItem"
+            }
+          },
+          "unresolved": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnresolvedSecret"
+            }
+          }
+        },
+        "description": "The secrets view: every visible secret and every reference that does not resolve."
+      },
+      "SecretValueRequest": {
+        "required": [
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        },
+        "description": "A secret value to store. It is never returned."
+      },
+      "SessionId": {},
+      "SessionSource": {
+        "enum": [
+          "voice",
+          "web",
+          "task",
+          "api"
+        ]
+      },
+      "SseItemOfLiveEventMessage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/LiveEventMessage"
+          },
+          "eventType": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "eventId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reconnectionInterval": {
+            "pattern": "^-?(\\d\u002B\\.)?\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,7})?$",
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "SseItemOfObject": {
+        "type": "object",
+        "properties": {
+          "data": {},
+          "eventType": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "eventId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reconnectionInterval": {
+            "pattern": "^-?(\\d\u002B\\.)?\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,7})?$",
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "TaintSource": {
+        "required": [
+          "kind",
+          "firstStep"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "firstStep": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "UnresolvedSecret": {
+        "required": [
+          "name",
+          "referencedBy"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Secret name."
+          },
+          "referencedBy": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Where it is referenced."
+          }
+        },
+        "description": "A referenced secret that no source provides."
+      },
+      "UserPreferencesResponse": {
+        "required": [
+          "language",
+          "timeZone",
+          "quietHours",
+          "notificationTargets",
+          "dndUntil"
+        ],
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string",
+            "description": "\u0060de\u0060 or \u0060en\u0060; used when a request has no language."
+          },
+          "timeZone": {
+            "type": "string",
+            "description": "IANA time zone id."
+          },
+          "quietHours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuietHoursWindow"
+            },
+            "description": "Weekly quiet-hour windows; an end before the start ends the next day."
+          },
+          "notificationTargets": {
+            "description": "HA \u0060person.*\u0060 entity and \u0060notify.*\u0060 push services.",
+            "$ref": "#/components/schemas/NotificationTargets"
+          },
+          "dndUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Do-not-disturb end, if active.",
+            "format": "date-time"
+          }
+        },
+        "description": "A user\u0027s preferences. Content preferences (briefing topics, interests) live in memory, not here."
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Me"
+    },
+    {
+      "name": "Events"
+    },
+    {
+      "name": "Runs"
+    },
+    {
+      "name": "Marshal"
+    },
+    {
+      "name": "Tokens"
+    },
+    {
+      "name": "Secrets"
+    },
+    {
+      "name": "Preferences"
+    }
+  ]
+}

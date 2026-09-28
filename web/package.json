@@ -1,0 +1,33 @@
+{
+  "name": "marshal-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "gen:api": "dotnet run --project ../src/Marshal.Api -- --export-openapi \"$PWD/openapi/v1.json\" && npm run gen:types",
+    "gen:types": "openapi-typescript openapi/v1.json -o src/api/schema.d.ts",
+    "typecheck": "vue-tsc --noEmit",
+    "build": "npm run gen:types && npm run typecheck && vite build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "markdown-it": "^15.0.2",
+    "openapi-fetch": "^0.17.0",
+    "vue": "^3.5.43",
+    "vue-router": "^5.3.1"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.2.0",
+    "@types/node": "^24.19.0",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "@vue/test-utils": "^2.5.1",
+    "@vue/tsconfig": "^0.9.1",
+    "jsdom": "^30.1.1",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2",
+    "vue-tsc": "^3.3.11"
+  }
+}

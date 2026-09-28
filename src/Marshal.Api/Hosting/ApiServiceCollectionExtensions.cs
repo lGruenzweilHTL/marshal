@@ -44,7 +44,12 @@ public static class ApiServiceCollectionExtensions
                 options.GroupNameFormat = "'v'VVV";
                 options.SubstituteApiVersionInUrl = true;
             })
-            .AddOpenApi();
+            // A fixed title: the default is the host assembly name, which differs between the app and test hosts.
+            .AddOpenApi(options => options.Document.AddDocumentTransformer((document, context, _) =>
+            {
+                document.Info.Title = $"Marshal API | {context.DocumentName}";
+                return Task.CompletedTask;
+            }));
 
         services.AddMarshalAuth(configuration);
         services.AddAuthorization(options => options.AddScopePolicies());
