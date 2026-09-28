@@ -11,7 +11,8 @@ namespace Marshal.Api.Auth;
 /// Turns a completed OIDC login into a Marshal session: roles from groups (deny when unmapped), user matched by
 /// subject (never email), the unclaimed instance owner claimed by the first subject, roles re-synced every login.
 /// </summary>
-internal sealed partial class OidcLoginMapper(UserAccounts accounts, IRoleProvisioner provisioner, TimeProvider timeProvider, ILogger<OidcLoginMapper> logger)
+internal sealed partial class OidcLoginMapper(
+    UserAccounts accounts, IRoleProvisioner provisioner, IUserPreferencesStore preferences, TimeProvider timeProvider, ILogger<OidcLoginMapper> logger)
 {
     public async Task MapAsync(TicketReceivedContext context, LoginProviderOptions provider)
     {
@@ -43,7 +44,7 @@ internal sealed partial class OidcLoginMapper(UserAccounts accounts, IRoleProvis
             if (await users.FindByLoginAsync(provider.Name, subject) is { } raced)
                 return raced;
 
-            User user = await accounts.FindUnclaimedOwnerAsync(ct) ?? await CreateAsync(external, provider, subject);
+            User user = await accounts.FindUnclaimedOwnerAsync(ct) ?? await CreateAsync(external, provider, subject, ct);
             UserAccounts.Check(await users.AddLoginAsync(user, new UserLoginInfo(provider.Name, subject, provider.EffectiveDisplayName)));
             return user;
         }
@@ -53,7 +54,7 @@ internal sealed partial class OidcLoginMapper(UserAccounts accounts, IRoleProvis
         }
     }
 
-    private async Task<User> CreateAsync(ClaimsPrincipal external, LoginProviderOptions provider, string subject)
+    private async Task<User> CreateAsync(ClaimsPrincipal external, LoginProviderOptions provider, string subject, CancellationToken ct)
     {
         var id = OwnerId.New();
         var user = new User
@@ -65,6 +66,8 @@ internal sealed partial class OidcLoginMapper(UserAccounts accounts, IRoleProvis
             CreatedAt = timeProvider.GetUtcNow(),
         };
         UserAccounts.Check(await accounts.Users.CreateAsync(user));
+        // Stored right away so the user keeps the instance time zone of their creation day.
+        await preferences.SaveAsync(user.Id, await preferences.GetAsync(user.Id, ct), ct);
         return user;
     }
 

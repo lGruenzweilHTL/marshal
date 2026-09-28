@@ -48,7 +48,7 @@ public sealed class ExampleConfigTests
         Assert.True(result.Succeeded, result.FailureMessage);
         Assert.Contains(models.Models.Values, model => model.Tier == Abstractions.Models.ModelTier.Fast);
         Assert.Contains(models.Models.Values, model => model.Tier == Abstractions.Models.ModelTier.Standard);
-        Assert.Equal("Europe/Vienna", configuration["owner:timeZone"]);
+        Assert.Equal("Europe/Vienna", configuration["instance:timeZone"]);
     }
 
     private static string RepositoryRoot()

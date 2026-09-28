@@ -42,7 +42,7 @@ public sealed class MarshalApiFactory : WebApplicationFactory<Program>
             ["models:standard:model"] = "qwen3",
             ["owner:displayName"] = "Lukas",
             ["owner:language"] = "en",
-            ["owner:timeZone"] = "Europe/Vienna",
+            ["instance:timeZone"] = "Europe/Vienna",
         };
         foreach ((string key, string? value) in settings ?? [])
             _settings[key] = value;

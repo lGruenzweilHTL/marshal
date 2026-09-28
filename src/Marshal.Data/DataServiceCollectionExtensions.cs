@@ -33,6 +33,7 @@ public static class DataServiceCollectionExtensions
         services.AddSingleton<IAdvisorUsage, EfAdvisorUsage>();
         services.AddSingleton<IAuditLog, DbAuditLog>();
         services.AddSingleton<IUserProfileProvider, EfUserProfileProvider>();
+        services.AddSingleton<IUserPreferencesStore, EfUserPreferencesStore>();
         services.AddSingleton<IInstanceOwner, EfInstanceOwner>();
         services.AddSingleton<IUserDirectory, EfUserDirectory>();
         services.AddSingleton<IApiTokenService, ApiTokenService>();

@@ -1,10 +1,12 @@
 # Marshal instance configuration. Keys are camelCase; environment variables override them
 # (MARSHAL__Section__Key). Never put secret values here — only secret names (keys ending in "Secret").
 
+instance:
+  timeZone: Europe/Vienna   # IANA id; new users start with it (unset: UTC)
+
 owner:                      # the instance owner created on first start
   displayName: "Your name"
   language: en              # de | en
-  timeZone: Europe/Vienna   # IANA id
 
 http:
   pathBase: ""              # e.g. /marshal behind a reverse proxy

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 
@@ -95,7 +96,9 @@ public sealed class OidcLoginTests : IAsyncLifetime
         Assert.NotNull(second);
         Assert.NotEqual(await InstanceOwnerAsync(), second.Id);
         Assert.Equal("Anna", second.DisplayName);
-        Assert.Equal(2, (Users()).Count);
+        Assert.Equal(2, Users().Count);
+        UserPreferences preferences = await _factory.WithDatabaseAsync(second.Id, db => db.UserPreferences.SingleAsync(row => row.UserId == second.Id, Ct));
+        Assert.Equal("Europe/Vienna", preferences.TimeZone);
     }
 
     [Fact]

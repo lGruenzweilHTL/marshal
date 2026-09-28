@@ -112,3 +112,7 @@ One EF migration converting `User` to Identity and adding Identity tables, `Auth
   (`Policies.Human`) on top of the scope policies, so a leaked machine token cannot mint tokens or change secrets.
   `/me` works for both principal kinds. An `OwnerContextMiddleware` makes the principal's owner the request's
   execution context, so endpoint queries go through the owner filter.
+- **`instance.timeZone` replaces `owner.timeZone`** (a core-agent config key): the seeded instance owner and every
+  new user start with the instance time zone (`IInstanceTimeZone`, UTC when unset; `extensibility` adds Home
+  Assistant's). New OIDC users get a stored preferences row at creation. Preferences are validated by
+  `UserPreferencesRules` (IANA ids via `TimeZoneInfo.HasIanaId`, `person.*` / `notify.*` targets).

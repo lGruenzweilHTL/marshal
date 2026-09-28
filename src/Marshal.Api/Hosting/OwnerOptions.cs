@@ -3,7 +3,8 @@ using System.ComponentModel.DataAnnotations;
 namespace Marshal.Api.Hosting;
 
 /// <summary>
-/// Profile of the instance owner created on first start (<c>owner</c>). Later changes are made per user.
+/// Profile of the instance owner created on first start (<c>owner</c>). Its time zone is <c>instance.timeZone</c>.
+/// Later changes are made per user.
 /// </summary>
 public sealed class OwnerOptions
 {
@@ -12,8 +13,4 @@ public sealed class OwnerOptions
 
     [RegularExpression("^(de|en)$", ErrorMessage = "owner.language is invalid.")]
     public string Language { get; set; } = "en";
-
-    /// <summary>IANA time zone id.</summary>
-    [Required(ErrorMessage = "owner.timeZone is required.")]
-    public string TimeZone { get; set; } = "UTC";
 }

@@ -14,6 +14,7 @@ using Marshal.Core.Context;
 using Marshal.Core.Conversation;
 using Marshal.Core.Execution;
 using Marshal.Core.Guard;
+using Marshal.Core.Identity;
 using Marshal.Core.Models;
 using Marshal.Core.Recording;
 using Marshal.Core.Satellites;
@@ -79,6 +80,10 @@ public static class CoreServiceCollectionExtensions
 
         services.AddSingleton<IAgentRunner, AgentRunner>();
         services.AddSingleton<IIdentityResolver, InstanceOwnerIdentityResolver>();
+        services.AddOptions<InstanceOptions>().Bind(configuration.GetSection("instance"))
+            .Validate(options => options.TimeZone is null || UserPreferencesRules.IsIanaTimeZone(options.TimeZone), "instance.timeZone is not an IANA time zone.")
+            .ValidateOnStart();
+        services.AddSingleton<IInstanceTimeZone, ConfiguredInstanceTimeZone>();
         services.AddSingleton<SessionResolver>();
         services.AddSingleton<SessionMaintenance>();
         services.AddSingleton<ConversationService>();

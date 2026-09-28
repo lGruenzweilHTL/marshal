@@ -1,3 +1,4 @@
+using Marshal.Abstractions.Identity;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Tools;
 using Marshal.Api.Auth;
@@ -22,6 +23,7 @@ namespace Marshal.Api.Hosting;
 internal sealed partial class MarshalStartup(
     IOptions<PathsOptions> paths,
     IOptions<OwnerOptions> owner,
+    IInstanceTimeZone instanceTimeZone,
     IOptions<ModelRoutingOptions> models,
     IOptions<AuthOptions> auth,
     IConfigSecretScanner scanner,
@@ -45,7 +47,7 @@ internal sealed partial class MarshalStartup(
         await using (MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken))
         {
             var initializer = new DatabaseInitializer(db, timeProvider, loggers.CreateLogger<DatabaseInitializer>());
-            await initializer.InitializeAsync(new InstanceOwnerSeed(owner.Value.DisplayName, owner.Value.Language, owner.Value.TimeZone), cancellationToken);
+            await initializer.InitializeAsync(new InstanceOwnerSeed(owner.Value.DisplayName, owner.Value.Language, await instanceTimeZone.GetAsync(cancellationToken)), cancellationToken);
         }
 
         SecretBindingReport[] reports =

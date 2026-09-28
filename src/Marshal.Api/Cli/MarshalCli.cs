@@ -6,6 +6,7 @@ using Marshal.Abstractions.Tokens;
 using Marshal.Api.Configuration;
 using Marshal.Api.Hosting;
 using Marshal.Core.Configuration;
+using Marshal.Core.Identity;
 using Marshal.Core.Execution;
 using Marshal.Data;
 using Marshal.Data.Persistence;
@@ -30,6 +31,8 @@ internal static class MarshalCli
         builder.Services.AddSingleton<IExecutionContextAccessor, AsyncLocalExecutionContextAccessor>();
         builder.Services.AddOptions<PathsOptions>().Bind(builder.Configuration.GetSection("paths"));
         builder.Services.AddOptions<OwnerOptions>().Bind(builder.Configuration.GetSection("owner"));
+        builder.Services.AddOptions<InstanceOptions>().Bind(builder.Configuration.GetSection("instance"));
+        builder.Services.AddSingleton<IInstanceTimeZone, ConfiguredInstanceTimeZone>();
         builder.Services.AddMarshalData(builder.Configuration, MarshalApp.ConnectionString);
 
         using IHost host = builder.Build();
@@ -39,7 +42,7 @@ internal static class MarshalCli
         await using (MarshalDbContext db = await services.GetRequiredService<IDbContextFactory<MarshalDbContext>>().CreateDbContextAsync())
         {
             await new DatabaseInitializer(db, TimeProvider.System, services.GetRequiredService<ILogger<DatabaseInitializer>>())
-                .InitializeAsync(new InstanceOwnerSeed(owner.DisplayName, owner.Language, owner.TimeZone), CancellationToken.None);
+                .InitializeAsync(new InstanceOwnerSeed(owner.DisplayName, owner.Language, await services.GetRequiredService<IInstanceTimeZone>().GetAsync(CancellationToken.None)), CancellationToken.None);
         }
 
         var command = new TokenCommand(
