@@ -10,8 +10,8 @@
 
 ## 3. Config flow
 
-- [ ] 3.1 Write config flow tests: success, unsupported version, unreachable, invalid token
-- [ ] 3.2 Implement the config flow and translated errors
+- [x] 3.1 Write config flow tests: success, unsupported version, unreachable, invalid token
+- [x] 3.2 Implement the config flow and translated errors
 
 ## 4. Conversation entity
 

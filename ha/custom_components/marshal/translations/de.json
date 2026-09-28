@@ -1,1 +1,28 @@
-{}
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Mit Marshal verbinden",
+        "description": "Gib die Adresse deiner Marshal-Instanz und ein API-Token mit dem Scope conversation:write ein (in Marshal unter Sicherheit oder mit `marshal tokens create --scope conversation:write` erstellen).",
+        "data": {
+          "url": "URL",
+          "token": "API-Token"
+        },
+        "data_description": {
+          "url": "Zum Beispiel http://marshal.local:8080",
+          "token": "Wird nur einmal beim Erstellen angezeigt."
+        }
+      }
+    },
+    "error": {
+      "unsupported_version": "Marshal unterstützt die API-Version dieser Integration nicht",
+      "cannot_connect": "Marshal ist unter dieser Adresse nicht erreichbar",
+      "invalid_auth": "Marshal hat das API-Token abgelehnt",
+      "invalid_url": "Gib eine vollständige http://- oder https://-Adresse ein",
+      "unknown": "Unerwartete Antwort von Marshal; siehe Protokoll"
+    },
+    "abort": {
+      "already_configured": "Diese Marshal-Instanz ist bereits eingerichtet"
+    }
+  }
+}
