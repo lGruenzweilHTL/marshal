@@ -5,7 +5,8 @@ namespace Marshal.Api.Conversation;
 /// <summary>
 /// A conversation turn.
 /// </summary>
-/// <param name="ConversationId">Client conversation id (required for token clients).</param>
+/// <param name="ConversationId">Token clients: their own conversation id (required). Browser sessions: Marshal's session id
+/// from an earlier final event; omitted starts a new conversation.</param>
 /// <param name="Text">What the user said or typed.</param>
 /// <param name="Language">Request language (<c>de</c> or <c>en</c>); the reply uses it.</param>
 /// <param name="DeviceId">Home Assistant device id.</param>

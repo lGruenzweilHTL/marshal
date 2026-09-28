@@ -25,8 +25,8 @@
 
 ## 4. Conversation endpoint for cookie clients
 
-- [ ] 4.1 Write tests: new web session without id, own session continued, foreign session 404, session id returned
-- [ ] 4.2 Extend the turn endpoint and session lookup for cookie principals
+- [x] 4.1 Write tests: new web session without id, own session continued, foreign session 404, session id returned
+- [x] 4.2 Extend the turn endpoint and session lookup for cookie principals
 
 ## 5. Tokens, secrets and preferences APIs
 
