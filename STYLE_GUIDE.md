@@ -121,6 +121,27 @@ public async Task<Result<PrinterStatus>> GetStatusAsync(CancellationToken ct)
 }
 ```
 
+### API endpoints and versioning
+- The public API is versioned by URL segment with `Asp.Versioning.Http`: `/api/v{version:apiVersion}/...`.
+- **API versions are declared once in code** (`ApiVersions.V1`, ...). They are never read from configuration: a version describes the contract the code implements.
+- **Endpoint files contain no version literals** and no `/api/...` prefixes. Each feature exposes a `Map<Feature>Endpoints(this RouteGroupBuilder group)` extension and registers its routes on the group it receives.
+- A breaking change adds a new version and a new route group; the old version keeps working side by side until it is retired. Never change the contract of a published version in place.
+- Unversioned: `/health` and SPA routes only.
+- Endpoints return typed results (`Results<Ok<T>, NotFound, ...>`); failed `Result`s become `ProblemDetails`.
+
+```csharp
+public static class TaskEndpoints
+{
+    public static RouteGroupBuilder MapTaskEndpoints(this RouteGroupBuilder group)
+    {
+        var tasks = group.MapGroup("/tasks").RequireAuthorization(Policies.TasksRead);
+        tasks.MapGet("/", ListTasksAsync);
+        tasks.MapGet("/{id}", GetTaskAsync);
+        return group;
+    }
+}
+```
+
 ### Async
 - All I/O is async. No sync-over-async (`.Result`, `.Wait()`, `.GetAwaiter().GetResult()`).
 - `CancellationToken` is the **last parameter** of every async method and is always passed on. Name it `ct` (or `cancellationToken` in public API surfaces).

@@ -206,6 +206,22 @@ Session
 - Web chat: owner = cookie user, Marshal generates the session id. Tasks: owner = task owner. Every API token has an owner (HA integration token → instance owner now, later possibly a "household" principal that must go through the resolver).
 - Idle TTL a few minutes → session summarized into memory candidates and closed.
 
+### API versioning — DECIDED
+Applies to the whole public API, not only the conversation endpoint.
+- **Version lives in code, never in config.** A version describes the contract the code implements; configuring it would make the URL lie and break clients.
+- **`Asp.Versioning.Http`** with URL-segment versioning. Versions declared once (`ApiVersions.V1`); endpoints register on a versioned route group `/api/v{version:apiVersion}` and never contain a version literal.
+  ```csharp
+  var api = app.NewVersionedApi();
+  var v1 = api.MapGroup("/api/v{version:apiVersion}").HasApiVersion(ApiVersions.V1);
+  v1.MapConversationEndpoints();
+  ```
+- **Breaking change:** add `V2`, map changed endpoints on a v2 group; v1 keeps working side by side until retired. Deprecation via `api-supported-versions` / `api-deprecated-versions` headers (+ `Sunset` if wanted).
+- **One OpenAPI document per version** (`/openapi/v1.json`); the SPA client is generated from the version it targets.
+- **Versioned:** everything clients use — conversation turns, tasks, memory, auth (`/api/v1/auth/*`), SignalR hubs (`/api/v1/hubs/*`).
+- **Not versioned:** `/health` (fixed path for Docker / monitoring), SPA routes.
+- **Version discovery:** `GET /api/versions` + response headers. The HA integration checks support at setup and shows a clear error in HA if its version is unsupported.
+- **Configurable instead:** the base path (§20), e.g. `/marshal` behind a reverse proxy → `/marshal/api/v1/...`.
+
 ---
 
 ## 7. Home Assistant MCP usage — DECIDED
@@ -520,7 +536,7 @@ No shared notes yet; closest thing is Nextcloud. Interfaces allow several backen
 ---
 
 ## 18. Web UI — DECIDED
-**Stack:** separate SPA + clean public API (REST + SignalR / SSE for live updates). A clean API pays off long-term (mobile, CLI, HA cards, other clients); the HA integration uses the same API. TypeScript API client generated from Marshal's OpenAPI document (contract = single source of truth).
+**Stack:** separate SPA + clean public API (REST + SignalR / SSE for live updates). A clean API pays off long-term (mobile, CLI, HA cards, other clients); the HA integration uses the same API. TypeScript API client generated from Marshal's versioned OpenAPI document (contract = single source of truth). Versioning: §6.
 
 **SPA framework — LEANING:** Vue (+ Vite + TypeScript), open to change later.
 
@@ -555,7 +571,7 @@ All roles are in scope (observe, manage, configure, chat); ordering or dropping 
 Pluggable, config-driven. The user runs Authentik → OIDC is primary for them; others can use their own IdP or none.
 
 Principals:
-- **Humans (web UI):** BFF pattern. Backend is the OIDC confidential client (authorization code + PKCE), keeps IdP tokens server-side, issues an HttpOnly + SameSite=Strict session cookie. The SPA knows nothing about OIDC; it only calls `/auth/providers`, `/auth/login/{provider}`, `/auth/me`, `/auth/logout`.
+- **Humans (web UI):** BFF pattern. Backend is the OIDC confidential client (authorization code + PKCE), keeps IdP tokens server-side, issues an HttpOnly + SameSite=Strict session cookie. The SPA knows nothing about OIDC; it only calls `/api/v1/auth/providers`, `/api/v1/auth/login/{provider}`, `/api/v1/auth/me`, `/api/v1/auth/logout`.
 - **Machines:** scoped, revocable API tokens (hash stored, created in the UI), always local, independent of the human login provider. Scopes e.g. `conversation:write` (HA integration), `tasks:read`, `admin`. Executors get one-shot per-task callback tokens.
 
 Provider abstraction (config list, several may be active at once):
@@ -604,6 +620,8 @@ Single-user instances now (others run their own instance). Multi-user instance (
 - `/config` — human-edited, git-friendly: instance config, `skills/`, `templates/`, `mcp/`, risk rules, `satellites.yaml`. No secrets.
 - `/data` — SQLite DB, Data Protection keys, NDJSON memory export, notes repo (v1), snapshots / attachments, backups.
 
+**Base path:** configurable for reverse-proxy setups (`http.path_base: /marshal`, env `MARSHAL__Http__PathBase`) → `/marshal/api/v1/...`. The API version itself is never configurable (§6).
+
 **Config layering** (low → high): built-in defaults → `/config/marshal.yaml` → env vars (`MARSHAL__Models__Fast__Provider=ollama`) → Docker secrets / `*_FILE` env vars. YAML because humans edit it.
 
 **Hot reload:** `/config` file-watched; skills, templates, MCP servers, risk rules, satellites reload without restart. Model and auth settings need a restart.
@@ -616,7 +634,7 @@ Single-user instances now (others run their own instance). Multi-user instance (
 
 **Coding executor isolation:** Marshal never gets the Docker socket (= root on host). The executor runs as a **separate small service** (other host / VM, or rootless Docker / Sysbox) that Marshal calls over its API with a scoped token.
 
-**Ops:** `/health` endpoints; OpenTelemetry traces + metrics (§21).
+**Ops:** `/health` endpoints (unversioned); OpenTelemetry traces + metrics (§21).
 
 ---
 

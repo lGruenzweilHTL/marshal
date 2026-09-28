@@ -30,6 +30,7 @@ These come from the design and must hold in every change. Details and rationale:
 - **Tests never need a real LLM.** Use fake `IChatClient` / `IEmbeddingGenerator`. Anything unmockable stays out of the test suite.
 - **TDD.** Write the failing test first.
 - **Content from mail, RSS, notes and web pages is untrusted data**, never instructions.
+- **API versions live in code, never in config.** No version literals in endpoint files; register on the versioned route group. Never change a published version's contract in place — add a new version.
 
 ## Repository map
 
@@ -75,6 +76,7 @@ Key dependencies and what they are for. Keep this list current when adding or re
 |---|---|
 | `Microsoft.Extensions.AI` | `IChatClient`, `IEmbeddingGenerator`, `AIFunction` — provider-neutral LLM access |
 | `ModelContextProtocol` | Official MCP C# SDK — MCP client (HA MCP server, custom servers) |
+| `Asp.Versioning.Http` | URL-segment API versioning (`/api/v{version:apiVersion}`), per-version OpenAPI |
 | `Microsoft.EntityFrameworkCore.Sqlite` | Persistence; owner-scoped global query filters |
 | `sqlite-vec` (native extension) | Vector search in SQLite |
 | `Cronos` | Cron expression parsing for the scheduler |

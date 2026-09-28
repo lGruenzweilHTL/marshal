@@ -29,7 +29,8 @@ package "src/ (.NET 10)" {
   package "Marshal.Api" as Api {
     [ASP.NET host] as ApiHost
     note right of ApiHost
-      REST + SignalR, OpenAPI,
+      REST + SignalR under /api/v1,
+      versioned OpenAPI,
       BFF auth (OIDC / local),
       API tokens, serves SPA,
       composition root
@@ -94,6 +95,7 @@ package "tests/" {
 ' External dependencies
 package "External" #F5F5F5 {
   [Microsoft.Extensions.AI] as MEAI
+  [Asp.Versioning.Http] as Versioning
   [ModelContextProtocol] as MCP
   [EF Core SQLite\n+ sqlite-vec] as EF
   [MailKit] as MailKit
@@ -124,6 +126,7 @@ Data --> Abstractions
 
 Tasks ..> ExecutorHost : HTTP (scoped token)
 
+Api --> Versioning
 Core --> MEAI
 Core --> MCP
 Memory --> MEAI
