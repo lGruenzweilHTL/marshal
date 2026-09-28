@@ -65,9 +65,14 @@ internal sealed class SingleModelRouter(IChatClient client, IChatClient? advisor
 {
     public List<Marshal.Abstractions.Models.ModelRequest> Requests { get; } = [];
 
+    public bool Unavailable { get; set; }
+
     public Marshal.Abstractions.Result<Marshal.Abstractions.Models.RoutedModel> Route(Marshal.Abstractions.Models.ModelRequest request)
     {
         Requests.Add(request);
+        if (Unavailable)
+            return new Marshal.Abstractions.Error("model.not_available", "none");
+
         if (request.Tier == Marshal.Abstractions.Models.ModelTier.Advisor)
         {
             return advisor is null

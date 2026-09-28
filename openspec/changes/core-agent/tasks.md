@@ -74,10 +74,10 @@
 
 ## 9. Agent loop
 
-- [ ] 9.1 Write loop tests with scripted fake client: tool call then reply, step limit, failed tool result passed to model, unknown tool name denied, taint set after untrusted tool result
-- [ ] 9.2 Implement `AgentRunner`
-- [ ] 9.3 Write advisor tests: no tools on advisor call, hidden in voice turns, per-run limit, daily cap, hidden without advisor model
-- [ ] 9.4 Implement `agent.ask_advisor`
+- [x] 9.1 Write loop tests with scripted fake client: tool call then reply, step limit, failed tool result passed to model, unknown tool name denied, taint set after untrusted tool result
+- [x] 9.2 Implement `AgentRunner`
+- [x] 9.3 Write advisor tests: no tools on advisor call, hidden in voice turns, per-run limit, daily cap, hidden without advisor model
+- [x] 9.4 Implement `agent.ask_advisor`
 
 ## 10. Sessions and identity
 

@@ -1,0 +1,84 @@
+using System.Threading.Channels;
+using Marshal.Abstractions.Conversation;
+using Marshal.Abstractions.Satellites;
+using Marshal.Abstractions.Tools;
+using Marshal.Core.Agent;
+using Marshal.Core.Context;
+using Marshal.Core.Guard;
+using Marshal.Core.Models;
+using Marshal.Core.Tools;
+using Marshal.Testing;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
+
+namespace Marshal.Core.Tests.Agent;
+
+/// <summary>
+/// Wires a real agent runner, guard, registry and risk engine around a scripted fake model.
+/// </summary>
+internal sealed class LoopHarness
+{
+    private LoopHarness()
+    {
+    }
+
+    public FakeChatClient Model { get; } = new();
+
+    public FakeChatClient Advisor { get; } = new();
+
+    public FakeTimeProvider Time { get; } = new(new DateTimeOffset(2026, 9, 28, 10, 0, 0, TimeSpan.Zero));
+
+    public InMemoryPendingActionStore Store { get; private set; } = null!;
+
+    public InMemoryRunRecorder Recorder { get; } = new();
+
+    public FakeExecutionContextAccessor Accessor { get; } = new();
+
+    public AgentOptions Options { get; } = new();
+
+    public SingleModelRouter Router { get; private set; } = null!;
+
+    public ToolRegistry Registry { get; private set; } = null!;
+
+    public AgentRunner Runner { get; private set; } = null!;
+
+    public Channel<TurnEvent> Events { get; } = Channel.CreateUnbounded<TurnEvent>();
+
+    public static async Task<LoopHarness> CreateAsync(string rules = "risk: []", SatelliteProfile? kitchen = null, bool withAdvisor = true, Func<LoopHarness, ITool[]>? builtIns = null, params ITool[] tools)
+    {
+        var harness = new LoopHarness();
+        harness.Store = new InMemoryPendingActionStore(harness.Time);
+        harness.Router = new SingleModelRouter(harness.Model, withAdvisor ? harness.Advisor : null);
+        ITool[] all = [.. tools, .. builtIns?.Invoke(harness) ?? []];
+        harness.Registry = new ToolRegistry([new FakeToolSource("test", true, all)]);
+        await harness.Registry.RefreshAsync(TestContext.Current.CancellationToken);
+        RuleBasedRiskEngine engine = GuardTestKit.Engine(rules);
+        var satellites = new FixedSatellites("assist_satellite.kitchen", kitchen ?? SatelliteProfile.Default);
+        var visibility = new ToolVisibilityFilter(harness.Registry, engine, satellites);
+        var guard = new ToolCallGuard(harness.Registry, visibility, engine, satellites);
+        harness.Runner = new AgentRunner(
+            harness.Router,
+            new ContextBuilder([new BasePromptContributor(), new OutputModeContributor()]),
+            visibility,
+            guard,
+            harness.Store,
+            harness.Recorder,
+            new PriceTableCostCalculator(Microsoft.Extensions.Options.Options.Create(new ModelRoutingOptions())),
+            harness.Accessor,
+            Microsoft.Extensions.Options.Options.Create(harness.Options),
+            Microsoft.Extensions.Options.Options.Create(new ConfirmationOptions()),
+            harness.Time,
+            NullLogger<AgentRunner>.Instance);
+        return harness;
+    }
+
+    public async Task<List<TurnEvent>> DrainEventsAsync()
+    {
+        Events.Writer.TryComplete();
+        var events = new List<TurnEvent>();
+        await foreach (TurnEvent turnEvent in Events.Reader.ReadAllAsync())
+            events.Add(turnEvent);
+
+        return events;
+    }
+}
