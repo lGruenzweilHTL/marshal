@@ -16,6 +16,8 @@ export function appBaseUrl(): string {
  */
 export interface ApiSession {
   api: ApiClient
+  /** Root URL of the app and API (no trailing slash), for links the browser follows itself. */
+  baseUrl: string
   /** Antiforgery token for a state-changing request (fetched once, cached until reset). */
   antiforgeryToken(): Promise<string>
   resetAntiforgery(): void
@@ -27,6 +29,7 @@ export function createApiSession(options: { baseUrl?: string; fetch?: typeof glo
   let token: Promise<string> | null = null
 
   const session: ApiSession = {
+    baseUrl,
     api: createClient<paths>({ baseUrl, fetch: doFetch, credentials: 'same-origin' }),
     antiforgeryToken() {
       token ??= doFetch(new Request(`${baseUrl}/api/v1/auth/antiforgery`, { credentials: 'same-origin' }))

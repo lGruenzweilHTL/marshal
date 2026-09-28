@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
+using System.Text.Json;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Tokens;
 using Marshal.Api.Auth;
@@ -94,6 +95,23 @@ public sealed class AuthorizationTests : IAsyncLifetime
         (HttpClient signedIn, _) = await Browser.SignInAsync(_factory, "user");
 
         HttpResponseMessage response = await signedIn.PostAsync("/api/v1/auth/logout", null, Ct);
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await signedIn.GetAsync("/api/v1/me", Ct)).StatusCode);
+    }
+
+    [Fact]
+    public async Task LogoutFormPost_WithTokenInFormField_IsAccepted()
+    {
+        (HttpClient signedIn, _) = await Browser.SignInAsync(_factory, "user");
+        string token = (await signedIn.GetFromJsonAsync<JsonElement>("/api/v1/auth/antiforgery", Ct)).GetProperty("token").GetString()!;
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/logout")
+        {
+            Content = new FormUrlEncodedContent([new("__RequestVerificationToken", token)]),
+        };
+        request.Headers.Add(Browser.SkipAntiforgery, "1");
+
+        HttpResponseMessage response = await signedIn.SendAsync(request, Ct);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await signedIn.GetAsync("/api/v1/me", Ct)).StatusCode);
