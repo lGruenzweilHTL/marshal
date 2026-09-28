@@ -9,3 +9,4 @@ docs/
 openspec/
 deploy/
 web/node_modules/
+web/dist/

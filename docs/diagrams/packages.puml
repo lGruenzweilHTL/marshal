@@ -8,8 +8,9 @@
 ' (see docs/diagrams/README.md).
 '
 ' Status: PARTLY BUILT — Marshal.Abstractions, Marshal.Core, Marshal.Data,
-' Marshal.Api, Marshal.Testing and their test projects exist (core-agent);
-' the other projects are still planned (docs/brainstorm-notes.md).
+' Marshal.Api, Marshal.Testing and their test projects exist (core-agent),
+' web/ exists (auth-web-shell); the other projects are still planned
+' (docs/brainstorm-notes.md).
 ' External packages are drawn inside the project that references them
 ' (grey boxes, <<nuget>> / <<npm>> / <<pip>>).
 
@@ -45,9 +46,11 @@ package "Clients" {
   package "ha/ custom_components/marshal (Python, HACS)" as HaComponent {
     component "pytest-homeassistant-\ncustom-component" <<pip>>
   }
-  package "web/ (Vue SPA)" as Web {
-    component "vue, vite, typescript" <<npm>>
+  package "web/ (Vue SPA, served from Marshal.Api wwwroot)" as Web {
+    component "vue, vue-router,\nvite, typescript, vue-tsc" <<npm>>
     component "openapi-typescript\n+ openapi-fetch" <<npm>>
+    component "markdown-it" <<npm>>
+    component "vitest, @vue/test-utils,\njsdom" <<npm>>
   }
   component "HA companion app\n(actionable push)" as Companion
 }
@@ -139,6 +142,7 @@ ExecutorHost ..> Api : callbacks\n(per-task token)
 
 Tests --> Testing
 Testing --> Abstractions
+Testing --> Data
 Tests --> Api
 Tests --> Core
 Tests --> Data

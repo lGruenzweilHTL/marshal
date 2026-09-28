@@ -61,6 +61,6 @@
 
 ## 9. Hosting and packaging
 
-- [ ] 9.1 Write API test: SPA fallback for deep links, CSP header (`img-src 'self' data:`), base path respected
-- [ ] 9.2 Serve SPA from `wwwroot` with fallback and CSP
-- [ ] 9.3 Add SPA build stage to the Dockerfile; update `packages.puml`, `CLAUDE.md` package index (incl. `markdown-it`, Vitest, Vue Router) and repository map
+- [x] 9.1 Write API test: SPA fallback for deep links, CSP header (`img-src 'self' data:`), base path respected
+- [x] 9.2 Serve SPA from `wwwroot` with fallback and CSP
+- [x] 9.3 Add SPA build stage to the Dockerfile; update `packages.puml`, `CLAUDE.md` package index (incl. `markdown-it`, Vitest, Vue Router) and repository map

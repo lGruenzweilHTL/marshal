@@ -52,7 +52,8 @@ src/                         .NET projects
   Marshal.ExecutorHost/      separate coding-sandbox service (own deployment, never in the main container) (planned)
 tests/                       one test project per src project (Marshal.<Name>.Tests)
   Marshal.Testing/           shared hand-written fakes (FakeChatClient, FakeEmbeddingGenerator, ...)
-web/                         Vue + Vite + TypeScript SPA (API client generated from OpenAPI) (planned)
+web/                         Vue + Vite + TypeScript SPA (API client generated from OpenAPI), folders by feature;
+                             built into Marshal.Api's wwwroot by the Dockerfile
 ha/                          custom_components/marshal (Python HA integration, HACS; may move to its own repo) (planned)
 deploy/                      docker-compose.yml, config.example/ (example /config files); Dockerfile at repo root
 docs/                        design notes, images
@@ -110,9 +111,13 @@ No mocking or assertion libraries — use hand-written fakes from `Marshal.Testi
 **Web (`web/`)**
 | Package | Purpose |
 |---|---|
-| `vue`, `vite`, `typescript` | SPA framework and build (Vue is the current choice, may change) |
-| `openapi-typescript` | Generates TypeScript types from Marshal's versioned OpenAPI document (build step) |
+| `vue`, `vite`, `typescript` | SPA framework and build (Vue is the current choice, may change); TypeScript 5.x until `vue-tsc` supports 7 |
+| `vue-router` | Client-side routing (history mode under the `<base href>` the host writes) |
+| `vue-tsc` | Type-checks `.vue` files in `npm run build`, so an API contract change the SPA does not handle fails the build |
+| `openapi-typescript` | Generates TypeScript types from Marshal's versioned OpenAPI document (build step; `npm run gen:api` exports it via `marshal --export-openapi`) |
 | `openapi-fetch` | Small typed `fetch` client driven by those types |
+| `markdown-it` | Chat markdown rendering with HTML disabled and a same-origin-only image rule (ships its own types) |
+| `vitest`, `@vue/test-utils`, `jsdom` | Component tests (`npm test`) against a hand-written fake API server (`src/testing/fakeServer.ts`) |
 
 **Python (`ha/`)**
 | Package | Purpose |

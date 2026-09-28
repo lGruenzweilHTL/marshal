@@ -147,3 +147,13 @@ One EF migration converting `User` to Identity and adding Identity tables, `Auth
 - **Live events in the SPA:** `web/src/live/events.ts` holds the hand-written payload types (`LiveEventMap`);
   `createLiveEvents` shares one `EventSource` per tab for the union of subscribed topics and reopens it when the set
   changes. Runs list and dashboard widgets reload on `run.completed`.
+- **SPA hosting:** static files from the web root (`wwwroot`, hashed `assets/` cached as immutable), then a
+  lowest-precedence `GET`/`HEAD` route for every non-file path that returns `index.html` with `<base href>`
+  rewritten to the path base (`no-cache`). `/api/**` keeps its JSON 404, file-like paths stay 404. Every response
+  carries the CSP `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self';
+  font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`. `form-action` is left out on
+  purpose: browsers apply it to the redirect after the logout form post, which goes to the IdP's end-session
+  endpoint. Column alignment in markdown tables (inline `style` from markdown-it) is dropped by the CSP; accepted.
+- **Docker build:** the .NET stage publishes and runs `marshal --export-openapi`; a Node stage builds the SPA
+  against that document (`npm run build` = type generation + `vue-tsc` + Vite), so a breaking contract change fails
+  the image build; the runtime stage copies `dist/` to `/app/wwwroot`.
