@@ -1,7 +1,7 @@
 ## 1. Setup and verification
 
-- [ ] 1.1 Verify against current HA docs / source: conversation entity chat-log streaming API, `ConversationInput` fields (device, satellite, extra system prompt, user), STT vs typed signal; record findings in `design.md`
-- [ ] 1.2 Scaffold `ha/custom_components/marshal` (`manifest.json`, `const.py`, `strings.json`, translations `en` / `de`), `ha/hacs.json`, `ha/tests/` with `pytest-homeassistant-custom-component`
+- [x] 1.1 Verify against current HA docs / source: conversation entity chat-log streaming API, `ConversationInput` fields (device, satellite, extra system prompt, user), STT vs typed signal; record findings in `design.md`
+- [x] 1.2 Scaffold `ha/custom_components/marshal` (`manifest.json`, `const.py`, `strings.json`, translations `en` / `de`), `ha/hacs.json`, `ha/tests/` with `pytest-homeassistant-custom-component`
 
 ## 2. Client
 
