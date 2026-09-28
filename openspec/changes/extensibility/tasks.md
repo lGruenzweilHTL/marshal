@@ -1,7 +1,7 @@
 ## 1. Verification
 
-- [ ] 1.1 Verify against current HA docs: MCP server endpoint and tool list, websocket commands for entity / device / area / floor registries and exposed entities, timer intents without device context; record in `design.md`
-- [ ] 1.2 Record HA MCP and websocket traffic from a test instance as fixtures for fake servers
+- [x] 1.1 Verify against current HA docs: MCP server endpoint and tool list, websocket commands for entity / device / area / floor registries and exposed entities, timer intents without device context; record in `design.md`
+- [x] 1.2 Record HA MCP and websocket traffic from a test instance as fixtures for fake servers
 
 ## 2. MCP client
 

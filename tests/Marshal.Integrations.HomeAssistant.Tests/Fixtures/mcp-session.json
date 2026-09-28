@@ -1,0 +1,1115 @@
+[
+ {
+  "request": {
+   "jsonrpc": "2.0",
+   "id": 1,
+   "method": "initialize",
+   "params": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {},
+    "clientInfo": {
+     "name": "marshal-fixtures",
+     "version": "0.1"
+    }
+   }
+  },
+  "status": 200,
+  "contentType": "application/json; charset=utf-8",
+  "response": {
+   "jsonrpc": "2.0",
+   "id": 1,
+   "result": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {
+     "experimental": {},
+     "prompts": {
+      "listChanged": false
+     },
+     "resources": {
+      "subscribe": false,
+      "listChanged": false
+     },
+     "tools": {
+      "listChanged": false
+     }
+    },
+    "serverInfo": {
+     "name": "home-assistant",
+     "version": "1.26.0"
+    }
+   }
+  }
+ },
+ {
+  "request": {
+   "jsonrpc": "2.0",
+   "method": "notifications/initialized"
+  },
+  "status": 202,
+  "contentType": null,
+  "response": null
+ },
+ {
+  "request": {
+   "jsonrpc": "2.0",
+   "id": 2,
+   "method": "tools/list"
+  },
+  "status": 200,
+  "contentType": "application/json; charset=utf-8",
+  "response": {
+   "jsonrpc": "2.0",
+   "id": 2,
+   "result": {
+    "tools": [
+     {
+      "name": "assist_satellite__HassBroadcast",
+      "description": "Broadcast a message through the home",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "message": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     {
+      "name": "climate__HassClimateSetTemperature",
+      "description": "Sets the target temperature of a climate device or entity",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "temperature": {
+         "type": "number"
+        },
+        "area": {
+         "type": "string"
+        },
+        "name": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     {
+      "name": "fan__HassFanSetSpeed",
+      "description": "Sets a fan's speed by percentage",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        },
+        "domain": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "fan"
+          ]
+         }
+        },
+        "percentage": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 100,
+         "description": "The speed percentage of the fan"
+        }
+       }
+      }
+     },
+     {
+      "name": "homeassistant__GetLiveContext",
+      "description": "Provides real-time information about the CURRENT state, value, or mode of devices, sensors, entities, or areas. Use this tool for: 1. Answering questions about current conditions (e.g., 'Is the light on?'). 2. As the first step in conditional actions (e.g., 'If the weather is rainy, turn off sprinklers' requires checking the weather first). You may filter for devices by name, domain, and area, including combining those filters. Prefer filtering by domain when searching for multiple devices of the same type.",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string",
+         "description": "Filter entities by name or alias (case-insensitive)."
+        },
+        "domain": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "array",
+           "items": {
+            "type": "string"
+           }
+          }
+         ],
+         "description": "Filter entities by domain (e.g. 'light', 'sensor'). Accepts a single domain or a list."
+        },
+        "area": {
+         "type": "string",
+         "description": "Filter entities by area name or alias (case-insensitive)."
+        }
+       }
+      }
+     },
+     {
+      "name": "humidifier__HassHumidifierSetpoint",
+      "description": "Set desired humidity level",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "humidity": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 100
+        }
+       }
+      }
+     },
+     {
+      "name": "humidifier__HassHumidifierMode",
+      "description": "Set humidifier mode",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "mode": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     {
+      "name": "intent__HassTurnOn",
+      "description": "Turns on/opens/presses a device or entity. For locks, this performs a 'lock' action. Use for requests like 'turn on', 'activate', 'enable', or 'lock'.",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        },
+        "domain": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "device_class": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "outlet",
+           "switch",
+           "awning",
+           "blind",
+           "curtain",
+           "damper",
+           "door",
+           "garage",
+           "gate",
+           "shade",
+           "shutter",
+           "window",
+           "tv",
+           "speaker",
+           "receiver",
+           "projector",
+           "water",
+           "gas",
+           "identify",
+           "restart",
+           "update"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "name": "intent__HassTurnOff",
+      "description": "Turns off/closes a device or entity. For locks, this performs an 'unlock' action. Use for requests like 'turn off', 'deactivate', 'disable', or 'unlock'.",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        },
+        "domain": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "device_class": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "outlet",
+           "switch",
+           "awning",
+           "blind",
+           "curtain",
+           "damper",
+           "door",
+           "garage",
+           "gate",
+           "shade",
+           "shutter",
+           "window",
+           "tv",
+           "speaker",
+           "receiver",
+           "projector",
+           "water",
+           "gas",
+           "identify",
+           "restart",
+           "update"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "name": "intent__HassSetPosition",
+      "description": "Sets the position of a device or entity",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        },
+        "domain": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "device_class": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "awning",
+           "blind",
+           "curtain",
+           "damper",
+           "door",
+           "garage",
+           "gate",
+           "shade",
+           "shutter",
+           "window",
+           "water",
+           "gas"
+          ]
+         }
+        },
+        "position": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 100
+        }
+       }
+      }
+     },
+     {
+      "name": "intent__HassStopMoving",
+      "description": "Stops a moving device or entity",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        },
+        "domain": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "device_class": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "awning",
+           "blind",
+           "curtain",
+           "damper",
+           "door",
+           "garage",
+           "gate",
+           "shade",
+           "shutter",
+           "window",
+           "water",
+           "gas"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "name": "intent__HassCancelAllTimers",
+      "description": "Cancels all timers",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "area": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     {
+      "name": "light__HassLightSet",
+      "description": "Sets the brightness percentage or color of a light",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        },
+        "domain": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "light"
+          ]
+         }
+        },
+        "color": {
+         "type": "string"
+        },
+        "temperature": {
+         "type": "integer",
+         "minimum": 0
+        },
+        "brightness": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 100,
+         "description": "The brightness percentage of the light between 0 and 100, where 0 is off and 100 is fully lit"
+        }
+       }
+      }
+     },
+     {
+      "name": "llm__GetDateTime",
+      "description": "Provides the current date and time.",
+      "inputSchema": {
+       "type": "object",
+       "properties": {}
+      }
+     },
+     {
+      "name": "media_player__HassMediaUnpause",
+      "description": "Resumes a media player",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        },
+        "domain": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "media_player"
+          ]
+         }
+        },
+        "device_class": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "tv",
+           "speaker",
+           "receiver",
+           "projector"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "name": "media_player__HassMediaPause",
+      "description": "Pauses a media player",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        },
+        "domain": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "media_player"
+          ]
+         }
+        },
+        "device_class": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "tv",
+           "speaker",
+           "receiver",
+           "projector"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "name": "media_player__HassMediaNext",
+      "description": "Skips a media player to the next item",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        },
+        "domain": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "media_player"
+          ]
+         }
+        },
+        "device_class": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "tv",
+           "speaker",
+           "receiver",
+           "projector"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "name": "media_player__HassMediaPrevious",
+      "description": "Replays the previous item for a media player",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        },
+        "domain": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "media_player"
+          ]
+         }
+        },
+        "device_class": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "tv",
+           "speaker",
+           "receiver",
+           "projector"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "name": "media_player__HassSetVolume",
+      "description": "Sets the volume percentage of a media player",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        },
+        "domain": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "media_player"
+          ]
+         }
+        },
+        "device_class": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "tv",
+           "speaker",
+           "receiver",
+           "projector"
+          ]
+         }
+        },
+        "volume_level": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 100,
+         "description": "The volume percentage of the media player"
+        }
+       }
+      }
+     },
+     {
+      "name": "media_player__HassSetVolumeRelative",
+      "description": "Increases or decreases the volume of a media player",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "volume_step": {
+         "anyOf": [
+          {
+           "type": "string",
+           "enum": [
+            "up",
+            "down"
+           ]
+          },
+          {
+           "type": "integer",
+           "minimum": -100,
+           "maximum": 100
+          }
+         ]
+        },
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     {
+      "name": "media_player__HassMediaPlayerMute",
+      "description": "Mutes a media player",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        },
+        "domain": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "media_player"
+          ]
+         }
+        },
+        "device_class": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "tv",
+           "speaker",
+           "receiver",
+           "projector"
+          ]
+         }
+        },
+        "is_volume_muted": {
+         "description": "Whether the media player should be muted or unmuted",
+         "type": "string"
+        }
+       }
+      }
+     },
+     {
+      "name": "media_player__HassMediaPlayerUnmute",
+      "description": "Unmutes a media player",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        },
+        "domain": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "media_player"
+          ]
+         }
+        },
+        "device_class": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "tv",
+           "speaker",
+           "receiver",
+           "projector"
+          ]
+         }
+        },
+        "is_volume_muted": {
+         "description": "Whether the media player should be muted or unmuted",
+         "type": "string"
+        }
+       }
+      }
+     },
+     {
+      "name": "media_player__HassMediaSearchAndPlay",
+      "description": "Searches for media and plays the first result",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "search_query": {
+         "type": "string"
+        },
+        "media_class": {
+         "type": "string",
+         "enum": [
+          "album",
+          "app",
+          "artist",
+          "channel",
+          "composer",
+          "contributing_artist",
+          "directory",
+          "episode",
+          "game",
+          "genre",
+          "image",
+          "movie",
+          "music",
+          "playlist",
+          "podcast",
+          "season",
+          "track",
+          "tv_show",
+          "url",
+          "video"
+         ]
+        },
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     {
+      "name": "todo__get_items",
+      "description": "Query a to-do list to find out what items are on it. Use this to answer questions like 'What's on my task list?' or 'Read my grocery list'. Filters items by status (needs_action, completed, all).",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "todo_list": {
+         "type": "string",
+         "enum": [
+          "Shopping list"
+         ]
+        },
+        "status": {
+         "type": "string",
+         "enum": [
+          "needs_action",
+          "completed",
+          "all"
+         ],
+         "description": "Filter returned items by status, by default returns incomplete items",
+         "default": "needs_action"
+        }
+       }
+      }
+     },
+     {
+      "name": "todo__HassListAddItem",
+      "description": "Add item to a todo list",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "item": {
+         "type": "string"
+        },
+        "name": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     {
+      "name": "todo__HassListCompleteItem",
+      "description": "Complete item on a todo list",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "item": {
+         "type": "string"
+        },
+        "name": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     {
+      "name": "todo__HassListRemoveItem",
+      "description": "Remove one or more items from a todo list",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "item": {
+         "type": "string"
+        },
+        "name": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     {
+      "name": "vacuum__HassVacuumStart",
+      "description": "Starts a vacuum",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        },
+        "domain": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "vacuum"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "name": "vacuum__HassVacuumReturnToBase",
+      "description": "Returns a vacuum to base",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "area": {
+         "type": "string"
+        },
+        "floor": {
+         "type": "string"
+        },
+        "domain": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "vacuum"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "name": "vacuum__HassVacuumCleanArea",
+      "description": "Tells a vacuum to clean a specific area",
+      "inputSchema": {
+       "type": "object",
+       "properties": {
+        "area": {
+         "type": "string"
+        },
+        "name": {
+         "type": "string"
+        }
+       }
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "request": {
+   "jsonrpc": "2.0",
+   "id": 3,
+   "method": "tools/call",
+   "params": {
+    "name": "homeassistant__GetLiveContext",
+    "arguments": {}
+   }
+  },
+  "status": 200,
+  "contentType": "application/json; charset=utf-8",
+  "response": {
+   "jsonrpc": "2.0",
+   "id": 3,
+   "result": {
+    "content": [
+     {
+      "type": "text",
+      "text": "{\"success\": true, \"result\": \"Live Context: An overview of the areas and the devices in this smart home:\\n- names: Nachtlicht\\n  domain: light\\n  state: 'on'\\n  areas: Bedroom\\n  attributes:\\n    brightness: '180'\\n- names: Bedroom\\n  domain: media_player\\n  state: playing\\n  attributes:\\n    volume_level: 1.0\\n    media_title: Epic sax guy 10 hours\\n- names: Browse\\n  domain: media_player\\n  state: playing\\n  attributes:\\n    volume_level: 1.0\\n- names: Carbon dioxide\\n  domain: sensor\\n  state: '54'\\n  attributes:\\n    unit_of_measurement: ppm\\n    device_class: carbon_dioxide\\n- names: Carbon monoxide\\n  domain: sensor\\n  state: '54'\\n  attributes:\\n    unit_of_measurement: ppm\\n    device_class: carbon_monoxide\\n- names: Ceiling Fan\\n  domain: fan\\n  state: 'off'\\n  attributes:\\n    percentage:\\n- names: Ceiling Lights\\n  domain: light\\n  state: 'on'\\n  areas: Hall, Flur\\n  attributes:\\n    brightness: '180'\\n- names: Decorative Lights\\n  domain: switch\\n  state: 'on'\\n- names: Dehumidifier\\n  domain: humidifier\\n  state: 'on'\\n  attributes:\\n    humidity: 54.2\\n    device_class: dehumidifier\\n- names: Demo Water Heater\\n  domain: water_heater\\n  state: eco\\n  attributes:\\n    current_temperature:\\n    temperature: 48.3\\n- names: Demo Water Heater Celsius\\n  domain: water_heater\\n  state: eco\\n  attributes:\\n    current_temperature:\\n    temperature: '45'\\n- names: Demo vacuum 0 ground floor\\n  domain: vacuum\\n  state: docked\\n- names: Demo vacuum 1 first floor\\n  domain: vacuum\\n  state: docked\\n- names: Demo vacuum 2 second floor\\n  domain: vacuum\\n  state: docked\\n- names: Demo vacuum 3 third floor\\n  domain: vacuum\\n  state: docked\\n- names: Demo vacuum 4 fourth floor\\n  domain: vacuum\\n  state: docked\\n- names: Ecobee\\n  domain: climate\\n  state: heat_cool\\n  attributes:\\n    current_temperature: '23'\\n- names: Entrance Color + White Lights\\n  domain: light\\n  state: 'off'\\n  areas: Hall, Flur\\n  attributes:\\n    brightness:\\n- names: Garage Door\\n  domain: cover\\n  state: closed\\n  areas: Hall, Flur\\n  attributes:\\n    device_class: garage\\n- names: Group\\n  domain: media_player\\n  state: playing\\n  attributes:\\n    volume_level: 1.0\\n- names: Hall Door\\n  domain: lock\\n  state: unlocked\\n  areas: Hall, Flur\\n- names: Hall Window\\n  domain: cover\\n  state: open\\n  attributes:\\n    current_position: '10'\\n- names: HeatPump\\n  domain: climate\\n  state: heat\\n  attributes:\\n    current_temperature: 25.0\\n    temperature: 20.0\\n- names: Humidifier\\n  domain: humidifier\\n  state: 'on'\\n  attributes:\\n    humidity: '65'\\n    device_class: humidifier\\n- names: Hvac\\n  domain: climate\\n  state: cool\\n  attributes:\\n    current_temperature: '22'\\n    temperature: '21'\\n    humidity: 67.4\\n- names: Hygrostat\\n  domain: humidifier\\n  state: 'on'\\n  attributes:\\n    humidity: '50'\\n- names: Kitchen\\n  domain: media_player\\n  state: playing\\n  attributes:\\n    volume_level: 1.0\\n    media_title: I Wanna Be A Hippy (Flamman & Abraxas Radio Mix)\\n    media_artist: Technohead\\n    media_album_name: Bounzz\\n- names: Kitchen Spots\\n  domain: light\\n  state: 'on'\\n  areas: Kitchen, Küche\\n  attributes:\\n    brightness: '180'\\n- names: Kitchen Window\\n  domain: cover\\n  state: closed\\n  areas: Kitchen, Küche\\n- names: Living Room\\n  domain: media_player\\n  state: playing\\n  attributes:\\n    volume_level: 1.0\\n    media_title: ♥♥ The Best Fireplace Video (3 hours)\\n- names: Living Room Fan\\n  domain: fan\\n  state: 'off'\\n  attributes:\\n    percentage:\\n- names: Living Room RGBWW Lights\\n  domain: light\\n  state: 'on'\\n  attributes:\\n    brightness: '180'\\n- names: Living Room Window\\n  domain: cover\\n  state: open\\n  attributes:\\n    current_position: '70'\\n- names: Lounge room\\n  domain: media_player\\n  state: playing\\n  attributes:\\n    volume_level: 1.0\\n    media_title: Chapter 1\\n    device_class: tv\\n- names: Movement Backyard\\n  domain: binary_sensor\\n  state: 'on'\\n  attributes:\\n    device_class: motion\\n- names: Office RGBW Lights\\n  domain: light\\n  state: 'on'\\n  attributes:\\n    brightness: '180'\\n- names: Outside Humidity\\n  domain: sensor\\n  state: '54'\\n  attributes:\\n    unit_of_measurement: '%'\\n    device_class: humidity\\n- names: Outside Temperature\\n  domain: sensor\\n  state: '15.6'\\n  attributes:\\n    unit_of_measurement: °C\\n    device_class: temperature\\n- names: Percentage Full Fan\\n  domain: fan\\n  state: 'off'\\n  attributes:\\n    percentage:\\n- names: Percentage Limited Fan\\n  domain: fan\\n  state: 'off'\\n  attributes:\\n    percentage:\\n- names: Pergola Roof\\n  domain: cover\\n  state: closed\\n- names: Preset Only Limited Fan\\n  domain: fan\\n  state: 'off'\\n- names: Search\\n  domain: media_player\\n  state: playing\\n  attributes:\\n    volume_level: 1.0\\n- names: Shopping list\\n  domain: todo\\n  state: '0'\\n- names: Walkman\\n  domain: media_player\\n  state: playing\\n  attributes:\\n    volume_level: 1.0\\n    media_title: I Wanna Be A Hippy (Flamman & Abraxas Radio Mix)\\n    media_artist: Technohead\\n    media_album_name: Bounzz\\n\"}"
+     }
+    ],
+    "isError": false
+   }
+  }
+ },
+ {
+  "request": {
+   "jsonrpc": "2.0",
+   "id": 4,
+   "method": "tools/call",
+   "params": {
+    "name": "intent__HassTurnOff",
+    "arguments": {
+     "area": "Hall",
+     "domain": [
+      "light"
+     ]
+    }
+   }
+  },
+  "status": 200,
+  "contentType": "application/json; charset=utf-8",
+  "response": {
+   "jsonrpc": "2.0",
+   "id": 4,
+   "result": {
+    "content": [
+     {
+      "type": "text",
+      "text": "{\"speech\": {}, \"response_type\": \"action_done\", \"data\": {\"success\": [{\"name\": \"Hall\", \"type\": \"area\", \"id\": \"hall\"}, {\"name\": \"Ceiling Lights\", \"type\": \"entity\", \"id\": \"light.ceiling_lights\"}, {\"name\": \"Entrance Color + White Lights\", \"type\": \"entity\", \"id\": \"light.entrance_color_white_lights\"}], \"failed\": []}}"
+     }
+    ],
+    "isError": false
+   }
+  }
+ },
+ {
+  "request": {
+   "jsonrpc": "2.0",
+   "id": 8,
+   "method": "tools/call",
+   "params": {
+    "name": "intent__HassTurnOff",
+    "arguments": {
+     "area": "Hall"
+    }
+   }
+  },
+  "status": 200,
+  "contentType": "application/json; charset=utf-8",
+  "response": {
+   "jsonrpc": "2.0",
+   "id": 8,
+   "result": {
+    "content": [
+     {
+      "type": "text",
+      "text": "{\"speech\": {}, \"response_type\": \"action_done\", \"data\": {\"success\": [{\"name\": \"Hall\", \"type\": \"area\", \"id\": \"hall\"}, {\"name\": \"Hall Door\", \"type\": \"entity\", \"id\": \"lock.hall_door\"}, {\"name\": \"Garage Door\", \"type\": \"entity\", \"id\": \"cover.garage_door\"}, {\"name\": \"Ceiling Lights\", \"type\": \"entity\", \"id\": \"light.ceiling_lights\"}, {\"name\": \"Entrance Color + White Lights\", \"type\": \"entity\", \"id\": \"light.entrance_color_white_lights\"}], \"failed\": []}}"
+     }
+    ],
+    "isError": false
+   }
+  }
+ },
+ {
+  "request": {
+   "jsonrpc": "2.0",
+   "id": 5,
+   "method": "tools/call",
+   "params": {
+    "name": "intent__HassTurnOn",
+    "arguments": {
+     "name": "Nachtlicht"
+    }
+   }
+  },
+  "status": 200,
+  "contentType": "application/json; charset=utf-8",
+  "response": {
+   "jsonrpc": "2.0",
+   "id": 5,
+   "result": {
+    "content": [
+     {
+      "type": "text",
+      "text": "{\"speech\": {}, \"response_type\": \"action_done\", \"data\": {\"success\": [{\"name\": \"Bed Light\", \"type\": \"entity\", \"id\": \"light.bed_light\"}], \"failed\": []}}"
+     }
+    ],
+    "isError": false
+   }
+  }
+ },
+ {
+  "request": {
+   "jsonrpc": "2.0",
+   "id": 6,
+   "method": "tools/call",
+   "params": {
+    "name": "intent__HassTurnOn",
+    "arguments": {
+     "name": "Does Not Exist"
+    }
+   }
+  },
+  "status": 200,
+  "contentType": "application/json; charset=utf-8",
+  "response": {
+   "jsonrpc": "2.0",
+   "id": 6,
+   "result": {
+    "content": [
+     {
+      "type": "text",
+      "text": "Error calling tool: <MatchFailedError result=MatchTargetsResult(is_match=False, no_match_reason=<MatchFailedReason.NAME: 1>, states=[], no_match_name=None, areas=[], floors=[]), constraints=MatchTargetsConstraints(name='Does Not Exist', area_name=None, floor_name=None, domains=None, device_classes=None, features=None, states=None, assistant='conversation', allow_duplicate_names=False, single_target=False), preferences=MatchTargetsPreferences(area_id=None, floor_id=None)>"
+     }
+    ],
+    "isError": true
+   }
+  }
+ },
+ {
+  "request": {
+   "jsonrpc": "2.0",
+   "id": 7,
+   "method": "tools/list"
+  },
+  "note": "no Authorization header",
+  "status": 401,
+  "contentType": "text/plain; charset=utf-8",
+  "response": null
+ }
+]

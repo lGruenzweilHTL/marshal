@@ -11,8 +11,8 @@ MCP servers SHALL be configured in `/config/mcp/*.yaml` with `id`, transport (`s
 Tools from an MCP server SHALL use the server id (or `toolPrefix`) as namespace, without an `mcp.` prefix. Tool names SHALL be kept as reported, sanitized per the registry rules.
 
 #### Scenario: HA tool id
-- **WHEN** server `ha` reports tool `HassTurnOn`
-- **THEN** its internal id is `ha.HassTurnOn` and its model-facing name is `ha_HassTurnOn`
+- **WHEN** server `ha` reports tool `intent__HassTurnOn`
+- **THEN** its internal id is `ha.intent__HassTurnOn` and its model-facing name is `ha_intent__HassTurnOn`
 
 ### Requirement: Failure isolation
 A server that fails to start, fails discovery, collides with a reserved or existing namespace, or produces colliding tool names SHALL be rejected with a clear error; all other servers and built-in tools SHALL keep working. A server that disconnects SHALL be reconnected with backoff; its tools SHALL be hidden while it is down.

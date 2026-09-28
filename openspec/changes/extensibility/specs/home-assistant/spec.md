@@ -22,7 +22,7 @@ The system SHALL cache HA's entity, device, area and floor registries and the se
 The system SHALL register an `IRiskTargetResolver` for the `ha` namespace that expands a call's `name`, `area`, `floor`, `domain` and `device_class` arguments to the concrete exposed entities, each with domain and device class. Unknown names or empty results SHALL be reported as unresolved.
 
 #### Scenario: Area expansion
-- **WHEN** `HassTurnOff` is called with `area = hall` and the hall has two lights and a lock
+- **WHEN** `ha.intent__HassTurnOff` is called with `area = hall` and the hall has two lights and a lock
 - **THEN** the resolver returns all three entities, and a lock rule makes the call `confirm`
 
 #### Scenario: Non-exposed entity
@@ -30,7 +30,7 @@ The system SHALL register an `IRiskTargetResolver` for the `ha` namespace that e
 - **THEN** the resolver reports it as unresolved
 
 ### Requirement: Area context without dumps
-The context builder SHALL include states of exposed entities in the turn's area and of entities mentioned in the user's text, taken from the cache. It SHALL NOT include all entity states; the model SHALL call `ha.GetLiveContext` for more.
+The context builder SHALL include states of exposed entities in the turn's area and of entities mentioned in the user's text, taken from the cache. It SHALL NOT include all entity states; the model SHALL call `ha.homeassistant__GetLiveContext` for more.
 
 #### Scenario: Kitchen turn
 - **WHEN** a turn comes from the kitchen

@@ -1,0 +1,278 @@
+[
+ {
+  "method": "GET",
+  "path": "/api/config",
+  "status": 200,
+  "response": {
+   "allowlist_external_dirs": [
+    "/config-root/config/media",
+    "/config-root/config/www"
+   ],
+   "allowlist_external_urls": [],
+   "components": [
+    "power",
+    "light",
+    "ai_task",
+    "demo.camera",
+    "battery",
+    "wake_word",
+    "device_automation",
+    "event",
+    "map_tiles",
+    "air_quality",
+    "backup",
+    "websocket_api",
+    "binary_sensor",
+    "logger",
+    "trace",
+    "demo.date",
+    "text",
+    "assist_satellite",
+    "tts",
+    "mcp_server",
+    "siren",
+    "demo.climate",
+    "scene",
+    "demo.number",
+    "input_button",
+    "demo.notify",
+    "notify",
+    "demo",
+    "demo.light",
+    "ffmpeg",
+    "demo.alarm_control_panel",
+    "door",
+    "todo",
+    "persistent_notification",
+    "demo.tts",
+    "demo.binary_sensor",
+    "input_select",
+    "lawn_mower",
+    "water_heater",
+    "hardware",
+    "demo.time",
+    "motion",
+    "sun.binary_sensor",
+    "demo.device_tracker",
+    "stt",
+    "input_text",
+    "demo.event",
+    "backup.event",
+    "homeassistant",
+    "template",
+    "counter",
+    "blueprint",
+    "demo.button",
+    "llm",
+    "search",
+    "homeassistant.scene",
+    "demo.text",
+    "vacuum",
+    "web_rtc",
+    "shopping_list",
+    "humidity",
+    "illuminance",
+    "system_health",
+    "humidifier",
+    "input_number",
+    "image_processing",
+    "calendar",
+    "labs",
+    "person",
+    "alarm_control_panel",
+    "demo.sensor",
+    "geo_location",
+    "lovelace",
+    "media_source",
+    "application_credentials",
+    "camera",
+    "climate",
+    "demo.humidifier",
+    "switch",
+    "shopping_list.todo",
+    "auth",
+    "button",
+    "demo.remote",
+    "sun",
+    "conversation",
+    "demo.image_processing",
+    "api",
+    "script",
+    "remote",
+    "demo.vacuum",
+    "demo.lock",
+    "demo.siren",
+    "brands",
+    "number",
+    "timer",
+    "schedule",
+    "demo.switch",
+    "demo.stt",
+    "window",
+    "lock",
+    "input_boolean",
+    "sensor",
+    "group",
+    "device_tracker",
+    "config",
+    "sun.sensor",
+    "network",
+    "repairs",
+    "tag",
+    "intent",
+    "occupancy",
+    "fan",
+    "moisture",
+    "gate",
+    "google_translate",
+    "time",
+    "diagnostics",
+    "demo.weather",
+    "file_upload",
+    "media_player",
+    "image_upload",
+    "demo.valve",
+    "demo.select",
+    "system_log",
+    "automation",
+    "update",
+    "onboarding",
+    "date",
+    "demo.datetime",
+    "http",
+    "cover",
+    "assist_pipeline",
+    "vibration",
+    "garage_door",
+    "demo.media_player",
+    "valve",
+    "demo.air_quality",
+    "temperature",
+    "demo.fan",
+    "template.lock",
+    "zone",
+    "demo.cover",
+    "demo.update",
+    "demo.calendar",
+    "demo.geo_location",
+    "frontend",
+    "select",
+    "datetime",
+    "backup.sensor",
+    "input_datetime",
+    "weather",
+    "demo.water_heater",
+    "image"
+   ],
+   "config_dir": "/config-root/config",
+   "config_source": "yaml",
+   "country": "AT",
+   "currency": "EUR",
+   "debug": false,
+   "elevation": 170,
+   "external_url": null,
+   "internal_url": null,
+   "language": "en",
+   "latitude": 48.2,
+   "location_name": "Marshal Test Home",
+   "logging": {
+    "log_file_disabled_reason": null
+   },
+   "longitude": 16.37,
+   "radius": 100,
+   "recovery_mode": false,
+   "safe_mode": false,
+   "state": "RUNNING",
+   "time_zone": "Europe/Vienna",
+   "unit_system": {
+    "length": "km",
+    "accumulated_precipitation": "mm",
+    "area": "m²",
+    "mass": "g",
+    "pressure": "Pa",
+    "temperature": "°C",
+    "volume": "L",
+    "wind_speed": "m/s"
+   },
+   "version": "2026.9.4",
+   "whitelist_external_dirs": [
+    "/config-root/config/media",
+    "/config-root/config/www"
+   ]
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/intent/handle",
+  "request": {
+   "name": "HassStartTimer",
+   "data": {
+    "minutes": 10
+   },
+   "device_id": "bd1275c1fa794dd7fb8761dd3fc64497"
+  },
+  "status": 200,
+  "response": {
+   "speech": {
+    "plain": {
+     "speech": "Device does not support timers: device_id=bd1275c1fa794dd7fb8761dd3fc64497",
+     "extra_data": null
+    }
+   },
+   "card": {},
+   "language": "en",
+   "response_type": "error",
+   "data": {
+    "code": "failed_to_handle"
+   }
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/intent/handle",
+  "request": {
+   "name": "HassStartTimer",
+   "data": {
+    "minutes": 10
+   }
+  },
+  "status": 200,
+  "response": {
+   "speech": {
+    "plain": {
+     "speech": "Device does not support timers: device_id=None",
+     "extra_data": null
+    }
+   },
+   "card": {},
+   "language": "en",
+   "response_type": "error",
+   "data": {
+    "code": "failed_to_handle"
+   }
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/intent/handle",
+  "request": {
+   "name": "HassTimerStatus",
+   "data": {},
+   "device_id": "bd1275c1fa794dd7fb8761dd3fc64497"
+  },
+  "status": 200,
+  "response": {
+   "speech": {},
+   "card": {},
+   "language": "en",
+   "response_type": "action_done",
+   "speech_slots": {
+    "timers": []
+   },
+   "data": {
+    "success": [],
+    "failed": []
+   }
+  }
+ }
+]
