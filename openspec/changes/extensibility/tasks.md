@@ -49,5 +49,5 @@
 
 ## 7. Documentation
 
-- [ ] 7.1 Add example `deploy/config/mcp/ha.yaml`, a sample skill and a sample template
-- [ ] 7.2 Update `CLAUDE.md` package index if needed
+- [x] 7.1 Add example `deploy/config/mcp/ha.yaml`, a sample skill and a sample template
+- [x] 7.2 Update `CLAUDE.md` package index if needed

@@ -57,7 +57,8 @@ tests/                       one test project per src project (Marshal.<Name>.Te
 web/                         Vue + Vite + TypeScript SPA (API client generated from OpenAPI), folders by feature;
                              built into Marshal.Api's wwwroot by the Dockerfile
 ha/                          custom_components/marshal (Python HA integration, HACS; may move to its own repo); uv project, tests in ha/tests
-deploy/                      docker-compose.yml, config.example/ (example /config files); Dockerfile at repo root
+deploy/                      docker-compose.yml, config.example/ (example /config files: marshal.yaml, risk.yaml,
+                             satellites.yaml, mcp/, skills/, templates/); Dockerfile at repo root
 docs/                        design notes, images
 openspec/                    specifications and changes
 ```
@@ -101,6 +102,7 @@ Key dependencies and what they are for. Keep this list current when adding or re
 | `SmartReader` | Readability full-text extraction for RSS articles |
 | `Google.Apis.Gmail.v1`, `Microsoft.Graph` | Gmail API and Graph mail providers (later, build order §14) |
 | `SkiaSharp` | Image resizing (camera snapshots before VLM calls); MIT licensed |
+| `Microsoft.Extensions.Http` | `IHttpClientFactory` named clients (MCP streamable HTTP, Home Assistant REST) |
 | `Microsoft.Extensions.Http.Resilience` | Retries / backoff for integration HTTP clients |
 | `OpenTelemetry.*` (`Extensions.Hosting`, `Exporter.OpenTelemetryProtocol`) | Traces and metrics (`Marshal.Runs` activity source, `Marshal` meter), OTLP export |
 | `xunit.v3`, `Testcontainers` | Tests (plain `Assert`) on Microsoft.Testing.Platform (`dotnet test --project <dir>`); containers for IMAP, FreshRSS |

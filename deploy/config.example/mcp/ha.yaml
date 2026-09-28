@@ -1,0 +1,7 @@
+# Home Assistant's MCP server (integration "Model Context Protocol Server" with the Assist API).
+# One server per file; the file name is free, the id must be unique. Hot-reloaded.
+id: ha                        # tools become ha.<name>, e.g. ha.intent__HassTurnOn (model-facing: ha_intent__HassTurnOn)
+transport: http               # streamable HTTP; use "stdio" with command / args for local servers
+url: http://homeassistant.local:8123/api/mcp
+authTokenSecret: ha_token     # secret NAME of a long-lived access token; never the token itself
+untrusted: false              # true: tool output is third-party data and taints the run

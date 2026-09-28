@@ -2,7 +2,13 @@ using System.Collections;
 using Marshal.Abstractions;
 using Marshal.Api.Configuration;
 using Marshal.Core.Configuration;
+using Marshal.Abstractions.Mcp;
+using Marshal.Abstractions.Templates;
 using Marshal.Core.Guard;
+using Marshal.Core.Mcp;
+using Marshal.Core.Skills;
+using Marshal.Core.Templates;
+using Marshal.Testing;
 using Marshal.Core.Models;
 using Marshal.Core.Satellites;
 using Microsoft.Extensions.Configuration;
@@ -49,6 +55,23 @@ public sealed class ExampleConfigTests
         Assert.Contains(models.Models.Values, model => model.Tier == Abstractions.Models.ModelTier.Fast);
         Assert.Contains(models.Models.Values, model => model.Tier == Abstractions.Models.ModelTier.Standard);
         Assert.Equal("Europe/Vienna", configuration["instance:timeZone"]);
+    }
+
+    [Fact]
+    public void ExampleMcpServerSkillAndTemplate_LoadWithoutErrors()
+    {
+        var scanner = new ConfigSecretScanner();
+        using var servers = new YamlMcpServerCatalog(Path.Combine(_directory, "mcp"), scanner, new FakeSecretStore(), NullLogger<YamlMcpServerCatalog>.Instance, watch: false);
+        using var skills = new FileSkillCatalog(Path.Combine(_directory, "skills"), null, "skills/**/*", scanner, NullLogger<FileSkillCatalog>.Instance);
+        using var templates = new FileTemplateCatalog(Path.Combine(_directory, "templates"), null, "templates/*.md", scanner, NullLogger<FileTemplateCatalog>.Instance);
+
+        Assert.Empty(servers.Errors);
+        McpServerDefinition ha = Assert.Single(servers.Servers);
+        Assert.Equal(("ha", "ha_token"), (ha.Namespace, ha.AuthTokenSecret?.Value));
+        Assert.Empty(skills.Errors);
+        Assert.NotEmpty(skills.Skills);
+        Assert.Empty(templates.Errors);
+        Assert.Contains(templates.Templates, template => template.Name != AgentTemplate.DefaultName);
     }
 
     private static string RepositoryRoot()

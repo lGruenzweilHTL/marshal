@@ -225,3 +225,15 @@ lock, floors / areas / aliases, `mcp_server` with the Assist API). The recorded 
   field of the v1 response, so no new API version; the web run view indents and marks subagent steps.
 - **DI cycle.** The runner depends on the registry, which offers `agent.delegate`; the tool therefore resolves
   `IAgentRunner` lazily through a factory.
+
+### Config view and examples (tasks 6.1–7.2)
+
+- `GET /api/v1/config` (`admin` scope, so admin API tokens work too) returns the loaded skills, templates (the
+  built-in default flagged), MCP servers with status, error and tool count, the compiled risk rules in order,
+  models and satellite profiles. Secrets appear by name only (`apiKeySecret`, `authTokenSecret`, `envSecrets`).
+  `errors` lists each file whose last load failed: `risk.yaml` / `satellites.yaml` keep their previous version
+  (`previousVersionActive: true`), rejected MCP, skill and template files are skipped.
+- The web view is read-only (no inputs) and linked in the navigation for admins only.
+- The examples live in `deploy/config.example/` next to the existing example files (the task named
+  `deploy/config/`): `mcp/ha.yaml`, the `house-status` skill and the `house-inspector` template (fast tier,
+  read-only HA tool, delegable). A test loads them through the real catalogs.
