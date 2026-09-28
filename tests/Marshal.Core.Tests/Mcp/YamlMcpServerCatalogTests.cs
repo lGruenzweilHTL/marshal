@@ -107,6 +107,7 @@ public sealed class YamlMcpServerCatalogTests : IDisposable
         ConfigFileError error = Assert.Single(catalog.Errors);
         Assert.Contains("token", error.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("hunter2", error.Message, StringComparison.Ordinal);
+        Assert.True(error.LiteralSecret);
     }
 
     [Fact]

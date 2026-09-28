@@ -40,6 +40,9 @@ internal sealed class LoopHarness
 
     public ToolRegistry Registry { get; private set; } = null!;
 
+    /// <summary>The source behind <see cref="Registry"/>; changes show after the next refresh.</summary>
+    public FakeToolSource Source { get; private set; } = null!;
+
     public AgentRunner Runner { get; private set; } = null!;
 
     public Channel<TurnEvent> Events { get; } = Channel.CreateUnbounded<TurnEvent>();
@@ -56,7 +59,8 @@ internal sealed class LoopHarness
         harness.Store = new InMemoryPendingActionStore(harness.Time);
         harness.Router = new SingleModelRouter(harness.Model, withAdvisor ? harness.Advisor : null);
         ITool[] all = [.. tools, .. builtIns?.Invoke(harness) ?? []];
-        harness.Registry = new ToolRegistry([new FakeToolSource("test", true, all)]);
+        harness.Source = new FakeToolSource("test", true, all);
+        harness.Registry = new ToolRegistry([harness.Source]);
         await harness.Registry.RefreshAsync(TestContext.Current.CancellationToken);
         RuleBasedRiskEngine engine = GuardTestKit.Engine(rules);
         var satellites = new FixedSatellites("assist_satellite.kitchen", kitchen ?? SatelliteProfile.Default);
@@ -64,6 +68,7 @@ internal sealed class LoopHarness
         var guard = new ToolCallGuard(harness.Registry, visibility, engine, satellites);
         harness.Runner = new AgentRunner(
             harness.Router,
+            harness.Registry,
             new ContextBuilder([new BasePromptContributor(), new OutputModeContributor()]),
             visibility,
             guard,

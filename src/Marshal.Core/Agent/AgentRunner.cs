@@ -23,6 +23,7 @@ namespace Marshal.Core.Agent;
 /// </summary>
 public sealed partial class AgentRunner(
     IModelRouter router,
+    IToolRegistry registry,
     IContextBuilder contextBuilder,
     IToolVisibilityFilter visibility,
     IGuard guard,
@@ -43,7 +44,9 @@ public sealed partial class AgentRunner(
         using (executionContext.Use(request.Context))
             runId = await recorder.StartRunAsync(new RunStart(request.Context, request.Trigger), cancellationToken);
 
-        MarshalExecutionContext context = request.Context with { RunId = runId };
+        // The run keeps the tools of its start; sources added or removed meanwhile apply to the next run.
+        ToolSnapshot tools = request.Context.Tools ?? await registry.RefreshAsync(cancellationToken);
+        MarshalExecutionContext context = request.Context with { RunId = runId, Tools = tools };
         using IDisposable scope = executionContext.Use(context);
         LogRunStarted(logger, runId.Value, request.Trigger);
 

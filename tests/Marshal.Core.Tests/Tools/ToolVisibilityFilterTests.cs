@@ -110,10 +110,25 @@ public sealed class ToolVisibilityFilterTests
         Assert.True((await filter.CheckAsync(Tool(filter, "test.safe"), context, Ct)).IsVisible);
     }
 
+    [Fact]
+    public async Task Visible_ContextSnapshot_WinsOverLaterRegistryState()
+    {
+        var source = new FakeToolSource("test", true, FakeTool.Safe("test.a"));
+        var registry = new ToolRegistry([source]);
+        MarshalExecutionContext context = TestExecutionContext.Text() with { Tools = await registry.RefreshAsync(Ct) };
+        var filter = new ToolVisibilityFilter(registry, GuardTestKit.Engine("risk: []"), new FixedSatellites(Kitchen, SatelliteProfile.Default));
+
+        source.Tools.Add(FakeTool.Safe("test.b"));
+        await registry.RefreshAsync(Ct);
+
+        Assert.Equal(["test_a"], await NamesAsync(filter, context));
+        Assert.Equal(["test_a", "test_b"], await NamesAsync(filter, TestExecutionContext.Text()));
+    }
+
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     private static RegisteredTool Tool(ToolVisibilityFilter filter, string id) =>
-        filter.Registry.FindById(ToolId.Parse(id).Value) ?? throw new InvalidOperationException(id);
+        filter.Registry.Current.FindById(ToolId.Parse(id).Value) ?? throw new InvalidOperationException(id);
 
     private static async Task<List<string>> NamesAsync(ToolVisibilityFilter filter, MarshalExecutionContext context) =>
         [.. (await filter.GetVisibleToolsAsync(context, Ct)).Select(tool => tool.ModelName).Order(StringComparer.Ordinal)];

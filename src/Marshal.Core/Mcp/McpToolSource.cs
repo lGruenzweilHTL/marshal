@@ -31,6 +31,7 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
     private Task? _loop;
     private volatile Connection? _connection;
     private volatile State _state;
+    private int _disposed;
 
     public McpToolSource(McpServerDefinition server, IMcpServerCatalog catalog, IMcpTransportFactory transports, ILoggerFactory loggers, McpReconnectPolicy reconnect, TimeProvider time)
     {
@@ -82,6 +83,9 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) == 1)
+            return;
+
         await _stop.CancelAsync();
         if (_loop is not null)
             await _loop;
@@ -92,7 +96,7 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
     internal async Task<Result<ToolOutput>> CallAsync(string name, JsonElement arguments, CancellationToken cancellationToken)
     {
         Connection? connection = _connection;
-        if (connection is null)
+        if (connection is null || connection.IsLost)
             return Unavailable();
 
         var parameters = new CallToolRequestParams
@@ -103,9 +107,11 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
                 : new Dictionary<string, JsonElement>(StringComparer.Ordinal),
         };
 
+        // A request sent just as the connection drops may never be answered; losing the connection ends it.
+        using var call = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, connection.LostToken);
         try
         {
-            CallToolResult result = await connection.Client.CallToolAsync(parameters, cancellationToken);
+            CallToolResult result = await connection.Client.CallToolAsync(parameters, call.Token);
             string content = McpContent.ToText(result);
             return result.IsError == true
                 ? new Error("mcp.tool_error", content)
@@ -269,25 +275,43 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
     private sealed class Connection : IAsyncDisposable
     {
         private readonly TaskCompletionSource<string> _lost = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly CancellationTokenSource _lostToken = new();
+        private McpClient? _client;
 
-        public McpClient Client { get; set; } = null!;
-
-        public void Lost(string reason) => _lost.TrySetResult(reason);
-
-        public async Task<string> WaitUntilLostAsync(CancellationToken cancellationToken)
+        public McpClient Client
         {
-            Task completed = await Task.WhenAny(_lost.Task, Client.Completion).WaitAsync(cancellationToken);
-            if (completed == _lost.Task)
-                return await _lost.Task;
-
-            ClientCompletionDetails details = await Client.Completion;
-            return details.Exception?.Message ?? "Disconnected";
+            get => _client ?? throw new InvalidOperationException("Not connected.");
+            set
+            {
+                _client = value;
+                _ = value.Completion.ContinueWith(
+                    completion => Lost(completion.IsCompletedSuccessfully ? completion.Result.Exception?.Message ?? "Disconnected" : "Disconnected"),
+                    CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Default);
+            }
         }
+
+        public bool IsLost => _lost.Task.IsCompleted;
+
+        /// <summary>Cancelled once the connection is lost.</summary>
+        public CancellationToken LostToken => _lostToken.Token;
+
+        public void Lost(string reason)
+        {
+            if (_lost.TrySetResult(reason))
+                _lostToken.Cancel();
+        }
+
+        public Task<string> WaitUntilLostAsync(CancellationToken cancellationToken) => _lost.Task.WaitAsync(cancellationToken);
 
         public async ValueTask DisposeAsync()
         {
-            if (Client is not null)
-                await Client.DisposeAsync();
+            Lost("Closed");
+            if (_client is not null)
+                await _client.DisposeAsync();
+
+            // _lostToken is not disposed: a call may still link to it; it holds no timer or handle.
         }
     }
 }

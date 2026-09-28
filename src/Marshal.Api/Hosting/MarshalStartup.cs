@@ -1,10 +1,13 @@
 using Marshal.Abstractions;
+using Marshal.Abstractions.Configuration;
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.Mcp;
 using Marshal.Abstractions.Tools;
 using Marshal.Api.Auth;
 using Marshal.Api.Configuration;
 using Marshal.Core.Configuration;
 using Marshal.Core.Guard;
+using Marshal.Core.Mcp;
 using Marshal.Core.Models;
 using Marshal.Core.Satellites;
 using Marshal.Core.Secrets;
@@ -35,6 +38,9 @@ internal sealed partial class MarshalStartup(
     TimeProvider timeProvider,
     ILoggerFactory loggers) : IHostedLifecycleService
 {
+    // Startup waits this long for MCP servers' first connection; slower ones join the registry later.
+    private static readonly TimeSpan _mcpStartupWait = TimeSpan.FromSeconds(10);
+
     public async Task StartingAsync(CancellationToken cancellationToken)
     {
         ScanMainFile();
@@ -63,12 +69,28 @@ internal sealed partial class MarshalStartup(
             throw new InvalidOperationException($"Required secrets do not resolve: {string.Join(", ", missingRequired)}.");
 
         secretHealth.Set([.. reports.SelectMany(report => report.MissingOptional)]);
-        await registry.RefreshAsync(cancellationToken);
-        foreach (ToolSourceError error in registry.Errors)
+        await StartMcpServersAsync(cancellationToken);
+        ToolSnapshot tools = await registry.RefreshAsync(cancellationToken);
+        foreach (ToolSourceError error in tools.Errors)
             LogToolSourceRejected(loggers.CreateLogger<MarshalStartup>(), error.Source, error.Message);
     }
 
     public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    // Invalid server files are skipped (the others load); a literal secret in any of them stops startup.
+    private async Task StartMcpServersAsync(CancellationToken cancellationToken)
+    {
+        IMcpServerCatalog catalog = services.GetRequiredService<IMcpServerCatalog>();
+        List<ConfigFileError> leaks = [.. catalog.Errors.Where(error => error.LiteralSecret)];
+        if (leaks.Count > 0)
+            throw new InvalidOperationException(string.Join(" ", leaks.Select(error => error.Message)));
+
+        ILogger logger = loggers.CreateLogger<MarshalStartup>();
+        foreach (ConfigFileError error in catalog.Errors)
+            LogMcpServerRejected(logger, error.File, error.Message);
+
+        await services.GetRequiredService<McpToolSources>().StartAsync(_mcpStartupWait, cancellationToken);
+    }
 
     public Task StartedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
@@ -93,4 +115,7 @@ internal sealed partial class MarshalStartup(
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Tool source {Source} rejected: {Reason}")]
     private static partial void LogToolSourceRejected(ILogger logger, string source, string reason);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "MCP server file {File} rejected: {Reason}")]
+    private static partial void LogMcpServerRejected(ILogger logger, string file, string reason);
 }

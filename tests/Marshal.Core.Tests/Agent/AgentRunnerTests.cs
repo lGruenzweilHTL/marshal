@@ -32,6 +32,41 @@ public sealed class AgentRunnerTests
     }
 
     [Fact]
+    public async Task Run_RegistryChangesMidRun_ToolListStaysFixedUntilNextRun()
+    {
+        LoopHarness harness = await LoopHarness.CreateAsync(tools: FakeTool.Safe());
+        harness.Model
+            .Then(async (_, _, ct) =>
+            {
+                harness.Source.Tools.Add(FakeTool.Safe("test.added"));
+                await harness.Registry.RefreshAsync(ct);
+                return new ChatResponse(new ChatMessage(ChatRole.Assistant, [new FunctionCallContent("call-1", "test_safe")]));
+            })
+            .ThenText("done")
+            .ThenText("again");
+
+        await harness.Runner.RunAsync(Request("go"), Ct);
+        await harness.Runner.RunAsync(Request("go again"), Ct);
+
+        Assert.Equal(["test_safe"], harness.Model.Requests[0].ToolNames);
+        Assert.Equal(["test_safe"], harness.Model.Requests[1].ToolNames);
+        Assert.Equal(["test_safe", "test_added"], harness.Model.Requests[2].ToolNames);
+    }
+
+    [Fact]
+    public async Task Run_SourceChangedBetweenRuns_NextRunSeesNewTools()
+    {
+        LoopHarness harness = await LoopHarness.CreateAsync(tools: FakeTool.Safe());
+        harness.Model.ThenText("one").ThenText("two");
+
+        await harness.Runner.RunAsync(Request("go"), Ct);
+        harness.Source.Tools.Add(FakeTool.Safe("test.added"));
+        await harness.Runner.RunAsync(Request("go again"), Ct);
+
+        Assert.Equal(["test_safe", "test_added"], harness.Model.Requests[1].ToolNames);
+    }
+
+    [Fact]
     public async Task Run_RecordsContextModelToolModelReplyInOrder()
     {
         LoopHarness harness = await LoopHarness.CreateAsync(tools: FakeTool.Safe());

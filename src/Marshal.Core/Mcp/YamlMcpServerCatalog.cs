@@ -6,7 +6,6 @@ using Marshal.Abstractions.Secrets;
 using Marshal.Abstractions.Tools;
 using Marshal.Core.Configuration;
 using Marshal.Core.Tools;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using YamlDotNet.Core;
@@ -29,24 +28,40 @@ public sealed partial class YamlMcpServerCatalog : IMcpServerCatalog, IDisposabl
     private readonly IConfigSecretScanner _scanner;
     private readonly ISecretStore _secrets;
     private readonly ILogger<YamlMcpServerCatalog> _logger;
-    private readonly PhysicalFileProvider? _fileProvider;
+    private readonly IConfigWatcher? _watcher;
+    private readonly string _filter;
+    private readonly IDisposable? _ownedWatcher;
     private readonly List<Action> _listeners = [];
     private readonly Lock _lock = new();
     private IDisposable? _watch;
     private volatile State _state = new([], []);
 
+    /// <summary>Reads <paramref name="directory"/>, watched through <paramref name="watcher"/> with <paramref name="filter"/> (relative to the watcher's root).</summary>
+    public YamlMcpServerCatalog(string directory, IConfigWatcher? watcher, string filter, IConfigSecretScanner scanner, ISecretStore secrets, ILogger<YamlMcpServerCatalog> logger)
+        : this(directory, watcher, filter, ownedWatcher: null, scanner, secrets, logger)
+    {
+    }
+
+    /// <summary>Reads and (optionally) watches <paramref name="directory"/> on its own.</summary>
     public YamlMcpServerCatalog(string directory, IConfigSecretScanner scanner, ISecretStore secrets, ILogger<YamlMcpServerCatalog> logger, bool watch = true)
+        : this(directory, OwnWatcher(directory, watch), "*.yaml", scanner, secrets, logger, watch)
+    {
+    }
+
+    private YamlMcpServerCatalog(string directory, ConfigDirectoryWatcher? watcher, string filter, IConfigSecretScanner scanner, ISecretStore secrets, ILogger<YamlMcpServerCatalog> logger, bool owned)
+        : this(directory, watcher, filter, owned ? watcher : null, scanner, secrets, logger)
+    {
+    }
+
+    private YamlMcpServerCatalog(string directory, IConfigWatcher? watcher, string filter, IDisposable? ownedWatcher, IConfigSecretScanner scanner, ISecretStore secrets, ILogger<YamlMcpServerCatalog> logger)
     {
         _directory = Path.GetFullPath(directory);
         _scanner = scanner;
         _secrets = secrets;
         _logger = logger;
-        if (watch)
-        {
-            Directory.CreateDirectory(_directory);
-            _fileProvider = new PhysicalFileProvider(_directory);
-        }
-
+        _watcher = watcher;
+        _filter = filter;
+        _ownedWatcher = ownedWatcher;
         _state = Read();
         Watch();
     }
@@ -121,7 +136,7 @@ public sealed partial class YamlMcpServerCatalog : IMcpServerCatalog, IDisposabl
     public void Dispose()
     {
         _watch?.Dispose();
-        _fileProvider?.Dispose();
+        _ownedWatcher?.Dispose();
     }
 
     private static Error Unresolved(McpServerDefinition server, string key, SecretName secret) =>
@@ -142,7 +157,7 @@ public sealed partial class YamlMcpServerCatalog : IMcpServerCatalog, IDisposabl
             Result<McpServerDefinition> parsed = Parse(file, path);
             if (parsed.IsFailure)
             {
-                errors.Add(new ConfigFileError(file, parsed.Error.Message));
+                errors.Add(new ConfigFileError(file, parsed.Error.Message, parsed.Error.Code == LiteralSecretCode));
                 continue;
             }
 
@@ -181,7 +196,7 @@ public sealed partial class YamlMcpServerCatalog : IMcpServerCatalog, IDisposabl
         if (scan.IsFailure)
             return scan.Error;
         if (scan.Value.Count > 0)
-            return Invalid(string.Join(" ", scan.Value));
+            return new Error(LiteralSecretCode, string.Join(" ", scan.Value), ErrorType.Validation);
 
         McpServerFile? raw;
         try
@@ -253,14 +268,25 @@ public sealed partial class YamlMcpServerCatalog : IMcpServerCatalog, IDisposabl
         Error Invalid(string message) => YamlMcpServerCatalog.Invalid($"{file}: {message}");
     }
 
+    private const string LiteralSecretCode = "mcp.literal_secret";
+
+    private static ConfigDirectoryWatcher? OwnWatcher(string directory, bool watch)
+    {
+        if (!watch)
+            return null;
+
+        Directory.CreateDirectory(directory);
+        return new ConfigDirectoryWatcher(directory);
+    }
+
     private static Error Invalid(string message) => new("mcp.invalid_server", message, ErrorType.Validation);
 
     private void Watch()
     {
-        if (_fileProvider is null)
+        if (_watcher is null)
             return;
 
-        IChangeToken token = _fileProvider.Watch("*.yaml");
+        IChangeToken token = _watcher.Watch(_filter);
         _watch = token.RegisterChangeCallback(_ => OnDirectoryChanged(), null);
     }
 

@@ -9,8 +9,8 @@
 - [x] 2.2 Implement `YamlMcpServerCatalog`
 - [x] 2.3 Write `McpToolSource` tests with an in-process fake MCP server: discovery, flat namespace, sanitizing, collision rejection, `list_changed`, disconnect hides tools, reconnect restores, untrusted flag taints
 - [x] 2.4 Implement `McpToolSource` (stdio + streamable HTTP)
-- [ ] 2.5 Write registry tests: source register / unregister as a unit, unmatched external tool defaults to confirm
-- [ ] 2.6 Extend `ToolRegistry` and risk engine defaults
+- [x] 2.5 Write registry tests: source register / unregister as a unit, unmatched external tool defaults to confirm
+- [x] 2.6 Extend `ToolRegistry` and risk engine defaults
 - [ ] 2.7 Add MCP server status to `/health`
 
 ## 3. Home Assistant client

@@ -4,6 +4,7 @@ using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.LiveEvents;
+using Marshal.Abstractions.Mcp;
 using Marshal.Abstractions.Models;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Satellites;
@@ -17,6 +18,7 @@ using Marshal.Core.Execution;
 using Marshal.Core.Guard;
 using Marshal.Core.Identity;
 using Marshal.Core.LiveEvents;
+using Marshal.Core.Mcp;
 using Marshal.Core.Models;
 using Marshal.Core.Recording;
 using Marshal.Core.Satellites;
@@ -38,6 +40,7 @@ public static class CoreServiceCollectionExtensions
 {
     public const string RiskFile = "risk.yaml";
     public const string SatellitesFileName = "satellites.yaml";
+    public const string McpDirectory = "mcp";
 
     public static IServiceCollection AddMarshalCore(this IServiceCollection services, IConfiguration configuration, IDictionary environment)
     {
@@ -53,6 +56,7 @@ public static class CoreServiceCollectionExtensions
 
         // Hot-reloaded /config files; a failing first load fails startup.
         services.AddSingleton<IConfigSecretScanner, ConfigSecretScanner>();
+        services.AddSingleton<IConfigWatcher>(provider => new ConfigDirectoryWatcher(provider.GetRequiredService<IOptions<PathsOptions>>().Value.Config));
         services.AddSingleton(provider => LoadConfigFile<RiskRulesFile>(provider, RiskFile, RiskRulesFile.Validate));
         services.AddSingleton<IOptionsMonitor<RiskRulesFile>>(provider => provider.GetRequiredService<YamlConfigFile<RiskRulesFile>>());
         services.AddSingleton(provider => LoadConfigFile<SatellitesFile>(provider, SatellitesFileName, SatellitesFile.Validate));
@@ -64,6 +68,22 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ITool, AskAdvisorTool>();
         services.AddSingleton<IToolSource, BuiltInToolSource>();
         services.AddSingleton<IToolRegistry, ToolRegistry>();
+
+        services.AddHttpClient(McpTransportFactory.HttpClientName);
+        services.AddSingleton(provider => new YamlMcpServerCatalog(
+            Path.Combine(provider.GetRequiredService<IOptions<PathsOptions>>().Value.Config, McpDirectory),
+            provider.GetRequiredService<IConfigWatcher>(),
+            $"{McpDirectory}/*.yaml",
+            provider.GetRequiredService<IConfigSecretScanner>(),
+            provider.GetRequiredService<ISecretStore>(),
+            provider.GetRequiredService<ILogger<YamlMcpServerCatalog>>()));
+        services.AddSingleton<IMcpServerCatalog>(provider => provider.GetRequiredService<YamlMcpServerCatalog>());
+        services.AddSingleton<IMcpTransportFactory, McpTransportFactory>();
+        services.AddSingleton(McpReconnectPolicy.Default);
+        services.AddSingleton<McpToolSources>();
+        services.AddSingleton<IToolSourceProvider>(provider => provider.GetRequiredService<McpToolSources>());
+        services.AddSingleton<ISecretReferenceSource, McpSecretReferences>();
+
         services.AddSingleton<IRiskEngine, RuleBasedRiskEngine>();
         services.AddSingleton<IToolVisibilityFilter, ToolVisibilityFilter>();
         services.AddSingleton<IGuard, ToolCallGuard>();
@@ -113,8 +133,8 @@ public static class CoreServiceCollectionExtensions
     private static YamlConfigFile<T> LoadConfigFile<T>(IServiceProvider provider, string name, Func<T, Abstractions.Result> validate)
         where T : class, new()
     {
-        string path = Path.Combine(provider.GetRequiredService<IOptions<PathsOptions>>().Value.Config, name);
+        string directory = provider.GetRequiredService<IOptions<PathsOptions>>().Value.Config;
         ILogger logger = provider.GetRequiredService<ILoggerFactory>().CreateLogger("Marshal.Configuration");
-        return YamlConfigFile.Load(path, provider.GetRequiredService<IConfigSecretScanner>(), validate, logger);
+        return YamlConfigFile.Load(directory, name, provider.GetRequiredService<IConfigWatcher>(), provider.GetRequiredService<IConfigSecretScanner>(), validate, logger);
     }
 }

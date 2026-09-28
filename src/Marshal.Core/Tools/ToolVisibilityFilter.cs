@@ -17,7 +17,7 @@ public sealed class ToolVisibilityFilter(IToolRegistry registry, IRiskEngine ris
     public async Task<IReadOnlyList<RegisteredTool>> GetVisibleToolsAsync(MarshalExecutionContext context, CancellationToken cancellationToken)
     {
         var visible = new List<RegisteredTool>();
-        foreach (RegisteredTool tool in registry.Tools)
+        foreach (RegisteredTool tool in (context.Tools ?? registry.Current).Tools)
         {
             if ((await CheckAsync(tool, context, cancellationToken)).IsVisible)
                 visible.Add(tool);

@@ -48,12 +48,16 @@ public sealed class RuleBasedRiskEngine(IOptionsMonitor<RiskRulesFile> rules, IE
         }
 
         if (defaultReachable)
-            tiers.Add(tool.Descriptor.DefaultTier);
+            tiers.Add(DefaultTier(tool));
         if (matching.Exists(rule => rule.TargetConditions.Count > 0))
             tiers.Add(RiskTier.Confirm);
 
         return new RiskProfile(tiers);
     }
+
+    // Fail closed: external tools (MCP, skills) that no rule matches need confirmation.
+    private static RiskTier DefaultTier(RegisteredTool tool) =>
+        tool.IsBuiltIn || tool.Descriptor.DefaultTier > RiskTier.Confirm ? tool.Descriptor.DefaultTier : RiskTier.Confirm;
 
     private static RiskAssessment Assessment(RiskTier tier) =>
         new(tier, tier == RiskTier.Confirm ? [ConfirmationReasonCode.Rule] : []);
@@ -79,7 +83,7 @@ public sealed class RuleBasedRiskEngine(IOptionsMonitor<RiskRulesFile> rules, IE
                 return rule.Tier;
         }
 
-        return tool.Descriptor.DefaultTier;
+        return DefaultTier(tool);
     }
 
     private static RiskTier FirstMatch(List<RiskRule> matching, RegisteredTool tool, JsonElement arguments, RiskTarget target)
@@ -90,7 +94,7 @@ public sealed class RuleBasedRiskEngine(IOptionsMonitor<RiskRulesFile> rules, IE
                 return rule.Tier;
         }
 
-        return tool.Descriptor.DefaultTier;
+        return DefaultTier(tool);
     }
 
     private static bool ArgumentsMatch(RiskRule rule, JsonElement arguments)

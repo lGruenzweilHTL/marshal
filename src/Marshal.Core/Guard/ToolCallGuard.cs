@@ -15,7 +15,7 @@ public sealed class ToolCallGuard(IToolRegistry registry, IToolVisibilityFilter 
 
     public async Task<GuardVerdict> EvaluateAsync(GuardRequest request, CancellationToken cancellationToken)
     {
-        RegisteredTool? tool = registry.FindByModelName(request.ModelName);
+        RegisteredTool? tool = (request.Context.Tools ?? registry.Current).FindByModelName(request.ModelName);
         if (tool is null)
             return Deny(null, null, new Error("tool.unknown", $"There is no tool named '{request.ModelName}'.", ErrorType.NotFound));
 

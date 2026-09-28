@@ -1,6 +1,7 @@
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Sessions;
+using Marshal.Abstractions.Tools;
 
 namespace Marshal.Abstractions.Execution;
 
@@ -42,4 +43,10 @@ public sealed record MarshalExecutionContext
 
     /// <summary>Per-run counters (e.g. advisor calls). Shared by all copies within one run.</summary>
     public RunCounters Counters { get; init; } = new();
+
+    /// <summary>
+    /// Tools fixed at run start (subagents inherit them), so the tool list never changes mid-turn. Null outside a
+    /// run; the registry's current snapshot applies then.
+    /// </summary>
+    public ToolSnapshot? Tools { get; init; }
 }

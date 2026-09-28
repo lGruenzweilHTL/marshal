@@ -130,3 +130,21 @@ lock, floors / areas / aliases, `mcp_server` with the Assist API). The recorded 
   and JSON-RPC errors are failed tool results, transport failures are `mcp.unavailable`.
 - **Stdio children** do not inherit Marshal's environment (it may hold `MARSHAL__…` secrets): they get `PATH`,
   `HOME`, `LANG`, `LC_ALL`, `TZ`, `TMPDIR` and their configured `envSecrets` only.
+
+### Registry and reload (tasks 2.5, 2.6)
+
+- **Dynamic sources.** `McpToolSources` implements `IToolSourceProvider` and keeps one source per catalog entry:
+  added files start a source, removed files stop it, changed files replace it; unchanged servers keep their
+  connection. The registry reads static sources and providers on every refresh, built-in sources first.
+- **Per-run snapshot.** `IToolRegistry.RefreshAsync` returns an immutable `ToolSnapshot`. The agent runner
+  refreshes at run start and stores the snapshot in `MarshalExecutionContext.Tools`; the visibility filter and the
+  guard use it, so a reload during a turn never changes that turn's tools (subagents inherit the snapshot). A
+  confirmation in a later turn resolves the frozen tool against the then-current snapshot.
+- **Fail-closed default.** The risk engine uses `confirm` as the default tier for every non-built-in tool (a
+  stricter descriptor tier stays), independent of what the source's descriptor says.
+- **Startup.** Invalid MCP server files are logged and skipped; a literal secret in any of them stops startup,
+  like in every other `/config` file. Startup waits up to 10 s for first connection attempts. MCP secret names
+  appear in the secrets view (`mcp/<file>: authTokenSecret`).
+- **One watcher for `/config`.** Hot-reloaded files (`risk.yaml`, `satellites.yaml`, `mcp/*.yaml`, later skills and
+  templates) share one `ConfigDirectoryWatcher` (a single inotify instance per process) instead of one watcher per
+  file; the default Linux limit is 128 instances per user.

@@ -61,7 +61,7 @@ public sealed class ConfirmationFlow(
 
     private async Task<(RegisteredTool? Tool, Result<ToolOutput> Result)> ExecuteFrozenAsync(PendingActionRecord action, MarshalExecutionContext context, CancellationToken cancellationToken)
     {
-        RegisteredTool? tool = registry.FindById(action.Tool);
+        RegisteredTool? tool = registry.Current.FindById(action.Tool);
         if (tool is null)
             return (null, new Error("tool.unknown", $"The tool '{action.Tool}' is no longer available.", ErrorType.NotFound));
 

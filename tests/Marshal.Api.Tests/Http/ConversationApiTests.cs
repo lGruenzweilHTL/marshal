@@ -215,6 +215,31 @@ public sealed class ConversationApiTests
         Assert.DoesNotContain("abc", StartupErrors.Flatten(error), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Startup_LiteralSecretInMcpFile_Fails()
+    {
+        using var factory = new MarshalApiFactory();
+        Directory.CreateDirectory(Path.Combine(factory.ConfigDirectory, "mcp"));
+        await File.WriteAllTextAsync(Path.Combine(factory.ConfigDirectory, "mcp", "search.yaml"), "id: search\ntransport: http\nurl: http://search/mcp\ntoken: abc\n", Ct);
+
+        Exception error = Assert.ThrowsAny<Exception>(() => factory.CreateClient());
+
+        Assert.Contains("search.yaml", StartupErrors.Flatten(error), StringComparison.Ordinal);
+        Assert.DoesNotContain("abc", StartupErrors.Flatten(error), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Startup_InvalidMcpServerFile_Starts()
+    {
+        using var factory = new MarshalApiFactory();
+        Directory.CreateDirectory(Path.Combine(factory.ConfigDirectory, "mcp"));
+        await File.WriteAllTextAsync(Path.Combine(factory.ConfigDirectory, "mcp", "bad.yaml"), "id: home_assistant\ntransport: http\nurl: http://ha/api/mcp\n", Ct);
+
+        HttpResponseMessage response = await factory.CreateClient().GetAsync("/health", Ct);
+
+        Assert.NotEqual(HttpStatusCode.InternalServerError, response.StatusCode);
+    }
+
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     private static TurnBody Body(string? conversationId, string text, string inputMode = "text") =>

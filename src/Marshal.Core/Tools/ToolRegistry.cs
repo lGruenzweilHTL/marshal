@@ -5,34 +5,43 @@ using Marshal.Abstractions.Tools;
 namespace Marshal.Core.Tools;
 
 /// <summary>
-/// Collects tools from all sources. Sources are processed in order; a source that uses a reserved namespace
-/// (non-built-in), reuses another source's namespace, or collides on a model-facing name is rejected as a unit.
+/// Collects tools from static sources (built-in tools) and dynamic sources (<see cref="IToolSourceProvider"/>).
+/// Built-in sources come first; a source that uses a reserved namespace (non-built-in), reuses another source's
+/// namespace, or collides on a model-facing name is rejected as a unit.
 /// </summary>
-public sealed class ToolRegistry(IEnumerable<IToolSource> sources) : IToolRegistry
+public sealed class ToolRegistry(IEnumerable<IToolSource> sources, IEnumerable<IToolSourceProvider> providers) : IToolRegistry
 {
     private const int MaxModelNameLength = 64;
     private const int HashLength = 8;
 
-    private readonly IToolSource[] _sources = [.. sources.OrderByDescending(source => source.IsBuiltIn)];
-    private volatile Snapshot _snapshot = Snapshot.Empty;
+    private readonly IToolSource[] _sources = [.. sources];
+    private readonly IToolSourceProvider[] _providers = [.. providers];
+    private volatile ToolSnapshot _snapshot = ToolSnapshot.Empty;
+
+    public ToolRegistry(IEnumerable<IToolSource> sources)
+        : this(sources, [])
+    {
+    }
+
+    public ToolSnapshot Current => _snapshot;
 
     public IReadOnlyList<RegisteredTool> Tools => _snapshot.Tools;
 
     public IReadOnlyList<ToolSourceError> Errors => _snapshot.Errors;
 
-    public RegisteredTool? FindByModelName(string modelName) => _snapshot.ByModelName.GetValueOrDefault(modelName);
+    public RegisteredTool? FindByModelName(string modelName) => _snapshot.FindByModelName(modelName);
 
-    public RegisteredTool? FindById(ToolId id) => _snapshot.ById.GetValueOrDefault(id);
+    public RegisteredTool? FindById(ToolId id) => _snapshot.FindById(id);
 
-    public async Task RefreshAsync(CancellationToken cancellationToken)
+    public async Task<ToolSnapshot> RefreshAsync(CancellationToken cancellationToken)
     {
         var tools = new List<RegisteredTool>();
         var errors = new List<ToolSourceError>();
         var byModelName = new Dictionary<string, RegisteredTool>(StringComparer.Ordinal);
-        var byId = new Dictionary<ToolId, RegisteredTool>();
         var namespaceOwners = new Dictionary<string, string>(StringComparer.Ordinal);
 
-        foreach (IToolSource source in _sources)
+        IEnumerable<IToolSource> all = _sources.Concat(_providers.SelectMany(provider => provider.Sources));
+        foreach (IToolSource source in all.OrderByDescending(source => source.IsBuiltIn))
         {
             IReadOnlyList<ITool> offered;
             try
@@ -57,13 +66,14 @@ public sealed class ToolRegistry(IEnumerable<IToolSource> sources) : IToolRegist
                 var registered = new RegisteredTool(tool, ModelName(tool.Descriptor.Id), source.Name, source.IsBuiltIn);
                 tools.Add(registered);
                 byModelName[registered.ModelName] = registered;
-                byId[registered.Id] = registered;
                 if (!source.IsBuiltIn)
                     namespaceOwners[registered.Id.Namespace] = source.Name;
             }
         }
 
-        _snapshot = new Snapshot(tools, errors, byModelName, byId);
+        var snapshot = new ToolSnapshot(tools, errors);
+        _snapshot = snapshot;
+        return snapshot;
     }
 
     /// <summary>Model-facing name: <c>namespace_name</c>, sanitized, truncated with a hash suffix above 64 characters.</summary>
@@ -102,14 +112,5 @@ public sealed class ToolRegistry(IEnumerable<IToolSource> sources) : IToolRegist
         }
 
         return null;
-    }
-
-    private sealed record Snapshot(
-        IReadOnlyList<RegisteredTool> Tools,
-        IReadOnlyList<ToolSourceError> Errors,
-        IReadOnlyDictionary<string, RegisteredTool> ByModelName,
-        IReadOnlyDictionary<ToolId, RegisteredTool> ById)
-    {
-        public static Snapshot Empty { get; } = new([], [], new Dictionary<string, RegisteredTool>(), new Dictionary<ToolId, RegisteredTool>());
     }
 }

@@ -1,8 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Marshal.Api.Tests.Auth;
 using Marshal.Abstractions.Tokens;
+using Marshal.Api.Tests.Auth;
 
 namespace Marshal.Api.Tests.Http;
 

@@ -1,5 +1,4 @@
 using Marshal.Abstractions;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -25,21 +24,23 @@ public sealed partial class YamlConfigFile<T> : IOptionsMonitor<T>, IDisposable
     private readonly IConfigSecretScanner _scanner;
     private readonly Func<T, Result> _validate;
     private readonly ILogger _logger;
-    private readonly PhysicalFileProvider? _fileProvider;
+    private readonly IConfigWatcher? _watcher;
+    private readonly string _filter;
+    private readonly IDisposable? _ownedWatcher;
     private readonly List<Action<T, string?>> _listeners = [];
     private readonly Lock _lock = new();
     private IDisposable? _watch;
     private T _current = new();
 
-    internal YamlConfigFile(string path, IConfigSecretScanner scanner, Func<T, Result> validate, ILogger logger, bool watch)
+    internal YamlConfigFile(string path, IConfigSecretScanner scanner, Func<T, Result> validate, ILogger logger, IConfigWatcher? watcher, string filter, IDisposable? ownedWatcher)
     {
         _path = Path.GetFullPath(path);
         _scanner = scanner;
         _validate = validate;
         _logger = logger;
-        string? directory = Path.GetDirectoryName(_path);
-        if (watch && directory is not null && Directory.Exists(directory))
-            _fileProvider = new PhysicalFileProvider(directory);
+        _watcher = watcher;
+        _filter = filter;
+        _ownedWatcher = ownedWatcher;
     }
 
     /// <summary>File name, for error messages.</summary>
@@ -121,7 +122,7 @@ public sealed partial class YamlConfigFile<T> : IOptionsMonitor<T>, IDisposable
     public void Dispose()
     {
         _watch?.Dispose();
-        _fileProvider?.Dispose();
+        _ownedWatcher?.Dispose();
     }
 
     private Result<T> Read()
@@ -162,10 +163,10 @@ public sealed partial class YamlConfigFile<T> : IOptionsMonitor<T>, IDisposable
 
     private void Watch()
     {
-        if (_fileProvider is null)
+        if (_watcher is null)
             return;
 
-        IChangeToken token = _fileProvider.Watch(FileName);
+        IChangeToken token = _watcher.Watch(_filter);
         _watch = token.RegisterChangeCallback(_ => OnFileChanged(), null);
     }
 

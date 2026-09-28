@@ -37,6 +37,43 @@ public sealed class RuleBasedRiskEngineTests
     }
 
     [Fact]
+    public async Task Assess_ExternalToolWithoutRule_DefaultsToConfirm()
+    {
+        RuleBasedRiskEngine engine = Engine("risk: []");
+        RegisteredTool tool = External(FakeTool.Safe("search.query"));
+
+        RiskAssessment result = await engine.AssessAsync(tool, Args(), Ct);
+
+        Assert.Equal(RiskTier.Confirm, result.Tier);
+        Assert.Equal([ConfirmationReasonCode.Rule], result.Reasons);
+        Assert.Equal([RiskTier.Confirm], engine.GetProfile(tool).PossibleTiers);
+    }
+
+    [Fact]
+    public async Task Assess_ExternalToolWithSafeRule_IsSafe()
+    {
+        RuleBasedRiskEngine engine = Engine("""
+            risk:
+              - match: { tool: "search.*" }
+                tier: safe
+            """);
+
+        RiskAssessment result = await engine.AssessAsync(External(FakeTool.Safe("search.query")), Args(), Ct);
+
+        Assert.Equal(RiskTier.Safe, result.Tier);
+    }
+
+    [Fact]
+    public async Task Assess_ExternalToolWithForbiddenDefault_StaysForbidden()
+    {
+        RuleBasedRiskEngine engine = Engine("risk: []");
+
+        RiskAssessment result = await engine.AssessAsync(External(FakeTool.Forbidden("search.wipe")), Args(), Ct);
+
+        Assert.Equal(RiskTier.Forbidden, result.Tier);
+    }
+
+    [Fact]
     public async Task Assess_GlobMatch_AppliesRuleTier()
     {
         RuleBasedRiskEngine engine = Engine("""

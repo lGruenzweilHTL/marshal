@@ -153,6 +153,40 @@ public sealed class ToolRegistryTests
     }
 
     [Fact]
+    public async Task Refresh_ProviderSource_RegistersAndUnregistersAsUnit()
+    {
+        var provider = new FakeToolSourceProvider();
+        var server = new FakeToolSource("srv", false, FakeTool.Safe("srv.a"), FakeTool.Safe("srv.b"));
+        provider.Sources.Add(server);
+        var registry = new ToolRegistry([new FakeToolSource("built-in", true, FakeTool.Safe("agent.ask_advisor"))], [provider]);
+
+        await registry.RefreshAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(["agent.ask_advisor", "srv.a", "srv.b"], registry.Tools.Select(tool => tool.Id.ToString()));
+
+        provider.Sources.Remove(server);
+        await registry.RefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("agent.ask_advisor", Assert.Single(registry.Tools).Id.ToString());
+        Assert.Null(registry.FindByModelName("srv_a"));
+    }
+
+    [Fact]
+    public async Task Refresh_ReturnsSnapshot_LaterRefreshLeavesItUnchanged()
+    {
+        var source = new FakeToolSource("srv", false, FakeTool.Safe("srv.a"));
+        var registry = new ToolRegistry([source]);
+
+        ToolSnapshot first = await registry.RefreshAsync(TestContext.Current.CancellationToken);
+        source.Tools.Add(FakeTool.Safe("srv.b"));
+        ToolSnapshot second = await registry.RefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.Single(first.Tools);
+        Assert.Null(first.FindByModelName("srv_b"));
+        Assert.Equal(2, second.Tools.Count);
+        Assert.Same(second, registry.Current);
+    }
+
+    [Fact]
     public async Task Refresh_SourceThrows_RejectsOnlyThatSource()
     {
         ToolRegistry registry = await RegistryAsync(
