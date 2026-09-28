@@ -1,3 +1,5 @@
+using Marshal.Data;
+using Marshal.Data.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -17,6 +19,12 @@ internal static class AuthServiceCollectionExtensions
         services.AddOptions<AuthOptions>().Bind(configuration.GetSection("auth")).ValidateOnStart();
         services.AddSingleton<IValidateOptions<AuthOptions>, AuthOptionsValidator>();
         services.AddMemoryCache();
+        services.AddIdentityCore<User>()
+            .AddRoles<Role>()
+            .AddEntityFrameworkStores<MarshalDbContext>();
+        services.AddScoped<UserAccounts>();
+        services.AddScoped<OidcLoginMapper>();
+        services.AddSingleton<IRoleProvisioner, GroupClaimRoleProvisioner>();
         services.AddSingleton<ITicketStore, EfTicketStore>();
 
         AuthenticationBuilder authentication = services.AddAuthentication(MarshalAuthSchemes.Default)
@@ -107,6 +115,13 @@ internal static class AuthServiceCollectionExtensions
         options.CallbackPath = $"/signin-oidc/{provider.Name}";
         options.SignedOutCallbackPath = $"/signout-callback-oidc/{provider.Name}";
         options.TokenValidationParameters.NameClaimType = provider.Claims.Name;
+        options.Events.OnTicketReceived = context => context.HttpContext.RequestServices.GetRequiredService<OidcLoginMapper>().MapAsync(context, provider);
+        options.Events.OnRemoteFailure = context =>
+        {
+            context.Response.Redirect($"{context.Request.PathBase}/login?error=login_failed");
+            context.HandleResponse();
+            return Task.CompletedTask;
+        };
         options.Scope.Clear();
         foreach (string scope in provider.Scopes)
             options.Scope.Add(scope);

@@ -58,6 +58,9 @@ public sealed class MarshalApiFactory : WebApplicationFactory<Program>
 
     public IReadOnlyList<ITool> Tools { get; }
 
+    /// <summary>Extra service registrations applied after the host's own (e.g. a fake IdP backchannel).</summary>
+    public Action<IServiceCollection>? TestServices { get; set; }
+
     /// <summary>Creates a token for the instance owner and returns a client that sends it.</summary>
     public async Task<HttpClient> ClientWithTokenAsync(params string[] scopes)
     {
@@ -84,6 +87,8 @@ public sealed class MarshalApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IChatClientFactory>(new FakeFactory(Model));
             foreach (ITool tool in Tools)
                 services.AddSingleton(tool);
+
+            TestServices?.Invoke(services);
         });
     }
 

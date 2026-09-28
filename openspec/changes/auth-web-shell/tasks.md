@@ -9,10 +9,10 @@
 
 - [x] 2.1 Write tests: provider list endpoint, config validation (`clientCredentialSecret` resolves via `ISecretStore`)
 - [x] 2.2 Implement provider options, `ILoginProvider`, `/api/v1/auth/providers`, `/auth/login/{provider}`, `/auth/logout`
-- [ ] 2.3 Write OIDC tests against a fake IdP: code + PKCE, cookie flags, no tokens to browser, match by `sub`, email change keeps user
-- [ ] 2.4 Implement OIDC handler wiring and external-login mapping
-- [ ] 2.5 Write provisioning tests: group → role mapping, unmapped denied, roles re-synced on login
-- [ ] 2.6 Implement `GroupClaimRoleProvisioner`
+- [x] 2.3 Write OIDC tests against a fake IdP: code + PKCE, cookie flags, no tokens to browser, match by `sub`, email change keeps user
+- [x] 2.4 Implement OIDC handler wiring and external-login mapping
+- [x] 2.5 Write provisioning tests: group → role mapping, unmapped denied, roles re-synced on login
+- [x] 2.6 Implement `GroupClaimRoleProvisioner`
 - [ ] 2.7 Write local provider tests: first-run setup creates admin, setup 404 afterwards, password login, passkey registration and login
 - [ ] 2.8 Implement local provider with Identity passwords and passkeys
 
