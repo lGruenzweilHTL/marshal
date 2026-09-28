@@ -45,6 +45,19 @@ public sealed partial class ConfigSecretScanner : IConfigSecretScanner
         return findings;
     }
 
+    public IReadOnlyList<ConfigSecretFinding> ScanText(string file, string text)
+    {
+        var findings = new List<ConfigSecretFinding>();
+        string[] lines = text.Split('\n');
+        for (int index = 0; index < lines.Length; index++)
+        {
+            if (LooksLikeCredential(lines[index].Trim()))
+                findings.Add(new ConfigSecretFinding(file, $"line {index + 1}", ConfigSecretRule.CredentialValue));
+        }
+
+        return findings;
+    }
+
     private static void Visit(string file, YamlNode node, string? key, string path, List<ConfigSecretFinding> findings)
     {
         switch (node)

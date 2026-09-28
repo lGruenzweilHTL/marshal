@@ -29,10 +29,10 @@
 
 ## 4. Skills
 
-- [ ] 4.1 Write skill catalog tests: frontmatter parsing, invalid skill skipped, hot reload, secret scanner applied
-- [ ] 4.2 Implement `FileSkillCatalog` and `SkillIndexContributor`
-- [ ] 4.3 Write `agent.load_skill` tests: body, extra file, unknown skill error, hidden without skills, no taint
-- [ ] 4.4 Implement `agent.load_skill`
+- [x] 4.1 Write skill catalog tests: frontmatter parsing, invalid skill skipped, hot reload, secret scanner applied
+- [x] 4.2 Implement `FileSkillCatalog` and `SkillIndexContributor`
+- [x] 4.3 Write `agent.load_skill` tests: body, extra file, unknown skill error, hidden without skills, no taint
+- [x] 4.4 Implement `agent.load_skill`
 
 ## 5. Templates and subagents
 

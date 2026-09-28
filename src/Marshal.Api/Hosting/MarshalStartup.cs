@@ -2,6 +2,7 @@ using Marshal.Abstractions;
 using Marshal.Abstractions.Configuration;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Mcp;
+using Marshal.Abstractions.Skills;
 using Marshal.Abstractions.Tools;
 using Marshal.Api.Auth;
 using Marshal.Api.Configuration;
@@ -80,11 +81,11 @@ internal sealed partial class MarshalStartup(
 
     public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    // Invalid server files are skipped (the others load); a literal secret in any of them stops startup.
+    // Invalid server files and skills are skipped (the others load); a literal secret in any of them stops startup.
     private async Task StartMcpServersAsync(CancellationToken cancellationToken)
     {
         IMcpServerCatalog catalog = services.GetRequiredService<IMcpServerCatalog>();
-        List<ConfigFileError> leaks = [.. catalog.Errors.Where(error => error.LiteralSecret)];
+        List<ConfigFileError> leaks = [.. catalog.Errors.Concat(services.GetRequiredService<ISkillCatalog>().Errors).Where(error => error.LiteralSecret)];
         if (leaks.Count > 0)
             throw new InvalidOperationException(string.Join(" ", leaks.Select(error => error.Message)));
 

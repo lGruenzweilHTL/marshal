@@ -135,5 +135,20 @@ public sealed class ConfigSecretScannerTests
         Assert.Empty(Scan(""));
     }
 
+    [Fact]
+    public void ScanText_CredentialOnALine_FoundWithLineNumber()
+    {
+        IReadOnlyList<ConfigSecretFinding> findings = _scanner.ScanText("rss/SKILL.md", "# RSS\n\nCall it with sk-ant-api03-abcdefghijklmnop please.\n");
+
+        ConfigSecretFinding finding = Assert.Single(findings);
+        Assert.Equal("line 3", finding.KeyPath);
+    }
+
+    [Fact]
+    public void ScanText_OrdinaryMarkdown_NoFindings()
+    {
+        Assert.Empty(_scanner.ScanText("rss/SKILL.md", "# RSS digest\n\n1. Search unread articles with rss_search.\n2. See https://example.org/docs/format-guide for details.\n"));
+    }
+
     private IReadOnlyList<ConfigSecretFinding> Scan(string yaml) => _scanner.Scan("marshal.yaml", yaml).Value;
 }

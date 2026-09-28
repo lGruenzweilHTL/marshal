@@ -70,5 +70,17 @@ public sealed class HealthApiTests
         Assert.Contains("\"degraded\"", body, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Health_RejectedSkill_ConfigWarning()
+    {
+        using var factory = new MarshalApiFactory();
+        Directory.CreateDirectory(Path.Combine(factory.ConfigDirectory, "skills", "broken"));
+        await File.WriteAllTextAsync(Path.Combine(factory.ConfigDirectory, "skills", "broken", "SKILL.md"), "---\nname: broken\n---\nBody\n", Ct);
+
+        string body = await factory.CreateClient().GetStringAsync("/health", Ct);
+
+        Assert.Contains("skills/broken/SKILL.md", body, StringComparison.Ordinal);
+    }
+
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 }

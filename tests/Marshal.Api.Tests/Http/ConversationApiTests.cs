@@ -229,6 +229,19 @@ public sealed class ConversationApiTests
     }
 
     [Fact]
+    public async Task Startup_LiteralSecretInSkill_Fails()
+    {
+        using var factory = new MarshalApiFactory();
+        Directory.CreateDirectory(Path.Combine(factory.ConfigDirectory, "skills", "leak"));
+        await File.WriteAllTextAsync(Path.Combine(factory.ConfigDirectory, "skills", "leak", "SKILL.md"), "---\nname: leak\ndescription: d\n---\nUse sk-ant-api03-abcdefghijklmnop.\n", Ct);
+
+        Exception error = Assert.ThrowsAny<Exception>(() => factory.CreateClient());
+
+        Assert.Contains("leak/SKILL.md", StartupErrors.Flatten(error), StringComparison.Ordinal);
+        Assert.DoesNotContain("sk-ant-api03", StartupErrors.Flatten(error), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Startup_InvalidMcpServerFile_Starts()
     {
         using var factory = new MarshalApiFactory();

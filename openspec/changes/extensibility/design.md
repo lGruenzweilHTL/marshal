@@ -175,3 +175,17 @@ lock, floors / areas / aliases, `mcp_server` with the Assist API). The recorded 
   never retried (a retry could start a second timer).
 - **Smoke test.** The cache ran only against the recorded traffic of the HA 2026.9.4 test instance; a live run
   was not possible because the instance stopped finishing its bootstrap (no HTTP server, no error logged).
+
+### Skills (tasks 4.1–4.4)
+
+- **Format** verified against the Agent Skills specification (agentskills.io): required `name` (1–64 lowercase
+  letters, digits and single hyphens, equal to the directory name) and `description` (1–1024 characters);
+  optional `license`, `compatibility` (≤ 500), `metadata` (string map), `allowed-tools` (experimental; parsed,
+  not enforced — Marshal's tool visibility and risk rules stay authoritative). Other keys are errors.
+- **Secret scanning.** The frontmatter goes through the YAML scanner; the body and every other text file of the
+  skill are scanned line by line for credential-looking values (`IConfigSecretScanner.ScanText`), YAML files also
+  by key. A finding rejects the skill, and at startup a literal secret in any skill stops Marshal like in every
+  other `/config` file. Binary files and files over 256 KB are not offered to `agent.load_skill`.
+- **Loading.** Skills are read into memory on (re)load; `agent.load_skill` returns the body plus the list of the
+  skill's files, or one file by its relative path (no path outside the skill can be named). Rejected skills
+  appear as `config` warnings in `/health`.
