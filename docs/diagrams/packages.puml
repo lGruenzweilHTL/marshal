@@ -1,12 +1,15 @@
 @startuml packages
 ' Marshal — Package Diagram
 '
-' KEEP UP TO DATE: this diagram must match the projects in src/, web/, ha/
-' and their project references. Update it in the same change that adds,
-' removes or renames a project or changes a project reference, and
-' re-render the SVG (see docs/diagrams/README.md).
+' KEEP UP TO DATE: this diagram must match the projects in src/, web/, ha/,
+' their project references and their key external packages. Update it in the
+' same change that adds, removes or renames a project, changes a project
+' reference or adds / removes a key package, and re-render the SVG
+' (see docs/diagrams/README.md).
 '
 ' Status: PLANNED — derived from docs/brainstorm-notes.md, no code yet.
+' External packages are drawn inside the project that references them
+' (grey boxes, <<nuget>> / <<npm>> / <<pip>>).
 
 !pragma layout smetana
 skinparam shadowing false
@@ -16,69 +19,80 @@ skinparam package {
   BackgroundColor #FEFEFE
   BorderColor #555555
 }
+skinparam component<<nuget>> {
+  BackgroundColor #EEEEEE
+  BorderColor #999999
+  FontColor #444444
+}
+skinparam component<<npm>> {
+  BackgroundColor #EEEEEE
+  BorderColor #999999
+  FontColor #444444
+}
+skinparam component<<pip>> {
+  BackgroundColor #EEEEEE
+  BorderColor #999999
+  FontColor #444444
+}
+hide stereotype
 
 title Marshal — Packages (planned)
 
 ' ------------------------------------------------------------------
 package "Clients" {
-  component "ha/\ncustom_components/marshal\n(Python, HACS)" as HaComponent
-  component "web/\nVue + Vite + TS SPA\n(generated API client)" as Web
+  package "ha/ custom_components/marshal (Python, HACS)" as HaComponent {
+    component "pytest-homeassistant-\ncustom-component" <<pip>>
+  }
+  package "web/ (Vue SPA)" as Web {
+    component "vue, vite, typescript" <<npm>>
+    component "openapi-typescript\n+ openapi-fetch" <<npm>>
+  }
+  component "HA companion app\n(actionable push)" as Companion
 }
 
 package "src/ (.NET 10)" {
   package "Marshal.Api" as Api {
-    [ASP.NET host] as ApiHost
-    note right of ApiHost
-      REST + SignalR under /api/v1,
-      versioned OpenAPI,
-      BFF auth (OIDC / local),
-      API tokens, serves SPA,
-      composition root
-    end note
+    component "ASP.NET host: REST + live updates\nunder /api/v1, versioned OpenAPI,\nBFF auth, API tokens, serves SPA,\ncomposition root" as ApiHost
+    component "Asp.Versioning.Http\n+ Mvc.ApiExplorer" <<nuget>>
+    component "Microsoft.AspNetCore.OpenApi" <<nuget>>
+    component "Authentication.OpenIdConnect\nIdentity.EntityFrameworkCore" <<nuget>>
+    component "NetEscapades\n.Configuration.Yaml" <<nuget>>
+    component "OpenTelemetry.*" <<nuget>>
+    component "OllamaSharp\nAnthropic (official SDK)\nMicrosoft.Extensions.AI.OpenAI" <<nuget>>
   }
 
   package "Marshal.Core" as Core {
-    [Agent loop]
-    [Tool registry + visibility]
-    [Risk engine + guard]
-    [Context builder]
-    [Model router]
-    [Sessions]
+    component "Agent loop, tool registry\n+ visibility, risk engine + guard,\ncontext builder, model router,\nsessions" as CoreParts
+    component "ModelContextProtocol" <<nuget>>
+    component "YamlDotNet" <<nuget>>
   }
 
   package "Marshal.Memory" as Memory {
-    [Chunks + edges]
-    [Hybrid retrieval]
-    [Project activation]
-    [Consolidation]
+    component "Chunks + edges, hybrid retrieval,\nproject activation, consolidation" as MemoryParts
   }
 
   package "Marshal.Tasks" as Tasks {
-    [Scheduler]
-    [EventBus + TriggerMatcher]
-    [Worker pool]
-    [Executors]
-    [NotificationRouter]
+    component "Scheduler, EventBus +\nTriggerMatcher, worker pool,\nexecutors, NotificationRouter" as TaskParts
+    component "Cronos" <<nuget>>
   }
 
   package "Marshal.Integrations.*" as Integrations {
-    [HomeAssistant\n(REST, websocket, MCP,\ncalendar v1)] as IntHa
-    [Moonraker] as IntMoon
-    [Mail\n(IMAP, Graph, Gmail)] as IntMail
-    [FreshRss] as IntRss
-    [Notes] as IntNotes
+    component "HomeAssistant (REST, websocket,\nMCP, calendar v1), Moonraker,\nMail, FreshRss, Notes" as IntParts
+    component "MailKit" <<nuget>>
+    component "Google.Apis.Gmail.v1 (later)\nMicrosoft.Graph (later)" <<nuget>>
+    component "SmartReader" <<nuget>>
+    component "SkiaSharp" <<nuget>>
+    component "Microsoft.Extensions\n.Http.Resilience" <<nuget>>
   }
 
   package "Marshal.Data" as Data {
-    [DbContext + migrations]
-    [Owner-scoped query filters]
+    component "DbContext + migrations,\nowner-scoped query filters" as DataParts
+    component "EF Core Sqlite\n+ sqlite-vec" <<nuget>>
   }
 
   package "Marshal.Abstractions" as Abstractions {
-    [Small interfaces]
-    [Result / Result<T>]
-    [Strongly typed ids]
-    [Execution context]
+    component "Small interfaces, Result / Result<T>,\nstrongly typed ids, execution context" as AbsParts
+    component "Microsoft.Extensions.AI\n.Abstractions" <<nuget>>
   }
 }
 
@@ -89,24 +103,14 @@ package "Separate services" {
 package "tests/" {
   component "Marshal.*.Tests" as Tests
   component "Marshal.Testing\n(shared fakes)" as Testing
-}
-
-' ------------------------------------------------------------------
-' External dependencies
-package "External" #F5F5F5 {
-  [Microsoft.Extensions.AI] as MEAI
-  [Asp.Versioning.Http] as Versioning
-  [ModelContextProtocol] as MCP
-  [EF Core SQLite\n+ sqlite-vec] as EF
-  [MailKit] as MailKit
-  [Cronos] as Cronos
-  [SmartReader] as SmartReader
+  component "xunit.v3, Testcontainers,\nTimeProvider.Testing,\nMvc.Testing" <<nuget>>
 }
 
 ' ------------------------------------------------------------------
 ' Project references (arrow = "depends on")
 HaComponent ..> Api : HTTP (conversation:write)
-Web ..> Api : HTTP + SignalR
+Web ..> Api : HTTP + live updates
+Companion ..> Api : via HA events\n(nonce-verified)
 
 Api --> Core
 Api --> Memory
@@ -116,34 +120,32 @@ Api --> Data
 Api --> Abstractions
 
 Core --> Abstractions
+Core --> Data
 Memory --> Abstractions
 Memory --> Data
 Tasks --> Core
 Tasks --> Abstractions
 Tasks --> Data
 Integrations --> Abstractions
+Integrations --> Data
 Data --> Abstractions
 
 Tasks ..> ExecutorHost : HTTP (scoped token)
-
-Api --> Versioning
-Core --> MEAI
-Core --> MCP
-Memory --> MEAI
-Data --> EF
-Tasks --> Cronos
-Integrations --> MailKit
-Integrations --> SmartReader
-Integrations --> MCP
+ExecutorHost ..> Api : callbacks\n(per-task token)
 
 Tests --> Testing
 Testing --> Abstractions
 
 note bottom of Abstractions
-  Only interfaces, value types and Result.
-  No project in src/ references an implementation
-  project except Marshal.Api (composition root)
-  and Marshal.Tasks -> Marshal.Core (headless runs).
+  Only interfaces, value types and Result
+  (references only the MEAI abstractions).
+  Feature projects depend on Abstractions and,
+  where they persist data, on Marshal.Data.
+  Marshal.Api is the composition root and wires
+  the implementations; Marshal.Tasks -> Marshal.Core
+  runs headless agent loops. Provider SDKs (Ollama,
+  Anthropic, OpenAI-compatible) are referenced only
+  by the host.
 end note
 
 @enduml

@@ -10,12 +10,15 @@ context: |
   - Backend: ASP.NET Core on .NET 10, C# (latest), EF Core + SQLite
     (FTS5 + sqlite-vec), own thin agent harness on Microsoft.Extensions.AI
     (IChatClient, IEmbeddingGenerator) + official ModelContextProtocol C# SDK.
-  - LLMs: provider-neutral, local (Ollama) and Claude API; model tiers
+  - LLMs: provider-neutral, local (Ollama, OpenAI-compatible servers such as
+    llama.cpp) and Claude API; model tiers
     fast / standard / advisor with capability flags (vision, tools, context).
   - Web UI: Vue + Vite + TypeScript SPA, API client generated from OpenAPI,
     served same-origin by the ASP.NET host (BFF cookie auth, OIDC or local).
   - HA integration: Python custom component (HACS) in ha/.
-  - Deployment: single Docker image; /config (git-friendly files, no secrets)
+  - Deployment: single Docker image for Marshal (the coding executor is a
+    separate service); /config (git-friendly files, camelCase keys,
+    secret names only, values via ISecretStore)
     and /data (DB, keys, backups) volumes; YAML config.
 
   Design principles (non-negotiable, see STYLE_GUIDE.md):

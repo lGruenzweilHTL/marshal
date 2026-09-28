@@ -24,8 +24,9 @@ These come from the design and must hold in every change. Details and rationale:
 - **The model can't use it → the model can't see it.** Forbidden, denied or unavailable tools are filtered out of the tool list, not refused after the call. The guard enforces the same rules server-side as a second line.
 - **Never add a send capability for mail.** No SMTP config, no `messages.send` / `drafts.send`, no Graph `Mail.Send` scope.
 - **Never expose raw G-code** or other free-form device commands to the model. Use allowlisted macros.
-- **Confirm-tier actions are frozen server-side** (tool + args + nonce + TTL). Only user turns can confirm; tool output never counts as confirmation.
+- **Confirm-tier actions are frozen server-side** (tool + args + nonce + TTL). Only user actions can confirm (a user turn, a web UI approval, a nonce-verified push action); tool output never counts as confirmation.
 - **Only system-defined sources may send `critical` notifications.**
+- **Config never contains secrets.** `/config` holds only secret *names* (`apiKeySecret: moonraker_voron`); values come from `ISecretStore` (env / `/run/secrets` files, or encrypted DB). Startup fails on literal secrets in `/config`.
 - **Every user-owned row has `owner_id`**, and all data access goes through owner-scoped queries. Never read "the user" from a global.
 - **Tests never need a real LLM.** Use fake `IChatClient` / `IEmbeddingGenerator`. Anything unmockable stays out of the test suite.
 - **TDD.** Write the failing test first.
@@ -38,7 +39,7 @@ Planned layout. Update this section whenever projects are added, renamed or remo
 
 ```
 src/                         .NET solution
-  Marshal.Api/               ASP.NET host: REST + SignalR, auth, serves the SPA
+  Marshal.Api/               ASP.NET host: REST + SSE, auth, serves the SPA
   Marshal.Abstractions/      small shared interfaces (providers, channels, executors, ...)
   Marshal.Core/              agent harness: loop, tool registry, risk engine + guard,
                              context builder, model router, sessions
@@ -50,7 +51,7 @@ src/                         .NET solution
 tests/                       one test project per src project (Marshal.<Name>.Tests)
   Marshal.Testing/           shared hand-written fakes (FakeChatClient, FakeEmbeddingGenerator, ...)
 web/                         Vue + Vite + TypeScript SPA (API client generated from OpenAPI)
-ha/                          custom_components/marshal (Python HA integration, HACS)
+ha/                          custom_components/marshal (Python HA integration, HACS; may move to its own repo)
 deploy/                      docker-compose, example config
 docs/                        design notes, images
 openspec/                    specifications and changes
@@ -74,16 +75,28 @@ Key dependencies and what they are for. Keep this list current when adding or re
 **.NET**
 | Package | Purpose |
 |---|---|
-| `Microsoft.Extensions.AI` | `IChatClient`, `IEmbeddingGenerator`, `AIFunction` — provider-neutral LLM access |
+| `Microsoft.Extensions.AI` (+ `.Abstractions`) | `IChatClient`, `IEmbeddingGenerator`, `AIFunction` — provider-neutral LLM access. `Marshal.Abstractions` references only `.Abstractions` |
+| `OllamaSharp` | Ollama provider implementing `IChatClient` / `IEmbeddingGenerator` (host only) |
+| `Anthropic` | Official Anthropic C# SDK (v10+; implements `IChatClient`) — Claude API provider (host only) |
+| `Microsoft.Extensions.AI.OpenAI` | OpenAI-compatible provider for local servers (llama.cpp `llama-server`, vLLM, LM Studio) (host only) |
 | `ModelContextProtocol` | Official MCP C# SDK — MCP client (HA MCP server, custom servers) |
-| `Asp.Versioning.Http` | URL-segment API versioning (`/api/v{version:apiVersion}`), per-version OpenAPI |
+| `Asp.Versioning.Http` + `Asp.Versioning.Mvc.ApiExplorer` | URL-segment API versioning (`/api/v{version:apiVersion}`), per-version OpenAPI grouping |
+| `Microsoft.AspNetCore.OpenApi` | OpenAPI document generation (one per API version) |
+| `Microsoft.AspNetCore.Authentication.OpenIdConnect` | `oidc` login provider (BFF) |
+| `Microsoft.AspNetCore.Identity.EntityFrameworkCore` | `local` login provider (passkeys + password) |
+| `NetEscapades.Configuration.Yaml` | YAML configuration provider for `/config/marshal.yaml` |
+| `YamlDotNet` | Parsing `/config` files (satellites, risk rules, MCP servers) and Markdown frontmatter (skills, templates) |
 | `Microsoft.EntityFrameworkCore.Sqlite` | Persistence; owner-scoped global query filters |
 | `sqlite-vec` (native extension) | Vector search in SQLite |
 | `Cronos` | Cron expression parsing for the scheduler |
 | `MailKit` | IMAP provider (search, drafts via `APPEND`, IDLE) |
 | `SmartReader` | Readability full-text extraction for RSS articles |
+| `Google.Apis.Gmail.v1`, `Microsoft.Graph` | Gmail API and Graph mail providers (later, build order §14) |
+| `SkiaSharp` | Image resizing (camera snapshots before VLM calls); MIT licensed |
+| `Microsoft.Extensions.Http.Resilience` | Retries / backoff for integration HTTP clients |
 | `OpenTelemetry.*` | Traces and metrics |
-| `xunit`, `Testcontainers` | Tests (plain `Assert`); containers for IMAP, FreshRSS |
+| `xunit.v3`, `Testcontainers` | Tests (plain `Assert`); containers for IMAP, FreshRSS |
+| `Microsoft.AspNetCore.Mvc.Testing` | In-process API integration tests (`WebApplicationFactory`) |
 | `Microsoft.Extensions.TimeProvider.Testing` | `FakeTimeProvider` for scheduler and time-based tests |
 
 No mocking or assertion libraries — use hand-written fakes from `Marshal.Testing`. Expected failures use Marshal's own `Result` / `Result<T>` from `Marshal.Abstractions`, not a third-party library.
@@ -92,7 +105,8 @@ No mocking or assertion libraries — use hand-written fakes from `Marshal.Testi
 | Package | Purpose |
 |---|---|
 | `vue`, `vite`, `typescript` | SPA framework and build (Vue is the current choice, may change) |
-| OpenAPI TypeScript generator (TBD) | Generated API client from Marshal's OpenAPI document |
+| `openapi-typescript` | Generates TypeScript types from Marshal's versioned OpenAPI document (build step) |
+| `openapi-fetch` | Small typed `fetch` client driven by those types |
 
 **Python (`ha/`)**
 | Package | Purpose |

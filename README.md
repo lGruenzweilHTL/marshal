@@ -83,8 +83,8 @@ Marshal understands and answers in both **English** and **German**.
 
 ## Private by design
 
-- Runs entirely on your own network
-- Works with fully local AI models if you prefer
+- Runs on your own hardware, on your own network
+- Works with fully local AI models if you prefer. Only the services you choose to connect (for example a cloud AI model or your Gmail account) are reached over the internet
 - Log in with your own identity provider, or with a passkey
 - You decide how long conversation history is kept
 

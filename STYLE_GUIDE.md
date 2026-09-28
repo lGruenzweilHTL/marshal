@@ -26,15 +26,14 @@ Tools the model is not allowed to use in the current context are **removed from 
 ### 3. Fail closed
 When a safety-relevant decision is uncertain, the answer is "no".
 
-- Judge timeout, parse error or low confidence → drop the pending action.
+- Judge timeout or parse error → drop the pending action. When the judge is unsure, its prompt makes it answer `neutral`, which also drops the action.
 - Unresolvable target in an arg-aware risk rule → confirm tier.
-- Unknown identity → no access, never a fallback to a privileged user.
 
 ### 4. Freeze what the user confirms
 Confirm-tier actions are stored server-side (tool + args + nonce + TTL) before the user is asked. On confirmation, the server executes exactly the frozen action. The model never gets to re-issue or modify it.
 
 ### 5. Untrusted content is data, never instructions
-Mail, RSS articles, notes, web pages and tool output are untrusted. They are wrapped as data in the context, and they can never confirm an action, change configuration or trigger privileged behavior. Only user turns can.
+Mail, RSS articles, notes, web pages and tool output are untrusted. They are wrapped as data in the context, and they can never confirm an action, change configuration or trigger privileged behavior. Only user actions can (a user turn, a web UI approval, a nonce-verified push action).
 
 ### 6. Everything has an owner
 Every user-owned row carries `owner_id`. All data access goes through owner-scoped queries (EF Core global query filters). Code reads the current user from the execution context and never from a global or static "the user". The instance is single-user today; the code must not assume that.
@@ -43,7 +42,7 @@ Every user-owned row carries `owner_id`. All data access goes through owner-scop
 If a feature can be expressed with the existing generic building blocks (tasks, triggers, conditional delivery, skills, templates), it gets **no dedicated code**. The daily briefing is the reference example: it is a task with a goal text, a template and a skill.
 
 ### 8. Configuration is files, credentials are data
-Human-edited configuration lives in `/config` as git-friendly files (YAML, Markdown). Secrets never go there. Runtime credentials (OAuth tokens, passwords) live encrypted in the database with an owner.
+Human-edited configuration lives in `/config` as git-friendly files (YAML with camelCase keys, Markdown). Secrets never go there: config holds only secret *names*, resolved through `ISecretStore` from environment / secret files or from encrypted, owner-scoped database rows (OAuth tokens, passwords).
 
 ### 9. Deterministic before intelligent
 Use deterministic code wherever it is enough: event filters, alias matching, keyword confirmation, retrieval scoring. Call a model only where judgment is actually needed. It is cheaper, faster and testable.
@@ -56,6 +55,7 @@ Use deterministic code wherever it is enough: event filters, alias matching, key
 - Target **.NET 10**, latest C# language version.
 - `<Nullable>enable</Nullable>` and `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>` in every project (set once in `Directory.Build.props`).
 - .NET analyzers enabled. Suppressions need a justification comment.
+- `<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>` so the `.editorconfig` `IDE*` rules fail the build, and `<GenerateDocumentationFile>true</GenerateDocumentationFile>` (required for IDE0005, unused usings, to run on build; `CS1591` stays off).
 - Formatting: `.editorconfig` is the source of truth; run `dotnet format` before committing.
 - Package versions are managed centrally in `Directory.Packages.props`.
 
@@ -75,13 +75,15 @@ Use deterministic code wherever it is enough: event filters, alias matching, key
 | Async methods | `Async` suffix | `SearchAsync` |
 | Type parameters | `T` or `T` + name | `TResult` |
 
+Model-facing tools have an internal id `<namespace>.<snake_case_name>` (`mail.search`, `printer.start_print`); the model sees `<namespace>_<name>`. Built-in namespaces name the capability, never the provider (`printer`, not `moonraker`). Risk rules, satellite policies and template allowlists always refer to the internal id. Details: tool naming in the design notes (§3).
+
 Names describe intent, not implementation. No abbreviations except well-known ones (`Id`, `Url`, `Http`, `Llm`, `Mcp`).
 
 ### Types
 - Classes are **`sealed` by default**. Unseal only with a reason.
 - `record` for DTOs, messages, events and other immutable data.
 - `readonly record struct` for small value types (ids, scores).
-- Strongly typed ids for domain entities (`ChunkId`, `TaskId`, `OwnerId`) instead of raw `Guid` / `string`.
+- Strongly typed ids for domain entities (`ChunkId`, `TaskId`, `OwnerId`) instead of raw `Guid` / `string`. A user's id is always `OwnerId`, also where it is not an owner column (execution context, Identity user key); there is no separate `UserId` type.
 - Prefer immutability: `init` properties, `IReadOnlyList<T>` / `IReadOnlyDictionary<TKey, TValue>` in public signatures.
 
 ### `var`
@@ -126,7 +128,7 @@ public async Task<Result<PrinterStatus>> GetStatusAsync(CancellationToken ct)
 - **API versions are declared once in code** (`ApiVersions.V1`, ...). They are never read from configuration: a version describes the contract the code implements.
 - **Endpoint files contain no version literals** and no `/api/...` prefixes. Each feature exposes a `Map<Feature>Endpoints(this RouteGroupBuilder group)` extension and registers its routes on the group it receives.
 - A breaking change adds a new version and a new route group; the old version keeps working side by side until it is retired. Never change the contract of a published version in place.
-- Unversioned: `/health` and SPA routes only.
+- Unversioned: `/health`, `/api/versions` (version discovery), `/openapi/{document}.json` (the name carries the version), auth protocol callbacks (`/signin-oidc`, `/signout-callback-oidc`) and SPA routes only.
 - Endpoints return typed results (`Results<Ok<T>, NotFound, ...>`); failed `Result`s become `ProblemDetails`.
 
 ```csharp
@@ -173,7 +175,7 @@ public static class TaskEndpoints
 - `TODO` comments reference an issue or OpenSpec change.
 
 ### Control flow and formatting
-- Always use braces, except for single-line guard clauses (`if (x is null) return ...;`).
+- Always use braces, except for single-line guard clauses (`if (x is null) return ...;`). The analyzer can only enforce "braces when multiline"; "braceless only for guard clauses" is checked in review.
 - Early returns over deep nesting.
 - Expression-bodied members for one-line members only.
 - Pattern matching (`is`, `switch` expressions) over type checks and casts.
@@ -182,7 +184,7 @@ public static class TaskEndpoints
 ### Security-relevant code
 - Code that decides risk tiers, visibility, confirmation or ownership has **100 % test coverage of its branches** and fails closed.
 - No custom cryptography. Use ASP.NET Core Data Protection, Identity and standard auth handlers.
-- Secrets come only from environment / Docker secrets or encrypted DB fields, never from `/config`.
+- Secrets come only through `ISecretStore` (environment / `/run/secrets` files, or Data Protection-encrypted DB rows), never from `/config`. Options properties holding secrets are marked `[Secret]` and fail startup if bound from a config file.
 
 ---
 

@@ -45,7 +45,8 @@ csharp_new_line_before_finally = true
 csharp_new_line_before_members_in_object_initializers = true
 csharp_new_line_before_members_in_anonymous_types = true
 csharp_new_line_between_query_expression_clauses = true
-# Braces required, except single-line guard clauses
+# Braces required when multiline. "Braceless only for guard clauses" (STYLE_GUIDE)
+# is not expressible as an analyzer rule and is checked in review.
 csharp_prefer_braces = when_multiline:warning
 
 # --- Indentation & spacing -----------------------------------------

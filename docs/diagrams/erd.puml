@@ -22,27 +22,46 @@ title Marshal — ERD (planned)
 
 ' ------------------------------------------------------------------
 package "Identity & Access" {
-  entity User {
-    * id : UserId <<PK>>
+  entity User <<Identity>> {
+    * id : OwnerId <<PK, Identity Guid key>>
     --
+    * user_name : string
     * display_name : string
-    * roles : string[]
+    password_hash : string  <<local only>>
+    * security_stamp : string
     * created_at : DateTimeOffset
   }
 
-  entity ExternalLogin {
+  entity UserLogin <<AspNetUserLogins>> {
+    * login_provider : string <<PK>>
+    * provider_key : string <<PK, OIDC sub>>
+    --
+    * user_id : OwnerId <<FK>>
+    provider_display_name : string
+  }
+
+  entity UserPasskey <<AspNetUserPasskeys>> {
+    * credential_id : bytes <<PK>>
+    --
+    * user_id : OwnerId <<FK>>
+    * data : json  <<public key, sign count, name>>
+  }
+
+  entity Role <<AspNetRoles>> {
     * id : Guid <<PK>>
     --
-    * user_id : UserId <<FK>>
-    * provider : string
-    * subject : string
-    <<unique (provider, subject)>>
+    * name : admin | user
+  }
+
+  entity UserRole <<AspNetUserRoles>> {
+    * user_id : OwnerId <<PK, FK>>
+    * role_id : Guid <<PK, FK>>
   }
 
   entity ApiToken {
     * id : ApiTokenId <<PK>>
     --
-    * owner_id : UserId <<FK>>
+    * owner_id : OwnerId <<FK>>
     * name : string
     * token_hash : string
     * scopes : string[]
@@ -54,13 +73,12 @@ package "Identity & Access" {
   }
 
   entity UserPreferences {
-    * user_id : UserId <<PK, FK>>
+    * user_id : OwnerId <<PK, FK>>
     --
     * language : de | en
     quiet_hours : json
     notification_targets : json
     dnd_until : DateTimeOffset
-    briefing : json
   }
 }
 
@@ -69,35 +87,40 @@ package "Conversations & Runs" {
   entity Session {
     * id : SessionId <<PK>>
     --
-    * owner_id : UserId <<FK>>
-    * client_id : ApiTokenId <<FK>>
-    external_id : string
+    * owner_id : OwnerId <<FK>>
     * source : voice | web | task | api
+    api_token_id : ApiTokenId <<FK, null for web / task>>
+    external_id : string  <<client conversation id>>
     * identity_evidence : json
     * resolved_by : string
     * created_at : DateTimeOffset
     * last_turn_at : DateTimeOffset
     closed_at : DateTimeOffset
-    <<unique (client_id, external_id)>>
+    <<unique (api_token_id, external_id)>>
   }
 
   entity Run {
     * id : RunId <<PK>>
     --
-    * owner_id : UserId <<FK>>
+    * owner_id : OwnerId <<FK>>
     session_id : SessionId <<FK>>
     task_id : TaskId <<FK>>
     * source : voice | web | task | api
+    input_mode : voice | text
+    satellite_id : string
+    area_id : string
+    language : string
     * trigger : string
     * started_at : DateTimeOffset
     ended_at : DateTimeOffset
-    * outcome : ok | error | auto_backgrounded | cancelled
+    * outcome : ok | error | backgrounded | cancelled
     * cost : decimal
   }
 
   entity RunStep {
     * id : Guid <<PK>>
     --
+    * owner_id : OwnerId <<FK>>
     * run_id : RunId <<FK>>
     * sequence : int
     * kind : context | model_call | tool_call | reply
@@ -116,17 +139,44 @@ package "Conversations & Runs" {
   entity PendingAction {
     * id : PendingActionId <<PK>>
     --
-    * owner_id : UserId <<FK>>
+    * owner_id : OwnerId <<FK>>
     session_id : SessionId <<FK>>
     task_id : TaskId <<FK>>
+    satellite_id : string  <<frozen with the action>>
     * tool : string
     * args : json  <<frozen>>
     * summary : string
     * nonce : string
-    * expires_at : DateTimeOffset
-    * status : pending | approved | rejected | expired | superseded
-    * decided_by : keyword | judge | ui | push
+    * expires_at : DateTimeOffset  <<~60 s conversation, 10 min approval queue>>
+    * status : pending | approved | rejected | dropped | expired | superseded
+    decided_by : keyword | judge | ui | push | system
     decided_at : DateTimeOffset
+  }
+
+  entity FollowUp {
+    * id : Guid <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    * nonce : string  <<sent as extra_system_prompt>>
+    * satellite_id : string
+    pending_action_id : PendingActionId <<FK>>
+    task_id : TaskId <<FK>>
+    linked_session_id : SessionId <<FK>>
+    * expires_at : DateTimeOffset
+    consumed_at : DateTimeOffset
+  }
+
+  entity AuditEvent {
+    * id : Guid <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    * actor_kind : user | api_token | system
+    actor_id : string
+    run_id : RunId <<FK>>
+    * action : string  <<e.g. printer.pause, approval.approve>>
+    target : string
+    details : json
+    * created_at : DateTimeOffset
   }
 }
 
@@ -135,16 +185,29 @@ package "Memory" {
   entity Project {
     * id : ProjectId <<PK>>
     --
-    * owner_id : UserId <<FK>>
+    * owner_id : OwnerId <<FK>>
     * name : string
     * description : string
     centroid : vector
     last_active_at : DateTimeOffset
   }
 
+  entity ProjectFeedback {
+    * id : Guid <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    * project_id : ProjectId <<FK>>
+    run_id : RunId <<FK>>
+    * kind : confirmed | rejected | switched
+    * phrase : string
+    embedding : vector  <<negative examples>>
+    * created_at : DateTimeOffset
+  }
+
   entity ProjectAlias {
     * id : Guid <<PK>>
     --
+    * owner_id : OwnerId <<FK>>
     * project_id : ProjectId <<FK>>
     * phrase : string
     * status : candidate | active | rejected
@@ -152,12 +215,11 @@ package "Memory" {
   }
 
   entity Chunk {
-    * id : ChunkId <<PK, hash(type + normalized title)>>
+    * id : ChunkId <<PK, hash(owner_id + scope + project_id + type + normalized title)>>
     --
-    * owner_id : UserId <<FK>>
-    project_id : ProjectId <<FK>>
+    * owner_id : OwnerId <<FK>>
+    project_id : ProjectId <<FK, set iff scope = project>>
     * scope : general | project
-    * origin : memory | notes
     * type : fact | preference | event | procedure | person | device
     * title : string
     * content : string
@@ -173,8 +235,9 @@ package "Memory" {
   entity ChunkEdge {
     * from_id : ChunkId <<PK, FK>>
     * to_id : ChunkId <<PK, FK>>
-    * kind : supersedes | contradicts | depends_on | relates_to | links_to <<PK>>
+    * kind : supersedes | contradicts | depends_on | relates_to <<PK>>
     --
+    * owner_id : OwnerId <<FK>>
     * created_at : DateTimeOffset
   }
 }
@@ -184,7 +247,7 @@ package "Background Work" {
   entity AgentTask {
     * id : TaskId <<PK>>
     --
-    * owner_id : UserId <<FK>>
+    * owner_id : OwnerId <<FK>>
     parent_id : TaskId <<FK>>
     * created_by : user | task | system
     * kind : agent | system
@@ -198,18 +261,18 @@ package "Background Work" {
     notes : string
     * budget : json
     * spent : json
-    * deliver : string
-    deliver_when : string
-    deliver_expires_at : DateTimeOffset
-    fallback_channel : string
+    name : string  <<unique (owner_id, name)>>
+    * deliveries : json  <<[{channel, target, priority, followUp, when, expires, fallback}]>>
     override_quiet_hours_until : DateTimeOffset
-    result : string
+    result_speech : string
+    result_body : string  <<markdown>>
     * depth : int
   }
 
   entity ExecutorSession {
     * id : Guid <<PK>>
     --
+    * owner_id : OwnerId <<FK>>
     * task_id : TaskId <<FK>>
     * executor : string
     * handle : string
@@ -222,23 +285,25 @@ package "Background Work" {
   entity Notification {
     * id : Guid <<PK>>
     --
-    * owner_id : UserId <<FK>>
+    * owner_id : OwnerId <<FK>>
     task_id : TaskId <<FK>>
     * source : string
     * priority : critical | normal | low
     * content : string
     channel : string
-    * outcome : delivered | coalesced | held | expired | fallback
+    * outcome : pending | delivered | coalesced | held | inboxed | expired | fallback
     reason : string
     coalesced_into : Guid <<FK>>
     * created_at : DateTimeOffset
     delivered_at : DateTimeOffset
+    consumed_at : DateTimeOffset  <<inbox item read by a task>>
   }
+
 
   entity Proposal {
     * id : Guid <<PK>>
     --
-    * owner_id : UserId <<FK>>
+    * owner_id : OwnerId <<FK>>
     task_id : TaskId <<FK>>
     * kind : notes | code
     * target : string  <<repo / sink>>
@@ -251,23 +316,50 @@ package "Background Work" {
 }
 
 ' ------------------------------------------------------------------
-package "Integrations" {
+package "Integrations & Secrets" {
+  entity Secret {
+    * id : Guid <<PK>>
+    --
+    owner_id : OwnerId <<FK, null = instance>>
+    * name : string
+    * ciphertext : bytes  <<Data Protection>>
+    * created_at : DateTimeOffset
+    * updated_at : DateTimeOffset
+    <<unique (name) where owner_id is null>>
+    <<unique (owner_id, name) where owner_id is not null>>
+  }
+
   entity MailAccount {
     * id : Guid <<PK>>
     --
-    * owner_id : UserId <<FK>>
+    * owner_id : OwnerId <<FK>>
     * alias : string
     * provider : imap | graph | gmail
     * credential_strategy : password | oauth_google | oauth_microsoft
-    * credentials : bytes  <<Data Protection>>
+    * credential_secret : string  <<Secret.name>>
     * settings : json
     last_sync_state : string  <<historyId / delta link / UIDNEXT>>
+  }
+
+  entity NoteIndexEntry {
+    * id : Guid <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    * path : string
+    * heading : string
+    * text : string
+    embedding : vector  <<sqlite-vec>>
+    * indexed_at : DateTimeOffset
+    <<derived, rebuilt per file on change>>
   }
 }
 
 ' ------------------------------------------------------------------
 ' Relationships
-User ||--o{ ExternalLogin
+User ||--o{ UserLogin
+User ||--o{ UserPasskey
+User ||--o{ UserRole
+Role ||--o{ UserRole
 User ||--o{ ApiToken
 User ||--|| UserPreferences
 User ||--o{ Session
@@ -279,13 +371,21 @@ User ||--o{ AgentTask
 User ||--o{ Notification
 User ||--o{ Proposal
 User ||--o{ MailAccount
+User |o--o{ Secret
+User ||--o{ AuditEvent
+User ||--o{ FollowUp
+User ||--o{ NoteIndexEntry
+PendingAction |o--o{ FollowUp
+AgentTask |o--o{ FollowUp
 
-ApiToken ||--o{ Session : client
+ApiToken |o--o{ Session : created by
 Session ||--o{ Run
 Session ||--o{ PendingAction
 Run ||--|{ RunStep
 
 Project ||--o{ ProjectAlias
+Project ||--o{ ProjectFeedback
+Run |o--o{ ProjectFeedback
 Project |o--o{ Chunk
 Chunk ||--o{ ChunkEdge : from
 Chunk ||--o{ ChunkEdge : to
@@ -297,10 +397,19 @@ AgentTask ||--o{ ExecutorSession
 AgentTask |o--o{ Notification
 AgentTask |o--o{ Proposal
 ApiToken ||--o| ExecutorSession : callback
+Run |o--o{ AuditEvent
 
 note bottom of Chunk
-  All user-owned tables carry owner_id and are
-  read through owner-scoped EF Core query filters.
+  Every user-owned table carries owner_id, child tables
+  included (denormalized), so each one gets its own
+  owner-scoped EF Core query filter. Exceptions: the
+  ASP.NET Identity tables (User, UserLogin, UserPasskey,
+  Role, UserRole) and UserPreferences, keyed by user_id.
+  Secret's owner filter also returns instance rows
+  (owner_id null); only admins may write those.
+  Notes are not memory: they live in NoteIndexEntry
+  (search only). Important note content becomes a normal
+  Chunk written by the agent, source_ref = note path.
 end note
 
 @enduml
