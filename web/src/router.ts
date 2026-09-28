@@ -5,10 +5,13 @@ import SetupPage from './auth/SetupPage.vue'
 import AppShell from './layout/AppShell.vue'
 import ChatView from './chat/ChatView.vue'
 import DashboardView from './dashboard/DashboardView.vue'
-import PlaceholderView from './layout/PlaceholderView.vue'
+import NotFoundView from './layout/NotFoundView.vue'
+import PreferencesView from './preferences/PreferencesView.vue'
 import CostView from './runs/CostView.vue'
 import RunDetailView from './runs/RunDetailView.vue'
 import RunsView from './runs/RunsView.vue'
+import SecretsView from './secrets/SecretsView.vue'
+import SecurityView from './security/SecurityView.vue'
 import SystemView from './system/SystemView.vue'
 import type { UserSession } from './session'
 
@@ -16,7 +19,7 @@ declare module 'vue-router' {
   interface RouteMeta {
     /** Reachable without a session (login and setup). */
     public?: boolean
-    /** Title shown in the shell header. */
+    /** Page title for the browser tab. */
     title?: string
   }
 }
@@ -34,11 +37,11 @@ const routes: RouteRecordRaw[] = [
       { path: 'runs', name: 'runs', component: RunsView, meta: { title: 'Runs' } },
       { path: 'runs/:id', name: 'run', component: RunDetailView, meta: { title: 'Run' } },
       { path: 'cost', name: 'cost', component: CostView, meta: { title: 'Cost' } },
-      { path: 'security', name: 'security', component: PlaceholderView, meta: { title: 'Security' } },
-      { path: 'secrets', name: 'secrets', component: PlaceholderView, meta: { title: 'Secrets' } },
-      { path: 'preferences', name: 'preferences', component: PlaceholderView, meta: { title: 'Preferences' } },
+      { path: 'security', name: 'security', component: SecurityView, meta: { title: 'Security' } },
+      { path: 'secrets', name: 'secrets', component: SecretsView, meta: { title: 'Secrets' } },
+      { path: 'preferences', name: 'preferences', component: PreferencesView, meta: { title: 'Preferences' } },
       { path: 'system', name: 'system', component: SystemView, meta: { title: 'System' } },
-      { path: ':pathMatch(.*)*', name: 'not-found', component: PlaceholderView, meta: { title: 'Not found' } },
+      { path: ':pathMatch(.*)*', name: 'not-found', component: NotFoundView, meta: { title: 'Not found' } },
     ],
   },
 ]
@@ -49,6 +52,9 @@ export function createAppRouter(user: UserSession, history: RouterHistory = crea
   router.beforeEach(async (to) => {
     if (to.meta.public) return true
     return (await user.load()) ? true : { path: '/login', query: { returnUrl: to.fullPath } }
+  })
+  router.afterEach((to) => {
+    document.title = to.meta.title ? `${to.meta.title} · Marshal` : 'Marshal'
   })
   return router
 }
