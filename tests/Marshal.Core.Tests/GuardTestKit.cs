@@ -2,6 +2,7 @@ using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Satellites;
 using Marshal.Core.Guard;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -43,4 +44,37 @@ internal sealed class FixedSatellites(string satelliteId, SatelliteProfile profi
 
     public Task<SatelliteContext> GetContextAsync(MarshalExecutionContext context, CancellationToken cancellationToken) =>
         Task.FromResult(new SatelliteContext(context.SatelliteId, GetProfile(context.SatelliteId), context.AreaId, null));
+}
+
+/// <summary>
+/// Resolves every call of a namespace to fixed targets.
+/// </summary>
+internal sealed class FakeTargetResolver(string ns, params Marshal.Abstractions.Guard.RiskTarget[] targets) : IRiskTargetResolver
+{
+    public string Namespace => ns;
+
+    public Task<Marshal.Abstractions.Result<IReadOnlyList<Marshal.Abstractions.Guard.RiskTarget>>> ResolveAsync(
+        Marshal.Abstractions.Tools.ToolId tool, System.Text.Json.JsonElement arguments, CancellationToken cancellationToken) =>
+        Task.FromResult(Marshal.Abstractions.Result.Success<IReadOnlyList<Marshal.Abstractions.Guard.RiskTarget>>(targets));
+}
+
+/// <summary>
+/// Router that returns the same fake client for every tier (optionally a separate advisor).
+/// </summary>
+internal sealed class SingleModelRouter(IChatClient client, IChatClient? advisor = null) : Marshal.Abstractions.Models.IModelRouter
+{
+    public List<Marshal.Abstractions.Models.ModelRequest> Requests { get; } = [];
+
+    public Marshal.Abstractions.Result<Marshal.Abstractions.Models.RoutedModel> Route(Marshal.Abstractions.Models.ModelRequest request)
+    {
+        Requests.Add(request);
+        if (request.Tier == Marshal.Abstractions.Models.ModelTier.Advisor)
+        {
+            return advisor is null
+                ? new Marshal.Abstractions.Error("model.not_available", "no advisor")
+                : new Marshal.Abstractions.Models.RoutedModel("advisor", request.Tier, advisor);
+        }
+
+        return new Marshal.Abstractions.Models.RoutedModel(request.Tier.ToString().ToLowerInvariant(), request.Tier, client);
+    }
 }

@@ -211,6 +211,7 @@ dotnet_diagnostic.CA1716.severity = none       # C#-only codebase: names like Er
 dotnet_naming_rule.async_methods_suffix.severity = none   # test names follow Method_Condition_Expected
 dotnet_diagnostic.CA1707.severity = none                   # underscores in test method names
 dotnet_diagnostic.CA2016.severity = warning
+dotnet_diagnostic.CA1001.severity = none                   # test classes hold no-op fakes (FakeChatClient) as fields
 
 # ------------------------------------------------------------------
 # EF Core migrations: generated code

@@ -54,14 +54,14 @@
 
 - [x] 7.1 Write risk rule tests: glob matching, first match wins, target conditions evaluated per resolved target with max tier, unresolvable / empty / no resolver → confirm with `unresolved_target`
 - [x] 7.2 Implement `RuleBasedRiskEngine` and `IRiskTargetResolver` seam
-- [ ] 7.3 Write guard tests: satellite `denyConfirm` denial on arg-aware call, taint escalation of `persists` tools, tiers only raised, reasons collected and localized, `taint` spoken first
-- [ ] 7.4 Implement `Guard` pipeline and reason localization (de / en)
-- [ ] 7.5 Write pending-action tests: frozen before question, one per session, superseded, expiry, frozen args unchanged on execute
-- [ ] 7.6 Implement `EfPendingActionStore` and freeze / execute logic
-- [ ] 7.7 Write keyword tests: normalization, full-utterance only, per-language lists
-- [ ] 7.8 Implement `ConfiguredConfirmationKeywords`
-- [ ] 7.9 Write judge tests with a fake client: positive executes, neutral drops and continues as a normal turn, negative cancels, timeout and parse errors drop
-- [ ] 7.10 Implement `LlmConfirmationJudge` (fast tier, structured output, 3 s timeout)
+- [x] 7.3 Write guard tests: satellite `denyConfirm` denial on arg-aware call, taint escalation of `persists` tools, tiers only raised, reasons collected and localized, `taint` spoken first
+- [x] 7.4 Implement `Guard` pipeline and reason localization (de / en)
+- [x] 7.5 Write pending-action tests: frozen before question, one per session, superseded, expiry, frozen args unchanged on execute
+- [x] 7.6 Implement `EfPendingActionStore` and freeze / execute logic
+- [x] 7.7 Write keyword tests: normalization, full-utterance only, per-language lists
+- [x] 7.8 Implement `ConfiguredConfirmationKeywords`
+- [x] 7.9 Write judge tests with a fake client: positive executes, neutral drops and continues as a normal turn, negative cancels, timeout and parse errors drop
+- [x] 7.10 Implement `LlmConfirmationJudge` (fast tier, structured output, 3 s timeout)
 - [ ] 7.11 Write test: tool output containing a confirmation keyword never confirms
 - [ ] 7.12 Verify 100 % branch coverage for risk engine, visibility filter and guard
 
