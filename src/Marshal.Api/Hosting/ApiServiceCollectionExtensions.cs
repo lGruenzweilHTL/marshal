@@ -31,7 +31,12 @@ public static class ApiServiceCollectionExtensions
         services.AddOptions<KeyManagementOptions>().Configure<IOptions<PathsOptions>, ILoggerFactory>((options, paths, loggers) =>
             options.XmlRepository = new FileSystemXmlRepository(new DirectoryInfo(Path.Combine(paths.Value.Data, "keys")), loggers));
 
-        services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
+        services.ConfigureHttpJsonOptions(options =>
+        {
+            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+            // Numbers are JSON numbers only, so OpenAPI (and the generated SPA types) describe them as `number`.
+            options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
+        });
         services.AddProblemDetails();
         services.AddApiVersioning(options =>
             {

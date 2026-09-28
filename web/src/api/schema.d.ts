@@ -260,6 +260,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The app version and the supported and deprecated API versions. */
+        get: operations["GetSystem"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/conversation/turns": {
         parameters: {
             query?: never;
@@ -477,12 +494,12 @@ export interface components {
             to: string;
             days: components["schemas"]["DailyCost"][];
             /** Format: double */
-            total: number | string;
+            total: number;
             byTier: {
-                [key: string]: number | string;
+                [key: string]: number;
             };
             /** Format: double */
-            advisor: number | string;
+            advisor: number;
         };
         /** @description A new token. */
         CreateApiTokenRequest: {
@@ -509,12 +526,12 @@ export interface components {
             /** Format: date */
             date: string;
             /** Format: double */
-            total: number | string;
+            total: number;
             byTier: {
-                [key: string]: number | string;
+                [key: string]: number;
             };
             /** Format: double */
-            advisor: number | string;
+            advisor: number;
         };
         /** @enum {unknown} */
         DayOfWeek: "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
@@ -606,22 +623,22 @@ export interface components {
         RunOutcome: "ok" | "error" | "backgrounded" | "cancelled";
         RunStepDetail: {
             /** Format: int32 */
-            sequence: number | string;
+            sequence: number;
             kind: components["schemas"]["RunStepKind"];
             model: null | string;
             tier: null | string;
             /** Format: int32 */
-            tokensIn: null | number | string;
+            tokensIn: null | number;
             /** Format: int32 */
-            tokensOut: null | number | string;
+            tokensOut: null | number;
             /** Format: int32 */
-            tokensCached: null | number | string;
+            tokensCached: null | number;
             /** Format: int32 */
-            firstTokenMs: null | number | string;
+            firstTokenMs: null | number;
             /** Format: int32 */
-            durationMs: number | string;
+            durationMs: number;
             /** Format: double */
-            cost: null | number | string;
+            cost: null | number;
             tool: null | string;
             riskTier: null | components["schemas"]["RiskTier"];
             guardDecision: null | components["schemas"]["GuardDecision"];
@@ -650,7 +667,7 @@ export interface components {
             outcomeReason: null | string;
             tainted: boolean;
             /** Format: double */
-            cost: number | string;
+            cost: number;
         };
         /** @description A secret without its value. */
         SecretItem: {
@@ -694,10 +711,19 @@ export interface components {
             eventId?: null | string;
             reconnectionInterval?: null | string;
         };
+        /** @description Version information. */
+        SystemInfo: {
+            /** @description App version (informational version, including the commit when built from source). */
+            version: string;
+            /** @description API versions this build serves, e.g. `1.0`. */
+            supportedApiVersions: string[];
+            /** @description Supported versions that will be removed. */
+            deprecatedApiVersions: string[];
+        };
         TaintSource: {
             kind: string;
             /** Format: int32 */
-            firstStep: number | string;
+            firstStep: number;
         };
         /** @description A referenced secret that no source provides. */
         UnresolvedSecret: {
@@ -1006,9 +1032,9 @@ export interface operations {
             query?: {
                 source?: string;
                 outcome?: string;
-                minCost?: number | string;
+                minCost?: number;
                 before?: string;
-                limit?: number | string;
+                limit?: number;
             };
             header?: never;
             path?: never;
@@ -1068,6 +1094,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CostReport"];
+                };
+            };
+        };
+    };
+    GetSystem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemInfo"];
                 };
             };
         };

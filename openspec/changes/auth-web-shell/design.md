@@ -127,3 +127,17 @@ One EF migration converting `User` to Identity and adding Identity tables, `Auth
   costs attributed to the local day their run started, in the user's time zone - the same basis as the advisor
   budget (`EfAdvisorUsage`); the advisor tier is reported on its own line and not in `byTier`. Enum values in the
   API are camelCase (`escalatedByTaint`); the spec's snake_case names are the stored values.
+- **SPA login flow:** OIDC buttons are plain links to `/api/v1/auth/login/{name}?returnUrl=...`; the local provider
+  has its own page (password, passkey via the browser's WebAuthn JSON helpers behind a small `Passkeys` interface)
+  and the first-run setup page is linked while `GET /auth/local/setup` answers 200. Logout is a real form post with
+  the antiforgery token in the `__RequestVerificationToken` form field (ASP.NET Core antiforgery reads the header or
+  that field), so the browser follows the redirect to the IdP's end-session endpoint.
+- **Chat confirmations:** the final event keeps its `{ speech, continueConversation, conversationId }` shape. The
+  confirmation reason reaches the chat inside the speech: the runner tells the model to include it (core-agent),
+  and the chat marks a reply with `continueConversation` as waiting for an answer.
+- **System view data:** `GET /api/v1/system` (any signed-in principal) returns the app version (the assembly's
+  informational version; `Version` in `Directory.Build.props`) and the supported / deprecated API versions. Health
+  details come from the existing unversioned `/health`.
+- **JSON numbers are strict:** `JsonSerializerOptions.Web` accepts numbers as strings, which made the OpenAPI
+  document describe every number as `number | string`. The HTTP JSON options use `JsonNumberHandling.Strict`, so
+  the generated SPA types are plain `number`. Only request bodies with quoted numbers are affected (now 400).

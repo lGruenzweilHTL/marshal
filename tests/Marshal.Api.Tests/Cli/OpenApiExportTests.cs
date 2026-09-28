@@ -39,6 +39,18 @@ public sealed class OpenApiExportTests : IDisposable
     }
 
     [Fact]
+    public async Task Document_DescribesNumbersAsJsonNumbersOnly()
+    {
+        await using var factory = new MarshalApiFactory();
+
+        JsonNode document = (await factory.CreateClient().GetFromJsonAsync<JsonNode>("/openapi/v1.json", Ct))!;
+
+        JsonNode cost = document["components"]!["schemas"]!["RunSummary"]!["properties"]!["cost"]!;
+        Assert.Equal("number", cost["type"]!.GetValue<string>());
+        Assert.Null(cost["pattern"]);
+    }
+
+    [Fact]
     public async Task CommittedSpaDocument_MatchesTheExport()
     {
         string root = RepositoryRoot();

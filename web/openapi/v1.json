@@ -338,11 +338,7 @@
             "in": "query",
             "description": "",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-              "type": [
-                "number",
-                "string"
-              ],
+              "type": "number",
               "format": "double"
             }
           },
@@ -360,11 +356,7 @@
             "in": "query",
             "description": "",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           }
@@ -452,6 +444,27 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CostReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "The app version and the supported and deprecated API versions.",
+        "operationId": "GetSystem",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemInfo"
                 }
               }
             }
@@ -988,30 +1001,18 @@
             }
           },
           "total": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ],
+            "type": "number",
             "format": "double"
           },
           "byTier": {
             "type": "object",
             "additionalProperties": {
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-              "type": [
-                "number",
-                "string"
-              ],
+              "type": "number",
               "format": "double"
             }
           },
           "advisor": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ],
+            "type": "number",
             "format": "double"
           }
         }
@@ -1090,30 +1091,18 @@
             "format": "date"
           },
           "total": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ],
+            "type": "number",
             "format": "double"
           },
           "byTier": {
             "type": "object",
             "additionalProperties": {
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-              "type": [
-                "number",
-                "string"
-              ],
+              "type": "number",
               "format": "double"
             }
           },
           "advisor": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ],
+            "type": "number",
             "format": "double"
           }
         }
@@ -1449,11 +1438,7 @@
         "type": "object",
         "properties": {
           "sequence": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "kind": {
@@ -1472,55 +1457,41 @@
             ]
           },
           "tokensIn": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ],
             "format": "int32"
           },
           "tokensOut": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ],
             "format": "int32"
           },
           "tokensCached": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ],
             "format": "int32"
           },
           "firstTokenMs": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ],
             "format": "int32"
           },
           "durationMs": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "cost": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ],
             "format": "double"
           },
@@ -1678,11 +1649,7 @@
             "type": "boolean"
           },
           "cost": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ],
+            "type": "number",
             "format": "double"
           }
         }
@@ -1825,6 +1792,35 @@
           }
         }
       },
+      "SystemInfo": {
+        "required": [
+          "version",
+          "supportedApiVersions",
+          "deprecatedApiVersions"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "description": "App version (informational version, including the commit when built from source)."
+          },
+          "supportedApiVersions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "API versions this build serves, e.g. \u00601.0\u0060."
+          },
+          "deprecatedApiVersions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Supported versions that will be removed."
+          }
+        },
+        "description": "Version information."
+      },
       "TaintSource": {
         "required": [
           "kind",
@@ -1836,11 +1832,7 @@
             "type": "string"
           },
           "firstStep": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           }
         }
@@ -1920,6 +1912,9 @@
     },
     {
       "name": "Runs"
+    },
+    {
+      "name": "System"
     },
     {
       "name": "Marshal"
