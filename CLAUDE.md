@@ -89,6 +89,8 @@ Key dependencies and what they are for. Keep this list current when adding or re
 | `NetEscapades.Configuration.Yaml` | YAML configuration provider for `/config/marshal.yaml` |
 | `YamlDotNet` | Parsing `/config` files (satellites, risk rules, MCP servers) and Markdown frontmatter (skills, templates) |
 | `Microsoft.EntityFrameworkCore.Sqlite` | Persistence; owner-scoped global query filters |
+| `EFCore.NamingConventions` | snake_case table and column names for the EF Core model |
+| `Microsoft.EntityFrameworkCore.Design` + `dotnet-ef` (local tool, `.config/dotnet-tools.json`) | Creating migrations (`dotnet ef migrations add <Name> --project src/Marshal.Data --output-dir Migrations`) |
 | `sqlite-vec` (native extension) | Vector search in SQLite |
 | `Cronos` | Cron expression parsing for the scheduler |
 | `MailKit` | IMAP provider (search, drafts via `APPEND`, IDLE) |

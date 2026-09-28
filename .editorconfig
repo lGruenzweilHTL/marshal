@@ -211,3 +211,10 @@ dotnet_diagnostic.CA1716.severity = none       # C#-only codebase: names like Er
 dotnet_naming_rule.async_methods_suffix.severity = none   # test names follow Method_Condition_Expected
 dotnet_diagnostic.CA1707.severity = none                   # underscores in test method names
 dotnet_diagnostic.CA2016.severity = warning
+
+# ------------------------------------------------------------------
+# EF Core migrations: generated code
+# ------------------------------------------------------------------
+[src/Marshal.Data/Migrations/**.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none

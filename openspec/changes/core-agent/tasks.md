@@ -15,12 +15,12 @@
 
 ## 3. Persistence and ownership
 
-- [ ] 3.1 Write ownership tests: two owners, each store returns only the current owner's rows; query without context throws
-- [ ] 3.2 Implement `MarshalDbContext`, value converters, snake_case naming and global owner filters (Secret: owner or null)
-- [ ] 3.3 Add entities `User`, `UserPreferences`, `ApiToken`, `Session`, `Run`, `RunStep`, `PendingAction`, `AuditEvent`, `Secret` with the indexes from `erd.puml` (incl. the two partial unique indexes on `Secret`)
-- [ ] 3.4 Write test: pending migration triggers a timestamped DB copy before migrating
-- [ ] 3.5 Implement startup migration with backup and instance-owner seeding; create the initial migration
-- [ ] 3.6 Update `docs/diagrams/erd.puml` if any column differs from the plan; re-render SVG
+- [x] 3.1 Write ownership tests: two owners, each store returns only the current owner's rows; query without context throws
+- [x] 3.2 Implement `MarshalDbContext`, value converters, snake_case naming and global owner filters (Secret: owner or null)
+- [x] 3.3 Add entities `User`, `UserPreferences`, `ApiToken`, `Session`, `Run`, `RunStep`, `PendingAction`, `AuditEvent`, `Secret` with the indexes from `erd.puml` (incl. the two partial unique indexes on `Secret`)
+- [x] 3.4 Write test: pending migration triggers a timestamped DB copy before migrating
+- [x] 3.5 Implement startup migration with backup and instance-owner seeding; create the initial migration
+- [x] 3.6 Update `docs/diagrams/erd.puml` if any column differs from the plan; re-render SVG
 
 ## 4. Configuration and secrets
 

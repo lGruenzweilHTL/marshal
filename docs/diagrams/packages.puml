@@ -90,7 +90,7 @@ package "src/ (.NET 10)" {
 
   package "Marshal.Data" as Data {
     component "DbContext + migrations,\nowner-scoped query filters" as DataParts
-    component "EF Core Sqlite\n+ sqlite-vec" <<nuget>>
+    component "EF Core Sqlite\n+ NamingConventions\n+ sqlite-vec" <<nuget>>
   }
 
   package "Marshal.Abstractions" as Abstractions {

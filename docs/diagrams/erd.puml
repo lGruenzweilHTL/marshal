@@ -5,7 +5,9 @@
 ' Update it in the same change that adds, removes or renames an entity,
 ' column or relationship, and re-render the SVG (see docs/diagrams/README.md).
 '
-' Status: PLANNED — derived from docs/brainstorm-notes.md, no code yet.
+' Status: PARTLY BUILT — User, UserPreferences, ApiToken, Session, Run, RunStep,
+' PendingAction, AuditEvent and Secret exist in Marshal.Data (core-agent);
+' the other entities are still planned (docs/brainstorm-notes.md).
 
 !pragma layout smetana
 hide circle
@@ -25,7 +27,7 @@ package "Identity & Access" {
   entity User <<Identity>> {
     * id : OwnerId <<PK, Identity Guid key>>
     --
-    * user_name : string
+    * user_name : string  <<unique>>
     * display_name : string
     password_hash : string  <<local only>>
     * security_stamp : string
@@ -63,7 +65,7 @@ package "Identity & Access" {
     --
     * owner_id : OwnerId <<FK>>
     * name : string
-    * token_hash : string
+    * token_hash : string  <<unique, SHA-256 hex>>
     * scopes : string[]
     * kind : standard | executor_callback
     task_id : TaskId <<FK>>
@@ -115,6 +117,7 @@ package "Conversations & Runs" {
     * started_at : DateTimeOffset
     ended_at : DateTimeOffset
     * outcome : ok | error | backgrounded | cancelled
+    outcome_reason : string  <<e.g. latency_cap>>
     * tainted : bool  <<untrusted content entered context>>
     taint_sources : json  <<mail | rss | notes | web | mcp:<id>, first tainting step>>
     * cost : decimal
@@ -130,6 +133,7 @@ package "Conversations & Runs" {
     model : string
     tier : string
     tokens_in / tokens_out / tokens_cached : int
+    first_token_ms : int
     tool : string
     risk_tier : string
     guard_decision : string
@@ -151,6 +155,8 @@ package "Conversations & Runs" {
     * summary : string
     * reasons : json  <<[{code: rule | unresolved_target | taint | quiet_hours_override, detail}]>>
     * nonce : string
+    * language : de | en  <<language of the reason sentences>>
+    * created_at : DateTimeOffset
     * expires_at : DateTimeOffset  <<~60 s conversation, 10 min approval queue>>
     * status : pending | approved | rejected | dropped | expired | superseded
     decided_by : keyword | judge | ui | push | system
