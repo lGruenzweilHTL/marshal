@@ -151,4 +151,14 @@ fieldset p {
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto;
   gap: 0.5rem;
 }
+
+@media (max-width: 480px) {
+  .window {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  }
+
+  .window select {
+    grid-column: 1 / -1;
+  }
+}
 </style>
