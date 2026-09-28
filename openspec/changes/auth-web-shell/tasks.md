@@ -52,8 +52,8 @@
 - [x] 8.1 Scaffold `web/` (Vue 3, Vite, TypeScript strict, Vue Router, Vitest); add OpenAPI export mode to the API and `gen:api` script
 - [x] 8.2 Write component tests for login page and app shell (provider buttons, logged-in layout, logout)
 - [x] 8.3 Implement login page, layout, navigation, responsive shell
-- [ ] 8.4 Write chat component tests: streaming deltas, status events, new conversation, confirmation question with reason, external image rendered as link
-- [ ] 8.5 Implement chat view with safe markdown rendering
+- [x] 8.4 Write chat component tests: streaming deltas, status events, new conversation, confirmation question with reason, external image rendered as link
+- [x] 8.5 Implement chat view with safe markdown rendering
 - [ ] 8.6 Write tests for runs list / detail and cost views
 - [ ] 8.7 Implement runs, cost, dashboard (recent runs, today's cost, health) and system views
 - [ ] 8.8 Write tests for security (tokens), secrets and preferences views

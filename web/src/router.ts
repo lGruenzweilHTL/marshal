@@ -3,6 +3,7 @@ import LocalLoginPage from './auth/LocalLoginPage.vue'
 import LoginPage from './auth/LoginPage.vue'
 import SetupPage from './auth/SetupPage.vue'
 import AppShell from './layout/AppShell.vue'
+import ChatView from './chat/ChatView.vue'
 import PlaceholderView from './layout/PlaceholderView.vue'
 import type { UserSession } from './session'
 
@@ -24,7 +25,7 @@ const routes: RouteRecordRaw[] = [
     component: AppShell,
     children: [
       { path: '', name: 'dashboard', component: PlaceholderView, meta: { title: 'Dashboard' } },
-      { path: 'chat', name: 'chat', component: PlaceholderView, meta: { title: 'Chat' } },
+      { path: 'chat', name: 'chat', component: ChatView, meta: { title: 'Chat' } },
       { path: 'runs', name: 'runs', component: PlaceholderView, meta: { title: 'Runs' } },
       { path: 'runs/:id', name: 'run', component: PlaceholderView, meta: { title: 'Run' } },
       { path: 'cost', name: 'cost', component: PlaceholderView, meta: { title: 'Cost' } },
