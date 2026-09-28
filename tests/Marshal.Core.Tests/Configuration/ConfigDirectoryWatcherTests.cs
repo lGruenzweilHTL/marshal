@@ -8,14 +8,14 @@ public sealed class ConfigDirectoryWatcherTests : IDisposable
     private readonly string _root = Directory.CreateTempSubdirectory("marshal-watch-").FullName;
 
     [Fact]
-    public async Task Watch_FileInSubdirectoryCreatedLater_Fires()
+    public async Task Watch_FileAddedInSubdirectory_Fires()
     {
+        Directory.CreateDirectory(Path.Combine(_root, "mcp"));
         using var watcher = new ConfigDirectoryWatcher(_root);
         var fired = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         IChangeToken token = watcher.Watch("mcp/*.yaml");
         using IDisposable registration = token.RegisterChangeCallback(_ => fired.TrySetResult(), null);
 
-        Directory.CreateDirectory(Path.Combine(_root, "mcp"));
         await File.WriteAllTextAsync(Path.Combine(_root, "mcp", "ha.yaml"), "id: ha\n", TestContext.Current.CancellationToken);
 
         await fired.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);

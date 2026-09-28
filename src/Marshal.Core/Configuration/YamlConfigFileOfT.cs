@@ -170,11 +170,12 @@ public sealed partial class YamlConfigFile<T> : IOptionsMonitor<T>, IDisposable
         _watch = token.RegisterChangeCallback(_ => OnFileChanged(), null);
     }
 
+    // Watch again before reading, so a change made while reloading triggers another reload instead of being lost.
     private void OnFileChanged()
     {
         _watch?.Dispose();
-        Reload();
         Watch();
+        Reload();
     }
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Reload of {File} failed, keeping the previous configuration: {Error}")]

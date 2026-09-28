@@ -290,11 +290,12 @@ public sealed partial class YamlMcpServerCatalog : IMcpServerCatalog, IDisposabl
         _watch = token.RegisterChangeCallback(_ => OnDirectoryChanged(), null);
     }
 
+    // Watch again before reading, so a change made while reloading triggers another reload instead of being lost.
     private void OnDirectoryChanged()
     {
         _watch?.Dispose();
-        Reload();
         Watch();
+        Reload();
     }
 
     [GeneratedRegex("^[a-z][a-z0-9]*$", RegexOptions.CultureInvariant)]
