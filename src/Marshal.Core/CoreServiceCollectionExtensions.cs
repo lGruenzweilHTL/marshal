@@ -84,7 +84,10 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ConversationService>();
         services.AddHostedService<IdleSessionCloser>();
 
-        services.AddSingleton<ISecretSource>(provider => new EnvironmentFileSecretSource(environment, provider.GetRequiredService<IOptions<PathsOptions>>().Value.Secrets));
+        services.AddSingleton(provider => new EnvironmentFileSecretSource(environment, provider.GetRequiredService<IOptions<PathsOptions>>().Value.Secrets));
+        services.AddSingleton<ISecretSource>(provider => provider.GetRequiredService<EnvironmentFileSecretSource>());
+        services.AddSingleton<ISecretCatalog>(provider => provider.GetRequiredService<EnvironmentFileSecretSource>());
+        services.AddSingleton<ISecretReferenceSource>(new ConfigurationSecretReferences(configuration));
         services.AddSingleton<ISecretStore, SecretStore>();
         services.AddSingleton<SecretBinder>();
         services.AddSingleton<SecretHealth>();

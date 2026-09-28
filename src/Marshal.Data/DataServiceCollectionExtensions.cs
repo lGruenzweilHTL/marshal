@@ -38,6 +38,8 @@ public static class DataServiceCollectionExtensions
         services.AddSingleton<IApiTokenService, ApiTokenService>();
         services.AddSingleton<DatabaseSecretSource>();
         services.AddSingleton<ISecretSource>(provider => provider.GetRequiredService<DatabaseSecretSource>());
+        services.AddSingleton<ISecretCatalog>(provider => provider.GetRequiredService<DatabaseSecretSource>());
+        services.AddSingleton<ISecretWriter>(provider => provider.GetRequiredService<DatabaseSecretSource>());
         return services;
     }
 }

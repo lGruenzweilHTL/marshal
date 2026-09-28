@@ -17,6 +17,60 @@ public sealed class DatabaseSecretSourceTests
     private readonly FakeTimeProvider _time = new();
 
     [Fact]
+    public async Task List_InstanceAndOwnRowsWithLastUpdate_NotOtherOwners()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        DatabaseSecretSource source = Source(database);
+        using (database.Accessor.Use(TestExecutionContext.Text(OwnerA)))
+        {
+            await source.SetAsync(_freshRss, "a", OwnerA, TestContext.Current.CancellationToken);
+            await source.SetAsync(SecretName.Create("shared").Value, "i", null, TestContext.Current.CancellationToken);
+        }
+
+        using (database.Accessor.Use(TestExecutionContext.Text(OwnerB)))
+            await source.SetAsync(SecretName.Create("bobs").Value, "b", OwnerB, TestContext.Current.CancellationToken);
+
+        using IDisposable scope = database.Accessor.Use(TestExecutionContext.Text(OwnerA));
+        IReadOnlyList<SecretListing> listed = await source.ListAsync(OwnerA, TestContext.Current.CancellationToken);
+
+        Assert.Equal([("freshrss", (Abstractions.Identity.OwnerId?)OwnerA), ("shared", null)], listed.Select(entry => (entry.Name.Value, entry.Owner)));
+        Assert.All(listed, entry => Assert.Equal((SecretOrigin.Database, _time.GetUtcNow()), (entry.Origin, entry.UpdatedAt)));
+    }
+
+    [Fact]
+    public async Task Delete_OwnRow_RemovesItAndMissingIsNotFound()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        DatabaseSecretSource source = Source(database);
+        using IDisposable scope = database.Accessor.Use(TestExecutionContext.Text(OwnerA));
+        await source.SetAsync(_freshRss, "a", OwnerA, TestContext.Current.CancellationToken);
+
+        Abstractions.Result deleted = await source.DeleteAsync(_freshRss, OwnerA, TestContext.Current.CancellationToken);
+        Abstractions.Result again = await source.DeleteAsync(_freshRss, OwnerA, TestContext.Current.CancellationToken);
+
+        Assert.True(deleted.IsSuccess);
+        Assert.Equal("secret.not_found", again.Error.Code);
+        Assert.Null(await source.TryGetAsync(_freshRss, OwnerA, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task Delete_AnotherOwnersRow_IsNotFound()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        DatabaseSecretSource source = Source(database);
+        using (database.Accessor.Use(TestExecutionContext.Text(OwnerA)))
+            await source.SetAsync(_freshRss, "a", OwnerA, TestContext.Current.CancellationToken);
+
+        Abstractions.Result deleted;
+        using (database.Accessor.Use(TestExecutionContext.Text(OwnerB)))
+            deleted = await source.DeleteAsync(_freshRss, OwnerB, TestContext.Current.CancellationToken);
+
+        Assert.Equal("secret.not_found", deleted.Error.Code);
+        using IDisposable scope = database.Accessor.Use(TestExecutionContext.Text(OwnerA));
+        Assert.Equal("a", await source.TryGetAsync(_freshRss, OwnerA, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public async Task Set_StoresCiphertextNotPlaintext()
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();

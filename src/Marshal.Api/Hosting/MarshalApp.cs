@@ -62,6 +62,7 @@ public static class MarshalApp
         v1.MapLocalAuthEndpoints();
         v1.MapMeEndpoints();
         v1.MapTokenEndpoints();
+        v1.MapSecretEndpoints();
         v1.MapConversationEndpoints();
         return app;
     }
