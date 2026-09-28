@@ -108,3 +108,25 @@ lock, floors / areas / aliases, `mcp_server` with the Assist API). The recorded 
   without a registered timer handler (anything that is not an Assist satellite) answers `response_type: error`,
   "Device does not support timers".
 - **Instance time zone.** `get_config` / `GET /api/config` return `time_zone` (IANA id).
+
+### MCP client (tasks 2.1–2.4)
+
+- **SDK.** `ModelContextProtocol.Core` 2.2 (client and server types; the full `ModelContextProtocol` package only
+  adds hosting helpers). Before `initialize` the 2.2 client sends a `server/discover` probe (protocol
+  `2026-07-28`); HA 2026.9 answers it with JSON-RPC error `-32602` and the client falls back to `initialize` with
+  `2025-06-18`. The probe is recorded in `mcp-session.json`; a smoke run against the test instance listed all 29
+  HA tools and called `homeassistant__GetLiveContext`.
+- **Server files.** `envSecrets` is a list of `{variable, secret}` pairs rather than a map, because the config
+  secret scanner flags map keys such as `SEARCH_API_KEY`. The `ha:` connection details stay in `marshal.yaml`;
+  `/config/mcp/ha.yaml` only points at `/api/mcp` with the same token secret.
+- **Connection loop.** Each `McpToolSource` runs a background loop: resolve secrets, connect, list tools, then
+  wait until the client completes (stdio process exit, closed stream) or a call fails with a transport error
+  (the only signal for HA's stateless HTTP endpoint). It then reconnects with exponential backoff (1 s doubling to
+  1 min). While a server is down `GetToolsAsync` throws, so the registry leaves its tools out and lists the reason
+  in its errors. `tools/list_changed` re-lists in the background. Startup waits for the first attempt only.
+- **Descriptors.** MCP tools default to `confirm` (fail-closed, also enforced by the risk engine for every
+  non-built-in tool); `untrusted: true` sets `untrustedOutput` with taint kind `mcp:<server id>`. Text content is
+  passed verbatim, other content is summarized (`[image: image/png]`, `[resource: name uri]`); `isError` results
+  and JSON-RPC errors are failed tool results, transport failures are `mcp.unavailable`.
+- **Stdio children** do not inherit Marshal's environment (it may hold `MARSHAL__…` secrets): they get `PATH`,
+  `HOME`, `LANG`, `LC_ALL`, `TZ`, `TMPDIR` and their configured `envSecrets` only.

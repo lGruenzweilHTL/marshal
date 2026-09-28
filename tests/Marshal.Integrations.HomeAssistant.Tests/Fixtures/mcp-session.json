@@ -3,6 +3,35 @@
   "request": {
    "jsonrpc": "2.0",
    "id": 1,
+   "method": "server/discover",
+   "params": {
+    "_meta": {
+     "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+     "io.modelcontextprotocol/clientInfo": {
+      "name": "marshal",
+      "version": "0.1.0"
+     },
+     "io.modelcontextprotocol/clientCapabilities": {}
+    }
+   }
+  },
+  "note": "discovery probe of MCP C# SDK 2.2; HA 2026.9 does not know server/discover",
+  "status": 200,
+  "contentType": "application/json; charset=utf-8",
+  "response": {
+   "jsonrpc": "2.0",
+   "id": 1,
+   "error": {
+    "code": -32602,
+    "message": "Invalid request parameters",
+    "data": ""
+   }
+  }
+ },
+ {
+  "request": {
+   "jsonrpc": "2.0",
+   "id": 1,
    "method": "initialize",
    "params": {
     "protocolVersion": "2025-06-18",

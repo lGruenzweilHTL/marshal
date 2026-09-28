@@ -7,8 +7,8 @@
 
 - [x] 2.1 Write catalog tests: YAML parsing, id / `toolPrefix` validation, `authTokenSecret` via `ISecretStore`, reserved namespace rejection, hot reload
 - [x] 2.2 Implement `YamlMcpServerCatalog`
-- [ ] 2.3 Write `McpToolSource` tests with an in-process fake MCP server: discovery, flat namespace, sanitizing, collision rejection, `list_changed`, disconnect hides tools, reconnect restores, untrusted flag taints
-- [ ] 2.4 Implement `McpToolSource` (stdio + streamable HTTP)
+- [x] 2.3 Write `McpToolSource` tests with an in-process fake MCP server: discovery, flat namespace, sanitizing, collision rejection, `list_changed`, disconnect hides tools, reconnect restores, untrusted flag taints
+- [x] 2.4 Implement `McpToolSource` (stdio + streamable HTTP)
 - [ ] 2.5 Write registry tests: source register / unregister as a unit, unmatched external tool defaults to confirm
 - [ ] 2.6 Extend `ToolRegistry` and risk engine defaults
 - [ ] 2.7 Add MCP server status to `/health`

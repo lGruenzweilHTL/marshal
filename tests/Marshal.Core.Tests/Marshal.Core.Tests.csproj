@@ -19,4 +19,9 @@
     <ProjectReference Include="..\..\src\Marshal.Core\Marshal.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Recorded Home Assistant MCP traffic, replayed by the streamable HTTP transport tests. -->
+    <None Include="..\Marshal.Integrations.HomeAssistant.Tests\Fixtures\mcp-session.json" Link="Fixtures\mcp-session.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
