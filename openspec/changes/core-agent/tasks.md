@@ -45,15 +45,15 @@
 
 ## 6. Tool registry and visibility
 
-- [ ] 6.1 Write registry tests: id ↔ name mapping, namespace pattern, reserved namespaces, sanitizing, 64-char truncation with hash, collision rejects the later source
-- [ ] 6.2 Implement `ITool`, tool descriptors (`defaultTier`, `untrustedOutput`, `persists`, `sensitive`), `IToolSource`, `ToolRegistry`
-- [ ] 6.3 Write visibility tests: forbidden hidden, `denyTools` hidden, confirm-only tool hidden under `denyConfirm`, arg-aware tool visible, tool-specific visibility conditions
-- [ ] 6.4 Implement `ToolVisibilityFilter`
+- [x] 6.1 Write registry tests: id ↔ name mapping, namespace pattern, reserved namespaces, sanitizing, 64-char truncation with hash, collision rejects the later source
+- [x] 6.2 Implement `ITool`, tool descriptors (`defaultTier`, `untrustedOutput`, `persists`, `sensitive`), `IToolSource`, `ToolRegistry`
+- [x] 6.3 Write visibility tests: forbidden hidden, `denyTools` hidden, confirm-only tool hidden under `denyConfirm`, arg-aware tool visible, tool-specific visibility conditions
+- [x] 6.4 Implement `ToolVisibilityFilter`
 
 ## 7. Risk engine and guard
 
-- [ ] 7.1 Write risk rule tests: glob matching, first match wins, target conditions evaluated per resolved target with max tier, unresolvable / empty / no resolver → confirm with `unresolved_target`
-- [ ] 7.2 Implement `RuleBasedRiskEngine` and `IRiskTargetResolver` seam
+- [x] 7.1 Write risk rule tests: glob matching, first match wins, target conditions evaluated per resolved target with max tier, unresolvable / empty / no resolver → confirm with `unresolved_target`
+- [x] 7.2 Implement `RuleBasedRiskEngine` and `IRiskTargetResolver` seam
 - [ ] 7.3 Write guard tests: satellite `denyConfirm` denial on arg-aware call, taint escalation of `persists` tools, tiers only raised, reasons collected and localized, `taint` spoken first
 - [ ] 7.4 Implement `Guard` pipeline and reason localization (de / en)
 - [ ] 7.5 Write pending-action tests: frozen before question, one per session, superseded, expiry, frozen args unchanged on execute

@@ -1,0 +1,46 @@
+using Marshal.Abstractions.Execution;
+using Marshal.Abstractions.Guard;
+using Marshal.Abstractions.Satellites;
+using Marshal.Core.Guard;
+using Microsoft.Extensions.Options;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
+
+namespace Marshal.Core.Tests;
+
+/// <summary>
+/// Shared helpers for guard, visibility and loop tests.
+/// </summary>
+internal static class GuardTestKit
+{
+    public static RiskRulesFile ParseRules(string yaml) =>
+        new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build().Deserialize<RiskRulesFile>(yaml);
+
+    public static RuleBasedRiskEngine Engine(string yaml, params IRiskTargetResolver[] resolvers) =>
+        new(new StaticMonitor<RiskRulesFile>(ParseRules(yaml)), resolvers);
+}
+
+/// <summary>
+/// Options monitor with a settable value.
+/// </summary>
+internal sealed class StaticMonitor<T>(T value) : IOptionsMonitor<T>
+{
+    public T Value { get; set; } = value;
+
+    public T CurrentValue => Value;
+
+    public T Get(string? name) => Value;
+
+    public IDisposable? OnChange(Action<T, string?> listener) => null;
+}
+
+/// <summary>
+/// One configured satellite; everything else gets defaults.
+/// </summary>
+internal sealed class FixedSatellites(string satelliteId, SatelliteProfile profile) : ISatelliteContextProvider
+{
+    public SatelliteProfile GetProfile(string? id) => id == satelliteId ? profile : SatelliteProfile.Default;
+
+    public Task<SatelliteContext> GetContextAsync(MarshalExecutionContext context, CancellationToken cancellationToken) =>
+        Task.FromResult(new SatelliteContext(context.SatelliteId, GetProfile(context.SatelliteId), context.AreaId, null));
+}
