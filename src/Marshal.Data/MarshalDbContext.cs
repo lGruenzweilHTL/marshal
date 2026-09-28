@@ -119,7 +119,8 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         modelBuilder.Entity<Session>(session =>
         {
             session.HasKey(entity => entity.Id);
-            session.HasIndex(entity => new { entity.ApiTokenId, entity.ExternalId }).IsUnique();
+            // Unique among open sessions only: after an idle close the same client id starts a new session.
+            session.HasIndex(entity => new { entity.ApiTokenId, entity.ExternalId }).IsUnique().HasFilter("closed_at IS NULL");
             session.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
             session.HasOne<ApiToken>().WithMany().HasForeignKey(entity => entity.ApiTokenId);
             OwnerFilter(session);

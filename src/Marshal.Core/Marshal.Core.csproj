@@ -10,6 +10,7 @@
     <PackageReference Include="YamlDotNet" />
     <PackageReference Include="Microsoft.Extensions.FileProviders.Physical" />
     <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 

@@ -379,7 +379,8 @@ namespace Marshal.Data.Migrations
 
                     b.HasIndex("ApiTokenId", "ExternalId")
                         .IsUnique()
-                        .HasDatabaseName("ix_sessions_api_token_id_external_id");
+                        .HasDatabaseName("ix_sessions_api_token_id_external_id")
+                        .HasFilter("closed_at IS NULL");
 
                     b.ToTable("sessions", (string)null);
                 });

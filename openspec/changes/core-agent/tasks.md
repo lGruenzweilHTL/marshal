@@ -81,8 +81,8 @@
 
 ## 10. Sessions and identity
 
-- [ ] 10.1 Write session tests: lookup by `(api_token_id, external_id)`, same id with different token = different session, owner pinned, per-turn data on run, idle close drops pending action
-- [ ] 10.2 Implement `EfSessionStore`, `InstanceOwnerIdentityResolver`, `AsyncLocalExecutionContextAccessor`, idle-close hosted service
+- [x] 10.1 Write session tests: lookup by `(api_token_id, external_id)`, same id with different token = different session, owner pinned, per-turn data on run, idle close drops pending action
+- [x] 10.2 Implement `EfSessionStore`, `InstanceOwnerIdentityResolver`, `AsyncLocalExecutionContextAccessor`, idle-close hosted service
 
 ## 11. Tokens
 
