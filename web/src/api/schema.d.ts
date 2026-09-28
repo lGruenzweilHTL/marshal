@@ -425,7 +425,8 @@ export interface components {
         AntiforgeryToken: {
             token: string;
         };
-        ApiTokenId: unknown;
+        /** Format: uuid */
+        ApiTokenId: string;
         /** @enum {unknown} */
         ApiTokenKind: "standard" | "executorCallback";
         /** @description A machine token without its secret. */
@@ -589,7 +590,8 @@ export interface components {
             person: null | string;
             push: string[];
         };
-        OwnerId: unknown;
+        /** Format: uuid */
+        OwnerId: string;
         /** @description A `PublicKeyCredential` serialized with `toJSON()`. */
         PasskeyCredentialRequest: {
             credentialJson: string;
@@ -618,7 +620,8 @@ export interface components {
             taintSources: components["schemas"]["TaintSource"][];
             steps: components["schemas"]["RunStepDetail"][];
         };
-        RunId: unknown;
+        /** Format: uuid */
+        RunId: string;
         /** @enum {unknown} */
         RunOutcome: "ok" | "error" | "backgrounded" | "cancelled";
         RunStepDetail: {
@@ -696,7 +699,8 @@ export interface components {
         SecretValueRequest: {
             value: string;
         };
-        SessionId: unknown;
+        /** Format: uuid */
+        SessionId: string;
         /** @enum {unknown} */
         SessionSource: "voice" | "web" | "task" | "api";
         SseItemOfLiveEventMessage: {

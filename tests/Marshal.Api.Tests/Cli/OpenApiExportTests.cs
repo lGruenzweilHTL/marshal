@@ -50,6 +50,21 @@ public sealed class OpenApiExportTests : IDisposable
         Assert.Null(cost["pattern"]);
     }
 
+    [Theory]
+    [InlineData("RunId")]
+    [InlineData("SessionId")]
+    [InlineData("OwnerId")]
+    public async Task Document_DescribesGuidIdsAsUuidStrings(string schema)
+    {
+        await using var factory = new MarshalApiFactory();
+
+        JsonNode document = (await factory.CreateClient().GetFromJsonAsync<JsonNode>("/openapi/v1.json", Ct))!;
+
+        JsonNode id = document["components"]!["schemas"]![schema]!;
+        Assert.Equal("string", id["type"]!.GetValue<string>());
+        Assert.Equal("uuid", id["format"]!.GetValue<string>());
+    }
+
     [Fact]
     public async Task CommittedSpaDocument_MatchesTheExport()
     {

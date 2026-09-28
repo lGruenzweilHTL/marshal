@@ -800,7 +800,10 @@
         },
         "description": "Value for the \u0060X-XSRF-TOKEN\u0060 header."
       },
-      "ApiTokenId": {},
+      "ApiTokenId": {
+        "type": "string",
+        "format": "uuid"
+      },
       "ApiTokenKind": {
         "enum": [
           "standard",
@@ -1295,7 +1298,10 @@
           }
         }
       },
-      "OwnerId": {},
+      "OwnerId": {
+        "type": "string",
+        "format": "uuid"
+      },
       "PasskeyCredentialRequest": {
         "required": [
           "credentialJson"
@@ -1403,7 +1409,10 @@
           }
         }
       },
-      "RunId": {},
+      "RunId": {
+        "type": "string",
+        "format": "uuid"
+      },
       "RunOutcome": {
         "enum": [
           "ok",
@@ -1731,7 +1740,10 @@
         },
         "description": "A secret value to store. It is never returned."
       },
-      "SessionId": {},
+      "SessionId": {
+        "type": "string",
+        "format": "uuid"
+      },
       "SessionSource": {
         "enum": [
           "voice",

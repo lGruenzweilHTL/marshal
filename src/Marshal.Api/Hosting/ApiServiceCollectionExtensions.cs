@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Asp.Versioning;
+using Marshal.Abstractions;
 using Marshal.Api.Auth;
 using Marshal.Api.Health;
 using Marshal.Api.Models;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.DataProtection.Repositories;
 using Microsoft.Extensions.Options;
+using Microsoft.OpenApi;
 using OpenTelemetry;
 
 namespace Marshal.Api.Hosting;
@@ -50,11 +52,23 @@ public static class ApiServiceCollectionExtensions
                 options.SubstituteApiVersionInUrl = true;
             })
             // A fixed title: the default is the host assembly name, which differs between the app and test hosts.
-            .AddOpenApi(options => options.Document.AddDocumentTransformer((document, context, _) =>
-            {
-                document.Info.Title = $"Marshal API | {context.DocumentName}";
-                return Task.CompletedTask;
-            }));
+            .AddOpenApi(options => options.Document
+                .AddDocumentTransformer((document, context, _) =>
+                {
+                    document.Info.Title = $"Marshal API | {context.DocumentName}";
+                    return Task.CompletedTask;
+                })
+                .AddSchemaTransformer((schema, context, _) =>
+                {
+                    // Typed ids serialize as their Guid (GuidIdJsonConverter); the generator cannot see through the converter.
+                    if (IsGuidId(context.JsonTypeInfo.Type))
+                    {
+                        schema.Type = JsonSchemaType.String;
+                        schema.Format = "uuid";
+                    }
+
+                    return Task.CompletedTask;
+                }));
 
         services.AddMarshalAuth(configuration);
         services.AddAuthorization(options => options.AddScopePolicies());
@@ -70,4 +84,7 @@ public static class ApiServiceCollectionExtensions
 
         return services;
     }
+
+    private static bool IsGuidId(Type type) =>
+        (Nullable.GetUnderlyingType(type) ?? type).GetInterfaces().Any(candidate => candidate.IsGenericType && candidate.GetGenericTypeDefinition() == typeof(IGuidId<>));
 }

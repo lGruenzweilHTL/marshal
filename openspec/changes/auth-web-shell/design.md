@@ -141,3 +141,9 @@ One EF migration converting `User` to Identity and adding Identity tables, `Auth
 - **JSON numbers are strict:** `JsonSerializerOptions.Web` accepts numbers as strings, which made the OpenAPI
   document describe every number as `number | string`. The HTTP JSON options use `JsonNumberHandling.Strict`, so
   the generated SPA types are plain `number`. Only request bodies with quoted numbers are affected (now 400).
+- **Typed ids in OpenAPI:** ids like `RunId` serialize as their Guid through `GuidIdJsonConverter`, which the
+  OpenAPI generator cannot see through (it emitted empty schemas, `unknown` in TypeScript). A schema transformer
+  describes every `IGuidId<T>` as `string` / `uuid`.
+- **Live events in the SPA:** `web/src/live/events.ts` holds the hand-written payload types (`LiveEventMap`);
+  `createLiveEvents` shares one `EventSource` per tab for the union of subscribed topics and reopens it when the set
+  changes. Runs list and dashboard widgets reload on `run.completed`.
