@@ -1,0 +1,15 @@
+namespace Marshal.Core.Satellites;
+
+/// <summary>
+/// One satellite in <c>satellites.yaml</c>.
+/// </summary>
+public sealed class SatelliteEntry
+{
+    public string Verbosity { get; set; } = "normal";
+
+    public string? Notes { get; set; }
+
+    public List<string> DenyTools { get; set; } = [];
+
+    public List<string> DenyConfirm { get; set; } = [];
+}

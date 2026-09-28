@@ -67,10 +67,10 @@
 
 ## 8. Context builder
 
-- [ ] 8.1 Write tests: contributor order, user profile from owner, voice vs text output rules, reply language, time in owner's time zone, untrusted-data wrapping
-- [ ] 8.2 Implement `ContextBuilder` and base contributors
-- [ ] 8.3 Write satellite tests: profile notes, defaults for unknown satellites, area name in context
-- [ ] 8.4 Implement `YamlSatelliteContextProvider`
+- [x] 8.1 Write tests: contributor order, user profile from owner, voice vs text output rules, reply language, time in owner's time zone, untrusted-data wrapping
+- [x] 8.2 Implement `ContextBuilder` and base contributors
+- [x] 8.3 Write satellite tests: profile notes, defaults for unknown satellites, area name in context
+- [x] 8.4 Implement `YamlSatelliteContextProvider`
 
 ## 9. Agent loop
 
