@@ -8,7 +8,7 @@ namespace Marshal.Core.Tools;
 
 /// <summary>
 /// The model can't use it → the model can't see it. Hides tools outside the run template's allowlist, forbidden tools, tools denied for the satellite,
-/// confirm-only tools on satellites that deny confirmation (taint escalation included), and tools whose own
+/// confirm-only tools inside subagents and on satellites that deny confirmation (taint escalation included), and tools whose own
 /// visibility condition fails. Tools whose tier depends on arguments stay visible; the guard decides per call.
 /// </summary>
 public sealed class ToolVisibilityFilter(IToolRegistry registry, IRiskEngine riskEngine, ISatelliteContextProvider satellites, ITemplateCatalog templates) : IToolVisibilityFilter
@@ -42,6 +42,10 @@ public sealed class ToolVisibilityFilter(IToolRegistry registry, IRiskEngine ris
         SatelliteProfile profile = satellites.GetProfile(context.SatelliteId);
         if (profile.DenyTools.Any(pattern => ToolGlob.Matches(pattern, tool.Id)))
             return VisibilityVerdict.Hidden("satellite_denied");
+
+        // A subagent has no user to ask, so tools that always need confirmation are useless to it.
+        if (!tiers.Contains(RiskTier.Safe) && context.IsSubagent)
+            return VisibilityVerdict.Hidden("subagent_confirm");
 
         if (!tiers.Contains(RiskTier.Safe) && profile.DenyConfirm.Any(pattern => ToolGlob.Matches(pattern, tool.Id)))
             return VisibilityVerdict.Hidden("satellite_denies_confirm");

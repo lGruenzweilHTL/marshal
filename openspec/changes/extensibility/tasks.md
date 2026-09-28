@@ -38,8 +38,8 @@
 
 - [x] 5.1 Write template catalog tests: frontmatter, allowlist globs, default template, hot reload
 - [x] 5.2 Implement `FileTemplateCatalog` and template-driven visibility / model tier / limits
-- [ ] 5.3 Write `agent.delegate` tests: inline result, same owner and satellite policy, taint flows back, depth limit hides tool, confirm-tier hidden and denied inside subagents
-- [ ] 5.4 Implement `agent.delegate` and child execution contexts; record subagent steps in the parent run
+- [x] 5.3 Write `agent.delegate` tests: inline result, same owner and satellite policy, taint flows back, depth limit hides tool, confirm-tier hidden and denied inside subagents
+- [x] 5.4 Implement `agent.delegate` and child execution contexts; record subagent steps in the parent run
 
 ## 6. Config view
 

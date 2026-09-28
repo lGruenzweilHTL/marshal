@@ -78,6 +78,7 @@ public sealed class AskAdvisorTool(
         {
             await recorder.RecordStepAsync(runId, new RunStepRecord
             {
+                Depth = invocation.Context.Depth,
                 Kind = RunStepKind.ModelCall,
                 Model = model.Value.Key,
                 Tier = "advisor",

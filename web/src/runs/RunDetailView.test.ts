@@ -24,6 +24,7 @@ const detail = {
       content: null,
     }),
     runStep({ sequence: 4, kind: 'reply', content: 'Should I remember that?' }),
+    runStep({ sequence: 5, kind: 'modelCall', model: 'qwen3:8b', tier: 'fast', depth: 1 }),
   ],
 }
 
@@ -62,6 +63,14 @@ describe('RunDetailView', () => {
     const model = wrapper.get('[data-step="2"]').text()
     for (const part of ['qwen3:8b', 'fast', '1200', '80', '1000', '310 ms', '900 ms', '0.0004']) expect(model).toContain(part)
     expect(wrapper.get('[data-step="4"]').text()).toContain('Should I remember that?')
+  })
+
+  it('marks subagent steps with their depth', async () => {
+    const wrapper = await mountDetail()
+
+    expect(wrapper.get('[data-step="5"]').text()).toContain('subagent (depth 1)')
+    expect(wrapper.get('[data-step="5"]').classes()).toContain('subagent')
+    expect(wrapper.get('[data-step="2"]').text()).not.toContain('subagent')
   })
 
   it('reports a missing run', async () => {

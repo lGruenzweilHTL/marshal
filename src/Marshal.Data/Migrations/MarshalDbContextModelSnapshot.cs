@@ -286,6 +286,10 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("REAL")
                         .HasColumnName("cost");
 
+                    b.Property<int>("Depth")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("depth");
+
                     b.Property<int>("DurationMs")
                         .HasColumnType("INTEGER")
                         .HasColumnName("duration_ms");

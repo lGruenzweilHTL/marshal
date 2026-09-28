@@ -59,8 +59,17 @@ watch(
         </ul>
       </div>
       <ol class="steps">
-        <li v-for="step in detail.steps" :key="step.sequence" :data-step="step.sequence" class="step">
-          <h2>{{ step.sequence }}. {{ kindLabels[step.kind] }}<template v-if="step.tool">: {{ step.tool }}</template></h2>
+        <li
+          v-for="step in detail.steps"
+          :key="step.sequence"
+          :data-step="step.sequence"
+          :class="['step', { subagent: step.depth > 0 }]"
+          :style="step.depth > 0 ? { marginInlineStart: `${step.depth * 1.5}rem` } : undefined"
+        >
+          <h2>
+            {{ step.sequence }}. {{ kindLabels[step.kind] }}<template v-if="step.tool">: {{ step.tool }}</template>
+            <span v-if="step.depth > 0" class="depth">subagent (depth {{ step.depth }})</span>
+          </h2>
           <dl v-if="step.kind === 'modelCall'" class="facts">
             <dt>Model</dt>
             <dd>{{ step.model }} ({{ step.tier }})</dd>
@@ -135,6 +144,17 @@ watch(
 .step h2 {
   margin: 0 0 0.5rem;
   font-size: 1rem;
+}
+
+.step.subagent {
+  border-style: dashed;
+}
+
+.depth {
+  margin-inline-start: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: normal;
+  color: var(--muted);
 }
 
 .step h3 {

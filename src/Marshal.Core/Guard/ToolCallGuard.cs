@@ -7,11 +7,16 @@ namespace Marshal.Core.Guard;
 
 /// <summary>
 /// Second line behind the visibility filter. Pipeline: known and offered → still visible → risk rules →
-/// taint escalation → satellite policy → decision. Every stage may only raise the tier.
+/// taint escalation → subagent and satellite policy → decision. Every stage may only raise the tier.
 /// </summary>
 public sealed class ToolCallGuard(IToolRegistry registry, IToolVisibilityFilter visibility, IRiskEngine riskEngine, ISatelliteContextProvider satellites) : IGuard
 {
     private static readonly Error _notFromDevice = new("tool.not_allowed_from_device", "This action is not allowed from this device.", ErrorType.Forbidden);
+
+    private static readonly Error _notInSubagent = new(
+        "subagent.confirm_denied",
+        "Not done: this action needs the user's confirmation, which a subagent cannot ask for. Report the needed action to your caller in your answer.",
+        ErrorType.Forbidden);
 
     public async Task<GuardVerdict> EvaluateAsync(GuardRequest request, CancellationToken cancellationToken)
     {
@@ -51,6 +56,9 @@ public sealed class ToolCallGuard(IToolRegistry registry, IToolVisibilityFilter 
         if (tier == RiskTier.Safe)
             return new GuardVerdict { Outcome = GuardOutcome.Allow, Decision = GuardDecision.Safe, Tool = tool, Tier = tier };
 
+        if (request.Context.IsSubagent)
+            return Deny(tool, tier, _notInSubagent);
+
         SatelliteProfile profile = satellites.GetProfile(request.Context.SatelliteId);
         if (profile.DenyConfirm.Any(pattern => ToolGlob.Matches(pattern, tool.Id)))
             return Deny(tool, tier, _notFromDevice);
@@ -69,6 +77,7 @@ public sealed class ToolCallGuard(IToolRegistry registry, IToolVisibilityFilter 
     {
         "forbidden" => new Error("tool.forbidden", "This action is not allowed.", ErrorType.Forbidden),
         "satellite_denied" or "satellite_denies_confirm" => _notFromDevice,
+        "subagent_confirm" => _notInSubagent,
         _ => new Error("tool.unavailable", "This tool is not available right now.", ErrorType.Forbidden),
     };
 

@@ -47,4 +47,7 @@ public sealed class RunStep : IOwned
     public decimal? Cost { get; init; }
 
     public string? Error { get; init; }
+
+    /// <summary>Delegation depth: 0 for the run's own loop, 1 and more for subagent steps.</summary>
+    public int Depth { get; init; }
 }

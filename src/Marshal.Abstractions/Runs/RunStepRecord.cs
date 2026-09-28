@@ -57,4 +57,7 @@ public sealed record RunStepRecord
 
     /// <summary>Error code and message, if the step failed.</summary>
     public string? Error { get; init; }
+
+    /// <summary>Delegation depth of the loop that made the step: 0 for the run itself, 1 and more inside subagents.</summary>
+    public int Depth { get; init; }
 }

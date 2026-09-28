@@ -76,6 +76,21 @@ public sealed class EfRunQueriesTests
     }
 
     [Fact]
+    public async Task Get_SubagentSteps_KeepTheirDepth()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        DbRunRecorder recorder = Recorder(database);
+        database.Accessor.Current = Text(OwnerA);
+        RunId run = await recorder.StartRunAsync(new RunStart(Text(OwnerA), "turn"), Ct);
+        await recorder.RecordStepAsync(run, new RunStepRecord { Kind = RunStepKind.ModelCall, Model = "m" }, Ct);
+        await recorder.RecordStepAsync(run, new RunStepRecord { Kind = RunStepKind.ModelCall, Model = "m", Depth = 1 }, Ct);
+
+        RunDetail? detail = await Queries(database, OwnerA).GetAsync(run, Ct);
+
+        Assert.Equal([0, 1], detail!.Steps.Select(step => step.Depth));
+    }
+
+    [Fact]
     public async Task Get_AnotherOwnersRun_IsNull()
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();

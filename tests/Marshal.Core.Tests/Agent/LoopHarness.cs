@@ -48,6 +48,9 @@ internal sealed class LoopHarness
 
     public FakeTemplateCatalog Templates { get; } = new();
 
+    /// <summary><c>agent.delegate</c> bound to <see cref="Runner"/>; offered only when passed as a built-in.</summary>
+    public DelegateTool DelegateTool { get; private set; } = null!;
+
     public Channel<TurnEvent> Events { get; } = Channel.CreateUnbounded<TurnEvent>();
 
     /// <summary>Wraps <see cref="Runner"/> and records the requests it receives.</summary>
@@ -61,6 +64,7 @@ internal sealed class LoopHarness
         var harness = new LoopHarness();
         harness.Store = new InMemoryPendingActionStore(harness.Time);
         harness.Router = new SingleModelRouter(harness.Model, withAdvisor ? harness.Advisor : null);
+        harness.DelegateTool = new DelegateTool(() => harness.Runner, harness.Templates, Microsoft.Extensions.Options.Options.Create(harness.Options));
         ITool[] all = [.. tools, .. builtIns?.Invoke(harness) ?? []];
         harness.Source = new FakeToolSource("test", true, all);
         harness.Registry = new ToolRegistry([harness.Source]);
@@ -73,7 +77,7 @@ internal sealed class LoopHarness
             harness.Router,
             harness.Registry,
             harness.Templates,
-            new ContextBuilder([new BasePromptContributor(), new OutputModeContributor(), new TemplatePromptContributor(harness.Templates)]),
+            new ContextBuilder([new BasePromptContributor(), new OutputModeContributor(), new TemplatePromptContributor(harness.Templates), new DelegationIndexContributor(harness.Templates, Microsoft.Extensions.Options.Options.Create(harness.Options))]),
             visibility,
             guard,
             harness.Store,

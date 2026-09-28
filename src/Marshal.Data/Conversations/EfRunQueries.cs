@@ -101,6 +101,6 @@ public sealed class EfRunQueries(IDbContextFactory<MarshalDbContext> contexts) :
         return new RunStepDetail(
             step.Sequence, step.Kind, step.Model, step.Tier, step.TokensIn, step.TokensOut, step.TokensCached, step.FirstTokenMs, step.DurationMs, step.Cost,
             step.Tool, step.RiskTier, step.GuardDecision, payload.Reasons ?? [], payload.Input, payload.Content, payload.Arguments, payload.Reference,
-            payload.ContinueConversation, step.Error);
+            payload.ContinueConversation, step.Error, step.Depth);
     }
 }

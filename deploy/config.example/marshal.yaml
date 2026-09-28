@@ -63,6 +63,7 @@ agent:
   maxSteps: 8
   voiceLatencyCap: "00:00:08"
   textLatencyCap: "00:01:00"
+  maxDelegationDepth: 3     # deepest subagent level for agent.delegate
   advisor:
     maxCallsPerRun: 2
     dailyCostCap: 1.0

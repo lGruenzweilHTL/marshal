@@ -17,6 +17,10 @@ public sealed class AgentOptions : IValidatableObject
     /// <summary>Hard latency cap for text turns.</summary>
     public TimeSpan TextLatencyCap { get; set; } = TimeSpan.FromSeconds(60);
 
+    /// <summary>Deepest subagent level; <c>agent.delegate</c> is hidden at this depth.</summary>
+    [Range(0, 10, ErrorMessage = "agent.maxDelegationDepth must be between {1} and {2}.")]
+    public int MaxDelegationDepth { get; set; } = 3;
+
     public AdvisorOptions Advisor { get; set; } = new();
 
     /// <summary>Validates the nested advisor limits too.</summary>

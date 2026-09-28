@@ -49,6 +49,21 @@ public sealed class ToolVisibilityFilterTests
     }
 
     [Fact]
+    public async Task Visible_Subagent_ConfirmOnlyHiddenArgumentDependentStays()
+    {
+        ToolVisibilityFilter filter = await FilterAsync("""
+            risk:
+              - match: { tool: "ha.*", domain: lock }
+                tier: confirm
+              - match: { tool: "ha.*" }
+                tier: safe
+            """, SatelliteProfile.Default, FakeTool.Confirm("printer.start_print"), FakeTool.Safe("ha.HassTurnOn"), FakeTool.Safe("printer.pause"));
+
+        Assert.Equal(["ha_HassTurnOn", "printer_pause"], await NamesAsync(filter, TestExecutionContext.Text() with { Depth = 1 }));
+        Assert.Equal(["ha_HassTurnOn", "printer_pause", "printer_start_print"], await NamesAsync(filter, TestExecutionContext.Text()));
+    }
+
+    [Fact]
     public async Task Visible_DenyConfirm_ConfirmOnlyToolHidden()
     {
         var profile = new SatelliteProfile("short", null, [], ["printer.*"]);

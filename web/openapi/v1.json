@@ -1442,7 +1442,8 @@
           "arguments",
           "reference",
           "continueConversation",
-          "error"
+          "error",
+          "depth"
         ],
         "type": "object",
         "properties": {
@@ -1571,6 +1572,10 @@
               "null",
               "string"
             ]
+          },
+          "depth": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

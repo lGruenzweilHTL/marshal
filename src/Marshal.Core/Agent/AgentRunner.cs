@@ -42,9 +42,18 @@ public sealed partial class AgentRunner(
 
     public async Task<AgentRunResult> RunAsync(AgentRunRequest request, CancellationToken cancellationToken)
     {
+        // A subagent records its steps in its caller's run, marked with its depth.
+        bool nested = request.Context is { IsSubagent: true, RunId: not null };
         RunId runId;
-        using (executionContext.Use(request.Context))
-            runId = await recorder.StartRunAsync(new RunStart(request.Context, request.Trigger), cancellationToken);
+        if (nested)
+        {
+            runId = request.Context.RunId!.Value;
+        }
+        else
+        {
+            using (executionContext.Use(request.Context))
+                runId = await recorder.StartRunAsync(new RunStart(request.Context, request.Trigger), cancellationToken);
+        }
 
         // The run keeps the tools of its start; sources added or removed meanwhile apply to the next run.
         ToolSnapshot tools = request.Context.Tools ?? await registry.RefreshAsync(cancellationToken);
@@ -68,17 +77,17 @@ public sealed partial class AgentRunner(
         }
 
         bool continueConversation = result.Pending is not null;
-        await recorder.RecordStepAsync(runId, new RunStepRecord { Kind = RunStepKind.Reply, Content = result.Reply, ContinueConversation = continueConversation }, cancellationToken);
-        await recorder.CompleteRunAsync(runId, new RunCompletion(result.Outcome, result.Reason, context.Taint.Sources), cancellationToken);
+        await RecordAsync(new RunStepRecord { Kind = RunStepKind.Reply, Content = result.Reply, ContinueConversation = continueConversation }, cancellationToken);
+        if (!nested)
+            await recorder.CompleteRunAsync(runId, new RunCompletion(result.Outcome, result.Reason, context.Taint.Sources), cancellationToken);
         LogRunCompleted(logger, runId.Value, result.Outcome, result.Reason);
         return new AgentRunResult(runId, result.Reply, continueConversation, result.Outcome, result.Reason, result.Pending);
     }
 
     private async Task<LoopResult> LoopAsync(AgentRunRequest request, MarshalExecutionContext context, CancellationToken ct)
     {
-        RunId runId = context.RunId!.Value;
         string systemPrompt = await contextBuilder.BuildSystemPromptAsync(new ContextRequest(context, request.UserText), ct);
-        await recorder.RecordStepAsync(runId, new RunStepRecord
+        await RecordAsync(new RunStepRecord
         {
             Kind = RunStepKind.Context,
             Content = systemPrompt,
@@ -159,7 +168,7 @@ public sealed partial class AgentRunner(
         }
 
         var response = updates.ToChatResponse();
-        await recorder.RecordStepAsync(CurrentRunId(), new RunStepRecord
+        await RecordAsync(new RunStepRecord
         {
             Kind = RunStepKind.ModelCall,
             Model = model.Key,
@@ -284,7 +293,7 @@ public sealed partial class AgentRunner(
     private async Task<int> RecordToolStepAsync(
         RegisteredTool? tool, string modelName, JsonElement arguments, RiskTier? tier, GuardDecision decision,
         IReadOnlyList<ConfirmationReason> reasons, ToolOutput? output, Error? error, int duration, CancellationToken ct) =>
-        await recorder.RecordStepAsync(CurrentRunId(), new RunStepRecord
+        await RecordAsync(new RunStepRecord
         {
             Kind = RunStepKind.ToolCall,
             Tool = tool?.Id ?? GuessId(modelName),
@@ -307,7 +316,11 @@ public sealed partial class AgentRunner(
         return parsed.IsSuccess ? parsed.Value : null;
     }
 
-    private RunId CurrentRunId() => executionContext.Current?.RunId ?? throw new UnreachableException("The run context is set for the whole loop.");
+    private Task<int> RecordAsync(RunStepRecord step, CancellationToken ct)
+    {
+        MarshalExecutionContext context = executionContext.Current ?? throw new UnreachableException("The run context is set for the whole loop.");
+        return recorder.RecordStepAsync(context.RunId!.Value, step with { Depth = context.Depth }, ct);
+    }
 
     private static string ErrorText(Error error) =>
         JsonSerializer.Serialize(new { error = new { code = error.Code, message = error.Message } });

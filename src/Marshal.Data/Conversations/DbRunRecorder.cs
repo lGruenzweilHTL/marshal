@@ -78,6 +78,7 @@ public sealed class DbRunRecorder(IDbContextFactory<MarshalDbContext> contexts, 
             DurationMs = redacted.DurationMs,
             Cost = redacted.Cost,
             Error = redacted.Error,
+            Depth = redacted.Depth,
         });
         await db.SaveChangesAsync(cancellationToken);
 

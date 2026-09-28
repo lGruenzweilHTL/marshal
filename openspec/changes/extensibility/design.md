@@ -205,3 +205,23 @@ lock, floors / areas / aliases, `mcp_server` with the Assist API). The recorded 
   so the guard denies them as well), the runner takes the model tier and step limit, `agent.ask_advisor` the
   advisor-call limit, the skill index and `agent.load_skill` only the template's skills, and
   `TemplatePromptContributor` (order 50) adds the prompt body.
+
+### Subagents (tasks 5.3, 5.4)
+
+- **Delegable templates** are all templates except `default`; `agent.delegate` is hidden when there are none or
+  the run's depth reached `agent.maxDelegationDepth` (default 3, 0 disables delegation). A template list (names
+  and descriptions) goes into the system prompt under the same conditions, when the run's template allows
+  `agent.delegate`.
+- **Child context.** `context with { Template, Depth + 1, Counters = new }`: owner, satellite, device, session,
+  run id, tool snapshot and the `TaintState` object are shared, so taint marked by the subagent is the caller's
+  taint. The subagent gets only the task text (no conversation history), no events and no latency cap of its own
+  (the caller's cancellation covers it). Its answer returns as the tool result, wrapped as untrusted data when
+  the run is tainted. A subagent stopped by an error (e.g. step limit) returns `agent.delegate_failed`.
+- **Confirm tier.** The visibility filter hides confirm-only tools when `IsSubagent`; the guard denies every call
+  that resolves to confirm (rules or taint escalation) with `subagent.confirm_denied`, before any freeze, so no
+  pending action exists.
+- **Recording.** The subagent loop reuses the caller's run: no run start or completion, every step carries its
+  `depth` (new `run_steps.depth` column, migration `RunStepDepth`). `RunStepDetail` gains `depth` — an additive
+  field of the v1 response, so no new API version; the web run view indents and marks subagent steps.
+- **DI cycle.** The runner depends on the registry, which offers `agent.delegate`; the tool therefore resolves
+  `IAgentRunner` lazily through a factory.

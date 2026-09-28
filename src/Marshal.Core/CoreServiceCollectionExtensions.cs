@@ -108,6 +108,11 @@ public static class CoreServiceCollectionExtensions
             provider.GetRequiredService<ILogger<FileTemplateCatalog>>()));
         services.AddSingleton<ITemplateCatalog>(provider => provider.GetRequiredService<FileTemplateCatalog>());
         services.AddSingleton<IContextContributor, TemplatePromptContributor>();
+        services.AddSingleton<IContextContributor, DelegationIndexContributor>();
+        services.AddSingleton<ITool>(provider => new DelegateTool(
+            () => provider.GetRequiredService<IAgentRunner>(),
+            provider.GetRequiredService<ITemplateCatalog>(),
+            provider.GetRequiredService<IOptions<AgentOptions>>()));
 
         services.AddSingleton<IRiskEngine, RuleBasedRiskEngine>();
         services.AddSingleton<IToolVisibilityFilter, ToolVisibilityFilter>();

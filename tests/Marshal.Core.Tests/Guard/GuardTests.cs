@@ -119,6 +119,31 @@ public sealed class GuardTests
     }
 
     [Fact]
+    public async Task Evaluate_SubagentCallResolvingToConfirm_DeniedTellingToReportToCaller()
+    {
+        ToolCallGuard guard = await GuardAsync(LockRules, SatelliteProfile.Default, [Resolver("lock")], FakeTool.Safe("ha.HassTurnOff"));
+
+        GuardVerdict verdict = await guard.EvaluateAsync(Request("ha_HassTurnOff", context: TestExecutionContext.Text() with { Depth = 1 }), Ct);
+
+        Assert.Equal(GuardOutcome.Deny, verdict.Outcome);
+        Assert.Equal(RiskTier.Confirm, verdict.Tier);
+        Assert.Equal("subagent.confirm_denied", verdict.Denial?.Code);
+        Assert.Contains("caller", verdict.Denial?.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Evaluate_SubagentPersistsInTaintedRun_Denied()
+    {
+        ToolCallGuard guard = await GuardAsync("risk: []", FakeTool.Persisting());
+        MarshalExecutionContext context = TestExecutionContext.Text() with { Depth = 1 };
+        context.Taint.Mark("mail", 1);
+
+        GuardVerdict verdict = await guard.EvaluateAsync(Request("memory_remember", context: context), Ct);
+
+        Assert.Equal("subagent.confirm_denied", verdict.Denial?.Code);
+    }
+
+    [Fact]
     public async Task Evaluate_ConfirmRule_RequiresConfirmationWithRuleReasonNamingAction()
     {
         ToolCallGuard guard = await GuardAsync(LockRules, SatelliteProfile.Default, [Resolver("lock")], FakeTool.Safe("ha.HassTurnOff"));

@@ -652,6 +652,8 @@ export interface components {
             reference: null | string;
             continueConversation: null | boolean;
             error: null | string;
+            /** Format: int32 */
+            depth: number;
         };
         /** @enum {unknown} */
         RunStepKind: "context" | "modelCall" | "toolCall" | "reply";
