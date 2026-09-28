@@ -44,10 +44,12 @@ public static class MarshalApp
             app.UseForwardedHeaders(forwarded);
         }
 
+        app.UseSecurityHeaders();
         string? pathBase = http.PathBase;
         if (!string.IsNullOrWhiteSpace(pathBase))
             app.UsePathBase(pathBase);
 
+        app.UseSpaAssets();
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
@@ -70,6 +72,7 @@ public static class MarshalApp
         v1.MapRunEndpoints();
         v1.MapSystemEndpoints();
         v1.MapConversationEndpoints();
+        app.MapSpaFallback();
         return app;
     }
 

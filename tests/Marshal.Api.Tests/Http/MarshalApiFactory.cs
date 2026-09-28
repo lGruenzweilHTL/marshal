@@ -29,6 +29,7 @@ public sealed class MarshalApiFactory : WebApplicationFactory<Program>
         Root = Directory.CreateTempSubdirectory("marshal-api-").FullName;
         Directory.CreateDirectory(ConfigDirectory);
         Directory.CreateDirectory(SecretsDirectory);
+        Directory.CreateDirectory(WebRoot);
         _settings = new Dictionary<string, string?>
         {
             ["paths:config"] = ConfigDirectory,
@@ -55,6 +56,9 @@ public sealed class MarshalApiFactory : WebApplicationFactory<Program>
     public string ConfigDirectory => Path.Combine(Root, "config");
 
     public string SecretsDirectory => Path.Combine(Root, "secrets");
+
+    /// <summary>The host's web root (the built SPA in production); empty unless a test writes files into it.</summary>
+    public string WebRoot => Path.Combine(Root, "wwwroot");
 
     public FakeChatClient Model { get; } = new();
 
@@ -91,6 +95,7 @@ public sealed class MarshalApiFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseWebRoot(WebRoot);
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(_settings));
         builder.ConfigureServices(services =>
         {
