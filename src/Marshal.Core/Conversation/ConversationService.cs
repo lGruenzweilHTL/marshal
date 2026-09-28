@@ -49,6 +49,7 @@ public sealed class ConversationService(
             Source = turn.Source,
             InputMode = turn.InputMode,
             Language = language,
+            DeviceId = turn.Evidence.DeviceId,
             SatelliteId = turn.Evidence.SatelliteId,
             AreaId = turn.Evidence.AreaId,
             SessionId = session.Value.Id,

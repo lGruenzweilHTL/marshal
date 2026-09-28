@@ -35,6 +35,16 @@ public sealed class ConversationServiceTests
     }
 
     [Fact]
+    public async Task Prepare_DeviceSatelliteAndArea_InExecutionContext()
+    {
+        (ConversationService service, _) = await ServiceAsync();
+
+        PreparedTurn prepared = (await service.PrepareAsync(Turn("hello"), Ct)).Value;
+
+        Assert.Equal(("device", "assist_satellite.kitchen", "kitchen"), (prepared.Context.DeviceId, prepared.Context.SatelliteId, prepared.Context.AreaId));
+    }
+
+    [Fact]
     public async Task Turn_ConfirmTier_ContinueConversationTrue()
     {
         (ConversationService service, LoopHarness harness) = await ServiceAsync();

@@ -22,8 +22,8 @@
 - [x] 3.5 Implement `HaTargetResolver` and ship default `risk.yaml` rules
 - [x] 3.6 Write area context tests: current-area states, mentioned entities, no full dump
 - [x] 3.7 Implement the HA area context contributor
-- [ ] 3.8 Write timer tests: tools hidden without device, hidden when HA MCP timers are usable, start / cancel / status call HA with the turn's device
-- [ ] 3.9 Implement `TimerTools`
+- [x] 3.8 Write timer tests: tools hidden without device, hidden when HA MCP timers are usable, start / cancel / status call HA with the turn's device
+- [x] 3.9 Implement `TimerTools`
 - [ ] 3.10 Write time zone tests (HA value, config override)
 - [ ] 3.11 Implement `HomeAssistantTimeZoneSource`
 

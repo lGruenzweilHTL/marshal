@@ -26,6 +26,9 @@ public sealed record MarshalExecutionContext
     /// <summary>Satellite entity id the turn came from, if any.</summary>
     public string? SatelliteId { get; init; }
 
+    /// <summary>Home Assistant device id the turn came from (e.g. a voice satellite), if any.</summary>
+    public string? DeviceId { get; init; }
+
     /// <summary>Area id the turn came from, if any.</summary>
     public string? AreaId { get; init; }
 

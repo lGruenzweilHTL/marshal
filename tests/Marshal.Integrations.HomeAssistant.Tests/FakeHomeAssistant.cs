@@ -56,7 +56,7 @@ internal sealed class FakeHomeAssistant : IAsyncDisposable
         app.Map("/api/websocket", fake.HandleSocketAsync);
         app.MapGet("/api/config", (HttpContext context) => fake.Rest(context, null, fake.Responses["get_config"]));
         app.MapPost("/api/intent/handle", async (HttpContext context) =>
-            fake.Rest(context, await JsonNode.ParseAsync(context.Request.Body), fake.IntentResponse));
+            await fake.Rest(context, await JsonNode.ParseAsync(context.Request.Body), fake.IntentResponse).ExecuteAsync(context));
         await app.StartAsync();
         return fake;
     }
