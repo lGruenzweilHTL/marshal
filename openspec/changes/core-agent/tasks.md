@@ -37,11 +37,11 @@
 
 ## 5. Model routing
 
-- [ ] 5.1 Write router tests: tier + capability selection, no match → failed result
-- [ ] 5.2 Implement `ConfiguredModelRouter` and model options (tier, provider, flags, price)
-- [ ] 5.3 Write `PriceTableCostCalculator` tests (priced, cached tokens, unpriced = 0)
-- [ ] 5.4 Implement `PriceTableCostCalculator`
-- [ ] 5.5 Wire provider clients in `Marshal.Api` (Ollama, OpenAI-compatible, Anthropic); add a build test asserting no other project references provider packages
+- [x] 5.1 Write router tests: tier + capability selection, no match → failed result
+- [x] 5.2 Implement `ConfiguredModelRouter` and model options (tier, provider, flags, price)
+- [x] 5.3 Write `PriceTableCostCalculator` tests (priced, cached tokens, unpriced = 0)
+- [x] 5.4 Implement `PriceTableCostCalculator`
+- [x] 5.5 Wire provider clients in `Marshal.Api` (Ollama, OpenAI-compatible, Anthropic); add a build test asserting no other project references provider packages
 
 ## 6. Tool registry and visibility
 

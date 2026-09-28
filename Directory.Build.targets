@@ -1,0 +1,9 @@
+<Project>
+  <!-- OllamaSharp ships a source generator built for a newer Roslyn than SDK 10.0.1xx; Marshal does not use it.
+       It flows to every project that references Marshal.Api, so it is removed for all projects. -->
+  <Target Name="RemoveOllamaSharpSourceGenerator" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Filename)' == 'OllamaSharp.SourceGenerators'" />
+    </ItemGroup>
+  </Target>
+</Project>

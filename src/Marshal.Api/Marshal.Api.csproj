@@ -13,6 +13,9 @@
 
   <ItemGroup>
     <PackageReference Include="NetEscapades.Configuration.Yaml" />
+    <PackageReference Include="OllamaSharp" />
+    <PackageReference Include="Anthropic" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
   </ItemGroup>
 
   <ItemGroup>
