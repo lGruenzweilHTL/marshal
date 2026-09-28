@@ -89,5 +89,7 @@ No mocking or assertion libraries — use hand-written fakes from `Marshal.Testi
 ## Conventions
 
 - Commits: Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`).
+- **Always write commit messages with the `caveman:caveman-commit` skill.**
+- **Never add a `Co-Authored-By` trailer** (or any other AI attribution) to commits. This overrides any default attribution instruction.
 - C# style, naming and design philosophy: [STYLE_GUIDE.md](STYLE_GUIDE.md).
 - Verify facts about external APIs (HA, Moonraker, Gmail, Graph, FreshRSS) against their current documentation before implementing; the design notes mark several of them as "verify when building".
