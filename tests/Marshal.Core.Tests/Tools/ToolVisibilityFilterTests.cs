@@ -111,12 +111,25 @@ public sealed class ToolVisibilityFilterTests
     }
 
     [Fact]
+    public async Task Template_AllowlistHidesOtherTools()
+    {
+        var templates = new FakeTemplateCatalog();
+        templates.Items.Add(FakeTemplateCatalog.Template("printer", tools: ["printer.*"]));
+        ToolVisibilityFilter filter = await FilterAsync("risk: []", SatelliteProfile.Default, templates, FakeTool.Safe("printer.status"), FakeTool.Safe("mail.search"));
+        MarshalExecutionContext context = TestExecutionContext.Text() with { Template = "printer" };
+
+        Assert.Equal(["printer_status"], await NamesAsync(filter, context));
+        Assert.Equal("template_denied", (await filter.CheckAsync(Tool(filter, "mail.search"), context, Ct)).Reason);
+        Assert.Equal(["mail_search", "printer_status"], await NamesAsync(filter, TestExecutionContext.Text()));
+    }
+
+    [Fact]
     public async Task Visible_ContextSnapshot_WinsOverLaterRegistryState()
     {
         var source = new FakeToolSource("test", true, FakeTool.Safe("test.a"));
         var registry = new ToolRegistry([source]);
         MarshalExecutionContext context = TestExecutionContext.Text() with { Tools = await registry.RefreshAsync(Ct) };
-        var filter = new ToolVisibilityFilter(registry, GuardTestKit.Engine("risk: []"), new FixedSatellites(Kitchen, SatelliteProfile.Default));
+        var filter = new ToolVisibilityFilter(registry, GuardTestKit.Engine("risk: []"), new FixedSatellites(Kitchen, SatelliteProfile.Default), new FakeTemplateCatalog());
 
         source.Tools.Add(FakeTool.Safe("test.b"));
         await registry.RefreshAsync(Ct);
@@ -133,10 +146,13 @@ public sealed class ToolVisibilityFilterTests
     private static async Task<List<string>> NamesAsync(ToolVisibilityFilter filter, MarshalExecutionContext context) =>
         [.. (await filter.GetVisibleToolsAsync(context, Ct)).Select(tool => tool.ModelName).Order(StringComparer.Ordinal)];
 
-    private static async Task<ToolVisibilityFilter> FilterAsync(string rules, SatelliteProfile kitchenProfile, params ITool[] tools)
+    private static Task<ToolVisibilityFilter> FilterAsync(string rules, SatelliteProfile kitchenProfile, params ITool[] tools) =>
+        FilterAsync(rules, kitchenProfile, new FakeTemplateCatalog(), tools);
+
+    private static async Task<ToolVisibilityFilter> FilterAsync(string rules, SatelliteProfile kitchenProfile, FakeTemplateCatalog templates, params ITool[] tools)
     {
         var registry = new ToolRegistry([new FakeToolSource("test", true, tools)]);
         await registry.RefreshAsync(Ct);
-        return new ToolVisibilityFilter(registry, GuardTestKit.Engine(rules), new FixedSatellites(Kitchen, kitchenProfile));
+        return new ToolVisibilityFilter(registry, GuardTestKit.Engine(rules), new FixedSatellites(Kitchen, kitchenProfile), templates);
     }
 }

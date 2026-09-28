@@ -1,4 +1,5 @@
 using Marshal.Abstractions.Skills;
+using Marshal.Abstractions.Templates;
 using Marshal.Core.Configuration;
 using Marshal.Core.Guard;
 using Marshal.Core.Satellites;
@@ -8,9 +9,9 @@ namespace Marshal.Api.Health;
 
 /// <summary>
 /// Degraded while a hot-reloaded file failed its last reload (the previous version stays active) or a skill is
-/// rejected.
+/// or template is rejected.
 /// </summary>
-internal sealed class ConfigurationHealthCheck(YamlConfigFile<RiskRulesFile> risk, YamlConfigFile<SatellitesFile> satellites, ISkillCatalog skills) : IHealthCheck
+internal sealed class ConfigurationHealthCheck(YamlConfigFile<RiskRulesFile> risk, YamlConfigFile<SatellitesFile> satellites, ISkillCatalog skills, ITemplateCatalog templates) : IHealthCheck
 {
     public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
@@ -20,6 +21,7 @@ internal sealed class ConfigurationHealthCheck(YamlConfigFile<RiskRulesFile> ris
                 .Where(file => file.LastError is not null)
                 .Select(file => $"{file.FileName}: last reload failed, previous version active"),
             .. skills.Errors.Select(error => $"skills/{error.Message}"),
+            .. templates.Errors.Select(error => $"templates/{error.Message}"),
         ];
         return Task.FromResult(failed.Length == 0
             ? HealthCheckResult.Healthy("loaded")

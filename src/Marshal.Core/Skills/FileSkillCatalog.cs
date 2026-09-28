@@ -113,19 +113,17 @@ public sealed partial class FileSkillCatalog : ISkillCatalog, IDisposable
         string text;
         try
         {
-            text = File.ReadAllText(Path.Combine(directory, SkillFile)).Replace("\r\n", "\n", StringComparison.Ordinal);
+            text = File.ReadAllText(Path.Combine(directory, SkillFile));
         }
         catch (IOException exception)
         {
             return Invalid(file, $"cannot be read: {exception.Message}");
         }
 
-        Match split = FrontmatterPattern().Match(text);
-        if (!split.Success)
+        if (MarkdownFrontmatter.Split(text) is not { } split)
             return Invalid(file, "has no YAML frontmatter (--- name / description ---).");
 
-        string yaml = split.Groups[1].Value;
-        string body = text[split.Length..].TrimStart('\n');
+        (string yaml, string body) = split;
         Result<IReadOnlyList<ConfigSecretFinding>> scan = _scanner.Scan(file, yaml);
         if (scan.IsFailure)
             return scan.Error;
@@ -227,9 +225,6 @@ public sealed partial class FileSkillCatalog : ISkillCatalog, IDisposable
         Watch();
         Reload();
     }
-
-    [GeneratedRegex(@"\A---\n(.*?)\n---[ \t]*(?:\n|\z)", RegexOptions.Singleline | RegexOptions.CultureInvariant)]
-    private static partial Regex FrontmatterPattern();
 
     [GeneratedRegex("^[a-z0-9]+(?:-[a-z0-9]+)*$", RegexOptions.CultureInvariant)]
     private static partial Regex NamePattern();

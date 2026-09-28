@@ -189,3 +189,19 @@ lock, floors / areas / aliases, `mcp_server` with the Assist API). The recorded 
 - **Loading.** Skills are read into memory on (re)load; `agent.load_skill` returns the body plus the list of the
   skill's files, or one file by its relative path (no path outside the skill can be named). Rejected skills
   appear as `config` warnings in `/health`.
+
+### Templates (tasks 5.1, 5.2)
+
+- **Format.** `/config/templates/<name>.md`, camelCase frontmatter: `name` (equal to the file name),
+  `description`, `modelTier` (`fast` / `standard`), `tools` (tool-id globs, required), `skills` (omitted = all),
+  `maxSteps` (1–50), `maxAdvisorCalls` (0–10); the body is the template prompt. Unknown keys, invalid values and
+  literal secrets reject the file; rejected templates appear as `config` warnings in `/health` and a literal secret
+  stops startup.
+- **Default.** A built-in `default` template (all tools, all skills, no prompt, tier by input mode, limits from
+  `agent.*`) applies when `default.md` does not exist or the run names an unknown template. `default.md`
+  replaces it.
+- **Effect.** The run's template (`MarshalExecutionContext.Template`) is resolved once per check through
+  `ITemplateCatalog.For(context)`: the visibility filter hides tools outside the allowlist (`template_denied`,
+  so the guard denies them as well), the runner takes the model tier and step limit, `agent.ask_advisor` the
+  advisor-call limit, the skill index and `agent.load_skill` only the template's skills, and
+  `TemplatePromptContributor` (order 50) adds the prompt body.

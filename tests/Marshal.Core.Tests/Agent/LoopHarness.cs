@@ -6,6 +6,7 @@ using Marshal.Core.Agent;
 using Marshal.Core.Context;
 using Marshal.Core.Guard;
 using Marshal.Core.Models;
+using Marshal.Core.Templates;
 using Marshal.Core.Tools;
 using Marshal.Testing;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -45,6 +46,8 @@ internal sealed class LoopHarness
 
     public AgentRunner Runner { get; private set; } = null!;
 
+    public FakeTemplateCatalog Templates { get; } = new();
+
     public Channel<TurnEvent> Events { get; } = Channel.CreateUnbounded<TurnEvent>();
 
     /// <summary>Wraps <see cref="Runner"/> and records the requests it receives.</summary>
@@ -64,12 +67,13 @@ internal sealed class LoopHarness
         await harness.Registry.RefreshAsync(TestContext.Current.CancellationToken);
         RuleBasedRiskEngine engine = GuardTestKit.Engine(rules);
         var satellites = new FixedSatellites("assist_satellite.kitchen", kitchen ?? SatelliteProfile.Default);
-        var visibility = new ToolVisibilityFilter(harness.Registry, engine, satellites);
+        var visibility = new ToolVisibilityFilter(harness.Registry, engine, satellites, harness.Templates);
         var guard = new ToolCallGuard(harness.Registry, visibility, engine, satellites);
         harness.Runner = new AgentRunner(
             harness.Router,
             harness.Registry,
-            new ContextBuilder([new BasePromptContributor(), new OutputModeContributor()]),
+            harness.Templates,
+            new ContextBuilder([new BasePromptContributor(), new OutputModeContributor(), new TemplatePromptContributor(harness.Templates)]),
             visibility,
             guard,
             harness.Store,

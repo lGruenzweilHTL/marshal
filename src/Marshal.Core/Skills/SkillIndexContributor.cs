@@ -2,19 +2,21 @@ using System.Globalization;
 using System.Text;
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Skills;
+using Marshal.Abstractions.Templates;
 
 namespace Marshal.Core.Skills;
 
 /// <summary>
-/// The skill index: names and descriptions only. Bodies are loaded on demand through <c>agent.load_skill</c>.
+/// The skill index of the skills available to the run's template: names and descriptions only. Bodies are loaded on demand through <c>agent.load_skill</c>.
 /// </summary>
-public sealed class SkillIndexContributor(ISkillCatalog catalog) : IContextContributor
+public sealed class SkillIndexContributor(ISkillCatalog catalog, ITemplateCatalog templates) : IContextContributor
 {
     public int Order => 250;
 
     public Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken)
     {
-        IReadOnlyList<Skill> skills = catalog.Skills;
+        AgentTemplate template = templates.For(request.Context);
+        List<Skill> skills = [.. catalog.Skills.Where(skill => template.AllowsSkill(skill.Name))];
         if (skills.Count == 0)
             return Task.FromResult<string?>(null);
 

@@ -245,7 +245,7 @@ public sealed class GuardTests
         await registry.RefreshAsync(Ct);
         RuleBasedRiskEngine engine = GuardTestKit.Engine(rules, resolvers);
         var satellites = new FixedSatellites(Kitchen, kitchen);
-        return new ToolCallGuard(registry, new ToolVisibilityFilter(registry, engine, satellites), engine, satellites);
+        return new ToolCallGuard(registry, new ToolVisibilityFilter(registry, engine, satellites, new FakeTemplateCatalog()), engine, satellites);
     }
 
     private static FakeTargetResolver Resolver(string domain) => new("ha", new RiskTarget($"{domain}.x", new Dictionary<string, string> { ["domain"] = domain }));

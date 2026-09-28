@@ -1,16 +1,17 @@
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Satellites;
+using Marshal.Abstractions.Templates;
 using Marshal.Abstractions.Tools;
 
 namespace Marshal.Core.Tools;
 
 /// <summary>
-/// The model can't use it → the model can't see it. Hides forbidden tools, tools denied for the satellite,
+/// The model can't use it → the model can't see it. Hides tools outside the run template's allowlist, forbidden tools, tools denied for the satellite,
 /// confirm-only tools on satellites that deny confirmation (taint escalation included), and tools whose own
 /// visibility condition fails. Tools whose tier depends on arguments stay visible; the guard decides per call.
 /// </summary>
-public sealed class ToolVisibilityFilter(IToolRegistry registry, IRiskEngine riskEngine, ISatelliteContextProvider satellites) : IToolVisibilityFilter
+public sealed class ToolVisibilityFilter(IToolRegistry registry, IRiskEngine riskEngine, ISatelliteContextProvider satellites, ITemplateCatalog templates) : IToolVisibilityFilter
 {
     internal IToolRegistry Registry => registry;
 
@@ -28,6 +29,9 @@ public sealed class ToolVisibilityFilter(IToolRegistry registry, IRiskEngine ris
 
     public async Task<VisibilityVerdict> CheckAsync(RegisteredTool tool, MarshalExecutionContext context, CancellationToken cancellationToken)
     {
+        if (!templates.For(context).Allows(tool.Id))
+            return VisibilityVerdict.Hidden("template_denied");
+
         HashSet<RiskTier> tiers = [.. riskEngine.GetProfile(tool).PossibleTiers];
         if (context.Taint.IsTainted && tool.Descriptor.Persists && tiers.Remove(RiskTier.Safe))
             tiers.Add(RiskTier.Confirm);

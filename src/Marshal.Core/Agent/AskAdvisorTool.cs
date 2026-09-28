@@ -4,6 +4,7 @@ using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Models;
 using Marshal.Abstractions.Runs;
+using Marshal.Abstractions.Templates;
 using Marshal.Abstractions.Tools;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
@@ -21,6 +22,7 @@ public sealed class AskAdvisorTool(
     ICostCalculator costs,
     IAdvisorUsage usage,
     IUserProfileProvider profiles,
+    ITemplateCatalog templates,
     IOptions<AgentOptions> options,
     TimeProvider timeProvider) : ITool
 {
@@ -46,7 +48,7 @@ public sealed class AskAdvisorTool(
     {
         if (context.InputMode == InputMode.Voice)
             return false;
-        if (context.Counters.Get(Id) >= options.Value.Advisor.MaxCallsPerRun)
+        if (context.Counters.Get(Id) >= (templates.For(context).MaxAdvisorCalls ?? options.Value.Advisor.MaxCallsPerRun))
             return false;
         if (router.Route(new ModelRequest(ModelTier.Advisor)).IsFailure)
             return false;

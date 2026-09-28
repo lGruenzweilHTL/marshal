@@ -10,6 +10,7 @@ using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Satellites;
 using Marshal.Abstractions.Secrets;
 using Marshal.Abstractions.Skills;
+using Marshal.Abstractions.Templates;
 using Marshal.Abstractions.Tools;
 using Marshal.Core.Agent;
 using Marshal.Core.Configuration;
@@ -26,6 +27,7 @@ using Marshal.Core.Satellites;
 using Marshal.Core.Secrets;
 using Marshal.Core.Sessions;
 using Marshal.Core.Skills;
+using Marshal.Core.Templates;
 using Marshal.Core.Tools;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,6 +46,7 @@ public static class CoreServiceCollectionExtensions
     public const string SatellitesFileName = "satellites.yaml";
     public const string McpDirectory = "mcp";
     public const string SkillsDirectory = "skills";
+    public const string TemplatesDirectory = "templates";
 
     public static IServiceCollection AddMarshalCore(this IServiceCollection services, IConfiguration configuration, IDictionary environment)
     {
@@ -96,6 +99,15 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ISkillCatalog>(provider => provider.GetRequiredService<FileSkillCatalog>());
         services.AddSingleton<IContextContributor, SkillIndexContributor>();
         services.AddSingleton<ITool, LoadSkillTool>();
+
+        services.AddSingleton(provider => new FileTemplateCatalog(
+            Path.Combine(provider.GetRequiredService<IOptions<PathsOptions>>().Value.Config, TemplatesDirectory),
+            provider.GetRequiredService<IConfigWatcher>(),
+            $"{TemplatesDirectory}/*.md",
+            provider.GetRequiredService<IConfigSecretScanner>(),
+            provider.GetRequiredService<ILogger<FileTemplateCatalog>>()));
+        services.AddSingleton<ITemplateCatalog>(provider => provider.GetRequiredService<FileTemplateCatalog>());
+        services.AddSingleton<IContextContributor, TemplatePromptContributor>();
 
         services.AddSingleton<IRiskEngine, RuleBasedRiskEngine>();
         services.AddSingleton<IToolVisibilityFilter, ToolVisibilityFilter>();

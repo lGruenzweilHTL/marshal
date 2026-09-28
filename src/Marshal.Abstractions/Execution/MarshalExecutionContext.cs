@@ -47,6 +47,15 @@ public sealed record MarshalExecutionContext
     /// <summary>Per-run counters (e.g. advisor calls). Shared by all copies within one run.</summary>
     public RunCounters Counters { get; init; } = new();
 
+    /// <summary>Agent template of the run.</summary>
+    public string Template { get; init; } = "default";
+
+    /// <summary>Delegation depth: 0 for a top-level run, 1 and more inside subagents.</summary>
+    public int Depth { get; init; }
+
+    /// <summary>True inside a subagent (no user to ask: confirm-tier actions are never run).</summary>
+    public bool IsSubagent => Depth > 0;
+
     /// <summary>
     /// Tools fixed at run start (subagents inherit them), so the tool list never changes mid-turn. Null outside a
     /// run; the registry's current snapshot applies then.

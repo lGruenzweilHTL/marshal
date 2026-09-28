@@ -7,6 +7,7 @@ using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Models;
 using Marshal.Abstractions.Runs;
+using Marshal.Abstractions.Templates;
 using Marshal.Abstractions.Tools;
 using Marshal.Core.Context;
 using Marshal.Core.Guard;
@@ -24,6 +25,7 @@ namespace Marshal.Core.Agent;
 public sealed partial class AgentRunner(
     IModelRouter router,
     IToolRegistry registry,
+    ITemplateCatalog templates,
     IContextBuilder contextBuilder,
     IToolVisibilityFilter visibility,
     IGuard guard,
@@ -97,7 +99,9 @@ public sealed partial class AgentRunner(
             return new LoopResult(request.FixedReply, null, RunOutcome.Ok, null);
         }
 
-        ModelTier tier = context.InputMode == InputMode.Voice ? ModelTier.Fast : ModelTier.Standard;
+        AgentTemplate template = templates.For(context);
+        ModelTier tier = template.ModelTier ?? (context.InputMode == InputMode.Voice ? ModelTier.Fast : ModelTier.Standard);
+        int maxSteps = template.MaxSteps ?? agentOptions.Value.MaxSteps;
         Result<RoutedModel> routed = router.Route(new ModelRequest(tier, Tools: true));
         if (routed.IsFailure)
             return new LoopResult(FixedReplies.ModelUnavailable(context.Language), null, RunOutcome.Error, "model_unavailable");
@@ -115,7 +119,7 @@ public sealed partial class AgentRunner(
             if (calls.Count == 0)
                 return new LoopResult(response.Text, pending, RunOutcome.Ok, null);
 
-            if (rounds == agentOptions.Value.MaxSteps)
+            if (rounds == maxSteps)
                 return new LoopResult(FixedReplies.StepLimit(context.Language), pending, RunOutcome.Error, "step_limit");
 
             rounds++;

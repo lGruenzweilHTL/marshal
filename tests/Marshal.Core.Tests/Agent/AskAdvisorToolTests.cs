@@ -102,6 +102,18 @@ public sealed class AskAdvisorToolTests
         Assert.Contains("agent_ask_advisor", harness.Model.Requests[0].ToolNames);
     }
 
+    [Fact]
+    public async Task TemplateMaxAdvisorCallsZero_Hidden()
+    {
+        LoopHarness harness = await HarnessAsync();
+        harness.Templates.Items.Add(FakeTemplateCatalog.Template("cheap", maxAdvisorCalls: 0));
+        harness.Model.ThenText("ok");
+
+        await harness.Runner.RunAsync(Request(TestExecutionContext.Text() with { Template = "cheap" }), Ct);
+
+        Assert.DoesNotContain("agent_ask_advisor", harness.Model.Requests[0].ToolNames);
+    }
+
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     private static AgentRunRequest Request(MarshalExecutionContext context) => new() { Context = context, UserText = "plan it" };
@@ -119,6 +131,7 @@ public sealed class AskAdvisorToolTests
                 })),
                 _usage,
                 new FixedProfiles(),
+                harness.Templates,
                 Options.Create(harness.Options),
                 harness.Time),
         ]);

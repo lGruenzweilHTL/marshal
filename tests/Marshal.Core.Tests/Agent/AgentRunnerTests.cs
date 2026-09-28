@@ -67,6 +67,32 @@ public sealed class AgentRunnerTests
     }
 
     [Fact]
+    public async Task Run_Template_ModelTierStepLimitAndPrompt()
+    {
+        LoopHarness harness = await LoopHarness.CreateAsync(tools: FakeTool.Safe());
+        harness.Templates.Items.Add(FakeTemplateCatalog.Template("scorer", tier: ModelTier.Fast, maxSteps: 1, prompt: "Score items from 0 to 3."));
+        harness.Model.ThenToolCall("test_safe").ThenToolCall("test_safe").ThenText("never");
+
+        await harness.Runner.RunAsync(new AgentRunRequest { Context = TestExecutionContext.Text() with { Template = "scorer" }, UserText = "go" }, Ct);
+
+        Assert.Equal("step_limit", harness.Recorder.OnlyRun.Completion?.Reason);
+        Assert.Equal(ModelTier.Fast, harness.Router.Requests[0].Tier);
+        Assert.Contains("Score items from 0 to 3.", harness.Model.Requests[0].SystemPrompt, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Run_DefaultTemplate_TierByInputMode()
+    {
+        LoopHarness harness = await LoopHarness.CreateAsync();
+        harness.Model.ThenText("one").ThenText("two");
+
+        await harness.Runner.RunAsync(Request("go"), Ct);
+        await harness.Runner.RunAsync(new AgentRunRequest { Context = TestExecutionContext.Voice(), UserText = "go" }, Ct);
+
+        Assert.Equal([ModelTier.Standard, ModelTier.Fast], harness.Router.Requests.Select(request => request.Tier));
+    }
+
+    [Fact]
     public async Task Run_RecordsContextModelToolModelReplyInOrder()
     {
         LoopHarness harness = await LoopHarness.CreateAsync(tools: FakeTool.Safe());
