@@ -1,4 +1,5 @@
 using System.Collections;
+using Marshal.Api.Auth;
 using Marshal.Api.Configuration;
 using Marshal.Api.Conversation;
 using Marshal.Api.Health;
@@ -44,6 +45,7 @@ public static class MarshalApp
 
         Asp.Versioning.Builder.IVersionedEndpointRouteBuilder api = app.NewVersionedApi("Marshal");
         RouteGroupBuilder v1 = api.MapGroup("/api/v{version:apiVersion}").HasApiVersion(ApiVersions.V1);
+        v1.MapAuthEndpoints();
         v1.MapConversationEndpoints();
         return app;
     }

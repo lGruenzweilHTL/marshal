@@ -8,7 +8,6 @@ using Marshal.Api.Versioning;
 using Marshal.Core.Configuration;
 using Marshal.Core.Models;
 using Marshal.Core.Recording;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.DataProtection.Repositories;
@@ -47,8 +46,7 @@ public static class ApiServiceCollectionExtensions
             })
             .AddOpenApi();
 
-        services.AddAuthentication(ApiTokenAuthenticationHandler.SchemeName)
-            .AddScheme<AuthenticationSchemeOptions, ApiTokenAuthenticationHandler>(ApiTokenAuthenticationHandler.SchemeName, null);
+        services.AddMarshalAuth(configuration);
         services.AddAuthorization(options => options.AddScopePolicies());
 
         services.AddMarshalHealthChecks();

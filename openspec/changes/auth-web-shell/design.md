@@ -80,3 +80,8 @@ One EF migration converting `User` to Identity and adding Identity tables, `Auth
   by user id and accessed only through ASP.NET Core Identity, so they carry no owner query filter.
 - **Migration `IdentityUsers`** adds the Identity columns to `users` (the instance owner keeps its id) and backfills
   `normalized_user_name` so Identity can find pre-existing users.
+- **First login claims the instance owner** (spec change agreed with the user): `core-agent` seeds the instance
+  owner on first start, so "no user exists" never holds. The owner counts as *unclaimed* while it has no password,
+  passkey or external login. The local first-run setup and the first OIDC login with a mapped group claim it (same
+  id, so voice sessions and CLI tokens stay with the human who logs in); afterwards setup returns 404 and new OIDC
+  subjects create new users.

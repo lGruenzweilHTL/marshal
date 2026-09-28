@@ -167,7 +167,7 @@ public sealed class ConversationApiTests
 
         Exception error = Assert.ThrowsAny<Exception>(() => factory.CreateClient());
 
-        Assert.Contains("agent.maxSteps", Flatten(error), StringComparison.Ordinal);
+        Assert.Contains("agent.maxSteps", StartupErrors.Flatten(error), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -183,7 +183,7 @@ public sealed class ConversationApiTests
 
         Exception error = Assert.ThrowsAny<Exception>(() => factory.CreateClient());
 
-        Assert.Contains("models.claude.apiKeySecret (anthropic_key)", Flatten(error), StringComparison.Ordinal);
+        Assert.Contains("models.claude.apiKeySecret (anthropic_key)", StartupErrors.Flatten(error), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -211,8 +211,8 @@ public sealed class ConversationApiTests
 
         Exception error = Assert.ThrowsAny<Exception>(() => factory.CreateClient());
 
-        Assert.Contains("token", Flatten(error), StringComparison.Ordinal);
-        Assert.DoesNotContain("abc", Flatten(error), StringComparison.Ordinal);
+        Assert.Contains("token", StartupErrors.Flatten(error), StringComparison.Ordinal);
+        Assert.DoesNotContain("abc", StartupErrors.Flatten(error), StringComparison.Ordinal);
     }
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -237,10 +237,6 @@ public sealed class ConversationApiTests
         await using MarshalDbContext db = await factory.Services.GetRequiredService<IDbContextFactory<MarshalDbContext>>().CreateDbContextAsync(Ct);
         await db.ApiTokens.IgnoreQueryFilters().ExecuteUpdateAsync(setters => setters.SetProperty(token => token.RevokedAt, DateTimeOffset.UnixEpoch), Ct);
     }
-
-    private static string Flatten(Exception error) => error is AggregateException aggregate
-        ? string.Join(" | ", aggregate.Flatten().InnerExceptions.Select(inner => inner.Message))
-        : error.Message + (error.InnerException is null ? "" : " | " + Flatten(error.InnerException));
 
     private sealed record TurnBody(string? ConversationId, string Text, string? Language, string? DeviceId, string? SatelliteId, string? AreaId, string? HaUserId, string InputMode, string? FollowupRef);
 }

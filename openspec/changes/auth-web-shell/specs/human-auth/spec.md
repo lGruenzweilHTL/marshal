@@ -33,26 +33,34 @@ All human users SHALL be ASP.NET Core Identity users whose key is exposed everyw
 - **THEN** the login maps to the same Marshal user
 
 ### Requirement: Local provider
-The `local` provider SHALL support passkeys and password fallback via ASP.NET Core Identity. When no user exists, a first-run setup SHALL create the first user as admin; afterwards the setup SHALL be unavailable.
+The `local` provider SHALL support passkeys and password fallback via ASP.NET Core Identity. While the instance owner seeded on first start is unclaimed (it has no password, passkey or external login), a first-run setup SHALL claim it: it sets the owner's user name and credentials and gives it role `admin`, keeping the owner's id. Once the owner is claimed, the setup SHALL be unavailable.
 
 #### Scenario: First run
-- **WHEN** the instance has no users and `local` is active
-- **THEN** the setup page creates the first user with role `admin`
+- **WHEN** the instance owner is unclaimed and `local` is active
+- **THEN** the setup page sets credentials on the instance owner and gives it role `admin`
 
-#### Scenario: Setup after first user
-- **WHEN** a user already exists
+#### Scenario: Setup after the owner is claimed
+- **WHEN** the instance owner already has a password, passkey or external login
 - **THEN** the setup endpoint returns 404
 
 ### Requirement: Role provisioning from claims
-OIDC users SHALL get roles from group claims via configured mappings (e.g. `marshal-admins` → `admin`, `marshal-users` → `user`), re-synced on every login. A login without any mapped group SHALL be denied.
+OIDC users SHALL get roles from group claims via configured mappings (e.g. `marshal-admins` → `admin`, `marshal-users` → `user`), re-synced on every login. A login without any mapped group SHALL be denied. An OIDC subject without an existing login SHALL claim the instance owner while the owner is unclaimed; otherwise it SHALL create a new user.
 
 #### Scenario: Unmapped user
 - **WHEN** an OIDC user without a mapped group logs in
-- **THEN** login is denied and no user is created
+- **THEN** login is denied and no user is created or linked
 
 #### Scenario: Group removed
 - **WHEN** an admin's `marshal-admins` group is removed at the IdP and they log in again
 - **THEN** their `admin` role is removed
+
+#### Scenario: First OIDC login claims the instance owner
+- **WHEN** the instance owner is unclaimed and a new OIDC subject with a mapped group logs in
+- **THEN** the subject is linked to the instance owner, which keeps its id, sessions and tokens
+
+#### Scenario: Later OIDC subject
+- **WHEN** the instance owner is claimed and a new OIDC subject with a mapped group logs in
+- **THEN** a new user is created
 
 ### Requirement: Current user endpoint
 `GET /api/v1/me` SHALL return the current user's id, display name, roles and scopes.

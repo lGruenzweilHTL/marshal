@@ -9,6 +9,22 @@ owner:                      # the instance owner created on first start
 http:
   pathBase: ""              # e.g. /marshal behind a reverse proxy
 
+auth:
+  providers:                # several may be active at once
+    - name: local           # passkeys + password; first-run setup claims the instance owner
+      type: local
+    # - name: authentik     # redirect URI at the IdP: https://<host>/signin-oidc/authentik
+    #   type: oidc
+    #   displayName: Authentik
+    #   authority: "https://auth.example.com/application/o/marshal/"
+    #   clientId: marshal
+    #   clientCredentialSecret: authentik_client   # secret name, not the value
+    #   scopes: [openid, profile, email]
+    #   claims: { subject: sub, name: name, groups: groups }
+    #   roleMappings:       # IdP group -> admin | user; logins without a mapped group are denied
+    #     marshal-admins: admin
+    #     marshal-users: user
+
 models:
   fast:
     tier: fast

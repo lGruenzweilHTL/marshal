@@ -1,5 +1,6 @@
 using Marshal.Abstractions;
 using Marshal.Abstractions.Tools;
+using Marshal.Api.Auth;
 using Marshal.Api.Configuration;
 using Marshal.Core.Configuration;
 using Marshal.Core.Guard;
@@ -22,6 +23,7 @@ internal sealed partial class MarshalStartup(
     IOptions<PathsOptions> paths,
     IOptions<OwnerOptions> owner,
     IOptions<ModelRoutingOptions> models,
+    IOptions<AuthOptions> auth,
     IConfigSecretScanner scanner,
     IDbContextFactory<MarshalDbContext> contexts,
     SecretBinder secretBinder,
@@ -46,13 +48,19 @@ internal sealed partial class MarshalStartup(
             await initializer.InitializeAsync(new InstanceOwnerSeed(owner.Value.DisplayName, owner.Value.Language, owner.Value.TimeZone), cancellationToken);
         }
 
-        SecretBindingReport secrets = await secretBinder.BindAsync(models.Value, "", cancellationToken);
-        if (secrets.BoundFromConfiguration.Count > 0)
-            throw new InvalidOperationException($"Secret values must not come from configuration: {string.Join(", ", secrets.BoundFromConfiguration)}.");
-        if (secrets.MissingRequired.Count > 0)
-            throw new InvalidOperationException($"Required secrets do not resolve: {string.Join(", ", secrets.MissingRequired)}.");
+        SecretBindingReport[] reports =
+        [
+            await secretBinder.BindAsync(models.Value, "", cancellationToken),
+            await secretBinder.BindAsync(auth.Value, "auth", cancellationToken),
+        ];
+        List<string> fromConfiguration = [.. reports.SelectMany(report => report.BoundFromConfiguration)];
+        if (fromConfiguration.Count > 0)
+            throw new InvalidOperationException($"Secret values must not come from configuration: {string.Join(", ", fromConfiguration)}.");
+        List<string> missingRequired = [.. reports.SelectMany(report => report.MissingRequired)];
+        if (missingRequired.Count > 0)
+            throw new InvalidOperationException($"Required secrets do not resolve: {string.Join(", ", missingRequired)}.");
 
-        secretHealth.Set(secrets.MissingOptional);
+        secretHealth.Set([.. reports.SelectMany(report => report.MissingOptional)]);
         await registry.RefreshAsync(cancellationToken);
         foreach (ToolSourceError error in registry.Errors)
             LogToolSourceRejected(loggers.CreateLogger<MarshalStartup>(), error.Source, error.Message);
