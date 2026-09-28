@@ -20,3 +20,16 @@ public sealed class ToolGlobTests
         Assert.Equal(expected, ToolGlob.Matches(pattern, ToolId.Parse(id).Value));
     }
 }
+
+public sealed class ToolGlobEdgeTests
+{
+    [Theory]
+    [InlineData("test.ab", "test.a", false)]
+    [InlineData("test.a**", "test.a", true)]
+    [InlineData("*.x", "test.y", false)]
+    [InlineData("t*t.*", "test.do", true)]
+    public void Matches_Edges(string pattern, string id, bool expected)
+    {
+        Assert.Equal(expected, ToolGlob.Matches(pattern, ToolId.Parse(id).Value));
+    }
+}

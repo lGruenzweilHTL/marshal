@@ -32,6 +32,7 @@ public sealed class LlmConfirmationJudgeTests
 
     [Theory]
     [InlineData("Sure, positive!")]
+    [InlineData("{not json")]
     [InlineData("""{"verdict":"maybe"}""")]
     [InlineData("""{"other":"positive"}""")]
     [InlineData("")]

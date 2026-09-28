@@ -50,7 +50,7 @@ public sealed class RiskRulesFile
 
                     foreach (DictionaryEntry argument in argumentMap)
                     {
-                        string name = argument.Key.ToString() ?? "";
+                        string name = $"{argument.Key}";
                         if (!TryValues(argument.Value, out IReadOnlyList<string> allowed))
                             return Invalid($"{at}.match.args.{name} must be a value or a list of values.");
 

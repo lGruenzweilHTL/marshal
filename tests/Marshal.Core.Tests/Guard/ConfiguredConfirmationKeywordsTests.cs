@@ -27,6 +27,7 @@ public sealed class ConfiguredConfirmationKeywordsTests
     [InlineData("bestätigt", "en")]
     [InlineData("confirm", "de")]
     [InlineData("confirm", "fr")]
+    [InlineData("confirm", "e")]
     public void IsConfirmation_NoExactMatch_False(string utterance, string language)
     {
         Assert.False(_keywords.IsConfirmation(utterance, language));

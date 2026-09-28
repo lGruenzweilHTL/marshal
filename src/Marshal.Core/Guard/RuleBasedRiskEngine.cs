@@ -22,7 +22,7 @@ public sealed class RuleBasedRiskEngine(IOptionsMonitor<RiskRulesFile> rules, IE
     {
         List<RiskRule> matching = MatchingRules(tool.Id);
         if (!matching.Exists(rule => rule.TargetConditions.Count > 0))
-            return Assessment(FirstMatch(matching, tool, arguments, target: null));
+            return Assessment(FirstArgumentMatch(matching, tool, arguments));
 
         IReadOnlyList<RiskTarget>? targets = await ResolveTargetsAsync(tool.Id, arguments, cancellationToken);
         if (targets is null or { Count: 0 })
@@ -70,7 +70,19 @@ public sealed class RuleBasedRiskEngine(IOptionsMonitor<RiskRulesFile> rules, IE
         return [.. compiled.Where(rule => ToolGlob.Matches(rule.ToolPattern, id))];
     }
 
-    private static RiskTier FirstMatch(List<RiskRule> matching, RegisteredTool tool, JsonElement arguments, RiskTarget? target)
+    // Used when no matching rule has target conditions.
+    private static RiskTier FirstArgumentMatch(List<RiskRule> matching, RegisteredTool tool, JsonElement arguments)
+    {
+        foreach (RiskRule rule in matching)
+        {
+            if (ArgumentsMatch(rule, arguments))
+                return rule.Tier;
+        }
+
+        return tool.Descriptor.DefaultTier;
+    }
+
+    private static RiskTier FirstMatch(List<RiskRule> matching, RegisteredTool tool, JsonElement arguments, RiskTarget target)
     {
         foreach (RiskRule rule in matching)
         {
@@ -101,13 +113,8 @@ public sealed class RuleBasedRiskEngine(IOptionsMonitor<RiskRulesFile> rules, IE
         return true;
     }
 
-    private static bool TargetMatches(RiskRule rule, RiskTarget? target)
+    private static bool TargetMatches(RiskRule rule, RiskTarget target)
     {
-        if (rule.TargetConditions.Count == 0)
-            return true;
-        if (target is null)
-            return false;
-
         foreach ((string attribute, IReadOnlyList<string> allowed) in rule.TargetConditions)
         {
             if (!target.Attributes.TryGetValue(attribute, out string? value) || !allowed.Contains(value, StringComparer.OrdinalIgnoreCase))

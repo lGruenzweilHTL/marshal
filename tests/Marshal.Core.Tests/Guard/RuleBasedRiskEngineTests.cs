@@ -342,3 +342,104 @@ public sealed class RuleBasedRiskEngineTests
         public IDisposable? OnChange(Action<RiskRulesFile, string?> listener) => null;
     }
 }
+
+public sealed class RuleBasedRiskEngineEdgeTests
+{
+    private const string ArgRule = """
+        risk:
+          - match: { tool: "test.*", args: { mode: [raw] } }
+            tier: forbidden
+        """;
+
+    [Theory]
+    [InlineData("[1,2]")]
+    [InlineData("""{"mode":{"nested":"raw"}}""")]
+    [InlineData("""{"mode":null}""")]
+    [InlineData("""{"mode":["raw"]}""")]
+    [InlineData("""{"other":"raw"}""")]
+    public async Task Assess_ArgumentNotAMatchingScalar_RuleDoesNotApply(string arguments)
+    {
+        RuleBasedRiskEngine engine = GuardTestKit.Engine(ArgRule);
+
+        RiskAssessment result = await engine.AssessAsync(Tool(), System.Text.Json.JsonDocument.Parse(arguments).RootElement, TestContext.Current.CancellationToken);
+
+        Assert.Equal(RiskTier.Safe, result.Tier);
+    }
+
+    [Theory]
+    [InlineData("true")]
+    [InlineData("\"RAW\"")]
+    public async Task Assess_BooleanAndCaseInsensitiveArgument_Matched(string value)
+    {
+        RuleBasedRiskEngine engine = GuardTestKit.Engine("""
+            risk:
+              - match: { tool: "test.*", args: { mode: [raw, "true"] } }
+                tier: forbidden
+            """);
+
+        RiskAssessment result = await engine.AssessAsync(Tool(), System.Text.Json.JsonDocument.Parse($$"""{"mode":{{value}}}""").RootElement, TestContext.Current.CancellationToken);
+
+        Assert.Equal(RiskTier.Forbidden, result.Tier);
+    }
+
+    [Fact]
+    public async Task Assess_TargetLacksConditionAttribute_RuleDoesNotApply()
+    {
+        RuleBasedRiskEngine engine = GuardTestKit.Engine("""
+            risk:
+              - match: { tool: "test.*", domain: cover, deviceClass: garage }
+                tier: confirm
+            """, new FakeTargetResolver("test", new RiskTarget("cover.x", new Dictionary<string, string> { ["domain"] = "cover" })));
+
+        RiskAssessment result = await engine.AssessAsync(Tool(), System.Text.Json.JsonDocument.Parse("{}").RootElement, TestContext.Current.CancellationToken);
+
+        Assert.Equal(RiskTier.Safe, result.Tier);
+    }
+
+    [Fact]
+    public async Task Assess_TargetRuleWithArgumentCondition_BothMustMatch()
+    {
+        RuleBasedRiskEngine engine = GuardTestKit.Engine("""
+            risk:
+              - match: { tool: "test.*", domain: lock, args: { action: open } }
+                tier: forbidden
+            """, new FakeTargetResolver("test", new RiskTarget("lock.x", new Dictionary<string, string> { ["domain"] = "lock" })));
+
+        RiskAssessment open = await engine.AssessAsync(Tool(), System.Text.Json.JsonDocument.Parse("""{"action":"open"}""").RootElement, TestContext.Current.CancellationToken);
+        RiskAssessment close = await engine.AssessAsync(Tool(), System.Text.Json.JsonDocument.Parse("""{"action":"close"}""").RootElement, TestContext.Current.CancellationToken);
+
+        Assert.Equal(RiskTier.Forbidden, open.Tier);
+        Assert.Equal(RiskTier.Safe, close.Tier);
+    }
+
+    [Fact]
+    public void Validate_ValidFile_Succeeds()
+    {
+        Assert.True(RiskRulesFile.Validate(GuardTestKit.ParseRules(ArgRule)).IsSuccess);
+    }
+
+    [Theory]
+    [InlineData("risk:\n  - match: { tool: \"x.*\", args: { mode: { a: b } } }\n    tier: safe\n", "match.args.mode")]
+    [InlineData("risk:\n  - match: { tool: \"x.*\", domain: [] }\n    tier: safe\n", "match.domain")]
+    [InlineData("risk:\n  - match: { tool: \"x.*\", domain: [lock, { a: b }] }\n    tier: safe\n", "match.domain")]
+    [InlineData("risk:\n  - match: { tool: \"x.*\" }\n    tier: \"1\"\n", "tier")]
+    [InlineData("risk:\n  - match: { tool: [a] }\n    tier: safe\n", "match.tool")]
+    public void Validate_InvalidShapes_Fail(string yaml, string expected)
+    {
+        Abstractions.Result result = RiskRulesFile.Validate(GuardTestKit.ParseRules(yaml));
+
+        Assert.Contains(expected, result.Error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Assess_InvalidCurrentRules_FailsClosedToForbidden()
+    {
+        var engine = new RuleBasedRiskEngine(new StaticMonitor<RiskRulesFile>(GuardTestKit.ParseRules("risk:\n  - match: { domain: lock }\n    tier: safe\n")), []);
+
+        RiskAssessment result = await engine.AssessAsync(Tool(), System.Text.Json.JsonDocument.Parse("{}").RootElement, TestContext.Current.CancellationToken);
+
+        Assert.Equal(RiskTier.Forbidden, result.Tier);
+    }
+
+    private static RegisteredTool Tool() => new(FakeTool.Safe("test.do"), "test_do", "test", true);
+}

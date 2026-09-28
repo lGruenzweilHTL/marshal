@@ -63,7 +63,7 @@
 - [x] 7.9 Write judge tests with a fake client: positive executes, neutral drops and continues as a normal turn, negative cancels, timeout and parse errors drop
 - [x] 7.10 Implement `LlmConfirmationJudge` (fast tier, structured output, 3 s timeout)
 - [x] 7.11 Write test: tool output containing a confirmation keyword never confirms
-- [ ] 7.12 Verify 100 % branch coverage for risk engine, visibility filter and guard
+- [x] 7.12 Verify 100 % branch coverage for risk engine, visibility filter and guard
 
 ## 8. Context builder
 
