@@ -1,3 +1,5 @@
+using Marshal.Abstractions.Satellites;
+
 namespace Marshal.Core.Satellites;
 
 /// <summary>
