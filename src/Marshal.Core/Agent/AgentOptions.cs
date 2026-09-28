@@ -5,10 +5,10 @@ namespace Marshal.Core.Agent;
 /// <summary>
 /// Agent loop limits (<c>agent</c> in <c>marshal.yaml</c>).
 /// </summary>
-public sealed class AgentOptions
+public sealed class AgentOptions : IValidatableObject
 {
     /// <summary>Maximum tool rounds per run.</summary>
-    [Range(1, 50)]
+    [Range(1, 50, ErrorMessage = "agent.maxSteps must be between {1} and {2}.")]
     public int MaxSteps { get; set; } = 8;
 
     /// <summary>Hard latency cap for voice turns.</summary>
@@ -18,4 +18,12 @@ public sealed class AgentOptions
     public TimeSpan TextLatencyCap { get; set; } = TimeSpan.FromSeconds(60);
 
     public AdvisorOptions Advisor { get; set; } = new();
+
+    /// <summary>Validates the nested advisor limits too.</summary>
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        var results = new List<ValidationResult>();
+        Validator.TryValidateObject(Advisor, new ValidationContext(Advisor), results, validateAllProperties: true);
+        return results;
+    }
 }

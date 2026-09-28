@@ -27,13 +27,13 @@
 - [x] 4.1 Write tests for the config secret scanner (reference-key pattern, forbidden key words incl. false-positive cases `maxTokens`, `tokenUrl`, value patterns incl. 32-hex and base64)
 - [x] 4.2 Implement `ConfigSecretScanner` over the raw YAML tree
 - [x] 4.3 Write tests for layering (YAML < `MARSHAL__` env) and that `MARSHAL_SECRET_*` never enters `IConfiguration`
-- [ ] 4.4 Implement configuration loading (`NetEscapades.Configuration.Yaml`, env prefix `MARSHAL__`), options with `ValidateOnStart`
+- [x] 4.4 Implement configuration loading (`NetEscapades.Configuration.Yaml`, env prefix `MARSHAL__`), options with `ValidateOnStart`
 - [x] 4.5 Write tests for hot reload keeping the last good value on invalid files
-- [ ] 4.6 Implement validating `IOptionsMonitor` wrapper and file watching for `risk.yaml` and `satellites.yaml`
+- [x] 4.6 Implement validating `IOptionsMonitor` wrapper and file watching for `risk.yaml` and `satellites.yaml`
 - [x] 4.7 Write tests for `ISecretStore`: env / file source, DB source encryption, lookup order for config vs user-owned references, not-found result
 - [x] 4.8 Implement `SecretStore`, `EnvironmentFileSecretSource`, `DatabaseSecretSource` (Data Protection, keys in `/data/keys`)
 - [x] 4.9 Write test: required secret missing fails startup; optional missing yields health warning
-- [ ] 4.10 Implement `[Secret]` binding and required-secret check at startup
+- [x] 4.10 Implement `[Secret]` binding and required-secret check at startup
 
 ## 5. Model routing
 
@@ -87,20 +87,20 @@
 ## 11. Tokens
 
 - [x] 11.1 Write token tests: hash only stored, revoked / expired rejected, scope policy check
-- [ ] 11.2 Implement `ApiTokenService` and bearer authentication handler
+- [x] 11.2 Implement `ApiTokenService` and bearer authentication handler
 - [x] 11.3 Write CLI tests: `tokens create` prints once and audits, `list`, `revoke`
 - [x] 11.4 Implement the `marshal tokens` command mode
 
 ## 12. Conversation API
 
-- [ ] 12.1 Write API tests (`WebApplicationFactory`): versioned route, unsupported version, `/api/versions`, OpenAPI v1 document, camelCase JSON
-- [ ] 12.2 Implement API versioning (`ApiVersions.V1`, versioned route group), OpenAPI per version, base path
-- [ ] 12.3 Write turn endpoint tests: missing scope 403, SSE `delta` / `status` / final events, id echo, `continueConversation` on pending action, keyword confirmation turn, unknown `followupRef` ignored
-- [ ] 12.4 Implement `POST /api/v1/conversation/turns` with `TypedResults.ServerSentEvents`
+- [x] 12.1 Write API tests (`WebApplicationFactory`): versioned route, unsupported version, `/api/versions`, OpenAPI v1 document, camelCase JSON
+- [x] 12.2 Implement API versioning (`ApiVersions.V1`, versioned route group), OpenAPI per version, base path
+- [x] 12.3 Write turn endpoint tests: missing scope 403, SSE `delta` / `status` / final events, id echo, `continueConversation` on pending action, keyword confirmation turn, unknown `followupRef` ignored
+- [x] 12.4 Implement `POST /api/v1/conversation/turns` with `TypedResults.ServerSentEvents`
 - [x] 12.5 Write latency cap tests with `FakeTimeProvider` (voice and text caps, outcome `cancelled` / `latency_cap`)
 - [x] 12.6 Implement the latency cap
-- [ ] 12.7 Write `/health` tests (DB, config, required secrets, warnings without values)
-- [ ] 12.8 Implement `/health`
+- [x] 12.7 Write `/health` tests (DB, config, required secrets, warnings without values)
+- [x] 12.8 Implement `/health`
 
 ## 13. Run recording
 

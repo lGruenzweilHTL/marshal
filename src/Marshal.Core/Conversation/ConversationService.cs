@@ -28,7 +28,15 @@ public sealed class ConversationService(
     private const int HistoryTurns = 10;
     private static readonly string[] _supportedLanguages = ["de", "en"];
 
+    /// <summary>Prepares and runs a turn.</summary>
     public async Task<Result<TurnOutcome>> HandleAsync(ConversationTurn turn, ChannelWriter<TurnEvent>? events, CancellationToken cancellationToken)
+    {
+        Result<PreparedTurn> prepared = await PrepareAsync(turn, cancellationToken);
+        return prepared.IsFailure ? prepared.Error : await RunAsync(prepared.Value, events, cancellationToken);
+    }
+
+    /// <summary>Resolves the session, owner and reply language. Fails before anything runs.</summary>
+    public async Task<Result<PreparedTurn>> PrepareAsync(ConversationTurn turn, CancellationToken cancellationToken)
     {
         Result<SessionRecord> session = await ResolveSessionAsync(turn, cancellationToken);
         if (session.IsFailure)
@@ -45,10 +53,16 @@ public sealed class ConversationService(
             AreaId = turn.Evidence.AreaId,
             SessionId = session.Value.Id,
         };
+        return new PreparedTurn(turn, session.Value, context);
+    }
 
+    /// <summary>Decides the session's pending action, then runs the loop under the latency cap.</summary>
+    public async Task<TurnOutcome> RunAsync(PreparedTurn prepared, ChannelWriter<TurnEvent>? events, CancellationToken cancellationToken)
+    {
+        (ConversationTurn turn, SessionRecord session, MarshalExecutionContext context) = prepared;
         using IDisposable scope = executionContext.Use(context);
-        IReadOnlyList<ChatMessage> earlier = await history.LoadAsync(session.Value.Id, HistoryTurns, cancellationToken);
-        ConfirmationOutcome decided = await confirmation.HandleUserTurnAsync(session.Value.Id, turn.Text, context, cancellationToken);
+        IReadOnlyList<ChatMessage> earlier = await history.LoadAsync(session.Id, HistoryTurns, cancellationToken);
+        ConfirmationOutcome decided = await confirmation.HandleUserTurnAsync(session.Id, turn.Text, context, cancellationToken);
         AgentRunRequest request = new()
         {
             Context = context,
@@ -61,14 +75,14 @@ public sealed class ConversationService(
         request = decided.Kind switch
         {
             ConfirmationOutcomeKind.Executed => request with { Trigger = "confirmation", Confirmation = Step(decided) },
-            ConfirmationOutcomeKind.Cancelled => request with { Trigger = "confirmation", Confirmation = Step(decided), FixedReply = FixedReplies.Cancelled(language) },
-            ConfirmationOutcomeKind.Expired => request with { Trigger = "confirmation", Confirmation = Step(decided), FixedReply = FixedReplies.Expired(language) },
+            ConfirmationOutcomeKind.Cancelled => request with { Trigger = "confirmation", Confirmation = Step(decided), FixedReply = FixedReplies.Cancelled(context.Language) },
+            ConfirmationOutcomeKind.Expired => request with { Trigger = "confirmation", Confirmation = Step(decided), FixedReply = FixedReplies.Expired(context.Language) },
             ConfirmationOutcomeKind.Dropped => request with { Confirmation = Step(decided) },
             _ => request,
         };
 
         AgentRunResult result = await runner.RunAsync(request, cancellationToken);
-        string conversationId = turn.ApiTokenId is null ? session.Value.Id.ToString() : turn.ConversationId!;
+        string conversationId = turn.ApiTokenId is null ? session.Id.ToString() : turn.ConversationId!;
         return new TurnOutcome(result.Reply, result.ContinueConversation, conversationId);
     }
 

@@ -8,6 +8,6 @@ namespace Marshal.Core.Sessions;
 public sealed class SessionOptions
 {
     /// <summary>A session without a turn for this long is closed.</summary>
-    [Range(typeof(TimeSpan), "00:00:30", "1.00:00:00")]
+    [Range(typeof(TimeSpan), "00:00:30", "1.00:00:00", ErrorMessage = "sessions.idleTtl must be between {1} and {2}.")]
     public TimeSpan IdleTtl { get; set; } = TimeSpan.FromMinutes(5);
 }
