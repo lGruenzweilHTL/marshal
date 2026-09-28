@@ -45,7 +45,8 @@ src/                         .NET projects
   Marshal.Abstractions/      small shared interfaces (providers, channels, executors, ...)
   Marshal.Core/              agent harness: loop, tool registry, risk engine + guard,
                              context builder, model router, sessions
-  Marshal.Memory/            chunks, embeddings, hybrid retrieval, project activation (planned)
+  Marshal.Memory/            memory chunks, versions and edges, hybrid retrieval, project activation,
+                             consolidation (entities and migrations live in Marshal.Data)
   Marshal.Tasks/             scheduler, event bus, trigger matcher, executors, notifications (planned)
   Marshal.Integrations.HomeAssistant/  HA REST + websocket client, registry and state cache, target resolver,
                              area context, timer tools, time zone source

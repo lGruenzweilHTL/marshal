@@ -78,6 +78,7 @@ package "src/ (.NET 10)" {
 
   package "Marshal.Memory" as Memory {
     component "Chunks + edges, hybrid retrieval,\nproject activation, consolidation" as MemoryParts
+    component "Microsoft.Extensions.AI\n.Abstractions\n(IEmbeddingGenerator)" <<nuget>>
   }
 
   package "Marshal.Tasks" as Tasks {
@@ -150,6 +151,7 @@ Tests --> Api
 Tests --> Core
 Tests --> Data
 Tests --> Integrations
+Tests --> Memory
 
 note bottom of Abstractions
   Only interfaces, value types and Result

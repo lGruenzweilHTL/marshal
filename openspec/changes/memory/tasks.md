@@ -1,6 +1,6 @@
 ## 1. Project and storage
 
-- [ ] 1.1 Create `Marshal.Memory` and `Marshal.Memory.Tests`; update `packages.puml` and `CLAUDE.md` repository map
+- [x] 1.1 Create `Marshal.Memory` and `Marshal.Memory.Tests`; update `packages.puml` and `CLAUDE.md` repository map
 - [ ] 1.2 Write tests: `sqlite-vec` loads on every connection; health error when it does not
 - [ ] 1.3 Implement the connection interceptor and ship the native extension in the Docker image
 - [ ] 1.4 Write deterministic id tests: normalization, owner / scope / project / type separation, project rename keeps ids
