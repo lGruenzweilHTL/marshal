@@ -11,7 +11,7 @@
 - [x] 2.4 Implement `McpToolSource` (stdio + streamable HTTP)
 - [x] 2.5 Write registry tests: source register / unregister as a unit, unmatched external tool defaults to confirm
 - [x] 2.6 Extend `ToolRegistry` and risk engine defaults
-- [ ] 2.7 Add MCP server status to `/health`
+- [x] 2.7 Add MCP server status to `/health`
 
 ## 3. Home Assistant client
 

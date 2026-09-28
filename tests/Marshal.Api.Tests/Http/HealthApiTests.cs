@@ -22,6 +22,25 @@ public sealed class HealthApiTests
         Assert.Equal("healthy", checks.GetProperty("database").GetProperty("status").GetString());
         Assert.Equal("healthy", checks.GetProperty("config").GetProperty("status").GetString());
         Assert.Equal("healthy", checks.GetProperty("secrets").GetProperty("status").GetString());
+        Assert.Equal("healthy", checks.GetProperty("mcp").GetProperty("status").GetString());
+    }
+
+    [Fact]
+    public async Task Health_McpServerDownAndInvalidFile_WarningsNameThem()
+    {
+        using var factory = new MarshalApiFactory();
+        Directory.CreateDirectory(Path.Combine(factory.ConfigDirectory, "mcp"));
+        await File.WriteAllTextAsync(Path.Combine(factory.ConfigDirectory, "mcp", "search.yaml"), "id: search\ntransport: http\nurl: http://127.0.0.1:1/mcp\n", Ct);
+        await File.WriteAllTextAsync(Path.Combine(factory.ConfigDirectory, "mcp", "bad.yaml"), "id: home_assistant\ntransport: http\nurl: http://ha/api/mcp\n", Ct);
+
+        HttpResponseMessage response = await factory.CreateClient().GetAsync("/health", Ct);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        JsonElement mcp = (await response.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("checks").GetProperty("mcp");
+        Assert.Equal("degraded", mcp.GetProperty("status").GetString());
+        string[] warnings = [.. mcp.GetProperty("warnings").EnumerateArray().Select(warning => warning.GetString()!)];
+        Assert.Contains(warnings, warning => warning.StartsWith("MCP server search is down", StringComparison.Ordinal));
+        Assert.Contains(warnings, warning => warning.StartsWith("mcp/bad.yaml: ", StringComparison.Ordinal));
     }
 
     [Fact]
