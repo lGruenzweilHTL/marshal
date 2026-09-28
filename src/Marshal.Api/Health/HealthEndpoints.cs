@@ -5,7 +5,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 namespace Marshal.Api.Health;
 
 /// <summary>
-/// <c>/health</c>: liveness and readiness (database, configuration, secrets, MCP servers), unauthenticated, without values.
+/// <c>/health</c>: liveness and readiness (database, configuration, secrets, MCP servers, memory vector search), unauthenticated, without values.
 /// </summary>
 internal static class HealthEndpoints
 {
@@ -15,6 +15,7 @@ internal static class HealthEndpoints
             .AddCheck<ConfigurationHealthCheck>("config")
             .AddCheck<SecretsHealthCheck>("secrets")
             .AddCheck<McpHealthCheck>("mcp")
+            .AddCheck<MemoryHealthCheck>("memory")
             .AddCheck<HomeAssistantHealthCheck>("homeassistant");
 
     public static IEndpointRouteBuilder MapMarshalHealth(this IEndpointRouteBuilder app)

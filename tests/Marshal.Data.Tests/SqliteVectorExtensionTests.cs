@@ -1,0 +1,63 @@
+using Marshal.Abstractions;
+using Marshal.Data.Persistence;
+using Marshal.Testing;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+
+namespace Marshal.Data.Tests;
+
+public sealed class SqliteVectorExtensionTests : IDisposable
+{
+    private readonly string _directory = Directory.CreateTempSubdirectory("marshal-vec-").FullName;
+
+    [Fact]
+    public async Task EveryConnection_LoadsTheExtension()
+    {
+        DbContextOptions<MarshalDbContext> options = new DbContextOptionsBuilder<MarshalDbContext>()
+            .UseMarshalSqlite($"Data Source={Path.Combine(_directory, "marshal.db")}")
+            .Options;
+
+        for (int attempt = 0; attempt < 2; attempt++)
+        {
+            await using var db = new MarshalDbContext(options, new FakeExecutionContextAccessor());
+
+            Result<string> version = await SqliteVectorExtension.ProbeAsync(db, Ct);
+
+            Assert.True(version.IsSuccess, version.IsFailure ? version.Error.Message : null);
+            Assert.StartsWith("v", version.Value, StringComparison.Ordinal);
+            SqliteConnection.ClearAllPools();
+        }
+    }
+
+    [Fact]
+    public async Task TestDatabase_HasTheExtension()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        await using MarshalDbContext db = database.CreateContext();
+
+        Assert.True((await SqliteVectorExtension.ProbeAsync(db, Ct)).IsSuccess);
+    }
+
+    [Fact]
+    public async Task ConnectionWithoutTheExtension_ProbeFailsWithReason()
+    {
+        DbContextOptions<MarshalDbContext> options = new DbContextOptionsBuilder<MarshalDbContext>()
+            .UseSqlite($"Data Source={Path.Combine(_directory, "plain.db")}")
+            .Options;
+        await using var db = new MarshalDbContext(options, new FakeExecutionContextAccessor());
+
+        Result<string> version = await SqliteVectorExtension.ProbeAsync(db, Ct);
+
+        Assert.True(version.IsFailure);
+        Assert.Equal("memory.vector_extension_missing", version.Error.Code);
+        Assert.Contains("vec_version", version.Error.Message, StringComparison.Ordinal);
+    }
+
+    public void Dispose()
+    {
+        SqliteConnection.ClearAllPools();
+        Directory.Delete(_directory, recursive: true);
+    }
+
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
+}

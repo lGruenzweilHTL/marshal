@@ -7,6 +7,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="EFCore.NamingConventions" />
+    <!-- Native vec0 binaries only; the package's source file is not wanted. -->
+    <PackageReference Include="sqlite-vec" ExcludeAssets="contentFiles" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.Extensions.Options" />

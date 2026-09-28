@@ -1,8 +1,13 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Marshal.Api.Health;
 using Marshal.Core.Secrets;
+using Marshal.Data;
+using Marshal.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Marshal.Api.Tests.Http;
 
@@ -23,6 +28,22 @@ public sealed class HealthApiTests
         Assert.Equal("healthy", checks.GetProperty("config").GetProperty("status").GetString());
         Assert.Equal("healthy", checks.GetProperty("secrets").GetProperty("status").GetString());
         Assert.Equal("healthy", checks.GetProperty("mcp").GetProperty("status").GetString());
+        Assert.Equal("healthy", checks.GetProperty("memory").GetProperty("status").GetString());
+    }
+
+    [Fact]
+    public async Task MemoryCheck_WithoutVectorExtension_Unhealthy()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"marshal-plain-{Guid.NewGuid():N}.db");
+        DbContextOptions<MarshalDbContext> options = new DbContextOptionsBuilder<MarshalDbContext>().UseSqlite($"Data Source={path}").Options;
+        var check = new MemoryHealthCheck(new PlainFactory(options));
+
+        HealthCheckResult result = await check.CheckHealthAsync(new HealthCheckContext(), Ct);
+
+        Assert.Equal(HealthStatus.Unhealthy, result.Status);
+        Assert.Contains("sqlite-vec", result.Description, StringComparison.Ordinal);
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        File.Delete(path);
     }
 
     [Fact]
@@ -80,6 +101,11 @@ public sealed class HealthApiTests
         string body = await factory.CreateClient().GetStringAsync("/health", Ct);
 
         Assert.Contains("skills/broken/SKILL.md", body, StringComparison.Ordinal);
+    }
+
+    private sealed class PlainFactory(DbContextOptions<MarshalDbContext> options) : IDbContextFactory<MarshalDbContext>
+    {
+        public MarshalDbContext CreateDbContext() => new(options, new FakeExecutionContextAccessor());
     }
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;

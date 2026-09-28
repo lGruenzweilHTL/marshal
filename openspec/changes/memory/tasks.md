@@ -1,8 +1,8 @@
 ## 1. Project and storage
 
 - [x] 1.1 Create `Marshal.Memory` and `Marshal.Memory.Tests`; update `packages.puml` and `CLAUDE.md` repository map
-- [ ] 1.2 Write tests: `sqlite-vec` loads on every connection; health error when it does not
-- [ ] 1.3 Implement the connection interceptor and ship the native extension in the Docker image
+- [x] 1.2 Write tests: `sqlite-vec` loads on every connection; health error when it does not
+- [x] 1.3 Implement the connection interceptor and ship the native extension in the Docker image
 - [ ] 1.4 Write deterministic id tests: normalization, owner / scope / project / type separation, project rename keeps ids
 - [ ] 1.5 Implement `ChunkId` generation
 - [ ] 1.6 Write store tests: validation (project scope needs project), same-id update creates `ChunkVersion`, identity change creates `supersedes`, no self-supersede, soft delete, FTS and vector index updated in the same transaction, ownership with a second user

@@ -73,3 +73,20 @@ EF migration adds memory tables; the FTS and vector virtual tables are created b
 ## Open Questions
 
 - Default quotas, half-lives and confidence thresholds — start with documented defaults, tune with real use (evaluation stays out of CI).
+
+## Implementation Notes
+
+### sqlite-vec (tasks 1.2, 1.3)
+
+- **Package.** The upstream author publishes the `sqlite-vec` NuGet package (owned by the .NET data team, used in
+  Microsoft's docs) with `runtimes/{linux,osx}-{x64,arm64}` and `win-x64` `vec0` binaries; its latest version is
+  the prerelease `0.1.7-alpha.2.1` (GitHub releases are at v0.1.9, 2026-03). Third-party repackagings of v0.1.9
+  exist but were not used. The package's `contentFiles` source (a `LoadVector` extension method) is excluded.
+  Upgrade to a stable package once one is published.
+- **Loading.** `UseMarshalSqlite` adds `SqliteVectorExtension.Interceptor`, which calls
+  `EnableExtensions` + `LoadExtension("vec0")` whenever EF Core opens a connection (Microsoft.Data.Sqlite finds the
+  RID-specific native asset through the host's native search directories). An already open connection (the tests'
+  in-memory databases) is loaded directly. A failed load is swallowed so the rest of the database keeps working;
+  the `memory` health check probes `vec_version()` on a fresh connection and reports unhealthy with the reason.
+- **Image.** `dotnet publish` copies `runtimes/*/native/vec0.*` into `/app`, which the Dockerfile ships as is;
+  a published build answered `/health` with `memory: healthy, sqlite-vec v0.1.7-alpha.2.1`.

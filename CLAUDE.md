@@ -97,7 +97,7 @@ Key dependencies and what they are for. Keep this list current when adding or re
 | `Microsoft.AspNetCore.DataProtection` | Encrypting UI-managed secrets in the database; keys in `/data/keys` |
 | `EFCore.NamingConventions` | snake_case table and column names for the EF Core model |
 | `Microsoft.EntityFrameworkCore.Design` + `dotnet-ef` (local tool, `.config/dotnet-tools.json`) | Creating migrations (`dotnet ef migrations add <Name> --project src/Marshal.Data --output-dir Migrations`) |
-| `sqlite-vec` (native extension) | Vector search in SQLite |
+| `sqlite-vec` | Vector search in SQLite: upstream NuGet with the native `vec0` binaries per RID (prerelease `0.1.7-alpha.2.1`, `contentFiles` excluded), loaded into every connection by `SqliteVectorExtension` (Marshal.Data) |
 | `Cronos` | Cron expression parsing for the scheduler |
 | `MailKit` | IMAP provider (search, drafts via `APPEND`, IDLE) |
 | `SmartReader` | Readability full-text extraction for RSS articles |
