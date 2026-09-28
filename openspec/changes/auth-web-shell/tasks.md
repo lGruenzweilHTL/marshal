@@ -54,8 +54,8 @@
 - [x] 8.3 Implement login page, layout, navigation, responsive shell
 - [x] 8.4 Write chat component tests: streaming deltas, status events, new conversation, confirmation question with reason, external image rendered as link
 - [x] 8.5 Implement chat view with safe markdown rendering
-- [ ] 8.6 Write tests for runs list / detail and cost views
-- [ ] 8.7 Implement runs, cost, dashboard (recent runs, today's cost, health) and system views
+- [x] 8.6 Write tests for runs list / detail and cost views
+- [x] 8.7 Implement runs, cost, dashboard (recent runs, today's cost, health) and system views
 - [ ] 8.8 Write tests for security (tokens), secrets and preferences views
 - [ ] 8.9 Implement security, secrets and preferences views
 
