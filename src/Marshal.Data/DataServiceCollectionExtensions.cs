@@ -31,6 +31,7 @@ public static class DataServiceCollectionExtensions
         services.AddSingleton<IConversationHistory, EfConversationHistory>();
         services.AddSingleton<IRunRecorder, DbRunRecorder>();
         services.AddSingleton<IAdvisorUsage, EfAdvisorUsage>();
+        services.AddSingleton<IRunQueries, EfRunQueries>();
         services.AddSingleton<IAuditLog, DbAuditLog>();
         services.AddSingleton<IUserProfileProvider, EfUserProfileProvider>();
         services.AddSingleton<IUserPreferencesStore, EfUserPreferencesStore>();

@@ -122,3 +122,8 @@ One EF migration converting `User` to Identity and adding Identity tables, `Auth
   publishes `run.started` / `run.completed` from the run recorder's observer hook. The SSE event name is the event
   type, the data a `LiveEventMessage` (`topic`, `type`, `id`, `payload`); a `ping` event every 25 s keeps proxies
   from closing idle streams. Each subscriber has a bounded buffer (256) that drops the oldest events.
+- **Runs and cost API:** `IRunQueries` (`EfRunQueries`) backs `GET /runs` (filters `source`, `outcome`, `minCost`,
+  paging with `before` + `limit`), `GET /runs/{id}` and `GET /cost?from&to`. Cost sums the recorded model-call
+  costs attributed to the local day their run started, in the user's time zone - the same basis as the advisor
+  budget (`EfAdvisorUsage`); the advisor tier is reported on its own line and not in `byTier`. Enum values in the
+  API are camelCase (`escalatedByTaint`); the spec's snake_case names are the stored values.

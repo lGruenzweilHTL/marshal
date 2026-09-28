@@ -44,8 +44,8 @@
 
 ## 7. Runs and cost API
 
-- [ ] 7.1 Write tests for runs list filters, run detail fields (guard decisions, reasons, taint sources, redacted results) and cost aggregation per day / tier / advisor
-- [ ] 7.2 Implement runs and cost endpoints
+- [x] 7.1 Write tests for runs list filters, run detail fields (guard decisions, reasons, taint sources, redacted results) and cost aggregation per day / tier / advisor
+- [x] 7.2 Implement runs and cost endpoints
 
 ## 8. SPA
 
