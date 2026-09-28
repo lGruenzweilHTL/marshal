@@ -49,6 +49,10 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         executionContext.Current?.OwnerId
         ?? throw new InvalidOperationException("Owner-scoped data accessed without an execution context.");
 
+    /// <summary>The current owner, or null without an execution context. Only for the Secret filter, which then
+    /// returns instance rows only (they are visible to every owner anyway).</summary>
+    internal OwnerId? CurrentOwnerIdOrNull => executionContext.Current?.OwnerId;
+
     /// <inheritdoc />
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
@@ -164,7 +168,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             // SQLite treats NULLs as distinct, so a plain unique (owner_id, name) would allow duplicate instance names.
             secret.HasIndex(entity => entity.Name).IsUnique().HasFilter("owner_id IS NULL").HasDatabaseName("ix_secrets_instance_name");
             secret.HasIndex(entity => new { entity.OwnerId, entity.Name }).IsUnique().HasFilter("owner_id IS NOT NULL").HasDatabaseName("ix_secrets_owner_id_name");
-            secret.HasQueryFilter(entity => entity.OwnerId == null || entity.OwnerId == CurrentOwnerId);
+            secret.HasQueryFilter(entity => entity.OwnerId == null || entity.OwnerId == CurrentOwnerIdOrNull);
         });
     }
 
@@ -188,6 +192,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
                 Secret secret => secret.OwnerId,
                 _ => null,
             };
+            // Instance secrets (null owner) may be written in any context; admin checks happen in the API.
             if (owner is not null && owner != CurrentOwnerId)
                 throw new InvalidOperationException($"Refusing to write a {entry.Metadata.ClrType.Name} row of another owner.");
         }

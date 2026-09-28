@@ -24,15 +24,15 @@
 
 ## 4. Configuration and secrets
 
-- [ ] 4.1 Write tests for the config secret scanner (reference-key pattern, forbidden key words incl. false-positive cases `maxTokens`, `tokenUrl`, value patterns incl. 32-hex and base64)
-- [ ] 4.2 Implement `ConfigSecretScanner` over the raw YAML tree
-- [ ] 4.3 Write tests for layering (YAML < `MARSHAL__` env) and that `MARSHAL_SECRET_*` never enters `IConfiguration`
+- [x] 4.1 Write tests for the config secret scanner (reference-key pattern, forbidden key words incl. false-positive cases `maxTokens`, `tokenUrl`, value patterns incl. 32-hex and base64)
+- [x] 4.2 Implement `ConfigSecretScanner` over the raw YAML tree
+- [x] 4.3 Write tests for layering (YAML < `MARSHAL__` env) and that `MARSHAL_SECRET_*` never enters `IConfiguration`
 - [ ] 4.4 Implement configuration loading (`NetEscapades.Configuration.Yaml`, env prefix `MARSHAL__`), options with `ValidateOnStart`
-- [ ] 4.5 Write tests for hot reload keeping the last good value on invalid files
+- [x] 4.5 Write tests for hot reload keeping the last good value on invalid files
 - [ ] 4.6 Implement validating `IOptionsMonitor` wrapper and file watching for `risk.yaml` and `satellites.yaml`
-- [ ] 4.7 Write tests for `ISecretStore`: env / file source, DB source encryption, lookup order for config vs user-owned references, not-found result
-- [ ] 4.8 Implement `SecretStore`, `EnvironmentFileSecretSource`, `DatabaseSecretSource` (Data Protection, keys in `/data/keys`)
-- [ ] 4.9 Write test: required secret missing fails startup; optional missing yields health warning
+- [x] 4.7 Write tests for `ISecretStore`: env / file source, DB source encryption, lookup order for config vs user-owned references, not-found result
+- [x] 4.8 Implement `SecretStore`, `EnvironmentFileSecretSource`, `DatabaseSecretSource` (Data Protection, keys in `/data/keys`)
+- [x] 4.9 Write test: required secret missing fails startup; optional missing yields health warning
 - [ ] 4.10 Implement `[Secret]` binding and required-secret check at startup
 
 ## 5. Model routing

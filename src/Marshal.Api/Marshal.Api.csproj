@@ -12,6 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="NetEscapades.Configuration.Yaml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Marshal.Api.Tests" />
   </ItemGroup>
 
