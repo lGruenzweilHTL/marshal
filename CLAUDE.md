@@ -54,7 +54,7 @@ tests/                       one test project per src project (Marshal.<Name>.Te
   Marshal.Testing/           shared hand-written fakes (FakeChatClient, FakeEmbeddingGenerator, ...)
 web/                         Vue + Vite + TypeScript SPA (API client generated from OpenAPI), folders by feature;
                              built into Marshal.Api's wwwroot by the Dockerfile
-ha/                          custom_components/marshal (Python HA integration, HACS; may move to its own repo) (planned)
+ha/                          custom_components/marshal (Python HA integration, HACS; may move to its own repo); uv project, tests in ha/tests
 deploy/                      docker-compose.yml, config.example/ (example /config files); Dockerfile at repo root
 docs/                        design notes, images
 openspec/                    specifications and changes
@@ -122,7 +122,8 @@ No mocking or assertion libraries — use hand-written fakes from `Marshal.Testi
 **Python (`ha/`)**
 | Package | Purpose |
 |---|---|
-| `pytest-homeassistant-custom-component` | Tests for the HA custom integration |
+| `pytest-homeassistant-custom-component` | Tests for the HA custom integration (`uv run pytest` in `ha/`); pins the HA version tested against. The component itself has no requirements (it uses HA's shared aiohttp session) |
+| `hassil`, `home-assistant-intents`, `gazetteer-matcher`, `pymicro-vad`, `pyspeex-noise`, `mutagen`, `ha-ffmpeg` (dev) | Requirements of the HA components the tests set up (`conversation`, `assist_pipeline`, `tts`); keep in step with the pinned HA release |
 
 ## Conventions
 

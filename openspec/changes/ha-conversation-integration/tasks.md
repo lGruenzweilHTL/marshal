@@ -22,5 +22,5 @@
 
 ## 5. Documentation
 
-- [ ] 5.1 Write `ha/README.md`: installation via HACS custom repository, token creation (`marshal tokens create --scope conversation:write`), pipeline setup with local command handling off
-- [ ] 5.2 Update `packages.puml` if the component's dependencies differ from the plan; re-render
+- [x] 5.1 Write `ha/README.md`: installation via HACS custom repository, token creation (`marshal tokens create --scope conversation:write`), pipeline setup with local command handling off
+- [x] 5.2 Update `packages.puml` if the component's dependencies differ from the plan; re-render

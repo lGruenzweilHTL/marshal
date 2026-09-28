@@ -9,7 +9,8 @@
 '
 ' Status: PARTLY BUILT — Marshal.Abstractions, Marshal.Core, Marshal.Data,
 ' Marshal.Api, Marshal.Testing and their test projects exist (core-agent),
-' web/ exists (auth-web-shell); the other projects are still planned
+' web/ exists (auth-web-shell), ha/ exists (ha-conversation-integration);
+' the other projects are still planned
 ' (docs/brainstorm-notes.md).
 ' External packages are drawn inside the project that references them
 ' (grey boxes, <<nuget>> / <<npm>> / <<pip>>).
@@ -44,7 +45,8 @@ title Marshal — Packages (planned)
 ' ------------------------------------------------------------------
 package "Clients" {
   package "ha/ custom_components/marshal (Python, HACS)" as HaComponent {
-    component "pytest-homeassistant-\ncustom-component" <<pip>>
+    component "no runtime requirements\n(HA's aiohttp session)" as HaRuntime
+    component "pytest-homeassistant-\ncustom-component (uv, dev)" <<pip>>
   }
   package "web/ (Vue SPA, served from Marshal.Api wwwroot)" as Web {
     component "vue, vue-router,\nvite, typescript, vue-tsc" <<npm>>

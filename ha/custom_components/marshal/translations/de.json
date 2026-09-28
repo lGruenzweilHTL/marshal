@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Mit Marshal verbinden",
-        "description": "Gib die Adresse deiner Marshal-Instanz und ein API-Token mit dem Scope conversation:write ein (in Marshal unter Sicherheit oder mit `marshal tokens create --scope conversation:write` erstellen).",
+        "description": "Gib die Adresse deiner Marshal-Instanz und ein API-Token mit dem Scope conversation:write ein (in Marshal unter Sicherheit oder mit `marshal tokens create --name home-assistant --scope conversation:write` erstellen).",
         "data": {
           "url": "URL",
           "token": "API-Token"

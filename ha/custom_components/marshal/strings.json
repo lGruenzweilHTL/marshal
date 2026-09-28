@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Connect to Marshal",
-        "description": "Enter the address of your Marshal instance and an API token with the scope conversation:write (create one in Marshal under Security or with `marshal tokens create --scope conversation:write`).",
+        "description": "Enter the address of your Marshal instance and an API token with the scope conversation:write (create one in Marshal under Security or with `marshal tokens create --name home-assistant --scope conversation:write`).",
         "data": {
           "url": "URL",
           "token": "API token"
