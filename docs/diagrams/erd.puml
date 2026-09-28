@@ -76,6 +76,7 @@ package "Identity & Access" {
     * user_id : OwnerId <<PK, FK>>
     --
     * language : de | en
+    * time_zone : string  <<IANA, default from HA>>
     quiet_hours : json
     notification_targets : json
     dnd_until : DateTimeOffset
@@ -114,6 +115,8 @@ package "Conversations & Runs" {
     * started_at : DateTimeOffset
     ended_at : DateTimeOffset
     * outcome : ok | error | backgrounded | cancelled
+    * tainted : bool  <<untrusted content entered context>>
+    taint_sources : json  <<mail | rss | notes | web | mcp:<id>, first tainting step>>
     * cost : decimal
   }
 
@@ -146,6 +149,7 @@ package "Conversations & Runs" {
     * tool : string
     * args : json  <<frozen>>
     * summary : string
+    * reasons : json  <<[{code: rule | unresolved_target | taint | quiet_hours_override, detail}]>>
     * nonce : string
     * expires_at : DateTimeOffset  <<~60 s conversation, 10 min approval queue>>
     * status : pending | approved | rejected | dropped | expired | superseded
@@ -232,6 +236,18 @@ package "Memory" {
     deleted_at : DateTimeOffset  <<soft delete>>
   }
 
+  entity ChunkVersion {
+    * id : Guid <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    * chunk_id : ChunkId <<FK>>
+    * content : string
+    * importance : int (1-5)
+    source_ref : string
+    * replaced_at : DateTimeOffset
+    <<previous content of a same-id update>>
+  }
+
   entity ChunkEdge {
     * from_id : ChunkId <<PK, FK>>
     * to_id : ChunkId <<PK, FK>>
@@ -253,7 +269,8 @@ package "Background Work" {
     * kind : agent | system
     * goal : string
     template : string
-    scope : json
+    project_id : ProjectId <<FK>>
+    origin_satellite_id : string  <<policy applies to all runs + children>>
     * trigger_kind : now | at | cron | event | after
     * trigger_spec : string
     * status : pending | running | waiting | done | failed | cancelled
@@ -387,6 +404,8 @@ Project ||--o{ ProjectAlias
 Project ||--o{ ProjectFeedback
 Run |o--o{ ProjectFeedback
 Project |o--o{ Chunk
+Chunk ||--o{ ChunkVersion
+Project |o--o{ AgentTask
 Chunk ||--o{ ChunkEdge : from
 Chunk ||--o{ ChunkEdge : to
 

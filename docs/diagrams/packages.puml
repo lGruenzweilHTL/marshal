@@ -63,6 +63,7 @@ package "src/ (.NET 10)" {
 
   package "Marshal.Core" as Core {
     component "Agent loop, tool registry\n+ visibility, risk engine + guard,\ncontext builder, model router,\nsessions" as CoreParts
+    component "Microsoft.Extensions.AI" <<nuget>>
     component "ModelContextProtocol" <<nuget>>
     component "YamlDotNet" <<nuget>>
   }

@@ -55,13 +55,13 @@ Capabilities:
 
 ### Sub-project decomposition — DECIDED
 Each sub-project gets its own spec → plan → implementation cycle. First spec sketches the full architecture.
-1. Core: agent loop, LLM providers, conversation endpoint, sessions, tool abstraction, guard, config, secret store, machine tokens. In-conversation confirmation only. The latency cap here only streams `status` events and ends the turn with a short "this takes too long" reply; there is no backgrounding yet.
+1. Core: agent loop, LLM providers, conversation endpoint, sessions, tool abstraction, guard, config, secret store, machine tokens. In-conversation confirmation only. The latency cap here only streams `status` events and ends the turn with a short "this takes too long" reply; there is no backgrounding yet. Machine tokens are created with an admin CLI command in the container (`marshal tokens create --name ha --scope conversation:write`), because the token UI only arrives in sub-project 2; the CLI stays as the headless path afterwards.
 2. Human auth + web shell: login providers (OIDC, local), API token management, secrets / accounts pages, text chat. Comes early because later sub-projects need a logged-in browser (OAuth connect flows, approvals).
 3. HA integration (Python custom component, §6): only consumes the public conversation API, so Core is built and tested without it. Marshal only ever receives text (HA runs STT before forwarding), so no voice testing is needed on the Marshal side.
 4. Extensibility: MCP client (HA MCP first), skills, agent templates
 5. Memory
-6. Integrations: Moonraker, mail, FreshRSS, calendar, notes
-7. Background work: scheduler, tasks, events, executors, notifications. Also adds everything in the conversation path that needs a durable task: auto-background at the latency cap, the `agent.move_to_background` tool, the approval queue and voice follow-ups (§6, §10). Until then these tools do not exist, so the visibility rule (§1) hides them automatically.
+6. Integrations: Moonraker, mail, FreshRSS, calendar, notes — tools and read paths only. The Moonraker websocket client and state cache are built here (status tools read the cache, §13); nothing is published to an event bus yet.
+7. Background work: scheduler, tasks, events, executors, notifications. Also adds everything in the conversation path that needs a durable task: auto-background at the latency cap, the `agent.move_to_background` tool, the approval queue and voice follow-ups (§6, §10). Until then these tools do not exist, so the visibility rule (§1) hides them automatically. Everything that needs the EventBus or the NotificationRouter lands here too, even when it belongs to an integration: Moonraker semantic events and the print babysitter (§13), new-mail events (§14), HA state-change events for conditional delivery.
 
 Each sub-project from 4 on adds its own web UI views (§18) instead of one big web UI phase at the end.
 
@@ -80,7 +80,7 @@ Provider-neutral via `Microsoft.Extensions.AI` (`IChatClient`, `IEmbeddingGenera
 **Advisor limits:**
 - No tools. Gets the question + an agent-written context summary (no full transcript). Returns advice text only.
 - Max 2 advisor calls per run (configurable per template).
-- **Hidden in voice turns** (visibility rule). Voice turns needing planning move to the background — either the model calls `agent.move_to_background` (§6) or the latency cap fires. The tool list is recomputed for background rules on that switch, so the advisor becomes visible there.
+- **Hidden in voice turns** (`inputMode = voice`, §6; visibility rule). Visible in interactive text turns (web chat, typed Assist, API) and in background runs. Voice turns needing planning move to the background — either the model calls `agent.move_to_background` (§6) or the latency cap fires. The tool list is recomputed for background rules on that switch, so the advisor becomes visible there.
 - Advisor cost counts against the task budget + separate daily advisor cap; own line in the cost view.
 - Prompt nudge: use only for multi-step planning or when stuck after a failed attempt. Hard limits are the real control.
 
@@ -97,13 +97,13 @@ Parts:
 - **Model router:** tiers + capabilities → providers (§2)
 - **Session store:** see §6
 - **Task runner:** same loop, headless (§10)
-- **Subagents:** `agent.delegate(template, task)` tool → nested Marshal agent loop (same harness, same guard, template's tools and model tier, usually cheaper), result returned inline to the calling loop. Not to be confused with executors (§10: `tasks.run_executor`), which hand long external work to another system and report back later as an event.
+- **Subagents:** `agent.delegate(template, task)` tool → nested Marshal agent loop (same harness, same guard, template's tools and model tier, usually cheaper), result returned inline to the calling loop. **Subagents never run confirm-tier actions:** confirm-tier tools are hidden in the nested loop; arg-aware tools stay visible, but the guard denies every call that resolves to confirm. A subagent has no user to ask; if it needs a confirm-tier action, it says so in its result and the calling loop performs the action itself (with the normal confirmation or approval flow). Subagents inherit the caller's satellite policy and taint (§4). Not to be confused with executors (§10: `tasks.run_executor`), which hand long external work to another system and report back later as an event.
 - **Advisor:** `agent.ask_advisor(question)` tool → single strong-model call with trimmed context (§2)
 
 Formats (file-based, git-friendly):
 - **Skills:** Anthropic Agent Skills format (`SKILL.md` + frontmatter + files). Progressive disclosure via `agent.load_skill`.
 - **Agent templates:** Markdown + frontmatter (like Claude Code subagents): `name`, `description`, `modelTier`, `tools` allowlist, `skills`, prompt body.
-- **MCP servers:** config list (stdio + streamable HTTP), with risk rules (§4).
+- **MCP servers:** config list (stdio + streamable HTTP), with risk rules (§4). A server whose tools return third-party content (web fetch, search, ...) is marked `untrusted: true`; its results taint the run (§4). MCP tools that no risk rule matches default to `confirm` (fail closed); built-in tools use their own default tier.
 
 ### Tool naming — DECIDED
 Model APIs only accept tool names matching `^[a-zA-Z0-9_-]{1,64}$` (no dots). So every tool has two names:
@@ -137,10 +137,15 @@ risk:
 ```
 - Rules match tool ids (globs, §3 tool naming), the same way for built-in and MCP tools; first match wins.
 - Tools whose tier depends on args stay visible; the guard decides per call.
-- Args that cannot be resolved to a known target (e.g. unknown HA entity name) → confirm (fail closed).
+- **Target resolution expands every filter the call carries**, not only names: HA intents target by `name`, `area`, `floor`, `domain` and `device_class`, so `HassTurnOff(area: "hall")` resolves to every exposed entity in the hall. Rules are evaluated per resolved entity and the **highest tier wins** (one lock in the set → the whole call is confirm). This matters because HA's generic on / off intents also act on locks and covers (e.g. turn off a lock = unlock — verify the exact domain mapping when building).
+- Args that cannot be resolved to a known target (e.g. unknown HA entity name), or that resolve to an empty set → confirm (fail closed).
+- **Tier escalation by taint:** see "Untrusted content" below. The guard may raise a call's tier, never lower it.
 
 **Flow for `confirm`-tier calls:**
-1. Server freezes the pending action: tool, args, session, satellite, nonce, TTL (~60 s). Agent asks the user for confirmation (`continueConversation` = true).
+1. Server freezes the pending action: tool, args, session, satellite, nonce, TTL (~60 s), and **the reason confirmation is needed**. Agent asks the user for confirmation (`continueConversation` = true).
+   - **Every confirmation explains itself.** The guard, not the model, determines the reason, as a code plus a short localized sentence (request language, §5): `rule` (the risk rule makes this tool / target confirm tier, e.g. "this unlocks the front door"), `unresolved_target` ("I couldn't tell exactly which device you mean"), `taint` (see below), `quiet_hours_override`.
+   - The reason is part of the frozen action. The tool result that tells the model "confirmation pending" carries the reason sentence, and the system prompt requires the question to include it. Channels the model does not write (approval queue in the web UI, actionable push) show the server sentence verbatim, so the explanation is there even if the model drops it.
+   - Several reasons can apply; all are stored, the most specific one is spoken (`taint` first, since it is the one a user would not expect).
 2. Next user turn:
    - **Exact match** (after normalization: trim, lowercase, strip punctuation; full utterance only) against configured keywords per language (§5) → execute frozen action. Bypasses the model; server-validated only.
    - Otherwise → **small judge LLM** sees only action summary + user reply, temperature 0, structured enum output:
@@ -154,9 +159,19 @@ risk:
 **Rules:**
 - Only user actions can confirm: a user turn, a web UI approval, or a nonce-verified push action. Tool output (mail bodies, RSS, notes) never counts → blocks prompt injection.
 - One pending action per conversation; a new one supersedes.
-- Background tasks: no user present → confirm-tier actions go to the **approval queue** (actionable push or web UI), same freeze + nonce model, but with a **10-minute TTL** (in-conversation confirmations keep ~60 s). An expired approval counts as rejected; the task gets that as the tool result and continues or fails.
-- Per-satellite policy (`denyConfirm`, `denyTools`) — §8.
-- Any future tool that sends data outward is confirm tier.
+- Background tasks: no user present → confirm-tier actions go to the **approval queue** (actionable push or web UI), same freeze + nonce model, but with a **10-minute TTL** (in-conversation confirmations keep ~60 s). An expired approval counts as rejected.
+  - **The run suspends, it does not block a worker.** The frozen action is queued, the server appends an automatic entry to the task's `notes` ("approval requested: `<tool>` with `<args summary>`"), and the run ends with `status=waiting` and trigger = the approval decision.
+  - On approve, the **server** executes the frozen action (the model never re-issues it). The task then resumes like any wakeup (§10): goal + notes + trigger payload, where the payload carries the decision and, when approved, the action's result. Rejected / expired → the payload says so, and the task continues or fails from there.
+- Per-satellite policy (`denyConfirm`, `denyTools`) — §8. Arg-aware tools on a `denyConfirm` satellite stay visible; the guard denies calls that resolve to confirm with a clear tool error ("not allowed from this device"). A tool whose every matching rule is confirm is hidden.
+- Any future tool that sends data outward is confirm tier. This includes tools that fetch a caller-chosen URL: a GET with data in the query string is an outward send. Fetch tools take ids of known items instead (e.g. `rss.fetch_full_text(articleId)`, §15).
+
+**Untrusted content and persistence (taint):**
+- A run becomes **tainted** as soon as untrusted tool output enters its context: mail, RSS articles, notes, calendar events (invitations come from third parties), notification inbox items, web pages, and MCP tools marked `untrusted` in their server config. Taint is per run and never cleared within it; subagents inherit it and pass it back.
+- Tools that **persist instructions or state the agent will act on later** carry a `persists` flag: `memory.remember`, `tasks.create`, `tasks.watch`, `tasks.schedule_wakeup`, `tasks.update`. In a tainted run the guard escalates them from safe to **confirm** (in background runs → approval queue). This blocks an injected mail from planting a memory or a watch that fires later.
+- **Taint confirmations name the source.** A simple reminder asking for confirmation looks odd without a reason, so the reason sentence says what caused it and why, e.g. "This conversation included text from your mail, and mail can contain hidden instructions. Should I really create the reminder 'reply to Anna' for tomorrow at 9?" The source kinds (mail, RSS, notes, web, named MCP server) are tracked per run with the taint flag, so the sentence can name them. The web UI approval view shows the same text plus a link to the tool result that tainted the run.
+- Drafts and notes proposals are not escalated: both are reviewed by the user before they have any effect.
+- **Pinning memory is UI-only.** `memory.remember` cannot pin; pinned chunks are always injected in full, so only the user decides what is pinned.
+- Nightly consolidation reads user turns and assistant replies only, never raw tool results (which are stored as references for sensitive tools anyway, §21).
 
 ---
 
@@ -177,7 +192,9 @@ Models and good STT handle both. What actually changes:
 - **Outbound:** Marshal calls HA REST / websocket + HA MCP server with a long-lived token (§7).
 - Optional later: OpenAI-compatible endpoint as compatibility bonus.
 
-**Endpoint:** `POST /api/v1/conversation/turns`, machine token with scope `conversation:write`.
+**Endpoint:** `POST /api/v1/conversation/turns`, policy `conversation:write`. One endpoint for all interactive clients:
+- **Token clients** (HA integration, API): machine token with scope `conversation:write`. `conversationId` is required; the session is looked up by `(api_token_id, conversationId)`.
+- **Cookie clients** (web chat): the logged-in user. Cookie principals carry the scopes their role grants (`user` → all non-admin scopes, `admin` → all), so both go through the same policies (§19). `conversationId` is optional: omitted = new session; otherwise it is Marshal's own session id and must belong to the user. The final event returns Marshal's session id.
 
 Request:
 ```json
@@ -195,7 +212,8 @@ Request:
 ```
 - **JSON is camelCase** across the whole public API (ASP.NET default, matches the generated TypeScript client). The Python HA component maps to HA's snake_case names at its edge.
 - `followupRef`: opaque reference Marshal handed out with a voice follow-up (§10); the component forwards it when the reply turn carries one.
-- `inputMode` (`voice` | `text`) is set by the HA integration per turn: `voice` when the turn came through STT (satellite or app microphone), `text` when typed (HA app / Assist dialog). It drives the output mode (§8). How the integration detects it (e.g. pipeline STT stage vs. no STT) → verify when building the component.
+- `inputMode` (`voice` | `text`) is set by the HA integration per turn: `voice` when the turn came through STT (satellite or app microphone), `text` when typed (HA app / Assist dialog). Web chat and API clients always send `text`. It drives the output mode (§8). How the integration detects it (e.g. pipeline STT stage vs. no STT) → verify when building the component.
+- **Terms used throughout:** a **voice turn** is a turn with `inputMode = voice`; an **interactive turn** is any turn with a user waiting for the reply (voice or text, any source); a **background run** is a task run. Rules keyed to "voice" (advisor hidden, speakable output, the ~8 s latency cap) follow `inputMode`, not `source`.
 
 Response: streamed as **Server-Sent Events** (`text/event-stream`, .NET `TypedResults.ServerSentEvents`):
 - `delta` events (text chunks)
@@ -205,9 +223,9 @@ Response: streamed as **Server-Sent Events** (`text/event-stream`, .NET `TypedRe
 Rules:
 - **Streaming from day one** (HA can stream LLM output into TTS; verify exact HA version / API when building the component). Non-streaming = same stream collected.
 - **`continueConversation`** (HA: `continue_conversation`) true when Marshal asks something (confirmations, clarifications) → satellite keeps listening without wake word.
-- **Latency budget + auto-background:** target first speech < ~2 s for simple turns; hard cap ~8 s (configurable). At the cap Marshal says "working on it, I'll tell you when done"; the run continues as a background task; result delivered via notifications (§11).
+- **Latency budget + auto-background:** target first speech < ~2 s for simple voice turns; hard cap ~8 s for voice turns and ~60 s for text turns (both configurable). At the cap Marshal says "working on it, I'll tell you when done"; the run continues as a background task; result delivered via notifications (§11).
 - **Self-backgrounding:** the model can call `agent.move_to_background(status_message)` (safe, visible only in interactive turns) when it sees early that the work is long or needs planning. Same effect as the latency cap: the status message is spoken, the run continues as a background task.
-- **Any switch to background recomputes the tool list** with background rules: advisor visible, confirm-tier actions go to the approval queue instead of an in-conversation confirmation. The originating satellite's `denyTools` / `denyConfirm` policy (§8) still applies — backgrounding never widens what a satellite may do.
+- **Any switch to background recomputes the tool list** with background rules: advisor visible, confirm-tier actions go to the approval queue instead of an in-conversation confirmation. The originating satellite's `denyTools` / `denyConfirm` policy (§8) still applies — backgrounding never widens what a satellite may do. To make that hold, the task stores the originating satellite (`origin_satellite_id`) and every run of it, and of every child task it creates, applies that satellite's policy. Tasks created from web chat or the API carry no satellite and get no satellite policy.
 - **HA state access** only via HA MCP / REST. The integration sends no entity dumps.
 - **Everything goes through Marshal:** the Assist pipeline does **not** use "prefer handling commands locally". Every turn reaches Marshal; Marshal performs home control and timers through HA intents (HA MCP, §7). Trade-off accepted: simple commands pay one model round trip (use the `fast` tier).
 
@@ -269,7 +287,7 @@ Applies to the whole public API, not only the conversation endpoint.
 ## 8. Per-satellite context — DECIDED
 **Per turn, from where it was spoken:**
 - **Location:** area + floor from `area_id` (names from HA). "Turn on the light" / "how warm is it here" resolve to this room; HA MCP tools take area arguments.
-- **Output mode** derived from the turn's `inputMode` / source (§6), not configured per device: voice → plain text, no markdown, short, numbers spoken naturally; text (typed in HA app, web chat) → markdown, links, images.
+- **Output mode** derived from the turn's `inputMode` / source (§6), not configured per device: voice → plain text, no markdown, short, numbers spoken naturally; text in web chat → markdown, links, images; typed Assist turns → whatever the HA Assist dialog renders (verify markdown / image support when building the component; fall back to plain text with links).
 - **Time & locale:** local time, day of week, request language.
 - **Optional satellite profile** in `/config/satellites.yaml` (hot-reloaded); unconfigured satellites use defaults:
   ```yaml
@@ -283,7 +301,9 @@ Applies to the whole public API, not only the conversation endpoint.
       denyTools: [mail.*]                       # hidden entirely
   ```
 
-**Implementation:** small `ISatelliteContextProvider(request) → SatelliteContext`. Context builder renders a few lines into the system prompt. Tool filtering applies `denyTools` / `denyConfirm` (hidden, §1); guard enforces the same policy server-side.
+**Implementation:** small `ISatelliteContextProvider(request) → SatelliteContext`. Context builder renders a few lines into the system prompt. Tool filtering applies `denyTools` / `denyConfirm` (hidden, §1; arg-aware tools: §4); guard enforces the same policy server-side.
+
+**Satellite policy is a convenience, not an authorization boundary.** It limits what a fixed device in a room can do, but anyone who can reach the same user through another client (HA app on a tablet: no `satelliteId`, defaults apply; web UI) bypasses it. Real restrictions for other people come with multi-user (separate users and roles).
 
 **Not now:** who else is in the room (comes with multi-user); area-specific memory (generic memory covers it, area is part of the turn embedding input).
 
@@ -302,7 +322,9 @@ Taken from granum:
 - Deterministic chunk ID = hash(owner_id + scope + project_id + type + normalized title); never similarity-merge. `owner_id` keeps two users' chunks apart (multi-user prep); `scope` + `project_id` keep same-titled chunks in different projects apart (`project_id` is empty for `general`). The project's stable id is used, not its name, so renaming a project never changes chunk ids. Moving a chunk to another scope or project = new chunk + `supersedes` edge.
 - Edges: `supersedes`, `contradicts`, `depends_on`, `relates_to`; two-phase retrieval (cosine seeds → BFS expansion)
 - Score = similarity × importance × freshness; per-type quotas
-- Soft deletes; version history via supersedes chains
+- Soft deletes; version history in two forms:
+  - **Same identity, new content** (same owner / scope / project / type / normalized title → same id): the chunk is updated in place and the previous content is kept as a `ChunkVersion` row (content, importance, source, timestamp). This is the normal "fact changed" case, e.g. an updated device setting.
+  - **Different identity** (title changed, scope or project moved, a contradiction resolved in favor of another chunk): a new chunk plus a `supersedes` edge from new to old; the old one is soft-deleted or kept as history. Supersedes edges never point from a chunk to itself.
 - Audit: stale / conflicts / orphans
 - NDJSON export to git for portability
 - Visualizations (force graph, PCA scatter) → web UI memory view (§18)
@@ -315,12 +337,12 @@ Changed for Marshal:
 - Not reusing granum directly (Python, Claude-Code-coupled, Kuzu — reportedly archived late 2025, verify)
 
 Layers:
-- **Pinned** (always injected in full, kept small) — replaces a separate "general" file
+- **Pinned** (always injected in full, kept small) — replaces a separate "general" file. Pinning and unpinning happen only in the web UI (§4, §18).
 - **General retrieved** — scope `general`, relevance-based
 - **Project** — scope `project` + `project_id`, boosted when project active
 - **Notes are not part of memory** (§17). They are a separate information source reached through notes tools. When a note contains something worth remembering, the agent writes a normal memory chunk in its own words, with `source_ref` pointing to the note path.
 
-Writes: `memory.remember` tool + background consolidation (cheap model reviews finished conversations, proposes chunks, dedupes by ID, flags contradictions). Nightly consolidation is a cron task.
+Writes: `memory.remember` tool (cannot pin; escalated to confirm in tainted runs, §4) + background consolidation (cheap model reviews finished conversations, proposes chunks, dedupes by ID, flags contradictions). Nightly consolidation is a cron task.
 
 ### Project activation — DECIDED
 - **Explicit mention loads** (project name or known alias).
@@ -343,11 +365,13 @@ Mechanisms (daily use will be mostly inferred — project names are rarely spoke
 The agent largely controls this itself (e.g. start a coding session and attach a voice update when finished; self-scheduled wakeups; cron jobs). The server enforces limits.
 
 ### Task model (durable, SQLite)
-`id, owner_id, parent_id, created_by, goal, template, scope, trigger (now | at | cron | event(filter) | after(task)), status (pending | running | waiting | done | failed | cancelled), next_run_at, notes (scratchpad carried between runs), budget (tokens / cost / steps / wall time / runs), deliver (list of deliveries, each: channel voice(satellite | area | "where I am") | push | inbox | silent, priority `normal` | `low` (default `normal`), optional `followUp` (voice only: listen for a reply), optional `when` state condition, optional `expires` deadline + fallback channel), override_quiet_hours_until (confirm tier, §11), name (optional, unique per owner, e.g. `briefing`), result { speech, body }`
+`id, owner_id, parent_id, created_by, goal, template, project_id (optional; the project is activated on every run, §9), origin_satellite_id (optional; its policy applies to every run and child task, §6), trigger (now | at | cron | event(filter) | after(task)), status (pending | running | waiting | done | failed | cancelled), next_run_at, notes (scratchpad carried between runs), budget (tokens / cost / steps / wall time / runs), deliver (list of deliveries, each: channel voice(satellite | area | "where I am") | push | inbox | silent, priority `normal` | `low` (default `normal`), optional `followUp` (voice only: listen for a reply), optional `when` state condition, optional `expires` deadline + fallback channel), override_quiet_hours_until (confirm tier, §11), name (optional, unique per owner, e.g. `briefing`), result { speech, body }`
 
 - **Wakeup** = run ends with `status=waiting` + new trigger. Resume gets goal + notes + trigger payload, **not** the old transcript (no context rot).
 - **Result = `speech` + `body`.** `speech` is short and speakable, `body` is markdown (links, tables, details). Voice channels use `speech`; push uses `speech` plus a deep link to `body`; the web UI always shows `body`.
 - **Several deliveries per task.** `deliver` is a list; each entry is delivered independently (e.g. voice when the kitchen is occupied, plus inbox).
+- **Delivery validation:** `priority: low` is never voice (§11), so a delivery with `channel: voice` and `priority: low` is rejected when the task is created or updated (validation error to the model / UI), not silently changed.
+- **Time zone:** cron expressions, `at` times, `expires` times and quiet hours are evaluated in the owner's time zone (§19), with DST handled by Cronos. Stored timestamps stay UTC.
 - **Deliveries go through the NotificationRouter (§11)** with the delivery's priority. Task results are `normal` or `low`, never `critical`, so they always respect quiet hours, DND and the voice caps; only `override_quiet_hours_until` (confirm tier) lifts quiet hours for one task.
 - **Conditional delivery:** a delivery can wait for its `when`, a **state condition** on Home Assistant entities, not an edge. It is checked immediately when the result is ready (already true → deliver now) and re-checked on every matching state-change event. If `expires` passes first, it goes out via the fallback channel (e.g. push), so results never rot.
   - Syntax: `state(<entity_id> <op> <value>)` with `=`, `!=`, `>`, `<` (numeric); several conditions in a list must all hold.
@@ -374,14 +398,24 @@ The agent largely controls this itself (e.g. start a coding session and attach a
   - Verify when building the component that `extra_system_prompt` reaches custom conversation agents. Fallback only if it does not: a short satellite-keyed reply window.
 
 ### Agent tools
-`tasks.create`, `tasks.schedule_wakeup`, `tasks.watch(event_filter, goal)`, `tasks.list` / `tasks.status` / `tasks.cancel`, `tasks.run_executor(executor, spec, on_done_goal)`, `notifications.notify(message, priority, deliver)`, `notifications.inbox_list` / `notifications.inbox_consume` (read and mark consumed items of the owner's notification inbox, §11), `agent.move_to_background(status_message)` (interactive turns only, §6)
+| Tool | Tier | Notes |
+|---|---|---|
+| `tasks.create`, `tasks.schedule_wakeup`, `tasks.watch(event_filter, goal)` | safe (`persists`: confirm in tainted runs, §4) | `override_quiet_hours_until` arg → confirm (§11) |
+| `tasks.update(task, goal?, trigger?, deliver?, template?)` | safe (`persists`: confirm in tainted runs) | edits a task by id or name (e.g. the self-editable briefing); `override_quiet_hours_until` arg → confirm; cannot change owner, budget or `origin_satellite_id` |
+| `tasks.run_now(task)` | safe | runs an existing task immediately (e.g. the briefing on request, §12); same budget, deliveries and conditions as a scheduled run |
+| `tasks.list` / `tasks.status` / `tasks.cancel` | safe | `status` and `cancel` accept an id or a name |
+| `tasks.stop_all` | safe | the kill switch (below); stopping is always allowed |
+| `tasks.run_executor(executor, spec, on_done_goal)` | confirm | starts external long-running work |
+| `notifications.notify(message, priority, deliver)` | safe | `priority` is `normal` or `low` only (§11) |
+| `notifications.inbox_list` / `notifications.inbox_consume` | safe | read and mark consumed items of the owner's inbox (§11) |
+| `agent.move_to_background(status_message)` | safe | interactive turns only (§6) |
 
 ### Guardrails (server-enforced)
 - Per-task budget + global daily cost cap; children draw from the parent budget
 - Recursion depth limit (~3), fan-out limit
 - Minimum wakeup interval (e.g. 5 min, per template)
 - Confirm-tier → approval queue
-- Kill switch (voice + web UI): stop all background tasks
+- Kill switch (voice via `tasks.stop_all`, web UI button): stop all background tasks
 - Full audit log per run
 
 ### Coding executor — DECIDED
@@ -393,7 +427,7 @@ Generic, abstract, extendable `IExecutor`. First implementation = Claude Code he
 
 ### Use-case ideas
 - Print babysitter (snapshot checks, auto-pause on failure, announce on complete) — a **system component**, not an agent task (§13)
-- Coding delegation (executor in worktree → cheap-model diff review → voice follow-up asking to merge)
+- Coding delegation (executor in worktree → cheap-model diff review → voice notice "the change is ready for review" → merge in the web UI review queue; merge is never a voice or agent action, §17)
 - Contextual reminders ("when I get home…" → presence watch)
 - Mail triage (event → classify → draft replies → `low` notification into the inbox, picked up by the briefing)
 - Deferred check-ins ("ask me tomorrow if…" → wakeup + `start_conversation`, answer to memory)
@@ -407,13 +441,13 @@ Generic, abstract, extendable `IExecutor`. First implementation = Claude Code he
 **Priorities** (set by the sender):
 - `critical` — print error, e-stop triggered, spaghetti detected. Always delivered, ignores quiet hours, voice + push. **Only system-defined sources may send `critical`**; the agent's `notifications.notify` cannot (otherwise the model could bypass quiet hours).
 - `normal` — task done, print complete, approval needed. Respects quiet hours.
-- `low` — FYI. Never voice. Goes into the owner's **inbox** (or a push digest). The inbox is generic: any task reads it via `notifications.inbox_list` / `notifications.inbox_consume` (§10); the briefing task is simply one consumer.
+- `low` — FYI. Never voice (a voice delivery with `low` priority is rejected at task creation, §10). Goes into the owner's **inbox** (or a push digest). The inbox is generic: any task reads it via `notifications.inbox_list` / `notifications.inbox_consume` (§10); the briefing task is simply one consumer.
 
 **Channel choice:** 1) the task delivery's channel and `when` condition (§10) → 2) where the user is (home presence via `person.*` / `zone.home`, room via occupancy `binary_sensor.*`, §10): home → voice in the occupied room (`assist_satellite.announce`, or `start_conversation` if a reply is expected / `followUp: true`); away → push → 3) fallback push. Notifications target a person (HA `person.*`), not a device.
 
 **Channels** (same set everywhere): `voice` (announce, or conversation when a reply is expected), `push`, `inbox`. A task delivery may also be `silent` (no notification; the result is only visible in the web UI). The web UI is not a channel: open browsers receive every notification on the live event stream (§18) regardless of the chosen channel.
 
-**Quiet hours** (user preference, e.g. 22:00–07:00, day-of-week aware):
+**Quiet hours** (user preference, e.g. 22:00–07:00, day-of-week aware, in the owner's time zone, §19):
 - `normal` → silent push or held until quiet hours end (configurable)
 - `low` → inbox
 - `critical` → delivered anyway
@@ -438,7 +472,7 @@ Generic, abstract, extendable `IExecutor`. First implementation = Claude Code he
 **Rule: a briefing is only a task. No briefing-specific features or code.**
 
 - **Content** lives only in the goal text. The agent uses the normal tools: calendar, mail, RSS pipeline (§15), printer, weather (HA MCP), `tasks.list` (done / failed / awaiting approval), reminders.
-- **Files only:** agent template `briefing.md` (model tier, tool allowlist) + a skill with format guidelines (voice length ~60–90 s, most important points first; long version with links, full RSS summaries, draft previews).
+- **Files only:** agent template `briefing.md` (model tier, tool allowlist) + a skill with format guidelines (voice length ~60–90 s, most important points first; long version with links, full RSS summaries, draft previews). The RSS digest steps (§15) are a second skill, not code.
 - **Trigger B (presence-based):** cron task prepares the briefing early (e.g. 06:00) and uses conditional delivery:
   ```
   name: briefing
@@ -452,7 +486,7 @@ Generic, abstract, extendable `IExecutor`. First implementation = Claude Code he
     - channel: inbox
   ```
   `speech` is spoken on the satellite in the room; `body` (long version) is the task result in the web UI and behind the push deep link. `followUp: true` makes the voice delivery use `start_conversation` instead of `announce`: the satellite listens after the briefing, and the reply turn arrives in a session seeded with the briefing result (voice follow-up, §10), so "tell me more about the second article" is a normal turn. The delivery has priority `normal` and respects quiet hours (§11).
-- **Trigger C (on request)** is generic: "good morning" / "what's my briefing" → agent calls `tasks.status("briefing")` (named task), reads the prepared result if fresh, else runs it now.
+- **Trigger C (on request)** is generic: "good morning" / "what's my briefing" → agent calls `tasks.status("briefing")` (named task), reads the prepared result if fresh, else calls `tasks.run_now("briefing")` (§10). A fresh run usually exceeds the voice latency cap, so the turn backgrounds (§6) and the result arrives through the task's normal deliveries.
 - **Weekends:** via goal text only, or two cron tasks with different goals.
 - **Language:** the stored user preference (§19). Proactive runs have no request language, so they always use it.
 - **Other briefing preferences** (topics, length, what to skip): regular memory `preference` chunks, retrieved like any other memory. No briefing settings anywhere else.
@@ -549,11 +583,11 @@ DEFERRED: Exchange account = Exchange Online (M365) or on-prem? IMAP enabled? Us
 - **Tools:**
   - safe: `rss.list_feeds` / `rss.list_categories`, `rss.get_unread(category?, since?, limit)`, `rss.get_article(id)`, `rss.search`, `rss.mark_read(ids)` (reversible, no confirmation)
   - never exposed: subscribe / unsubscribe / delete
-- **Full text:** optional `rss.fetch_full_text(url)` via a readability extractor (e.g. SmartReader) — only for items the briefing picks.
-- **Briefing pipeline** (used by the briefing task, §12):
+- **Full text:** optional `rss.fetch_full_text(articleId)` via a readability extractor (e.g. SmartReader) — only for items the briefing picks. It takes a FreshRSS item id, never a URL: the server looks up the article's link, so the tool cannot be used to send data to an arbitrary URL (§4).
+- **RSS digest** (used by the briefing task, §12): a **skill** (`rss-digest`) the agent follows with the generic tools above. No pipeline code (§1: generic mechanisms only).
   1. Fetch unread since last briefing.
-  2. `fast` model scores relevance from titles + feed + category against interests stored as memory preferences. No batching for now (revisit if volume grows).
-  3. Top N: fetch full text; `standard` model summarizes and clusters into themes.
+  2. Relevance scoring from titles + feed + category against interests stored as memory preferences, done by a subagent on a cheap template (`agent.delegate("rss-scorer", ...)`, `fast` tier). No batching for now (revisit if volume grows).
+  3. Top N: fetch full text; the briefing's own `standard`-tier loop summarizes and clusters into themes.
   4. Output: short voice version (3–5 sentences) + long version (web UI / push) with links.
   5. Mark processed items read afterwards.
 - **Learning:** "more like this" / "skip that topic" → preference chunks in memory → better scoring over time.
@@ -607,9 +641,10 @@ All roles are in scope (observe, manage, configure, chat); ordering or dropping 
 ### Views
 1. **Dashboard** (landing page): running tasks + next scheduled runs, pending approvals / reviews (count + quick actions), printer card (state, progress, ETA, latest snapshot), today's cost vs daily cap, recent runs, recent notifications, kill switch. Widgets only, built from existing data.
 2. **Chat:** text chat with Marshal (same agent as voice), streaming; rich output: markdown, tables, images / snapshots, diffs.
+   - **Images only from Marshal itself.** Model output is untrusted too: a markdown image with an external URL would load on render and leak data in its query string. The SPA's CSP sets `img-src 'self' data:`; the markdown renderer shows images only for same-origin URLs (snapshots, attachments) and turns external image URLs into plain links. Links need a click, which is a user action.
 3. **Runs / conversations:** list of all runs (voice / web / task / api), filter by source, outcome, cost. Run detail: context build (active projects + reason, retrieved chunks + scores, skills, template), model calls (tokens, latency, TTFT, cost), tool calls (args, truncated / redacted result, risk tier, guard decision), reply.
 4. **Cost:** per turn, task, day, tier; daily cap usage; advisor on its own line.
-5. **Memory:** force graph + PCA scatter (granum-style); chunk list, search, editor (create, edit, pin, supersede, soft delete); history (supersedes chains); audit (stale, conflicts, orphans); projects (description, aliases + alias candidates, correction log).
+5. **Memory:** force graph + PCA scatter (granum-style); chunk list, search, editor (create, edit, pin / unpin — the only place pinning happens, supersede, soft delete); history (`ChunkVersion` rows + supersedes chains); audit (stale, conflicts, orphans); projects (description, aliases + alias candidates, correction log).
 6. **Tasks:** list + detail (goal, trigger, notes, runs, budget use, result); edit goal (e.g. the briefing), cancel, kill switch; watches; executor sessions (coding) with status. **Task result view** renders markdown — this is where the long briefing lives (no special briefing page).
 7. **Review queue:** approvals (frozen action, expiry, approve / reject); notes proposals (diff, merge / reject / comment); coding results (diff + merge).
 8. **Notifications history:** every notification with content, priority, channel, outcome (delivered / coalesced / held by quiet hours / expired / fallback) and the reason. Answers "why didn't it tell me?".
@@ -620,7 +655,7 @@ All roles are in scope (observe, manage, configure, chat); ordering or dropping 
 11. **Secrets:** list of database secrets by name, scope (instance / user) and last update; create, replace, delete. Values are **write-only**, never shown again (§20). Secrets from environment / `/run/secrets` are listed read-only with their source, never their value. References from `/config` that do not resolve are flagged.
 12. **Config:** skills, templates, MCP servers, risk rules, models, satellites. Config stays file-based and git-friendly → read-only view or editing of the files themselves.
 13. **Security:** API tokens (create, revoke, scopes), login providers (read-only).
-14. **Preferences:** quiet hours, language, notification targets, DND.
+14. **Preferences:** quiet hours, language, time zone, notification targets, DND.
 15. **System:** health, backup status.
 
 ---
@@ -644,18 +679,18 @@ Internal user model — **one user store for both providers: ASP.NET Core Identi
 - `local` users additionally have a password hash and passkeys (Identity passkey support, .NET 10). The same user can have both an OIDC login and local credentials, e.g. a local admin as break-glass access when the IdP is down.
 - Roles are Identity roles. For OIDC users they are re-synced from the group claims on every login.
 - Provisioning: role / group mapping from claims (e.g. `marshal-admins` → admin, `marshal-users` → user), else deny. Optional invite flow for `local`.
-- Authorization: roles + scopes → ASP.NET policies. Cookie and token principals go through the same policies.
+- Authorization: roles + scopes → ASP.NET policies. Cookie and token principals go through the same policies: a cookie principal carries the scopes its role grants (`user` → all non-admin scopes, `admin` → all scopes), a token principal the scopes it was created with.
 
 Exposure: LAN / VPN only, TLS via reverse proxy. Never exposed directly to the internet (holds mail access, printer control, runs code).
 
 ### Users
 Single-user instances now (others run their own instance). Multi-user instance (household) later. Prepared without implementing it:
-- `owner_id` on every user-owned row: memory chunks, projects / aliases, sessions, tasks, approvals, integration accounts, notification prefs. Nullable owner (or explicit `household` scope) reserved for shared data later.
+- `owner_id` on every user-owned row: memory chunks, projects / aliases, sessions, tasks, approvals, integration accounts, notification prefs. Shared data later gets an explicit `household` scope column, **not** a null owner: a null `owner_id` already means "instance-scoped" on `Secret` (§20) and must keep only that meaning.
 - An execution context flows through everything: `{ OwnerId, Source (voice / web / task / api), Satellite, ... }`. Agent loop, tools and tasks read the user from it, never from a global "the user". Tasks store and run as their owner.
 - Identity resolution seam for voice: `IIdentityResolver` (§6). v1 always returns the instance owner.
 - Owner-scoped data access: EF Core global query filters on the current user from day one (trivial in v1).
 - Integration credentials per account with an owner (e.g. OAuth tokens in DB), not singletons in config.
-- Config split: **instance config** (models, MCP servers, risk rules, providers) vs **user preferences** (quiet hours, notification targets, language) stored per user. Softer preferences (briefing content, interests) are memory `preference` chunks.
+- Config split: **instance config** (models, MCP servers, risk rules, providers) vs **user preferences** (quiet hours, notification targets, language, time zone) stored per user. The time zone (IANA id) defaults to Home Assistant's configured time zone and drives cron, quiet hours and prompt times (§10, §11). Softer preferences (briefing content, interests) are memory `preference` chunks.
 - Notifications target a person (HA `person.*`).
 - Authorization policies check ownership (`owner or admin`).
 - API: `/api/v1/me` (current user) and `/api/v1/me/...` style routes (versioned like everything else, §6); DTOs carry `owner`.
@@ -687,7 +722,7 @@ Single-user instances now (others run their own instance). Multi-user instance (
 
 **Base path:** configurable for reverse-proxy setups (`http.pathBase: /marshal`, env `MARSHAL__Http__PathBase`) → `/marshal/api/v1/...`. The API version itself is never configurable (§6).
 
-**Config layering** (low → high): built-in defaults → `/config/marshal.yaml` → env vars (`MARSHAL__Models__Fast__Provider=ollama`). YAML because humans edit it.
+**Config layering** (low → high): built-in defaults → `/config/marshal.yaml` → env vars (`MARSHAL__Models__Fast__Provider=ollama`). YAML because humans edit it. The environment provider uses the prefix `MARSHAL__` (two underscores) exactly, so secret variables (`MARSHAL_SECRET_*`, one underscore) never enter `IConfiguration`.
 
 **Key naming:** camelCase in every `/config` file (`http.pathBase`, `denyTools`, `modelTier`). It matches the .NET options property names, so binding needs no mapping, and env vars are the same path in PascalCase with `__`. Only exception: `SKILL.md` frontmatter follows the Anthropic Agent Skills format.
 
@@ -706,9 +741,9 @@ Single-user instances now (others run their own instance). Multi-user instance (
   - `Secret` is the one table whose owner query filter also returns null-owner rows (`owner_id = current or owner_id is null`); the lookup order above decides which row wins.
 - Config references secrets by name, e.g. `printers: [{ name: voron, url: ..., apiKeySecret: moonraker_voron }]`; `MailAccount` rows reference their secret the same way.
 - **Enforcement at startup** (all checks run on every `/config` file, and again on hot reload; a failed reload keeps the previous config):
-  - **Reference keys** end in `Secret` (`apiKeySecret`, `clientSecret`, `tokenSecret`). Their value must be a secret *name*: `^[a-z][a-z0-9_]{0,63}$`. Real credentials (mixed case, dashes, long random strings) fail this pattern.
+  - **Reference keys** end in `Secret` (`apiKeySecret`, `clientCredentialSecret`, `tokenSecret`); the part before `Secret` says what the secret holds. The OIDC client secret is therefore referenced as `clientCredentialSecret`, never as a key named `clientSecret` (which reads like a literal). Their value must be a secret *name*: `^[a-z][a-z0-9_]{0,63}$`. Mixed case, dashes and most random strings fail this pattern, but not all: a lowercase hex key (Moonraker API keys are 32 hex characters) can match it, so reference values also go through the value scan below.
   - **Forbidden keys:** the key is split into camelCase words. If the **last word** is `password`, `passphrase`, `token`, `credential` or `credentials`, or the last two words are `api key`, `private key` or `access key`, startup fails. Matching whole words avoids false positives: `maxTokens`, `tokensPerMinute`, `inputPerMTok`, `tokenUrl`, `keyboardLayout` are fine.
-  - **Value scan:** any value anywhere that looks like a known credential format (PEM `-----BEGIN`, JWT `eyJ...`, `sk-`, `sk-ant-`, `ghp_`, `xox*-`, long high-entropy strings) fails startup, whatever its key.
+  - **Value scan:** any value anywhere that looks like a known credential format (PEM `-----BEGIN`, JWT `eyJ...`, `sk-`, `sk-ant-`, `ghp_`, `xox*-`, hex strings of 32+ characters, base64 / base64url strings of 32+ characters, other long high-entropy strings) fails startup, whatever its key. Secret names are short, lowercase words with underscores, so they never hit these patterns.
   - Options properties marked `[Secret]` can only be bound from `ISecretStore`, never from configuration.
   - **Required secrets** (`[Secret]` properties needed at startup: model API keys, OIDC client secret, HA token) must resolve, otherwise startup fails. References that may be filled later in the UI (printer key, FreshRSS) only produce a health warning and a flag in the Secrets view (§18).
 - Losing `/data/keys` makes DB secrets unreadable → keys must be in backups (§21).
@@ -727,7 +762,7 @@ Single-user instances now (others run their own instance). Multi-user instance (
 - **Run:** source, owner, session, trigger, start / end, outcome (ok / error / backgrounded (latency cap or `agent.move_to_background`) / cancelled)
 - **Context build:** active projects + reason (alias / centroid score), retrieved chunks + scores, loaded skills, template
 - **Model calls:** model, tier, input / output / cached tokens, latency, time to first token, cost
-- **Tool calls:** tool, args, result (truncated), risk tier, guard decision (safe / pending / confirmed-by-keyword / judge verdict / denied), duration, error
+- **Tool calls:** tool, args, result (truncated), risk tier, guard decision (safe / pending / confirmed-by-keyword / judge verdict / escalated by taint / denied), run taint flag, duration, error
 - **Reply:** final text, `continueConversation`
 - UI-initiated and other non-agent actions (printer controls, approvals, merges, token and account changes, kill switch) go to a separate **audit log** (`audit_events`): actor (user / API token / system), action, target, optional run link. Runs cover what the agent did; the audit log covers what humans and machines did outside a run.
 
@@ -761,7 +796,8 @@ Single-user instances now (others run their own instance). Multi-user instance (
 **Rule: tests never need a real LLM.** Anything that cannot be mocked is excluded from the test suite. Models and embeddings are always faked (`IChatClient`, `IEmbeddingGenerator` with deterministic vectors).
 
 1. **Unit tests (xUnit), bulk of the code:**
-   - Guard: keyword normalization, frozen action immutable, TTL, nonce, only user actions confirm (never tool output), fail-closed on judge error (judge = fake client), arg-aware risk rules.
+   - Guard: keyword normalization, frozen action immutable, TTL, nonce, only user actions confirm (never tool output), fail-closed on judge error (judge = fake client), arg-aware risk rules incl. area / floor / domain target expansion (highest tier wins, empty set → confirm), taint escalation of `persists` tools, reason codes on every pending action (taint reason names its sources), confirm-tier denial in subagents and on `denyConfirm` satellites.
+   - Approval suspension: run ends `waiting`, server executes the frozen action on approve, resume payload carries decision + result, expiry = rejection.
    - Scheduler: cron, wakeups, delivery `when` conditions / expiry, using .NET `TimeProvider` with a fake clock.
    - Notification router: priorities, quiet hours, override, coalescing, caps.
    - Retrieval scoring: freshness, importance, quotas, supersedes, soft scoping, alias promotion.
@@ -790,5 +826,5 @@ Single-user instances now (others run their own instance). Multi-user instance (
 - **LEANING (fine for now):** Vue (§18)
 - **DEFERRED:** Exchange account type / IMAP / consent (§14)
 - **LEANING:** HA integration in its own repository (HACS needs `custom_components/<domain>/` + `hacs.json` at the repo root). Decide when the component is built.
-- **OPEN (next):** notes proposals in full — write tools, worktree handling, remote repo sync, merge flow (§17)
+- **OPEN (next):** notes proposals in full — write tools, worktree handling, remote repo sync, merge flow (§17). Pushing proposal branches to a remote repo sends data outward → confirm tier or a user action (§4).
 - Final review of these notes by the user before OpenSpec formalization

@@ -19,7 +19,7 @@ Every integration and subsystem sits behind a small, focused interface, even whe
 ### 2. The model can't use it → the model can't see it
 Tools the model is not allowed to use in the current context are **removed from the tool list**, not refused after the call.
 
-- Reasons for hiding: forbidden tier, not in the agent template's allowlist, denied for the satellite, confirm-tier on a satellite that cannot confirm, advisor in voice turns.
+- Reasons for hiding: forbidden tier, not in the agent template's allowlist, denied for the satellite, confirm-tier on a satellite that cannot confirm, confirm-tier inside a subagent, advisor in voice turns.
 - The guard enforces the same rules again on the server. Visibility is the first line, the guard is the second. Never rely on only one.
 - Capabilities that must never happen (sending mail, raw G-code) **do not exist as code paths at all**. Don't write a tool and then forbid it.
 
@@ -27,13 +27,16 @@ Tools the model is not allowed to use in the current context are **removed from 
 When a safety-relevant decision is uncertain, the answer is "no".
 
 - Judge timeout or parse error → drop the pending action. When the judge is unsure, its prompt makes it answer `neutral`, which also drops the action.
-- Unresolvable target in an arg-aware risk rule → confirm tier.
+- Unresolvable target or empty target set in an arg-aware risk rule → confirm tier. When a call resolves to several targets, the highest tier wins.
 
 ### 4. Freeze what the user confirms
-Confirm-tier actions are stored server-side (tool + args + nonce + TTL) before the user is asked. On confirmation, the server executes exactly the frozen action. The model never gets to re-issue or modify it.
+Confirm-tier actions are stored server-side (tool + args + nonce + TTL) before the user is asked. On confirmation, the server executes exactly the frozen action. The model never gets to re-issue or modify it. The frozen action also stores why confirmation is needed (a server-determined reason, e.g. "this conversation included mail content"), and every confirmation prompt shows or speaks it. A request for confirmation that has no reason just trains the user to say yes.
 
 ### 5. Untrusted content is data, never instructions
 Mail, RSS articles, notes, web pages and tool output are untrusted. They are wrapped as data in the context, and they can never confirm an action, change configuration or trigger privileged behavior. Only user actions can (a user turn, a web UI approval, a nonce-verified push action).
+
+- A run that has read untrusted content is **tainted**. In a tainted run, tools that persist state the agent acts on later (memory writes, task creation and edits) are escalated to confirm tier.
+- Tools never fetch caller-chosen URLs; they take ids of known items. Model output is untrusted too: the web UI never loads external images from it.
 
 ### 6. Everything has an owner
 Every user-owned row carries `owner_id`. All data access goes through owner-scoped queries (EF Core global query filters). Code reads the current user from the execution context and never from a global or static "the user". The instance is single-user today; the code must not assume that.
