@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <AssemblyName>marshal</AssemblyName>
+    <RootNamespace>Marshal.Api</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Marshal.Abstractions\Marshal.Abstractions.csproj" />
+    <ProjectReference Include="..\Marshal.Core\Marshal.Core.csproj" />
+    <ProjectReference Include="..\Marshal.Data\Marshal.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marshal.Api.Tests" />
+  </ItemGroup>
+
+</Project>

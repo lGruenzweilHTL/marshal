@@ -1,17 +1,17 @@
 ## 1. Solution setup
 
-- [ ] 1.1 Create `Marshal.sln`, `Directory.Build.props` (net10.0, nullable, warnings as errors, analyzers, `EnforceCodeStyleInBuild`, `GenerateDocumentationFile`) and `Directory.Packages.props`
-- [ ] 1.2 Create projects `Marshal.Abstractions`, `Marshal.Core`, `Marshal.Data`, `Marshal.Api` with references as in `packages.puml`
-- [ ] 1.3 Create test projects `Marshal.{Abstractions,Core,Data,Api}.Tests` (xunit.v3) and `Marshal.Testing`
-- [ ] 1.4 Add `FakeChatClient` (scripted replies and tool calls), `FakeEmbeddingGenerator`, `FakeTool` variants and a `TestExecutionContext` to `Marshal.Testing`
-- [ ] 1.5 Update `CLAUDE.md` repository map and `docs/diagrams/packages.puml` for the created projects; re-render SVG
+- [x] 1.1 Create `Marshal.sln`, `Directory.Build.props` (net10.0, nullable, warnings as errors, analyzers, `EnforceCodeStyleInBuild`, `GenerateDocumentationFile`) and `Directory.Packages.props`
+- [x] 1.2 Create projects `Marshal.Abstractions`, `Marshal.Core`, `Marshal.Data`, `Marshal.Api` with references as in `packages.puml`
+- [x] 1.3 Create test projects `Marshal.{Abstractions,Core,Data,Api}.Tests` (xunit.v3) and `Marshal.Testing`
+- [x] 1.4 Add `FakeChatClient` (scripted replies and tool calls), `FakeEmbeddingGenerator`, `FakeTool` variants and a `TestExecutionContext` to `Marshal.Testing`
+- [x] 1.5 Update `CLAUDE.md` repository map and `docs/diagrams/packages.puml` for the created projects; re-render SVG
 
 ## 2. Abstractions and Result
 
-- [ ] 2.1 Write tests for `Result` / `Result<T>` (success, failure code + message, mapping)
-- [ ] 2.2 Implement `Result` / `Result<T>` and error type in `Marshal.Abstractions`
-- [ ] 2.3 Write tests for strongly typed ids (equality, parsing, JSON round trip)
-- [ ] 2.4 Implement `OwnerId`, `SessionId`, `RunId`, `PendingActionId`, `ApiTokenId`, `SecretName` and the execution context types
+- [x] 2.1 Write tests for `Result` / `Result<T>` (success, failure code + message, mapping)
+- [x] 2.2 Implement `Result` / `Result<T>` and error type in `Marshal.Abstractions`
+- [x] 2.3 Write tests for strongly typed ids (equality, parsing, JSON round trip)
+- [x] 2.4 Implement `OwnerId`, `SessionId`, `RunId`, `PendingActionId`, `ApiTokenId`, `SecretName` and the execution context types
 
 ## 3. Persistence and ownership
 

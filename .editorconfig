@@ -202,6 +202,7 @@ dotnet_diagnostic.CA1852.severity = warning    # seal internal types
 dotnet_diagnostic.CA1822.severity = suggestion # mark members static
 dotnet_diagnostic.VSTHRD002.severity = error   # no sync-over-async (if VS threading analyzers are added)
 dotnet_diagnostic.CS1591.severity = none       # XML docs only required on public abstractions (reviewed, not enforced)
+dotnet_diagnostic.CA1716.severity = none       # C#-only codebase: names like Error may clash with VB keywords
 
 # ------------------------------------------------------------------
 # Tests: relaxed rules

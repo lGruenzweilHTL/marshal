@@ -35,24 +35,26 @@ These come from the design and must hold in every change. Details and rationale:
 
 ## Repository map
 
-Planned layout. Update this section whenever projects are added, renamed or removed.
+Update this section whenever projects are added, renamed or removed. Entries marked *(planned)* do not exist yet.
 
 ```
-src/                         .NET solution
+Marshal.sln                  solution; build rules in Directory.Build.props, package versions in
+                             Directory.Packages.props, SDK + test runner (Microsoft.Testing.Platform) in global.json
+src/                         .NET projects
   Marshal.Api/               ASP.NET host: REST + SSE, auth, serves the SPA
   Marshal.Abstractions/      small shared interfaces (providers, channels, executors, ...)
   Marshal.Core/              agent harness: loop, tool registry, risk engine + guard,
                              context builder, model router, sessions
-  Marshal.Memory/            chunks, embeddings, hybrid retrieval, project activation
-  Marshal.Tasks/             scheduler, event bus, trigger matcher, executors, notifications
-  Marshal.Integrations.*/    HomeAssistant, Moonraker, Mail, FreshRss, Notes, ...
+  Marshal.Memory/            chunks, embeddings, hybrid retrieval, project activation (planned)
+  Marshal.Tasks/             scheduler, event bus, trigger matcher, executors, notifications (planned)
+  Marshal.Integrations.*/    HomeAssistant, Moonraker, Mail, FreshRss, Notes, ... (planned)
   Marshal.Data/              EF Core DbContext, migrations, owner-scoped query filters
-  Marshal.ExecutorHost/      separate coding-sandbox service (own deployment, never in the main container)
+  Marshal.ExecutorHost/      separate coding-sandbox service (own deployment, never in the main container) (planned)
 tests/                       one test project per src project (Marshal.<Name>.Tests)
   Marshal.Testing/           shared hand-written fakes (FakeChatClient, FakeEmbeddingGenerator, ...)
-web/                         Vue + Vite + TypeScript SPA (API client generated from OpenAPI)
-ha/                          custom_components/marshal (Python HA integration, HACS; may move to its own repo)
-deploy/                      docker-compose, example config
+web/                         Vue + Vite + TypeScript SPA (API client generated from OpenAPI) (planned)
+ha/                          custom_components/marshal (Python HA integration, HACS; may move to its own repo) (planned)
+deploy/                      docker-compose, example config (planned)
 docs/                        design notes, images
 openspec/                    specifications and changes
 ```

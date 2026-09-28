@@ -7,7 +7,9 @@
 ' reference or adds / removes a key package, and re-render the SVG
 ' (see docs/diagrams/README.md).
 '
-' Status: PLANNED — derived from docs/brainstorm-notes.md, no code yet.
+' Status: PARTLY BUILT — Marshal.Abstractions, Marshal.Core, Marshal.Data,
+' Marshal.Api, Marshal.Testing and their test projects exist (core-agent);
+' the other projects are still planned (docs/brainstorm-notes.md).
 ' External packages are drawn inside the project that references them
 ' (grey boxes, <<nuget>> / <<npm>> / <<pip>>).
 
@@ -103,7 +105,7 @@ package "Separate services" {
 
 package "tests/" {
   component "Marshal.*.Tests" as Tests
-  component "Marshal.Testing\n(shared fakes)" as Testing
+  component "Marshal.Testing\n(shared fakes: FakeChatClient,\nFakeEmbeddingGenerator, FakeTool)" as Testing
   component "xunit.v3, Testcontainers,\nTimeProvider.Testing,\nMvc.Testing" <<nuget>>
 }
 
@@ -136,6 +138,9 @@ ExecutorHost ..> Api : callbacks\n(per-task token)
 
 Tests --> Testing
 Testing --> Abstractions
+Tests --> Api
+Tests --> Core
+Tests --> Data
 
 note bottom of Abstractions
   Only interfaces, value types and Result
