@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useApi } from '../api/inject'
 import { useUserSession } from '../session'
@@ -15,10 +15,13 @@ const links = [
   { to: '/system', label: 'System' },
 ]
 
+const adminLinks = [{ to: '/config', label: 'Config' }]
+
 const session = useApi()
 const user = useUserSession()
 const route = useRoute()
 const menuOpen = ref(false)
+const visibleLinks = computed(() => (user.current.value?.roles.includes('admin') ? [...links, ...adminLinks] : links))
 
 watch(
   () => route.fullPath,
@@ -51,7 +54,7 @@ async function logout() {
       <button type="button" data-test="logout" @click="logout">Log out</button>
     </header>
     <nav id="nav" :class="{ open: menuOpen }">
-      <RouterLink v-for="link in links" :key="link.to" :to="link.to">{{ link.label }}</RouterLink>
+      <RouterLink v-for="link in visibleLinks" :key="link.to" :to="link.to">{{ link.label }}</RouterLink>
     </nav>
     <main class="content">
       <RouterView />

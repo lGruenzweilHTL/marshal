@@ -45,7 +45,7 @@
 
 - [x] 6.1 Write API tests: config summary without secrets, reload errors, admin-only
 - [x] 6.2 Implement config summary endpoint
-- [ ] 6.3 Write component tests and implement the config view in `web/`
+- [x] 6.3 Write component tests and implement the config view in `web/`
 
 ## 7. Documentation
 

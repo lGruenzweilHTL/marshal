@@ -17,6 +17,15 @@ describe('AppShell', () => {
     expect(links).toEqual(['Dashboard', 'Chat', 'Runs', 'Cost', 'Security', 'Secrets', 'Preferences', 'System'])
   })
 
+  it('shows the config link to admins only', async () => {
+    const admin = { ...me, roles: ['admin'] }
+    const { options } = await mountOptions(new FakeServer().on('GET', '/api/v1/me', 200, admin), '/')
+    const wrapper = mount(AppShell, { global: { ...options.global, stubs: { RouterView: true } } })
+    await flushPromises()
+
+    expect(wrapper.findAll('nav a').map((link) => link.text())).toContain('Config')
+  })
+
   it('logs out with a form post carrying the antiforgery token', async () => {
     const submit = vi.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(() => {})
     const { options } = await mountOptions(new FakeServer().on('GET', '/api/v1/me', 200, me).antiforgery('t-9'), '/')

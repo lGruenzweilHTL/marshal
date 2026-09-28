@@ -4,6 +4,7 @@ import LoginPage from './auth/LoginPage.vue'
 import SetupPage from './auth/SetupPage.vue'
 import AppShell from './layout/AppShell.vue'
 import ChatView from './chat/ChatView.vue'
+import ConfigView from './config/ConfigView.vue'
 import DashboardView from './dashboard/DashboardView.vue'
 import NotFoundView from './layout/NotFoundView.vue'
 import PreferencesView from './preferences/PreferencesView.vue'
@@ -41,6 +42,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'secrets', name: 'secrets', component: SecretsView, meta: { title: 'Secrets' } },
       { path: 'preferences', name: 'preferences', component: PreferencesView, meta: { title: 'Preferences' } },
       { path: 'system', name: 'system', component: SystemView, meta: { title: 'System' } },
+      { path: 'config', name: 'config', component: ConfigView, meta: { title: 'Configuration' } },
       { path: ':pathMatch(.*)*', name: 'not-found', component: NotFoundView, meta: { title: 'Not found' } },
     ],
   },
