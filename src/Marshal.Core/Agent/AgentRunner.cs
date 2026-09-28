@@ -39,7 +39,10 @@ public sealed partial class AgentRunner(
 
     public async Task<AgentRunResult> RunAsync(AgentRunRequest request, CancellationToken cancellationToken)
     {
-        RunId runId = await recorder.StartRunAsync(new RunStart(request.Context, request.Trigger), cancellationToken);
+        RunId runId;
+        using (executionContext.Use(request.Context))
+            runId = await recorder.StartRunAsync(new RunStart(request.Context, request.Trigger), cancellationToken);
+
         MarshalExecutionContext context = request.Context with { RunId = runId };
         using IDisposable scope = executionContext.Use(context);
         LogRunStarted(logger, runId.Value, request.Trigger);
@@ -73,7 +76,8 @@ public sealed partial class AgentRunner(
         await recorder.RecordStepAsync(runId, new RunStepRecord
         {
             Kind = RunStepKind.Context,
-            Content = JsonSerializer.Serialize(new { systemPrompt, userText = request.UserText, history = request.History.Count }),
+            Content = systemPrompt,
+            Input = request.UserText,
         }, ct);
 
         List<ChatMessage> messages = [new(ChatRole.System, systemPrompt), .. request.History];

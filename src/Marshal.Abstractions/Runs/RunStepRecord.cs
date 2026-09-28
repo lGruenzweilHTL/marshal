@@ -36,7 +36,10 @@ public sealed record RunStepRecord
     /// <summary>Tool arguments (tool calls).</summary>
     public string? Arguments { get; init; }
 
-    /// <summary>Content: prompt and input (context), reply text, or tool result. Redacted for sensitive tools.</summary>
+    /// <summary>User input of the turn (context steps).</summary>
+    public string? Input { get; init; }
+
+    /// <summary>Content: system prompt (context), model output, reply text, or tool result. Redacted for sensitive tools.</summary>
     public string? Content { get; init; }
 
     /// <summary>Reference stored instead of the content for sensitive tools (message id, path).</summary>

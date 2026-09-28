@@ -86,10 +86,10 @@
 
 ## 11. Tokens
 
-- [ ] 11.1 Write token tests: hash only stored, revoked / expired rejected, scope policy check
+- [x] 11.1 Write token tests: hash only stored, revoked / expired rejected, scope policy check
 - [ ] 11.2 Implement `ApiTokenService` and bearer authentication handler
-- [ ] 11.3 Write CLI tests: `tokens create` prints once and audits, `list`, `revoke`
-- [ ] 11.4 Implement the `marshal tokens` command mode
+- [x] 11.3 Write CLI tests: `tokens create` prints once and audits, `list`, `revoke`
+- [x] 11.4 Implement the `marshal tokens` command mode
 
 ## 12. Conversation API
 
