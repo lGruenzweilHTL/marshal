@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Marshal.Abstractions\Marshal.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Marshal.Data\Marshal.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>

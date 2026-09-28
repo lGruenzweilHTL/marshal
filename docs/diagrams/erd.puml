@@ -5,7 +5,7 @@
 ' Update it in the same change that adds, removes or renames an entity,
 ' column or relationship, and re-render the SVG (see docs/diagrams/README.md).
 '
-' Status: PARTLY BUILT — User (+ Identity tables), UserPreferences, ApiToken, Session,
+' Status: PARTLY BUILT — User (+ Identity tables), AuthTicket, UserPreferences, ApiToken, Session,
 ' Run, RunStep, PendingAction, AuditEvent and Secret exist in Marshal.Data;
 ' the other entities are still planned (docs/brainstorm-notes.md).
 
@@ -109,6 +109,15 @@ package "Identity & Access" {
     * created_at : DateTimeOffset
     expires_at : DateTimeOffset
     revoked_at : DateTimeOffset
+  }
+
+  entity AuthTicket {
+    * id : string <<PK, SHA-256 hex of the cookie key>>
+    --
+    * owner_id : OwnerId <<FK>>
+    * value : bytes  <<serialized ticket incl. IdP tokens, Data Protection>>
+    * created_at : DateTimeOffset
+    expires_at : DateTimeOffset
   }
 
   entity UserPreferences {
@@ -424,6 +433,7 @@ User ||--o{ UserClaim
 User ||--o{ UserToken
 Role ||--o{ RoleClaim
 User ||--o{ ApiToken
+User ||--o{ AuthTicket
 User ||--|| UserPreferences
 User ||--o{ Session
 User ||--o{ Run

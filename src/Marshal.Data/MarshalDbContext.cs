@@ -8,6 +8,7 @@ using Marshal.Abstractions.Sessions;
 using Marshal.Abstractions.Tokens;
 using Marshal.Abstractions.Tools;
 using Marshal.Data.Audit;
+using Marshal.Data.Auth;
 using Marshal.Data.Conversations;
 using Marshal.Data.Identity;
 using Marshal.Data.Persistence;
@@ -44,6 +45,8 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
 
     public DbSet<Secret> Secrets => Set<Secret>();
+
+    public DbSet<AuthTicket> AuthTickets => Set<AuthTicket>();
 
     /// <summary>The current owner. Throws when there is no execution context (fail closed).</summary>
     internal OwnerId CurrentOwnerId =>
@@ -134,6 +137,14 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         {
             preferences.HasKey(entity => entity.UserId);
             preferences.HasOne<User>().WithOne().HasForeignKey<UserPreferences>(entity => entity.UserId);
+        });
+
+        builder.Entity<AuthTicket>(ticket =>
+        {
+            ticket.HasKey(entity => entity.Id);
+            ticket.HasIndex(entity => entity.ExpiresAt);
+            ticket.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            OwnerFilter(ticket);
         });
 
         builder.Entity<ApiToken>(token =>

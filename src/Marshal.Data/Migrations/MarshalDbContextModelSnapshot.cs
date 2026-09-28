@@ -70,6 +70,41 @@ namespace Marshal.Data.Migrations
                     b.ToTable("audit_events", (string)null);
                 });
 
+            modelBuilder.Entity("Marshal.Data.Auth.AuthTicket", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<long?>("ExpiresAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<byte[]>("Value")
+                        .IsRequired()
+                        .HasColumnType("BLOB")
+                        .HasColumnName("value");
+
+                    b.HasKey("Id")
+                        .HasName("pk_auth_tickets");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("ix_auth_tickets_expires_at");
+
+                    b.HasIndex("OwnerId")
+                        .HasDatabaseName("ix_auth_tickets_owner_id");
+
+                    b.ToTable("auth_tickets", (string)null);
+                });
+
             modelBuilder.Entity("Marshal.Data.Conversations.PendingAction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -807,6 +842,16 @@ namespace Marshal.Data.Migrations
                         .WithMany()
                         .HasForeignKey("RunId")
                         .HasConstraintName("fk_audit_events_runs_run_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Auth.AuthTicket", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_auth_tickets_users_owner_id");
                 });
 
             modelBuilder.Entity("Marshal.Data.Conversations.PendingAction", b =>

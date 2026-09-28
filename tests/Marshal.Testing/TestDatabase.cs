@@ -1,16 +1,16 @@
 using Marshal.Abstractions.Identity;
+using Marshal.Data;
 using Marshal.Data.Identity;
 using Marshal.Data.Persistence;
-using Marshal.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
-namespace Marshal.Data.Tests;
+namespace Marshal.Testing;
 
 /// <summary>
 /// In-memory SQLite database shared by the contexts created from it.
 /// </summary>
-internal sealed class TestDatabase : IAsyncDisposable
+public sealed class TestDatabase : IAsyncDisposable
 {
     private readonly SqliteConnection _connection = new("Data Source=:memory:");
 
