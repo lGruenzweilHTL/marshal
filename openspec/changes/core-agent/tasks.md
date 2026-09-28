@@ -109,6 +109,6 @@
 
 ## 14. Packaging
 
-- [ ] 14.1 Add multi-stage `Dockerfile` (API only for now) and `deploy/docker-compose.yml` with Ollama
-- [ ] 14.2 Add example `deploy/config/marshal.yaml`, `risk.yaml`, `satellites.yaml` (no secrets; passes the scanner in a test)
-- [ ] 14.3 Update `CLAUDE.md` package index if packages changed
+- [x] 14.1 Add multi-stage `Dockerfile` (API only for now) and `deploy/docker-compose.yml` with Ollama
+- [x] 14.2 Add example `deploy/config/marshal.yaml`, `risk.yaml`, `satellites.yaml` (no secrets; passes the scanner in a test)
+- [x] 14.3 Update `CLAUDE.md` package index if packages changed

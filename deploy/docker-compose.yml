@@ -1,0 +1,39 @@
+# Example deployment: Marshal + Ollama (GPU). Copy config.example/ to config/ and adjust it first.
+# Secrets never go into config/: provide them as Docker secrets (files) or MARSHAL_SECRET_<NAME> variables.
+services:
+  marshal:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: marshal:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config:/config:ro
+      - marshal-data:/data
+    # secrets:
+    #   - anthropic_key
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama-models:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+# secrets:
+#   anthropic_key:
+#     file: ./secrets/anthropic_key
+
+volumes:
+  marshal-data:
+  ollama-models:

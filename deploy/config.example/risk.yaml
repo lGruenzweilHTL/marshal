@@ -1,0 +1,10 @@
+# Risk rules: evaluated in order, first match wins. Tools no rule matches use their default tier.
+# match.tool is a glob on the internal tool id; match.args compares call arguments; any other key
+# (domain, deviceClass, ...) is compared with the resolved targets. Hot-reloaded.
+risk:
+  - match: { tool: "ha.*", domain: [lock, alarm_control_panel] }
+    tier: confirm
+  - match: { tool: "ha.*", domain: cover, deviceClass: [garage, door, gate] }
+    tier: confirm
+  - match: { tool: "ha.*" }
+    tier: safe

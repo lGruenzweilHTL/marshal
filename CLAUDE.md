@@ -54,7 +54,7 @@ tests/                       one test project per src project (Marshal.<Name>.Te
   Marshal.Testing/           shared hand-written fakes (FakeChatClient, FakeEmbeddingGenerator, ...)
 web/                         Vue + Vite + TypeScript SPA (API client generated from OpenAPI) (planned)
 ha/                          custom_components/marshal (Python HA integration, HACS; may move to its own repo) (planned)
-deploy/                      docker-compose, example config (planned)
+deploy/                      docker-compose.yml, config.example/ (example /config files); Dockerfile at repo root
 docs/                        design notes, images
 openspec/                    specifications and changes
 ```
@@ -82,13 +82,14 @@ Key dependencies and what they are for. Keep this list current when adding or re
 | `Anthropic` | Official Anthropic C# SDK (v10+; implements `IChatClient`) — Claude API provider (host only) |
 | `Microsoft.Extensions.AI.OpenAI` | OpenAI-compatible provider for local servers (llama.cpp `llama-server`, vLLM, LM Studio) (host only) |
 | `ModelContextProtocol` | Official MCP C# SDK — MCP client (HA MCP server, custom servers) |
-| `Asp.Versioning.Http` + `Asp.Versioning.Mvc.ApiExplorer` | URL-segment API versioning (`/api/v{version:apiVersion}`), per-version OpenAPI grouping |
+| `Asp.Versioning.Http` + `Asp.Versioning.Mvc.ApiExplorer` + `Asp.Versioning.OpenApi` | URL-segment API versioning (`/api/v{version:apiVersion}`), per-version OpenAPI grouping (`MapOpenApi().WithDocumentPerVersion()`) |
 | `Microsoft.AspNetCore.OpenApi` | OpenAPI document generation (one per API version) |
 | `Microsoft.AspNetCore.Authentication.OpenIdConnect` | `oidc` login provider (BFF) |
 | `Microsoft.AspNetCore.Identity.EntityFrameworkCore` | `local` login provider (passkeys + password) |
 | `NetEscapades.Configuration.Yaml` | YAML configuration provider for `/config/marshal.yaml` |
 | `YamlDotNet` | Parsing `/config` files (satellites, risk rules, MCP servers) and Markdown frontmatter (skills, templates) |
 | `Microsoft.EntityFrameworkCore.Sqlite` | Persistence; owner-scoped global query filters |
+| `Microsoft.AspNetCore.DataProtection` | Encrypting UI-managed secrets in the database; keys in `/data/keys` |
 | `EFCore.NamingConventions` | snake_case table and column names for the EF Core model |
 | `Microsoft.EntityFrameworkCore.Design` + `dotnet-ef` (local tool, `.config/dotnet-tools.json`) | Creating migrations (`dotnet ef migrations add <Name> --project src/Marshal.Data --output-dir Migrations`) |
 | `sqlite-vec` (native extension) | Vector search in SQLite |
@@ -98,8 +99,9 @@ Key dependencies and what they are for. Keep this list current when adding or re
 | `Google.Apis.Gmail.v1`, `Microsoft.Graph` | Gmail API and Graph mail providers (later, build order §14) |
 | `SkiaSharp` | Image resizing (camera snapshots before VLM calls); MIT licensed |
 | `Microsoft.Extensions.Http.Resilience` | Retries / backoff for integration HTTP clients |
-| `OpenTelemetry.*` | Traces and metrics |
-| `xunit.v3`, `Testcontainers` | Tests (plain `Assert`); containers for IMAP, FreshRSS |
+| `OpenTelemetry.*` (`Extensions.Hosting`, `Exporter.OpenTelemetryProtocol`) | Traces and metrics (`Marshal.Runs` activity source, `Marshal` meter), OTLP export |
+| `xunit.v3`, `Testcontainers` | Tests (plain `Assert`) on Microsoft.Testing.Platform (`dotnet test --project <dir>`); containers for IMAP, FreshRSS |
+| `Microsoft.Testing.Extensions.CodeCoverage` | Coverage (`--coverage`) for the guard and risk engine branch-coverage check |
 | `Microsoft.AspNetCore.Mvc.Testing` | In-process API integration tests (`WebApplicationFactory`) |
 | `Microsoft.Extensions.TimeProvider.Testing` | `FakeTimeProvider` for scheduler and time-based tests |
 

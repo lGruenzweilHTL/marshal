@@ -1,0 +1,61 @@
+# Marshal instance configuration. Keys are camelCase; environment variables override them
+# (MARSHAL__Section__Key). Never put secret values here — only secret names (keys ending in "Secret").
+
+owner:                      # the instance owner created on first start
+  displayName: "Your name"
+  language: en              # de | en
+  timeZone: Europe/Vienna   # IANA id
+
+http:
+  pathBase: ""              # e.g. /marshal behind a reverse proxy
+
+models:
+  fast:
+    tier: fast
+    provider: ollama
+    model: "qwen3:8b"
+    endpoint: "http://ollama:11434"
+    contextLength: 32768
+  standard:
+    tier: standard
+    provider: ollama
+    model: "qwen3:30b"
+    endpoint: "http://ollama:11434"
+    contextLength: 32768
+  # advisor:
+  #   tier: advisor
+  #   provider: anthropic
+  #   model: claude-sonnet-4-5
+  #   apiKeySecret: anthropic_key       # file /run/secrets/anthropic_key or MARSHAL_SECRET_ANTHROPIC_KEY
+  #   contextLength: 200000
+  #   price: { inputPerMTok: 3, outputPerMTok: 15, cachedPerMTok: 0.3 }
+  # local:
+  #   tier: standard
+  #   provider: openai-compatible        # llama.cpp llama-server, vLLM, LM Studio
+  #   model: "qwen3"
+  #   endpoint: "http://llama:8080/v1"
+
+agent:
+  maxSteps: 8
+  voiceLatencyCap: "00:00:08"
+  textLatencyCap: "00:01:00"
+  advisor:
+    maxCallsPerRun: 2
+    dailyCostCap: 1.0
+
+confirmation:
+  ttl: "00:01:00"
+  judgeTimeout: "00:00:03"
+  keywords:
+    en: [confirm, confirmed, approved, "yes do it"]
+    de: [bestätigt, bestätigen, "ja mach", "ja mach das"]
+
+sessions:
+  idleTtl: "00:05:00"
+
+recording:
+  redactTools: []           # tool id globs stored as references only (tools flagged sensitive always are)
+  keepContentTools: []
+
+# telemetry:
+#   otlpEndpoint: "http://otel-collector:4317"

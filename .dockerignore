@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/TestResults/
+.git/
+.idea/
+.vscode/
+tests/
+docs/
+openspec/
+deploy/
+web/node_modules/

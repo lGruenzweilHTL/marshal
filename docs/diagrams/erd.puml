@@ -99,7 +99,7 @@ package "Conversations & Runs" {
     * created_at : DateTimeOffset
     * last_turn_at : DateTimeOffset
     closed_at : DateTimeOffset
-    <<unique (api_token_id, external_id)>>
+    <<unique (api_token_id, external_id) where closed_at is null>>
   }
 
   entity Run {

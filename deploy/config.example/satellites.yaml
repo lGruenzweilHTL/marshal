@@ -1,0 +1,10 @@
+# Optional per-satellite profiles, keyed by satellite entity id. Unlisted satellites use defaults.
+# A convenience limit for fixed devices, not an authorization boundary. Hot-reloaded.
+satellites:
+  assist_satellite.kitchen:
+    verbosity: short
+    notes: "Cooking area. Timer and recipe questions are common."
+  assist_satellite.kids_room:
+    verbosity: short
+    denyConfirm: [printer.*, calendar.*]   # confirm-tier tools hidden here
+    denyTools: [mail.*]                    # hidden entirely

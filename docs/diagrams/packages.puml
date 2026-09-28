@@ -55,11 +55,11 @@ package "Clients" {
 package "src/ (.NET 10)" {
   package "Marshal.Api" as Api {
     component "ASP.NET host: REST + live updates\nunder /api/v1, versioned OpenAPI,\nBFF auth, API tokens, serves SPA,\ncomposition root" as ApiHost
-    component "Asp.Versioning.Http\n+ Mvc.ApiExplorer" <<nuget>>
+    component "Asp.Versioning.Http\n+ Mvc.ApiExplorer\n+ Asp.Versioning.OpenApi" <<nuget>>
     component "Microsoft.AspNetCore.OpenApi" <<nuget>>
     component "Authentication.OpenIdConnect\nIdentity.EntityFrameworkCore" <<nuget>>
     component "NetEscapades\n.Configuration.Yaml" <<nuget>>
-    component "OpenTelemetry.*" <<nuget>>
+    component "OpenTelemetry.*\n(Extensions.Hosting,\nExporter.OpenTelemetryProtocol)" <<nuget>>
     component "OllamaSharp\nAnthropic (official SDK)\nMicrosoft.Extensions.AI.OpenAI" <<nuget>>
   }
 
@@ -91,6 +91,7 @@ package "src/ (.NET 10)" {
   package "Marshal.Data" as Data {
     component "DbContext + migrations,\nowner-scoped query filters" as DataParts
     component "EF Core Sqlite\n+ NamingConventions\n+ sqlite-vec" <<nuget>>
+    component "AspNetCore.DataProtection" <<nuget>>
   }
 
   package "Marshal.Abstractions" as Abstractions {
@@ -106,7 +107,7 @@ package "Separate services" {
 package "tests/" {
   component "Marshal.*.Tests" as Tests
   component "Marshal.Testing\n(shared fakes: FakeChatClient,\nFakeEmbeddingGenerator, FakeTool)" as Testing
-  component "xunit.v3, Testcontainers,\nTimeProvider.Testing,\nMvc.Testing" <<nuget>>
+  component "xunit.v3, Testcontainers,\nTimeProvider.Testing,\nMvc.Testing,\nTesting.Extensions.CodeCoverage" <<nuget>>
 }
 
 ' ------------------------------------------------------------------
