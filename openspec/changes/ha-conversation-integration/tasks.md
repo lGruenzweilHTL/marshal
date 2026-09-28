@@ -5,8 +5,8 @@
 
 ## 2. Client
 
-- [ ] 2.1 Write tests for `MarshalClient`: `/api/versions` parsing, SSE parsing (`delta`, `status`, final), auth errors, timeouts
-- [ ] 2.2 Implement `MarshalClient` with aiohttp and a minimal SSE parser
+- [x] 2.1 Write tests for `MarshalClient`: `/api/versions` parsing, SSE parsing (`delta`, `status`, final), auth errors, timeouts
+- [x] 2.2 Implement `MarshalClient` with aiohttp and a minimal SSE parser
 
 ## 3. Config flow
 
