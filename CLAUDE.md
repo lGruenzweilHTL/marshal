@@ -44,6 +44,8 @@ src/                         .NET solution
   Marshal.Memory/            chunks, embeddings, hybrid retrieval, project activation
   Marshal.Tasks/             scheduler, event bus, trigger matcher, executors, notifications
   Marshal.Integrations.*/    HomeAssistant, Moonraker, Mail, FreshRss, Notes, ...
+  Marshal.Data/              EF Core DbContext, migrations, owner-scoped query filters
+  Marshal.ExecutorHost/      separate coding-sandbox service (own deployment, never in the main container)
 tests/                       one test project per src project (Marshal.<Name>.Tests)
   Marshal.Testing/           shared hand-written fakes (FakeChatClient, FakeEmbeddingGenerator, ...)
 web/                         Vue + Vite + TypeScript SPA (API client generated from OpenAPI)
@@ -54,6 +56,15 @@ openspec/                    specifications and changes
 ```
 
 Runtime volumes (not in git): `/config` (skills, templates, MCP servers, risk rules, satellites — git-friendly, no secrets) and `/data` (SQLite, Data Protection keys, backups, notes repo).
+
+## Diagrams — keep up to date
+
+`docs/diagrams/` holds PlantUML diagrams that must always match the code (details and render commands: [docs/diagrams/README.md](docs/diagrams/README.md)):
+
+- **`erd.puml`** — update in the same change that adds, removes or renames an EF Core entity, column or relationship.
+- **`packages.puml`** — update in the same change that adds, removes or renames a project, changes a project reference or adds / removes a key external dependency.
+- Re-render the SVGs after every edit (`java -jar plantuml.jar -tsvg docs/diagrams/*.puml`) and commit `.puml` and `.svg` together.
+- Remove the "(planned)" title marker once the diagrammed structure exists in code.
 
 ## Package index
 

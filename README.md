@@ -96,6 +96,18 @@ Installation instructions will follow once the first release is available.
 
 ---
 
+## Architecture
+
+For the curious: how Marshal is put together. The diagrams are kept up to date with the code; sources and details are in [docs/diagrams](docs/diagrams/).
+
+### Packages
+![Package diagram](docs/diagrams/packages.svg)
+
+### Data model
+![Entity relationship diagram](docs/diagrams/erd.svg)
+
+---
+
 ## License
 
 Marshal is released under the [MIT License](LICENSE).

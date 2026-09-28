@@ -1,0 +1,306 @@
+@startuml erd
+' Marshal — Entity Relationship Diagram
+'
+' KEEP UP TO DATE: this diagram must match the EF Core model in src/.
+' Update it in the same change that adds, removes or renames an entity,
+' column or relationship, and re-render the SVG (see docs/diagrams/README.md).
+'
+' Status: PLANNED — derived from docs/brainstorm-notes.md, no code yet.
+
+!pragma layout smetana
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName Monospaced
+skinparam class {
+  BackgroundColor #FEFEFE
+  BorderColor #555555
+  HeaderBackgroundColor #E8EEF7
+}
+
+title Marshal — ERD (planned)
+
+' ------------------------------------------------------------------
+package "Identity & Access" {
+  entity User {
+    * id : UserId <<PK>>
+    --
+    * display_name : string
+    * roles : string[]
+    * created_at : DateTimeOffset
+  }
+
+  entity ExternalLogin {
+    * id : Guid <<PK>>
+    --
+    * user_id : UserId <<FK>>
+    * provider : string
+    * subject : string
+    <<unique (provider, subject)>>
+  }
+
+  entity ApiToken {
+    * id : ApiTokenId <<PK>>
+    --
+    * owner_id : UserId <<FK>>
+    * name : string
+    * token_hash : string
+    * scopes : string[]
+    * kind : standard | executor_callback
+    task_id : TaskId <<FK>>
+    * created_at : DateTimeOffset
+    expires_at : DateTimeOffset
+    revoked_at : DateTimeOffset
+  }
+
+  entity UserPreferences {
+    * user_id : UserId <<PK, FK>>
+    --
+    * language : de | en
+    quiet_hours : json
+    notification_targets : json
+    dnd_until : DateTimeOffset
+    briefing : json
+  }
+}
+
+' ------------------------------------------------------------------
+package "Conversations & Runs" {
+  entity Session {
+    * id : SessionId <<PK>>
+    --
+    * owner_id : UserId <<FK>>
+    * client_id : ApiTokenId <<FK>>
+    external_id : string
+    * source : voice | web | task | api
+    * identity_evidence : json
+    * resolved_by : string
+    * created_at : DateTimeOffset
+    * last_turn_at : DateTimeOffset
+    closed_at : DateTimeOffset
+    <<unique (client_id, external_id)>>
+  }
+
+  entity Run {
+    * id : RunId <<PK>>
+    --
+    * owner_id : UserId <<FK>>
+    session_id : SessionId <<FK>>
+    task_id : TaskId <<FK>>
+    * source : voice | web | task | api
+    * trigger : string
+    * started_at : DateTimeOffset
+    ended_at : DateTimeOffset
+    * outcome : ok | error | auto_backgrounded | cancelled
+    * cost : decimal
+  }
+
+  entity RunStep {
+    * id : Guid <<PK>>
+    --
+    * run_id : RunId <<FK>>
+    * sequence : int
+    * kind : context | model_call | tool_call | reply
+    model : string
+    tier : string
+    tokens_in / tokens_out / tokens_cached : int
+    tool : string
+    risk_tier : string
+    guard_decision : string
+    payload : json  <<redacted, 30 d>>
+    * duration_ms : int
+    cost : decimal
+    error : string
+  }
+
+  entity PendingAction {
+    * id : PendingActionId <<PK>>
+    --
+    * owner_id : UserId <<FK>>
+    session_id : SessionId <<FK>>
+    task_id : TaskId <<FK>>
+    * tool : string
+    * args : json  <<frozen>>
+    * summary : string
+    * nonce : string
+    * expires_at : DateTimeOffset
+    * status : pending | approved | rejected | expired | superseded
+    * decided_by : keyword | judge | ui | push
+    decided_at : DateTimeOffset
+  }
+}
+
+' ------------------------------------------------------------------
+package "Memory" {
+  entity Project {
+    * id : ProjectId <<PK>>
+    --
+    * owner_id : UserId <<FK>>
+    * name : string
+    * description : string
+    centroid : vector
+    last_active_at : DateTimeOffset
+  }
+
+  entity ProjectAlias {
+    * id : Guid <<PK>>
+    --
+    * project_id : ProjectId <<FK>>
+    * phrase : string
+    * status : candidate | active | rejected
+    * confirmations : int
+  }
+
+  entity Chunk {
+    * id : ChunkId <<PK, hash(type + normalized title)>>
+    --
+    * owner_id : UserId <<FK>>
+    project_id : ProjectId <<FK>>
+    * scope : general | project
+    * origin : memory | notes
+    * type : fact | preference | event | procedure | person | device
+    * title : string
+    * content : string
+    * importance : int (1-5)
+    * pinned : bool
+    source_ref : string  <<e.g. note path>>
+    embedding : vector  <<sqlite-vec>>
+    * created_at : DateTimeOffset
+    * updated_at : DateTimeOffset
+    deleted_at : DateTimeOffset  <<soft delete>>
+  }
+
+  entity ChunkEdge {
+    * from_id : ChunkId <<PK, FK>>
+    * to_id : ChunkId <<PK, FK>>
+    * kind : supersedes | contradicts | depends_on | relates_to | links_to <<PK>>
+    --
+    * created_at : DateTimeOffset
+  }
+}
+
+' ------------------------------------------------------------------
+package "Background Work" {
+  entity AgentTask {
+    * id : TaskId <<PK>>
+    --
+    * owner_id : UserId <<FK>>
+    parent_id : TaskId <<FK>>
+    * created_by : user | task | system
+    * kind : agent | system
+    * goal : string
+    template : string
+    scope : json
+    * trigger_kind : now | at | cron | event | after
+    * trigger_spec : string
+    * status : pending | running | waiting | done | failed | cancelled
+    next_run_at : DateTimeOffset
+    notes : string
+    * budget : json
+    * spent : json
+    * deliver : string
+    deliver_when : string
+    deliver_expires_at : DateTimeOffset
+    fallback_channel : string
+    override_quiet_hours_until : DateTimeOffset
+    result : string
+    * depth : int
+  }
+
+  entity ExecutorSession {
+    * id : Guid <<PK>>
+    --
+    * task_id : TaskId <<FK>>
+    * executor : string
+    * handle : string
+    * callback_token_id : ApiTokenId <<FK>>
+    * status : starting | running | done | failed | cancelled
+    * started_at : DateTimeOffset
+    finished_at : DateTimeOffset
+  }
+
+  entity Notification {
+    * id : Guid <<PK>>
+    --
+    * owner_id : UserId <<FK>>
+    task_id : TaskId <<FK>>
+    * source : string
+    * priority : critical | normal | low
+    * content : string
+    channel : string
+    * outcome : delivered | coalesced | held | expired | fallback
+    reason : string
+    coalesced_into : Guid <<FK>>
+    * created_at : DateTimeOffset
+    delivered_at : DateTimeOffset
+  }
+
+  entity Proposal {
+    * id : Guid <<PK>>
+    --
+    * owner_id : UserId <<FK>>
+    task_id : TaskId <<FK>>
+    * kind : notes | code
+    * target : string  <<repo / sink>>
+    * branch : string
+    * title : string
+    * status : open | merged | rejected
+    * created_at : DateTimeOffset
+    decided_at : DateTimeOffset
+  }
+}
+
+' ------------------------------------------------------------------
+package "Integrations" {
+  entity MailAccount {
+    * id : Guid <<PK>>
+    --
+    * owner_id : UserId <<FK>>
+    * alias : string
+    * provider : imap | graph | gmail
+    * credential_strategy : password | oauth_google | oauth_microsoft
+    * credentials : bytes  <<Data Protection>>
+    * settings : json
+    last_sync_state : string  <<historyId / delta link / UIDNEXT>>
+  }
+}
+
+' ------------------------------------------------------------------
+' Relationships
+User ||--o{ ExternalLogin
+User ||--o{ ApiToken
+User ||--|| UserPreferences
+User ||--o{ Session
+User ||--o{ Run
+User ||--o{ PendingAction
+User ||--o{ Project
+User ||--o{ Chunk
+User ||--o{ AgentTask
+User ||--o{ Notification
+User ||--o{ Proposal
+User ||--o{ MailAccount
+
+ApiToken ||--o{ Session : client
+Session ||--o{ Run
+Session ||--o{ PendingAction
+Run ||--|{ RunStep
+
+Project ||--o{ ProjectAlias
+Project |o--o{ Chunk
+Chunk ||--o{ ChunkEdge : from
+Chunk ||--o{ ChunkEdge : to
+
+AgentTask |o--o{ AgentTask : parent
+AgentTask ||--o{ Run
+AgentTask ||--o{ PendingAction
+AgentTask ||--o{ ExecutorSession
+AgentTask |o--o{ Notification
+AgentTask |o--o{ Proposal
+ApiToken ||--o| ExecutorSession : callback
+
+note bottom of Chunk
+  All user-owned tables carry owner_id and are
+  read through owner-scoped EF Core query filters.
+end note
+
+@enduml

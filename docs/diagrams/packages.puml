@@ -1,0 +1,146 @@
+@startuml packages
+' Marshal — Package Diagram
+'
+' KEEP UP TO DATE: this diagram must match the projects in src/, web/, ha/
+' and their project references. Update it in the same change that adds,
+' removes or renames a project or changes a project reference, and
+' re-render the SVG (see docs/diagrams/README.md).
+'
+' Status: PLANNED — derived from docs/brainstorm-notes.md, no code yet.
+
+!pragma layout smetana
+skinparam shadowing false
+skinparam defaultFontName Monospaced
+skinparam packageStyle rectangle
+skinparam package {
+  BackgroundColor #FEFEFE
+  BorderColor #555555
+}
+
+title Marshal — Packages (planned)
+
+' ------------------------------------------------------------------
+package "Clients" {
+  component "ha/\ncustom_components/marshal\n(Python, HACS)" as HaComponent
+  component "web/\nVue + Vite + TS SPA\n(generated API client)" as Web
+}
+
+package "src/ (.NET 10)" {
+  package "Marshal.Api" as Api {
+    [ASP.NET host] as ApiHost
+    note right of ApiHost
+      REST + SignalR, OpenAPI,
+      BFF auth (OIDC / local),
+      API tokens, serves SPA,
+      composition root
+    end note
+  }
+
+  package "Marshal.Core" as Core {
+    [Agent loop]
+    [Tool registry + visibility]
+    [Risk engine + guard]
+    [Context builder]
+    [Model router]
+    [Sessions]
+  }
+
+  package "Marshal.Memory" as Memory {
+    [Chunks + edges]
+    [Hybrid retrieval]
+    [Project activation]
+    [Consolidation]
+  }
+
+  package "Marshal.Tasks" as Tasks {
+    [Scheduler]
+    [EventBus + TriggerMatcher]
+    [Worker pool]
+    [Executors]
+    [NotificationRouter]
+  }
+
+  package "Marshal.Integrations.*" as Integrations {
+    [HomeAssistant\n(REST, websocket, MCP,\ncalendar v1)] as IntHa
+    [Moonraker] as IntMoon
+    [Mail\n(IMAP, Graph, Gmail)] as IntMail
+    [FreshRss] as IntRss
+    [Notes] as IntNotes
+  }
+
+  package "Marshal.Data" as Data {
+    [DbContext + migrations]
+    [Owner-scoped query filters]
+  }
+
+  package "Marshal.Abstractions" as Abstractions {
+    [Small interfaces]
+    [Result / Result<T>]
+    [Strongly typed ids]
+    [Execution context]
+  }
+}
+
+package "Separate services" {
+  component "Marshal.ExecutorHost\n(coding sandbox service)" as ExecutorHost
+}
+
+package "tests/" {
+  component "Marshal.*.Tests" as Tests
+  component "Marshal.Testing\n(shared fakes)" as Testing
+}
+
+' ------------------------------------------------------------------
+' External dependencies
+package "External" #F5F5F5 {
+  [Microsoft.Extensions.AI] as MEAI
+  [ModelContextProtocol] as MCP
+  [EF Core SQLite\n+ sqlite-vec] as EF
+  [MailKit] as MailKit
+  [Cronos] as Cronos
+  [SmartReader] as SmartReader
+}
+
+' ------------------------------------------------------------------
+' Project references (arrow = "depends on")
+HaComponent ..> Api : HTTP (conversation:write)
+Web ..> Api : HTTP + SignalR
+
+Api --> Core
+Api --> Memory
+Api --> Tasks
+Api --> Integrations
+Api --> Data
+Api --> Abstractions
+
+Core --> Abstractions
+Memory --> Abstractions
+Memory --> Data
+Tasks --> Core
+Tasks --> Abstractions
+Tasks --> Data
+Integrations --> Abstractions
+Data --> Abstractions
+
+Tasks ..> ExecutorHost : HTTP (scoped token)
+
+Core --> MEAI
+Core --> MCP
+Memory --> MEAI
+Data --> EF
+Tasks --> Cronos
+Integrations --> MailKit
+Integrations --> SmartReader
+Integrations --> MCP
+
+Tests --> Testing
+Testing --> Abstractions
+
+note bottom of Abstractions
+  Only interfaces, value types and Result.
+  No project in src/ references an implementation
+  project except Marshal.Api (composition root)
+  and Marshal.Tasks -> Marshal.Core (headless runs).
+end note
+
+@enduml
