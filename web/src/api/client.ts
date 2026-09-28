@@ -18,6 +18,8 @@ export interface ApiSession {
   api: ApiClient
   /** Root URL of the app and API (no trailing slash), for links the browser follows itself. */
   baseUrl: string
+  /** Plain fetch against the app root, for unversioned endpoints outside the OpenAPI document (`/health`). */
+  fetch(path: string): Promise<Response>
   /** Antiforgery token for a state-changing request (fetched once, cached until reset). */
   antiforgeryToken(): Promise<string>
   resetAntiforgery(): void
@@ -30,6 +32,7 @@ export function createApiSession(options: { baseUrl?: string; fetch?: typeof glo
 
   const session: ApiSession = {
     baseUrl,
+    fetch: (path) => doFetch(new Request(`${baseUrl}${path}`, { credentials: 'same-origin' })),
     api: createClient<paths>({ baseUrl, fetch: doFetch, credentials: 'same-origin' }),
     antiforgeryToken() {
       token ??= doFetch(new Request(`${baseUrl}/api/v1/auth/antiforgery`, { credentials: 'same-origin' }))

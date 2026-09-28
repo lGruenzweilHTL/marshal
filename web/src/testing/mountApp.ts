@@ -3,6 +3,8 @@ import { createApiSession, type ApiSession } from '../api/client'
 import { apiKey } from '../api/inject'
 import { createAppRouter } from '../router'
 import { createUserSession, sessionKey, type UserSession } from '../session'
+import { liveKey } from '../live/liveEvents'
+import { FakeLiveEvents } from './fakeLiveEvents'
 import type { FakeServer } from './fakeServer'
 
 export const me = { id: '0199aaaa-0000-7000-8000-000000000001', displayName: 'Lukas', roles: ['user'], scopes: ['conversation:write'] }
@@ -12,12 +14,14 @@ export async function mountOptions(server: FakeServer, path: string) {
   const api: ApiSession = createApiSession({ baseUrl: 'https://marshal.test', fetch: server.fetch })
   const user: UserSession = createUserSession(api)
   const router: Router = createAppRouter(user, createMemoryHistory())
+  const live = new FakeLiveEvents()
   await router.push(path)
   await router.isReady()
   return {
     api,
     user,
     router,
-    options: { global: { plugins: [router], provide: { [apiKey as symbol]: api, [sessionKey as symbol]: user } } },
+    live,
+    options: { global: { plugins: [router], provide: { [apiKey as symbol]: api, [sessionKey as symbol]: user, [liveKey as symbol]: live } } },
   }
 }

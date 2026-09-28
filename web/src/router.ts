@@ -4,7 +4,12 @@ import LoginPage from './auth/LoginPage.vue'
 import SetupPage from './auth/SetupPage.vue'
 import AppShell from './layout/AppShell.vue'
 import ChatView from './chat/ChatView.vue'
+import DashboardView from './dashboard/DashboardView.vue'
 import PlaceholderView from './layout/PlaceholderView.vue'
+import CostView from './runs/CostView.vue'
+import RunDetailView from './runs/RunDetailView.vue'
+import RunsView from './runs/RunsView.vue'
+import SystemView from './system/SystemView.vue'
 import type { UserSession } from './session'
 
 declare module 'vue-router' {
@@ -24,15 +29,15 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     component: AppShell,
     children: [
-      { path: '', name: 'dashboard', component: PlaceholderView, meta: { title: 'Dashboard' } },
+      { path: '', name: 'dashboard', component: DashboardView, meta: { title: 'Dashboard' } },
       { path: 'chat', name: 'chat', component: ChatView, meta: { title: 'Chat' } },
-      { path: 'runs', name: 'runs', component: PlaceholderView, meta: { title: 'Runs' } },
-      { path: 'runs/:id', name: 'run', component: PlaceholderView, meta: { title: 'Run' } },
-      { path: 'cost', name: 'cost', component: PlaceholderView, meta: { title: 'Cost' } },
+      { path: 'runs', name: 'runs', component: RunsView, meta: { title: 'Runs' } },
+      { path: 'runs/:id', name: 'run', component: RunDetailView, meta: { title: 'Run' } },
+      { path: 'cost', name: 'cost', component: CostView, meta: { title: 'Cost' } },
       { path: 'security', name: 'security', component: PlaceholderView, meta: { title: 'Security' } },
       { path: 'secrets', name: 'secrets', component: PlaceholderView, meta: { title: 'Secrets' } },
       { path: 'preferences', name: 'preferences', component: PlaceholderView, meta: { title: 'Preferences' } },
-      { path: 'system', name: 'system', component: PlaceholderView, meta: { title: 'System' } },
+      { path: 'system', name: 'system', component: SystemView, meta: { title: 'System' } },
       { path: ':pathMatch(.*)*', name: 'not-found', component: PlaceholderView, meta: { title: 'Not found' } },
     ],
   },
