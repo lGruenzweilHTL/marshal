@@ -62,3 +62,21 @@ One EF migration converting `User` to Identity and adding Identity tables, `Auth
 
 - Passkey API surface in the shipped .NET 10 Identity version — verify when building.
 - Vue remains LEANING; switching later only affects `web/`.
+
+## Implementation Notes
+
+- **D1 adjusted: `User` is `IdentityUser<OwnerId>`, not `IdentityUser<Guid>`.** EF Core refuses a relationship whose
+  foreign key (`OwnerId` on every user-owned table) and principal key (`Guid`) have different CLR types, even when the
+  value converter maps both to the same column type. Keying Identity by `OwnerId` keeps the typed id on every table
+  and the foreign keys in the database. `OwnerId` got a `TypeConverter` (`GuidIdTypeConverter<T>`) because Identity
+  converts keys from their string form. Identity uses one key type for users and roles, so role ids are
+  `OwnerId`-typed as well; they never leave the user store.
+- **Identity schema version 3 (passkeys)** is configured in `MarshalDbContext` itself: Identity reads the schema
+  version from the host's `IdentityOptions`, which the design-time factory and test contexts do not have. The base
+  model (schema 1) plus the schema 3 additions (passkey table with JSON `data`, key lengths 128, phone length 256)
+  keep migrations independent of the host.
+- **Identity tables** are `users`, `roles`, `user_roles`, `user_logins`, `user_passkeys`, and the unused-but-required
+  `user_claims`, `user_tokens`, `role_claims` (the EF user store expects them). They are the user store itself, keyed
+  by user id and accessed only through ASP.NET Core Identity, so they carry no owner query filter.
+- **Migration `IdentityUsers`** adds the Identity columns to `users` (the instance owner keeps its id) and backfills
+  `normalized_user_name` so Identity can find pre-existing users.

@@ -1,8 +1,11 @@
+using Marshal.Abstractions.Identity;
 using Marshal.Data.Identity;
 using Marshal.Data.Persistence;
 using Marshal.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 
@@ -56,6 +59,23 @@ public sealed class DatabaseInitializerTests : IDisposable
         Assert.Equal("Europe/Vienna", preferences.TimeZone);
     }
 
+    [Fact]
+    public async Task Initialize_CoreAgentDatabase_KeepsInstanceOwnerIdAsIdentityUser()
+    {
+        var ownerId = Guid.CreateVersion7();
+        await using (MarshalDbContext context = CreateContext())
+            await context.GetService<IMigrator>().MigrateAsync("OpenSessionUniqueness", cancellationToken: TestContext.Current.CancellationToken);
+        await ExecuteAsync($"INSERT INTO users (id, user_name, display_name, security_stamp, created_at) VALUES ('{ownerId.ToString().ToUpperInvariant()}', 'owner', 'Lukas', 'stamp', 0)");
+
+        await InitializeAsync();
+
+        await using MarshalDbContext migrated = CreateContext();
+        User owner = Assert.Single(await migrated.Users.ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(new OwnerId(ownerId), owner.Id);
+        Assert.Equal("Lukas", owner.DisplayName);
+        Assert.Equal("OWNER", owner.NormalizedUserName);
+    }
+
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();
@@ -78,6 +98,15 @@ public sealed class DatabaseInitializerTests : IDisposable
         await connection.OpenAsync();
         await using SqliteCommand command = connection.CreateCommand();
         command.CommandText = "CREATE TABLE legacy_marker (id INTEGER)";
+        await command.ExecuteNonQueryAsync();
+    }
+
+    private async Task ExecuteAsync(string sql)
+    {
+        await using var connection = new SqliteConnection($"Data Source={DatabasePath}");
+        await connection.OpenAsync();
+        await using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = sql;
         await command.ExecuteNonQueryAsync();
     }
 

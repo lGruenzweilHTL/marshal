@@ -11,7 +11,7 @@ public sealed class EfInstanceOwnerTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext();
-        context.Users.Add(new User { Id = OwnerId.New(), UserName = "late", DisplayName = "Late", SecurityStamp = "s", CreatedAt = DateTimeOffset.UnixEpoch.AddDays(-1) });
+        context.Users.Add(new User { Id = OwnerId.New(), UserName = "late", DisplayName = "Late", CreatedAt = DateTimeOffset.UnixEpoch.AddDays(-1) });
         await context.SaveChangesAsync(Ct);
 
         OwnerId owner = await new EfInstanceOwner(database.Factory).GetAsync(Ct);

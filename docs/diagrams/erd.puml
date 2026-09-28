@@ -5,8 +5,8 @@
 ' Update it in the same change that adds, removes or renames an entity,
 ' column or relationship, and re-render the SVG (see docs/diagrams/README.md).
 '
-' Status: PARTLY BUILT — User, UserPreferences, ApiToken, Session, Run, RunStep,
-' PendingAction, AuditEvent and Secret exist in Marshal.Data (core-agent);
+' Status: PARTLY BUILT — User (+ Identity tables), UserPreferences, ApiToken, Session,
+' Run, RunStep, PendingAction, AuditEvent and Secret exist in Marshal.Data;
 ' the other entities are still planned (docs/brainstorm-notes.md).
 
 !pragma layout smetana
@@ -24,17 +24,28 @@ title Marshal — ERD (planned)
 
 ' ------------------------------------------------------------------
 package "Identity & Access" {
-  entity User <<Identity>> {
-    * id : OwnerId <<PK, Identity Guid key>>
+  entity User <<Identity: users>> {
+    * id : OwnerId <<PK, Identity key (IdentityUser<OwnerId>)>>
     --
-    * user_name : string  <<unique>>
-    * display_name : string
+    user_name : string
+    normalized_user_name : string  <<unique>>
+    email : string
+    normalized_email : string
+    * email_confirmed : bool
     password_hash : string  <<local only>>
-    * security_stamp : string
+    security_stamp : string
+    concurrency_stamp : string
+    phone_number : string
+    * phone_number_confirmed : bool
+    * two_factor_enabled : bool
+    lockout_end : DateTimeOffset
+    * lockout_enabled : bool
+    * access_failed_count : int
+    * display_name : string
     * created_at : DateTimeOffset
   }
 
-  entity UserLogin <<AspNetUserLogins>> {
+  entity UserLogin <<Identity: user_logins>> {
     * login_provider : string <<PK>>
     * provider_key : string <<PK, OIDC sub>>
     --
@@ -42,22 +53,48 @@ package "Identity & Access" {
     provider_display_name : string
   }
 
-  entity UserPasskey <<AspNetUserPasskeys>> {
+  entity UserPasskey <<Identity: user_passkeys>> {
     * credential_id : bytes <<PK>>
     --
     * user_id : OwnerId <<FK>>
     * data : json  <<public key, sign count, name>>
   }
 
-  entity Role <<AspNetRoles>> {
-    * id : Guid <<PK>>
+  entity Role <<Identity: roles>> {
+    * id : OwnerId-typed <<PK, Identity shares the key type>>
     --
-    * name : admin | user
+    name : admin | user
+    normalized_name : string  <<unique>>
+    concurrency_stamp : string
   }
 
-  entity UserRole <<AspNetUserRoles>> {
+  entity UserRole <<Identity: user_roles>> {
     * user_id : OwnerId <<PK, FK>>
-    * role_id : Guid <<PK, FK>>
+    * role_id : Role id <<PK, FK>>
+  }
+
+  entity UserClaim <<Identity: user_claims>> {
+    * id : int <<PK>>
+    --
+    * user_id : OwnerId <<FK>>
+    claim_type : string
+    claim_value : string
+  }
+
+  entity UserToken <<Identity: user_tokens>> {
+    * user_id : OwnerId <<PK, FK>>
+    * login_provider : string <<PK>>
+    * name : string <<PK>>
+    --
+    value : string
+  }
+
+  entity RoleClaim <<Identity: role_claims>> {
+    * id : int <<PK>>
+    --
+    * role_id : Role id <<FK>>
+    claim_type : string
+    claim_value : string
   }
 
   entity ApiToken {
@@ -383,6 +420,9 @@ User ||--o{ UserLogin
 User ||--o{ UserPasskey
 User ||--o{ UserRole
 Role ||--o{ UserRole
+User ||--o{ UserClaim
+User ||--o{ UserToken
+Role ||--o{ RoleClaim
 User ||--o{ ApiToken
 User ||--|| UserPreferences
 User ||--o{ Session

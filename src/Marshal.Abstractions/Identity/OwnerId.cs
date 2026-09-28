@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
@@ -8,6 +9,7 @@ namespace Marshal.Abstractions.Identity;
 /// </summary>
 /// <param name="Value">The wrapped Guid.</param>
 [JsonConverter(typeof(GuidIdJsonConverter<OwnerId>))]
+[TypeConverter(typeof(GuidIdTypeConverter<OwnerId>))]
 public readonly record struct OwnerId(Guid Value) : IGuidId<OwnerId>
 {
     /// <summary>Creates a new, time-ordered id.</summary>

@@ -36,7 +36,6 @@ internal sealed class TestDatabase : IAsyncDisposable
                 Id = owner,
                 UserName = owner.ToString(),
                 DisplayName = owner == TestExecutionContext.OwnerA ? "Alice" : "Bob",
-                SecurityStamp = "stamp",
                 CreatedAt = DateTimeOffset.UnixEpoch,
             });
         }

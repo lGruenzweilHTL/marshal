@@ -1,21 +1,15 @@
 using Marshal.Abstractions.Identity;
+using Microsoft.AspNetCore.Identity;
 
 namespace Marshal.Data.Identity;
 
 /// <summary>
-/// A user of the instance. Becomes the ASP.NET Identity user in auth-web-shell.
+/// A human user: the ASP.NET Core Identity user, keyed by <see cref="OwnerId"/> so every user-owned row can reference it.
 /// </summary>
-public sealed class User
+public sealed class User : IdentityUser<OwnerId>
 {
-    public required OwnerId Id { get; init; }
-
-    public required string UserName { get; set; }
-
+    /// <summary>Name the system prompt and the UI use for the user.</summary>
     public required string DisplayName { get; set; }
-
-    public string? PasswordHash { get; set; }
-
-    public required string SecurityStamp { get; set; }
 
     public required DateTimeOffset CreatedAt { get; init; }
 }

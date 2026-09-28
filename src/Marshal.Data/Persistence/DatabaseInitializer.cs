@@ -1,6 +1,6 @@
+using Marshal.Abstractions.Identity;
 using System.Globalization;
 using System.Security.Cryptography;
-using Marshal.Abstractions.Identity;
 using Marshal.Data.Identity;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +48,7 @@ public sealed partial class DatabaseInitializer(MarshalDbContext db, TimeProvide
         {
             Id = OwnerId.New(),
             UserName = "owner",
+            NormalizedUserName = "OWNER",
             DisplayName = seed.DisplayName,
             SecurityStamp = Convert.ToHexString(RandomNumberGenerator.GetBytes(16)),
             CreatedAt = timeProvider.GetUtcNow(),

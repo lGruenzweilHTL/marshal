@@ -13,6 +13,8 @@ using Marshal.Data.Identity;
 using Marshal.Data.Persistence;
 using Marshal.Data.Secrets;
 using Marshal.Data.Tokens;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -21,13 +23,12 @@ namespace Marshal.Data;
 
 /// <summary>
 /// Marshal's database. Every user-owned table is filtered to the current execution context's owner;
-/// a query without an execution context fails instead of returning unfiltered data.
+/// a query without an execution context fails instead of returning unfiltered data. The Identity tables are the user
+/// store itself and are only accessed through ASP.NET Core Identity; everything else refers to users by <see cref="OwnerId"/>.
 /// </summary>
 public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options, IExecutionContextAccessor executionContext)
-    : DbContext(options)
+    : IdentityDbContext<User, Role, OwnerId>(options)
 {
-    public DbSet<User> Users => Set<User>();
-
     public DbSet<UserPreferences> UserPreferences => Set<UserPreferences>();
 
     public DbSet<ApiToken> ApiTokens => Set<ApiToken>();
@@ -94,21 +95,48 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
     }
 
     /// <inheritdoc />
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-        modelBuilder.Entity<User>(user =>
+        // Identity picks its schema version from the host's IdentityOptions, which design-time and test contexts do not
+        // have. The base call configures schema 1; the schema 3 additions (passkeys, key lengths) are applied here.
+        base.OnModelCreating(builder);
+        builder.Entity<User>(user =>
         {
-            user.HasKey(entity => entity.Id);
-            user.HasIndex(entity => entity.UserName).IsUnique();
+            user.ToTable("users");
+            user.Property(entity => entity.PhoneNumber).HasMaxLength(256);
+            user.HasMany<IdentityUserPasskey<OwnerId>>().WithOne().HasForeignKey(passkey => passkey.UserId).IsRequired();
         });
+        builder.Entity<IdentityUserPasskey<OwnerId>>(passkey =>
+        {
+            passkey.HasKey(entity => entity.CredentialId);
+            passkey.Property(entity => entity.CredentialId).HasMaxLength(1024);
+            passkey.OwnsOne(entity => entity.Data).ToJson();
+        });
+        builder.Entity<IdentityUserLogin<OwnerId>>(login =>
+        {
+            login.Property(entity => entity.LoginProvider).HasMaxLength(128);
+            login.Property(entity => entity.ProviderKey).HasMaxLength(128);
+        });
+        builder.Entity<IdentityUserToken<OwnerId>>(token =>
+        {
+            token.Property(entity => entity.LoginProvider).HasMaxLength(128);
+            token.Property(entity => entity.Name).HasMaxLength(128);
+        });
+        builder.Entity<Role>().ToTable("roles");
+        builder.Entity<IdentityUserRole<OwnerId>>().ToTable("user_roles");
+        builder.Entity<IdentityUserLogin<OwnerId>>().ToTable("user_logins");
+        builder.Entity<IdentityUserClaim<OwnerId>>().ToTable("user_claims");
+        builder.Entity<IdentityUserToken<OwnerId>>().ToTable("user_tokens");
+        builder.Entity<IdentityRoleClaim<OwnerId>>().ToTable("role_claims");
+        builder.Entity<IdentityUserPasskey<OwnerId>>().ToTable("user_passkeys");
 
-        modelBuilder.Entity<UserPreferences>(preferences =>
+        builder.Entity<UserPreferences>(preferences =>
         {
             preferences.HasKey(entity => entity.UserId);
             preferences.HasOne<User>().WithOne().HasForeignKey<UserPreferences>(entity => entity.UserId);
         });
 
-        modelBuilder.Entity<ApiToken>(token =>
+        builder.Entity<ApiToken>(token =>
         {
             token.HasKey(entity => entity.Id);
             token.HasIndex(entity => entity.TokenHash).IsUnique();
@@ -116,7 +144,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             OwnerFilter(token);
         });
 
-        modelBuilder.Entity<Session>(session =>
+        builder.Entity<Session>(session =>
         {
             session.HasKey(entity => entity.Id);
             // Unique among open sessions only: after an idle close the same client id starts a new session.
@@ -126,7 +154,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             OwnerFilter(session);
         });
 
-        modelBuilder.Entity<Run>(run =>
+        builder.Entity<Run>(run =>
         {
             run.HasKey(entity => entity.Id);
             run.HasIndex(entity => new { entity.OwnerId, entity.StartedAt });
@@ -136,7 +164,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             OwnerFilter(run);
         });
 
-        modelBuilder.Entity<RunStep>(step =>
+        builder.Entity<RunStep>(step =>
         {
             step.HasKey(entity => entity.Id);
             step.HasIndex(entity => new { entity.RunId, entity.Sequence }).IsUnique();
@@ -144,7 +172,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             OwnerFilter(step);
         });
 
-        modelBuilder.Entity<PendingAction>(action =>
+        builder.Entity<PendingAction>(action =>
         {
             action.HasKey(entity => entity.Id);
             action.HasIndex(entity => new { entity.SessionId, entity.Status });
@@ -153,7 +181,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             OwnerFilter(action);
         });
 
-        modelBuilder.Entity<AuditEvent>(audit =>
+        builder.Entity<AuditEvent>(audit =>
         {
             audit.HasKey(entity => entity.Id);
             audit.HasIndex(entity => new { entity.OwnerId, entity.CreatedAt });
@@ -162,7 +190,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             OwnerFilter(audit);
         });
 
-        modelBuilder.Entity<Secret>(secret =>
+        builder.Entity<Secret>(secret =>
         {
             secret.HasKey(entity => entity.Id);
             secret.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);

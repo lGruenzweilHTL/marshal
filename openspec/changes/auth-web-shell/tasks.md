@@ -1,7 +1,7 @@
 ## 1. Identity user store
 
-- [ ] 1.1 Write tests: `User` is an Identity user with key exposed as `OwnerId`; instance owner keeps its id after migration
-- [ ] 1.2 Migrate `User` to `IdentityUser<Guid>`, add `UserLogin`, `UserPasskey`, `Role`, `UserRole`; update `erd.puml` and re-render
+- [x] 1.1 Write tests: `User` is an Identity user with key exposed as `OwnerId`; instance owner keeps its id after migration
+- [x] 1.2 Migrate `User` to `IdentityUser<Guid>`, add `UserLogin`, `UserPasskey`, `Role`, `UserRole`; update `erd.puml` and re-render
 - [ ] 1.3 Write tests for `EfTicketStore` (store, renew, expire, owner-scoped)
 - [ ] 1.4 Implement `EfTicketStore` and `AuthTicket` table; add `AuthTicket` to `erd.puml` and re-render
 
