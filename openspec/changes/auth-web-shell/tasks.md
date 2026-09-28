@@ -39,8 +39,8 @@
 
 ## 6. Live-update stream
 
-- [ ] 6.1 Write tests: owner filtering, unknown topic 400, multiple topics on one stream
-- [ ] 6.2 Implement `InProcessLiveEvents` and `GET /api/v1/events`; publish `runs` topic events from the run recorder
+- [x] 6.1 Write tests: owner filtering, unknown topic 400, multiple topics on one stream
+- [x] 6.2 Implement `InProcessLiveEvents` and `GET /api/v1/events`; publish `runs` topic events from the run recorder
 
 ## 7. Runs and cost API
 

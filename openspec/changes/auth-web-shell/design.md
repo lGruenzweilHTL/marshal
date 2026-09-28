@@ -116,3 +116,9 @@ One EF migration converting `User` to Identity and adding Identity tables, `Auth
   new user start with the instance time zone (`IInstanceTimeZone`, UTC when unset; `extensibility` adds Home
   Assistant's). New OIDC users get a stored preferences row at creation. Preferences are validated by
   `UserPreferencesRules` (IANA ids via `TimeZoneInfo.HasIanaId`, `person.*` / `notify.*` targets).
+- **Live events:** `ILiveEventStream` from D4 is named `ILiveEventSource` (CA1711 forbids the `Stream` suffix) and
+  returns an `ILiveSubscription` that starts buffering at subscribe time, so events published before the SSE response
+  starts are not lost. Topics register as `LiveTopic` singletons (`runs` from Marshal.Core); `LiveRunObserver`
+  publishes `run.started` / `run.completed` from the run recorder's observer hook. The SSE event name is the event
+  type, the data a `LiveEventMessage` (`topic`, `type`, `id`, `payload`); a `ping` event every 25 s keeps proxies
+  from closing idle streams. Each subscriber has a bounded buffer (256) that drops the oldest events.

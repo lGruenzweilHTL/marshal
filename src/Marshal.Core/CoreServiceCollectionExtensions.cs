@@ -3,6 +3,7 @@ using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.LiveEvents;
 using Marshal.Abstractions.Models;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Satellites;
@@ -15,6 +16,7 @@ using Marshal.Core.Conversation;
 using Marshal.Core.Execution;
 using Marshal.Core.Guard;
 using Marshal.Core.Identity;
+using Marshal.Core.LiveEvents;
 using Marshal.Core.Models;
 using Marshal.Core.Recording;
 using Marshal.Core.Satellites;
@@ -99,6 +101,12 @@ public static class CoreServiceCollectionExtensions
 
         services.AddSingleton<OpenTelemetryRunObserver>();
         services.AddSingleton<IRunObserver>(provider => provider.GetRequiredService<OpenTelemetryRunObserver>());
+
+        services.AddSingleton<InProcessLiveEvents>();
+        services.AddSingleton<ILiveEventPublisher>(provider => provider.GetRequiredService<InProcessLiveEvents>());
+        services.AddSingleton<ILiveEventSource>(provider => provider.GetRequiredService<InProcessLiveEvents>());
+        services.AddSingleton(new LiveTopic(LiveTopics.Runs));
+        services.AddSingleton<IRunObserver, LiveRunObserver>();
         return services;
     }
 
