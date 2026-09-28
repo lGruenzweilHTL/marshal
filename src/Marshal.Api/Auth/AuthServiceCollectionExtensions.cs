@@ -20,6 +20,14 @@ internal static class AuthServiceCollectionExtensions
         services.AddOptions<AuthOptions>().Bind(configuration.GetSection("auth")).ValidateOnStart();
         services.AddSingleton<IValidateOptions<AuthOptions>, AuthOptionsValidator>();
         services.AddMemoryCache();
+        services.AddSingleton<IClaimsTransformation, ScopeClaimsTransformation>();
+        services.AddAntiforgery(options =>
+        {
+            options.HeaderName = "X-XSRF-TOKEN";
+            options.Cookie.Name = "marshal_af";
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.SameSite = SameSiteMode.Strict;
+        });
         services.AddIdentityCore<User>(options =>
             {
                 // Length over composition rules (NIST SP 800-63B); lockout after repeated failures.

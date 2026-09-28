@@ -103,3 +103,8 @@ One EF migration converting `User` to Identity and adding Identity tables, `Auth
   active; they stay unversioned. The OIDC schemes are registered through `AuthenticationOptions` from the bound
   `auth` options (not `AddOpenIdConnect`), because configuration added by the test host is not visible while services
   are registered. The IdP redirect URI to configure is `https://<host>/signin-oidc/<name>`.
+- **Antiforgery** is a small middleware after authorization: every state-changing `/api` request that is not
+  bearer-authenticated (cookie sessions and the anonymous login / setup calls) needs `X-XSRF-TOKEN`; the SPA fetches
+  it from `GET /api/v1/auth/antiforgery` and again after login or logout (tokens are bound to the user). Such requests
+  must arrive as https (`auth.https_required` otherwise); `http.trustForwardedHeaders` (default on) honors the TLS
+  proxy's `X-Forwarded-*` headers.

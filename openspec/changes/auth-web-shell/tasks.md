@@ -18,10 +18,10 @@
 
 ## 3. Authorization
 
-- [ ] 3.1 Write tests: cookie principal scopes from roles, same policies for cookie and token, antiforgery required on cookie POST
-- [ ] 3.2 Implement scope claims transformation, scope policies and antiforgery middleware
-- [ ] 3.3 Write tests for `/api/v1/me` (authenticated, anonymous 401)
-- [ ] 3.4 Implement `/api/v1/me`
+- [x] 3.1 Write tests: cookie principal scopes from roles, same policies for cookie and token, antiforgery required on cookie POST
+- [x] 3.2 Implement scope claims transformation, scope policies and antiforgery middleware
+- [x] 3.3 Write tests for `/api/v1/me` (authenticated, anonymous 401)
+- [x] 3.4 Implement `/api/v1/me`
 
 ## 4. Conversation endpoint for cookie clients
 

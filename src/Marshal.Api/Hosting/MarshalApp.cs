@@ -7,6 +7,7 @@ using Marshal.Api.Versioning;
 using Marshal.Core;
 using Marshal.Core.Configuration;
 using Marshal.Data;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
 
 namespace Marshal.Api.Hosting;
@@ -31,13 +32,23 @@ public static class MarshalApp
         builder.Services.AddMarshalApi(builder.Configuration);
 
         WebApplication app = builder.Build();
-        string? pathBase = app.Services.GetRequiredService<IOptions<HttpOptions>>().Value.PathBase;
+        HttpOptions http = app.Services.GetRequiredService<IOptions<HttpOptions>>().Value;
+        if (http.TrustForwardedHeaders)
+        {
+            var forwarded = new ForwardedHeadersOptions { ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost };
+            forwarded.KnownIPNetworks.Clear();
+            forwarded.KnownProxies.Clear();
+            app.UseForwardedHeaders(forwarded);
+        }
+
+        string? pathBase = http.PathBase;
         if (!string.IsNullOrWhiteSpace(pathBase))
             app.UsePathBase(pathBase);
 
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseMiddleware<AntiforgeryValidationMiddleware>();
 
         app.MapMarshalHealth();
         app.MapVersionDiscovery();
@@ -47,6 +58,7 @@ public static class MarshalApp
         RouteGroupBuilder v1 = api.MapGroup("/api/v{version:apiVersion}").HasApiVersion(ApiVersions.V1);
         v1.MapAuthEndpoints();
         v1.MapLocalAuthEndpoints();
+        v1.MapMeEndpoints();
         v1.MapConversationEndpoints();
         return app;
     }

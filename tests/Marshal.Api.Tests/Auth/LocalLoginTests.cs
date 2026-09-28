@@ -4,14 +4,13 @@ using Marshal.Abstractions.Identity;
 using Marshal.Api.Tests.Http;
 using Marshal.Data.Identity;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marshal.Api.Tests.Auth;
 
 public sealed class LocalLoginTests : IAsyncLifetime
 {
-    private const string Password = "correct horse battery staple";
+    private const string Password = Browser.Password;
 
     private MarshalApiFactory _factory = null!;
 
@@ -71,7 +70,7 @@ public sealed class LocalLoginTests : IAsyncLifetime
     {
         await using MarshalApiFactory oidcOnly = await AuthFactory.CreateAsync(AuthFactory.Oidc("authentik", "Authentik"));
 
-        HttpResponseMessage response = await oidcOnly.CreateClient(Options()).GetAsync("/api/v1/auth/local/setup", Ct);
+        HttpResponseMessage response = await Browser.Create(oidcOnly).GetAsync("/api/v1/auth/local/setup", Ct);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -138,15 +137,7 @@ public sealed class LocalLoginTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Unauthorized, login.StatusCode);
     }
 
-    private HttpClient Client()
-    {
-        HttpClient client = _factory.CreateClient(Options());
-        // Browsers send Origin on fetch POSTs; Identity checks WebAuthn client data against it.
-        client.DefaultRequestHeaders.Add("Origin", "https://localhost");
-        return client;
-    }
-
-    private static WebApplicationFactoryClientOptions Options() => new() { AllowAutoRedirect = false, BaseAddress = new Uri("https://localhost") };
+    private HttpClient Client() => Browser.Create(_factory);
 
     private static Task<HttpResponseMessage> SetupAsync(HttpClient client, string userName = "lukas") =>
         client.PostAsJsonAsync("/api/v1/auth/local/setup", new { userName, displayName = "Lukas G", password = Password }, Ct);
