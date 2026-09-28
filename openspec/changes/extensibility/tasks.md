@@ -15,7 +15,7 @@
 
 ## 3. Home Assistant client
 
-- [ ] 3.1 Create `Marshal.Integrations.HomeAssistant` and test project; update `packages.puml` and `CLAUDE.md` repository map
+- [x] 3.1 Create `Marshal.Integrations.HomeAssistant` and test project; update `packages.puml` and `CLAUDE.md` repository map
 - [ ] 3.2 Write websocket client tests against a fake server: auth, registry loads, `state_changed` updates, reconnect reload
 - [ ] 3.3 Implement `HomeAssistantClient` and `HomeAssistantCache`
 - [ ] 3.4 Write `HaTargetResolver` tests: name, alias, area, floor, domain, device class expansion; non-exposed and unknown → unresolved; area with lock → confirm through the risk engine

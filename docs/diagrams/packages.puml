@@ -9,7 +9,8 @@
 '
 ' Status: PARTLY BUILT — Marshal.Abstractions, Marshal.Core, Marshal.Data,
 ' Marshal.Api, Marshal.Testing and their test projects exist (core-agent),
-' web/ exists (auth-web-shell), ha/ exists (ha-conversation-integration);
+' web/ exists (auth-web-shell), ha/ exists (ha-conversation-integration),
+' Marshal.Integrations.HomeAssistant exists (extensibility);
 ' the other projects are still planned
 ' (docs/brainstorm-notes.md).
 ' External packages are drawn inside the project that references them
@@ -71,7 +72,7 @@ package "src/ (.NET 10)" {
   package "Marshal.Core" as Core {
     component "Agent loop, tool registry\n+ visibility, risk engine + guard,\ncontext builder, model router,\nsessions" as CoreParts
     component "Microsoft.Extensions.AI" <<nuget>>
-    component "ModelContextProtocol" <<nuget>>
+    component "ModelContextProtocol.Core" <<nuget>>
     component "YamlDotNet" <<nuget>>
   }
 
@@ -112,7 +113,7 @@ package "Separate services" {
 package "tests/" {
   component "Marshal.*.Tests" as Tests
   component "Marshal.Testing\n(shared fakes: FakeChatClient,\nFakeEmbeddingGenerator, FakeTool)" as Testing
-  component "xunit.v3, Testcontainers,\nTimeProvider.Testing,\nMvc.Testing,\nTesting.Extensions.CodeCoverage" <<nuget>>
+  component "xunit.v3, Testcontainers,\nTimeProvider.Testing,\nMvc.Testing, TestHost,\nTesting.Extensions.CodeCoverage" <<nuget>>
 }
 
 ' ------------------------------------------------------------------
@@ -148,6 +149,7 @@ Testing --> Data
 Tests --> Api
 Tests --> Core
 Tests --> Data
+Tests --> Integrations
 
 note bottom of Abstractions
   Only interfaces, value types and Result

@@ -47,7 +47,9 @@ src/                         .NET projects
                              context builder, model router, sessions
   Marshal.Memory/            chunks, embeddings, hybrid retrieval, project activation (planned)
   Marshal.Tasks/             scheduler, event bus, trigger matcher, executors, notifications (planned)
-  Marshal.Integrations.*/    HomeAssistant, Moonraker, Mail, FreshRss, Notes, ... (planned)
+  Marshal.Integrations.HomeAssistant/  HA REST + websocket client, registry and state cache, target resolver,
+                             area context, timer tools, time zone source
+  Marshal.Integrations.*/    Moonraker, Mail, FreshRss, Notes, ... (planned)
   Marshal.Data/              EF Core DbContext, migrations, owner-scoped query filters
   Marshal.ExecutorHost/      separate coding-sandbox service (own deployment, never in the main container) (planned)
 tests/                       one test project per src project (Marshal.<Name>.Tests)
@@ -82,7 +84,7 @@ Key dependencies and what they are for. Keep this list current when adding or re
 | `OllamaSharp` | Ollama provider implementing `IChatClient` / `IEmbeddingGenerator` (host only) |
 | `Anthropic` | Official Anthropic C# SDK (v10+; implements `IChatClient`) — Claude API provider (host only) |
 | `Microsoft.Extensions.AI.OpenAI` | OpenAI-compatible provider for local servers (llama.cpp `llama-server`, vLLM, LM Studio) (host only) |
-| `ModelContextProtocol` | Official MCP C# SDK — MCP client (HA MCP server, custom servers) |
+| `ModelContextProtocol.Core` | Official MCP C# SDK (client and server types, no hosting) — MCP client for HA's MCP server and custom servers; in-process fake servers in tests |
 | `Asp.Versioning.Http` + `Asp.Versioning.Mvc.ApiExplorer` + `Asp.Versioning.OpenApi` | URL-segment API versioning (`/api/v{version:apiVersion}`), per-version OpenAPI grouping (`MapOpenApi().WithDocumentPerVersion()`) |
 | `Microsoft.AspNetCore.OpenApi` | OpenAPI document generation (one per API version) |
 | `Microsoft.AspNetCore.Authentication.OpenIdConnect` | `oidc` login provider (BFF) |
@@ -104,6 +106,7 @@ Key dependencies and what they are for. Keep this list current when adding or re
 | `xunit.v3`, `Testcontainers` | Tests (plain `Assert`) on Microsoft.Testing.Platform (`dotnet test --project <dir>`); containers for IMAP, FreshRSS |
 | `Microsoft.Testing.Extensions.CodeCoverage` | Coverage (`--coverage`) for the guard and risk engine branch-coverage check |
 | `Microsoft.AspNetCore.Mvc.Testing` | In-process API integration tests (`WebApplicationFactory`) |
+| `Microsoft.AspNetCore.TestHost` | In-process fake servers for integration clients (HA websocket and REST) |
 | `Microsoft.Extensions.TimeProvider.Testing` | `FakeTimeProvider` for scheduler and time-based tests |
 
 No mocking or assertion libraries — use hand-written fakes from `Marshal.Testing`. Expected failures use Marshal's own `Result` / `Result<T>` from `Marshal.Abstractions`, not a third-party library.
