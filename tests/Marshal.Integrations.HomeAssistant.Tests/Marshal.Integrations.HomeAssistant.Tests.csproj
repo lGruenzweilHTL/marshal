@@ -21,10 +21,13 @@
   <ItemGroup>
     <ProjectReference Include="..\Marshal.Testing\Marshal.Testing.csproj" />
     <ProjectReference Include="..\..\src\Marshal.Integrations.HomeAssistant\Marshal.Integrations.HomeAssistant.csproj" />
+    <ProjectReference Include="..\..\src\Marshal.Core\Marshal.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The shipped default rules, evaluated with the HA target resolver. -->
+    <None Include="..\..\deploy\config.example\risk.yaml" Link="risk.yaml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
