@@ -1,0 +1,112 @@
+# ------------------------------------------------------------------
+# .NET (src/, tests/)
+# ------------------------------------------------------------------
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+[Ll]og/
+[Ll]ogs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+.vs/
+TestResults/
+*.trx
+coverage*.json
+coverage*.xml
+coverage*.info
+*.coverage
+*.coveragexml
+artifacts/
+BenchmarkDotNet.Artifacts/
+*.nupkg
+*.snupkg
+.nuget/
+project.lock.json
+
+# Local development settings with secrets
+appsettings.*.local.json
+appsettings.Development.local.json
+**/Properties/launchSettings.local.json
+
+# ------------------------------------------------------------------
+# Web UI (web/) — Vue + Vite + TypeScript
+# ------------------------------------------------------------------
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+coverage/
+.eslintcache
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# SPA build output copied into the ASP.NET host
+src/**/wwwroot/app/
+
+# ------------------------------------------------------------------
+# Home Assistant integration (ha/) — Python
+# ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+htmlcov/
+.coverage
+.coverage.*
+
+# ------------------------------------------------------------------
+# Runtime data & secrets (deploy/, local runs)
+# ------------------------------------------------------------------
+# Marshal's data volume: SQLite DB, Data Protection keys, backups, notes, snapshots
+/data/
+deploy/data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+*.pfx
+
+# Local instance config (the example config in deploy/ is committed)
+/config/
+deploy/config/
+!deploy/config.example/
+
+# ------------------------------------------------------------------
+# Tooling
+# ------------------------------------------------------------------
+.claude/settings.local.json
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*~
+
+# ------------------------------------------------------------------
+# OS
+# ------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
