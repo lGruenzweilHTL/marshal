@@ -1,20 +1,50 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Project: Marshal — self-hosted AI agent for Home Assistant. HA conversation
+  entities call Marshal over REST; voice via HA Assist is the main interface,
+  plus a web UI and a public API. One user per instance; code prepared for
+  multi-user later (owner_id everywhere, owner-scoped queries, IIdentityResolver).
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Tech stack:
+  - Backend: ASP.NET Core on .NET 10, C# (latest), EF Core + SQLite
+    (FTS5 + sqlite-vec), own thin agent harness on Microsoft.Extensions.AI
+    (IChatClient, IEmbeddingGenerator) + official ModelContextProtocol C# SDK.
+  - LLMs: provider-neutral, local (Ollama) and Claude API; model tiers
+    fast / standard / advisor with capability flags (vision, tools, context).
+  - Web UI: Vue + Vite + TypeScript SPA, API client generated from OpenAPI,
+    served same-origin by the ASP.NET host (BFF cookie auth, OIDC or local).
+  - HA integration: Python custom component (HACS) in ha/.
+  - Deployment: single Docker image; /config (git-friendly files, no secrets)
+    and /data (DB, keys, backups) volumes; YAML config.
+
+  Design principles (non-negotiable, see STYLE_GUIDE.md):
+  - Small interfaces for every capability, even with one implementation.
+  - The model can't use it -> the model can't see it (tool filtering), with
+    the guard enforcing the same rules server-side.
+  - Risk tiers safe / confirm / forbidden; arg-aware risk rules; confirm-tier
+    actions frozen server-side (tool + args + nonce + TTL); fail closed.
+  - Forbidden capabilities do not exist as code (no mail send, no raw G-code).
+  - Untrusted content (mail, RSS, notes, web) is data, never instructions.
+  - Generic mechanisms over special cases (e.g. the briefing is only a task).
+  - Deterministic code before model calls wherever it suffices.
+  - Languages: German + English; reply language = request language.
+
+  Engineering:
+  - TDD. Tests never need a real LLM or live account (hand-written fakes,
+    Testcontainers, recorded traffic). xUnit + plain Assert, no mocking libs.
+  - Expected failures return Result/Result<T>; exceptions only for bugs.
+  - Conventional Commits.
+
+  References: CLAUDE.md (AI guidance, repo map, package index),
+  STYLE_GUIDE.md (design philosophy + C# rules),
+  docs/brainstorm-notes.md (interim design notes until formalized here).
+
+rules:
+  proposal:
+    - Include a "Non-goals" section listing what the change deliberately does not do.
+  design:
+    - Name every new interface introduced and its v1 implementation(s).
+    - For every new model-facing tool, state its risk tier (safe / confirm / forbidden, incl. arg-aware rules) and when it is hidden from the model.
+  tasks:
+    - Test-first - every implementation task is preceded by (or paired with) the task that writes its failing test.
