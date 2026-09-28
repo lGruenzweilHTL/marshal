@@ -2,7 +2,6 @@ using Marshal.Abstractions;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Satellites;
 using Marshal.Abstractions.Tools;
-using Marshal.Core.Tools;
 
 namespace Marshal.Core.Guard;
 

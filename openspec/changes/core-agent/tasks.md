@@ -104,8 +104,8 @@
 
 ## 13. Run recording
 
-- [ ] 13.1 Write recorder tests: step order and fields, cost aggregation, redaction of sensitive tool results, audit events
-- [ ] 13.2 Implement `DbRunRecorder`, `DbAuditLog`, OpenTelemetry sink and `[LoggerMessage]` logging at boundaries
+- [x] 13.1 Write recorder tests: step order and fields, cost aggregation, redaction of sensitive tool results, audit events
+- [x] 13.2 Implement `DbRunRecorder`, `DbAuditLog`, OpenTelemetry sink and `[LoggerMessage]` logging at boundaries
 
 ## 14. Packaging
 

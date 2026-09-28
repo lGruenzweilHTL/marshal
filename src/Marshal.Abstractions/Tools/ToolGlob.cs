@@ -1,6 +1,5 @@
-using Marshal.Abstractions.Tools;
 
-namespace Marshal.Core.Tools;
+namespace Marshal.Abstractions.Tools;
 
 /// <summary>
 /// Glob matching on internal tool ids: <c>*</c> matches any run of characters, <c>?</c> one character.
@@ -8,6 +7,7 @@ namespace Marshal.Core.Tools;
 /// </summary>
 public static class ToolGlob
 {
+    /// <summary>True when <paramref name="id"/> matches <paramref name="pattern"/>.</summary>
     public static bool Matches(string pattern, ToolId id) => Matches(pattern.AsSpan(), id.ToString().AsSpan());
 
     private static bool Matches(ReadOnlySpan<char> pattern, ReadOnlySpan<char> text)
