@@ -3,6 +3,7 @@ using Marshal.Data.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
@@ -19,9 +20,21 @@ internal static class AuthServiceCollectionExtensions
         services.AddOptions<AuthOptions>().Bind(configuration.GetSection("auth")).ValidateOnStart();
         services.AddSingleton<IValidateOptions<AuthOptions>, AuthOptionsValidator>();
         services.AddMemoryCache();
-        services.AddIdentityCore<User>()
+        services.AddIdentityCore<User>(options =>
+            {
+                // Length over composition rules (NIST SP 800-63B); lockout after repeated failures.
+                options.Password.RequiredLength = 12;
+                options.Password.RequireDigit = false;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Lockout.MaxFailedAccessAttempts = 5;
+            })
             .AddRoles<Role>()
-            .AddEntityFrameworkStores<MarshalDbContext>();
+            .AddEntityFrameworkStores<MarshalDbContext>()
+            .AddSignInManager();
+        services.AddOptions<IdentityPasskeyOptions>().Configure<IOptions<AuthOptions>>((options, auth) =>
+            options.ServerDomain = auth.Value.Providers.FirstOrDefault(provider => provider.Type == LoginProviderOptions.LocalType)?.ServerDomain);
         services.AddScoped<UserAccounts>();
         services.AddScoped<OidcLoginMapper>();
         services.AddSingleton<IRoleProvisioner, GroupClaimRoleProvisioner>();
@@ -30,7 +43,8 @@ internal static class AuthServiceCollectionExtensions
         AuthenticationBuilder authentication = services.AddAuthentication(MarshalAuthSchemes.Default)
             .AddPolicyScheme(MarshalAuthSchemes.Default, null, options => options.ForwardDefaultSelector = SelectScheme)
             .AddScheme<AuthenticationSchemeOptions, ApiTokenAuthenticationHandler>(MarshalAuthSchemes.ApiToken, null)
-            .AddCookie(MarshalAuthSchemes.Cookie, ConfigureCookie);
+            .AddCookie(MarshalAuthSchemes.Cookie, ConfigureCookie)
+            .AddCookie(IdentityConstants.TwoFactorUserIdScheme, ConfigurePasskeyCeremonyCookie);
         services.AddOptions<CookieAuthenticationOptions>(MarshalAuthSchemes.Cookie)
             .Configure<ITicketStore>((options, store) => options.SessionStore = store);
 
@@ -66,6 +80,16 @@ internal static class AuthServiceCollectionExtensions
         // The SPA handles navigation; API calls get status codes instead of redirects.
         options.Events.OnRedirectToLogin = context => StatusOnly(context, StatusCodes.Status401Unauthorized);
         options.Events.OnRedirectToAccessDenied = context => StatusOnly(context, StatusCodes.Status403Forbidden);
+    }
+
+    /// <summary>Identity keeps the passkey ceremony state (challenge) in this short-lived, protected cookie.</summary>
+    private static void ConfigurePasskeyCeremonyCookie(CookieAuthenticationOptions options)
+    {
+        options.Cookie.Name = "marshal_passkey";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
     }
 
     private static Task StatusOnly(RedirectContext<CookieAuthenticationOptions> context, int status)

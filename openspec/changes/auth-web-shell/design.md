@@ -85,3 +85,21 @@ One EF migration converting `User` to Identity and adding Identity tables, `Auth
   passkey or external login. The local first-run setup and the first OIDC login with a mapped group claim it (same
   id, so voice sessions and CLI tokens stay with the human who logs in); afterwards setup returns 404 and new OIDC
   subjects create new users.
+- **Passkeys verified (open question).** .NET 10 Identity ships passkeys on `SignInManager<TUser>`:
+  `MakePasskeyCreationOptionsAsync(PasskeyUserEntity)` / `PerformPasskeyAttestationAsync(credentialJson)` for
+  registration and `MakePasskeyRequestOptionsAsync(user?)` / `PerformPasskeyAssertionAsync(credentialJson)` for
+  login; options and credentials are WebAuthn JSON (`PublicKeyCredential.toJSON()`). The ceremony state lives in a
+  Data Protection cookie of the `IdentityConstants.TwoFactorUserIdScheme` scheme (registered here as
+  `marshal_passkey`, 5 minutes, SameSite=Strict). Origin validation compares the client data origin with the
+  request's `Origin` header. `IdentityPasskeyOptions.ServerDomain` (RP id) defaults to the request host;
+  `auth.providers[local].serverDomain` sets it. Marshal calls `PerformPasskeyAssertionAsync` and signs in with its
+  own session principal (not `PasskeySignInAsync`), after the lockout / `CanSignInAsync` checks and storing the new
+  sign count. Registration checks that the attestation names the signed-in user. Tests drive both ceremonies with a
+  fake ES256 authenticator (`none` attestation).
+- **Local endpoints** live under `/api/v1/auth/local` (`setup`, `login`, `passkey/options`, `passkey`,
+  `passkeys/creation-options`, `passkeys`); passwords need 12+ characters without composition rules, 5 failures
+  lock the account for 5 minutes.
+- **OIDC callbacks** are `/signin-oidc/{name}` and `/signout-callback-oidc/{name}` so several OIDC providers can be
+  active; they stay unversioned. The OIDC schemes are registered through `AuthenticationOptions` from the bound
+  `auth` options (not `AddOpenIdConnect`), because configuration added by the test host is not visible while services
+  are registered. The IdP redirect URI to configure is `https://<host>/signin-oidc/<name>`.

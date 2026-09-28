@@ -50,6 +50,12 @@ public sealed class LoginProviderOptions
     /// <summary>IdP group → Marshal role (<c>admin</c> or <c>user</c>). A login without a mapped group is denied.</summary>
     public Dictionary<string, string> RoleMappings { get; set; } = [];
 
+    /// <summary>
+    /// <c>local</c> only: WebAuthn relying party id (e.g. <c>marshal.example.com</c>). Unset, the request host is used,
+    /// so set it when the host header is not validated by the reverse proxy.
+    /// </summary>
+    public string? ServerDomain { get; set; }
+
     /// <summary>The label shown when <see cref="DisplayName"/> is not set.</summary>
     public string EffectiveDisplayName => DisplayName ?? (Type == LocalType ? "Local account" : Name);
 }

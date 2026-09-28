@@ -13,8 +13,8 @@
 - [x] 2.4 Implement OIDC handler wiring and external-login mapping
 - [x] 2.5 Write provisioning tests: group → role mapping, unmapped denied, roles re-synced on login
 - [x] 2.6 Implement `GroupClaimRoleProvisioner`
-- [ ] 2.7 Write local provider tests: first-run setup creates admin, setup 404 afterwards, password login, passkey registration and login
-- [ ] 2.8 Implement local provider with Identity passwords and passkeys
+- [x] 2.7 Write local provider tests: first-run setup creates admin, setup 404 afterwards, password login, passkey registration and login
+- [x] 2.8 Implement local provider with Identity passwords and passkeys
 
 ## 3. Authorization
 
