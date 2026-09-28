@@ -30,8 +30,8 @@
 
 ## 5. Tokens, secrets and preferences APIs
 
-- [ ] 5.1 Write token management tests: list / create / revoke, no scope escalation, callback tokens read-only, audit events
-- [ ] 5.2 Implement `/api/v1/me/tokens`
+- [x] 5.1 Write token management tests: list / create / revoke, no scope escalation, callback tokens read-only, audit events
+- [x] 5.2 Implement `/api/v1/me/tokens`
 - [ ] 5.3 Write secret management tests: write-only, admin-only instance secrets, env secrets listed without value, unresolved references flagged, audit without value
 - [ ] 5.4 Implement `/api/v1/me/secrets`, `/api/v1/secrets/instance` and reference scanning
 - [ ] 5.5 Write preferences tests: read / update, IANA validation, default time zone from `instance.timeZone`

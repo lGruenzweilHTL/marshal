@@ -72,7 +72,7 @@ public sealed class ApiTokenService(IDbContextFactory<MarshalDbContext> contexts
             return _invalid;
 
         string hash = Hash(plaintext);
-        // The one sanctioned cross-owner query: authentication happens before an owner is known. The hash is the
+        // A sanctioned cross-owner query: authentication happens before an owner is known. The hash is the
         // lookup key, so only the presented token's row can match.
         ApiToken? row = await db.ApiTokens.IgnoreQueryFilters().AsNoTracking().SingleOrDefaultAsync(token => token.TokenHash == hash, cancellationToken);
         DateTimeOffset now = timeProvider.GetUtcNow();

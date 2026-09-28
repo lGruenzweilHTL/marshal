@@ -3,6 +3,7 @@ using Marshal.Api.Auth;
 using Marshal.Api.Configuration;
 using Marshal.Api.Conversation;
 using Marshal.Api.Health;
+using Marshal.Api.Security;
 using Marshal.Api.Versioning;
 using Marshal.Core;
 using Marshal.Core.Configuration;
@@ -49,6 +50,7 @@ public static class MarshalApp
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseMiddleware<AntiforgeryValidationMiddleware>();
+        app.UseMiddleware<OwnerContextMiddleware>();
 
         app.MapMarshalHealth();
         app.MapVersionDiscovery();
@@ -59,6 +61,7 @@ public static class MarshalApp
         v1.MapAuthEndpoints();
         v1.MapLocalAuthEndpoints();
         v1.MapMeEndpoints();
+        v1.MapTokenEndpoints();
         v1.MapConversationEndpoints();
         return app;
     }

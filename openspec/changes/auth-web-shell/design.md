@@ -108,3 +108,7 @@ One EF migration converting `User` to Identity and adding Identity tables, `Auth
   it from `GET /api/v1/auth/antiforgery` and again after login or logout (tokens are bound to the user). Such requests
   must arrive as https (`auth.https_required` otherwise); `http.trustForwardedHeaders` (default on) honors the TLS
   proxy's `X-Forwarded-*` headers.
+- **Credential management is human-only.** `/me/tokens` and the secret endpoints require a cookie session
+  (`Policies.Human`) on top of the scope policies, so a leaked machine token cannot mint tokens or change secrets.
+  `/me` works for both principal kinds. An `OwnerContextMiddleware` makes the principal's owner the request's
+  execution context, so endpoint queries go through the owner filter.

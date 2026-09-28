@@ -4,10 +4,12 @@ using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Tokens;
 using Marshal.Abstractions.Tools;
 using Marshal.Core.Models;
+using Marshal.Data;
 using Marshal.Testing;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -76,6 +78,15 @@ public sealed class MarshalApiFactory : WebApplicationFactory<Program>
         OwnerId owner = await scope.ServiceProvider.GetRequiredService<IInstanceOwner>().GetAsync(CancellationToken.None);
         using (scope.ServiceProvider.GetRequiredService<IExecutionContextAccessor>().Use(new MarshalExecutionContext { OwnerId = owner, Source = SessionSource.Api }))
             return (await scope.ServiceProvider.GetRequiredService<IApiTokenService>().CreateAsync("test", scopes, null, CancellationToken.None)).Value.Plaintext;
+    }
+
+    /// <summary>Runs <paramref name="work"/> on a database context scoped to <paramref name="owner"/>.</summary>
+    public async Task<T> WithDatabaseAsync<T>(OwnerId owner, Func<MarshalDbContext, Task<T>> work)
+    {
+        _ = Server;
+        using IDisposable scope = Services.GetRequiredService<IExecutionContextAccessor>().Use(new MarshalExecutionContext { OwnerId = owner, Source = SessionSource.Web });
+        await using MarshalDbContext db = await Services.GetRequiredService<IDbContextFactory<MarshalDbContext>>().CreateDbContextAsync();
+        return await work(db);
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
