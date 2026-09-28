@@ -24,8 +24,8 @@
 - [x] 3.7 Implement the HA area context contributor
 - [x] 3.8 Write timer tests: tools hidden without device, hidden when HA MCP timers are usable, start / cancel / status call HA with the turn's device
 - [x] 3.9 Implement `TimerTools`
-- [ ] 3.10 Write time zone tests (HA value, config override)
-- [ ] 3.11 Implement `HomeAssistantTimeZoneSource`
+- [x] 3.10 Write time zone tests (HA value, config override)
+- [x] 3.11 Implement `HomeAssistantTimeZoneSource`
 
 ## 4. Skills
 

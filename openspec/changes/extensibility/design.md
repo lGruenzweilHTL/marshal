@@ -148,3 +148,30 @@ lock, floors / areas / aliases, `mcp_server` with the Assist API). The recorded 
 - **One watcher for `/config`.** Hot-reloaded files (`risk.yaml`, `satellites.yaml`, `mcp/*.yaml`, later skills and
   templates) share one `ConfigDirectoryWatcher` (a single inotify instance per process) instead of one watcher per
   file; the default Linux limit is 128 instances per user.
+
+### Home Assistant client (tasks 3.1–3.11)
+
+- **Project.** `Marshal.Integrations.HomeAssistant` references only `Marshal.Abstractions`. `IAreaDirectory` moved
+  from Core to Abstractions so HA can supply area and floor names. The design's `ITimeZoneSource` is the existing
+  `IInstanceTimeZone`; `HomeAssistantTimeZoneSource` replaces `ConfiguredInstanceTimeZone`.
+- **Always registered, inert without `ha.url`.** Test configuration (and any late configuration source) arrives
+  after service registration, so the integration registers unconditionally: without `ha.url` the cache never
+  connects, the timer source offers no tools, the area directory falls back to ids, the time zone comes from
+  config or UTC and `/health` reports `homeassistant: not configured`. With `ha.url` set, `ha.tokenSecret` is
+  required and must resolve at startup.
+- **Cache.** One websocket session: subscribe (`state_changed` and the four `*_registry_updated` events) before
+  loading, so nothing is lost; states carry `last_updated`, and an older event never overwrites a newer state.
+  Registry events and a 5-minute timer reload the registries (exposure changes have no event). While
+  disconnected or reloading after a reconnect `Current` is null; the resolver and the context contributor treat
+  that as unknown (confirm / no section). Entity name = registry name, else friendly name, else original name.
+  HA 2026.9 lists `null` in `aliases` for "the entity's own name"; it is skipped.
+- **Resolver.** Only exposed entities; every targeting argument narrows the set (like HA's matching). A call
+  without targeting arguments yields one attribute-less target, so rules with target conditions do not match and
+  `ha.*: safe` applies (e.g. `GetLiveContext`, `HassBroadcast`); anything unresolvable is `confirm`. Targets carry
+  `domain`, `deviceClass` and `area`.
+- **Timers.** `timers.*` is a separate built-in tool source; tools need the turn's `DeviceId` (now part of the
+  execution context) and are hidden if HA MCP ever offers `HassStartTimer`. Durations: `10m`, `1h30m`, `90s`,
+  `25 minutes` or ISO 8601 `PT1H30M`, passed as HA's `hours` / `minutes` / `seconds` slots. REST intent calls are
+  never retried (a retry could start a second timer).
+- **Smoke test.** The cache ran only against the recorded traffic of the HA 2026.9.4 test instance; a live run
+  was not possible because the instance stopped finishing its bootstrap (no HTTP server, no error logged).

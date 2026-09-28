@@ -2,7 +2,13 @@
 # (MARSHAL__Section__Key). Never put secret values here — only secret names (keys ending in "Secret").
 
 instance:
-  timeZone: Europe/Vienna   # IANA id; new users start with it (unset: UTC)
+  timeZone: Europe/Vienna   # IANA id; new users start with it (unset: Home Assistant's time zone, else UTC)
+
+# Home Assistant (optional). The token is a long-lived access token of an admin user (the exposure list needs
+# admin); the same secret authenticates the HA MCP server in mcp/ha.yaml.
+# ha:
+#   url: http://homeassistant.local:8123
+#   tokenSecret: ha_token
 
 owner:                      # the instance owner created on first start
   displayName: "Your name"

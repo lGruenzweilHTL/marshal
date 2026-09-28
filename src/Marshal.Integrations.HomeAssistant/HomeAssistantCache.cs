@@ -34,12 +34,15 @@ public sealed partial class HomeAssistantCache(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         HomeAssistantOptions ha = options.Value;
+        if (ha.Url is null)
+            return;
+
         int attempt = 0;
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                await using HaConnection connection = await HaConnection.ConnectAsync(sockets, ha.WebSocketUri, ha.Token ?? "", timings.CommandTimeout, stoppingToken);
+                await using HaConnection connection = await HaConnection.ConnectAsync(sockets, ha.WebSocketUri(), ha.Token ?? "", timings.CommandTimeout, stoppingToken);
                 await RunAsync(connection, () => attempt = 0, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

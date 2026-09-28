@@ -9,6 +9,7 @@
     <ProjectReference Include="..\Marshal.Abstractions\Marshal.Abstractions.csproj" />
     <ProjectReference Include="..\Marshal.Core\Marshal.Core.csproj" />
     <ProjectReference Include="..\Marshal.Data\Marshal.Data.csproj" />
+    <ProjectReference Include="..\Marshal.Integrations.HomeAssistant\Marshal.Integrations.HomeAssistant.csproj" />
   </ItemGroup>
 
   <ItemGroup>

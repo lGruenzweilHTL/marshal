@@ -19,21 +19,18 @@ public sealed class HomeAssistantOptions
     public string? Token { get; set; }
 
     /// <summary>The websocket endpoint below <see cref="Url"/>.</summary>
-    public Uri WebSocketUri
+    public Uri WebSocketUri()
     {
-        get
+        Uri url = Url ?? throw new InvalidOperationException("ha.url is not configured.");
+        var builder = new UriBuilder(new Uri(EnsureTrailingSlash(url), "api/websocket"))
         {
-            Uri url = Url ?? throw new InvalidOperationException("ha.url is not configured.");
-            var builder = new UriBuilder(new Uri(EnsureTrailingSlash(url), "api/websocket"))
-            {
-                Scheme = url.Scheme == Uri.UriSchemeHttps ? "wss" : "ws",
-            };
-            return builder.Uri;
-        }
+            Scheme = url.Scheme == Uri.UriSchemeHttps ? "wss" : "ws",
+        };
+        return builder.Uri;
     }
 
     /// <summary><see cref="Url"/> with a trailing slash, so relative API paths keep a path base.</summary>
-    public Uri BaseUri => EnsureTrailingSlash(Url ?? throw new InvalidOperationException("ha.url is not configured."));
+    public Uri BaseUri() => EnsureTrailingSlash(Url ?? throw new InvalidOperationException("ha.url is not configured."));
 
     private static Uri EnsureTrailingSlash(Uri url) =>
         url.AbsoluteUri.EndsWith('/') ? url : new Uri(url.AbsoluteUri + "/");

@@ -14,7 +14,8 @@ internal static class HealthEndpoints
             .AddCheck<DatabaseHealthCheck>("database")
             .AddCheck<ConfigurationHealthCheck>("config")
             .AddCheck<SecretsHealthCheck>("secrets")
-            .AddCheck<McpHealthCheck>("mcp");
+            .AddCheck<McpHealthCheck>("mcp")
+            .AddCheck<HomeAssistantHealthCheck>("homeassistant");
 
     public static IEndpointRouteBuilder MapMarshalHealth(this IEndpointRouteBuilder app)
     {

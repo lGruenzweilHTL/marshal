@@ -10,6 +10,7 @@ using Marshal.Api.Versioning;
 using Marshal.Core;
 using Marshal.Core.Configuration;
 using Marshal.Data;
+using Marshal.Integrations.HomeAssistant;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
 
@@ -31,6 +32,7 @@ public static class MarshalApp
         builder.WebHost.UseUrls(builder.Configuration["http:urls"] ?? new HttpOptions().Urls);
 
         builder.Services.AddMarshalCore(builder.Configuration, environment);
+        builder.Services.AddMarshalHomeAssistant(builder.Configuration);
         builder.Services.AddMarshalData(builder.Configuration, ConnectionString);
         builder.Services.AddMarshalApi(builder.Configuration);
 

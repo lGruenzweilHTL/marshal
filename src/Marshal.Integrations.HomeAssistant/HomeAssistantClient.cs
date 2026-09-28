@@ -40,7 +40,7 @@ public sealed class HomeAssistantClient(IHttpClientFactory httpClients, IOptions
     private async Task<Result<JsonElement>> SendAsync(HttpMethod method, string path, JsonObject? body, CancellationToken cancellationToken)
     {
         HomeAssistantOptions ha = options.Value;
-        using var message = new HttpRequestMessage(method, new Uri(ha.BaseUri, path));
+        using var message = new HttpRequestMessage(method, new Uri(ha.BaseUri(), path));
         message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", ha.Token);
         if (body is not null)
             message.Content = JsonContent.Create(body);
