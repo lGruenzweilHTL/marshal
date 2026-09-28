@@ -22,7 +22,7 @@ public sealed class DbRunRecorderTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        DbRunRecorder recorder = Recorder(context);
+        DbRunRecorder recorder = Recorder(database);
         MarshalExecutionContext turn = Voice(OwnerA) with { Language = "de" };
 
         RunId run = await recorder.StartRunAsync(new RunStart(turn, "turn"), Ct);
@@ -60,7 +60,7 @@ public sealed class DbRunRecorderTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        DbRunRecorder recorder = Recorder(context);
+        DbRunRecorder recorder = Recorder(database);
         RunId run = await recorder.StartRunAsync(new RunStart(Text(OwnerA), "turn"), Ct);
 
         await recorder.RecordStepAsync(run, new RunStepRecord
@@ -83,7 +83,7 @@ public sealed class DbRunRecorderTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        DbRunRecorder recorder = Recorder(context, new RecordingOptions { RedactTools = ["notes.*"] });
+        DbRunRecorder recorder = Recorder(database, new RecordingOptions { RedactTools = ["notes.*"] });
         RunId run = await recorder.StartRunAsync(new RunStart(Text(OwnerA), "turn"), Ct);
 
         await recorder.RecordStepAsync(run, new RunStepRecord { Kind = RunStepKind.ToolCall, Tool = new ToolId("notes", "search"), Content = "private note", Reference = "notes/a.md" }, Ct);
@@ -96,7 +96,7 @@ public sealed class DbRunRecorderTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        DbRunRecorder recorder = Recorder(context, new RecordingOptions { KeepContentTools = ["notes.search"] });
+        DbRunRecorder recorder = Recorder(database, new RecordingOptions { KeepContentTools = ["notes.search"] });
         RunId run = await recorder.StartRunAsync(new RunStart(Text(OwnerA), "turn"), Ct);
 
         await recorder.RecordStepAsync(run, new RunStepRecord { Kind = RunStepKind.ToolCall, Tool = new ToolId("notes", "search"), Sensitive = true, Content = "note text" }, Ct);
@@ -109,7 +109,7 @@ public sealed class DbRunRecorderTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        DbRunRecorder recorder = Recorder(context);
+        DbRunRecorder recorder = Recorder(database);
         RunId run = await recorder.StartRunAsync(new RunStart(Text(OwnerA), "turn"), Ct);
 
         await recorder.RecordStepAsync(run, new RunStepRecord { Kind = RunStepKind.ToolCall, Tool = new ToolId("test", "big"), Content = new string('x', 50_000) }, Ct);
@@ -124,7 +124,7 @@ public sealed class DbRunRecorderTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        DbRunRecorder recorder = Recorder(context);
+        DbRunRecorder recorder = Recorder(database);
         RunId run = await recorder.StartRunAsync(new RunStart(Text(OwnerA), "turn"), Ct);
         await recorder.RecordStepAsync(run, new RunStepRecord
         {
@@ -149,7 +149,7 @@ public sealed class DbRunRecorderTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        DbRunRecorder recorder = Recorder(context);
+        DbRunRecorder recorder = Recorder(database);
         var sessionId = SessionId.New();
         context.Sessions.Add(new Session { Id = sessionId, OwnerId = OwnerA, Source = SessionSource.Voice, IdentityEvidence = "{}", ResolvedBy = "owner_default", CreatedAt = _time.GetUtcNow(), LastTurnAt = _time.GetUtcNow() });
         await context.SaveChangesAsync(Ct);
@@ -167,7 +167,7 @@ public sealed class DbRunRecorderTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        DbRunRecorder recorder = Recorder(context);
+        DbRunRecorder recorder = Recorder(database);
 
         RunId run = await recorder.StartRunAsync(new RunStart(Text(OwnerA), "turn"), Ct);
         await recorder.RecordStepAsync(run, new RunStepRecord { Kind = RunStepKind.ModelCall, Cost = 1m }, Ct);
@@ -181,7 +181,7 @@ public sealed class DbRunRecorderTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        DbRunRecorder recorder = Recorder(context);
+        DbRunRecorder recorder = Recorder(database);
         var sessionId = SessionId.New();
         context.Sessions.Add(new Session { Id = sessionId, OwnerId = OwnerA, Source = SessionSource.Web, IdentityEvidence = "{}", ResolvedBy = "cookie", CreatedAt = _time.GetUtcNow(), LastTurnAt = _time.GetUtcNow() });
         await context.SaveChangesAsync(Ct);
@@ -193,15 +193,15 @@ public sealed class DbRunRecorderTests
             _time.Advance(TimeSpan.FromSeconds(1));
         }
 
-        IReadOnlyList<ChatMessage> history = await new EfConversationHistory(context).LoadAsync(sessionId, maxTurns: 2, Ct);
+        IReadOnlyList<ChatMessage> history = await new EfConversationHistory(database.Factory).LoadAsync(sessionId, maxTurns: 2, Ct);
 
         Assert.Equal([(ChatRole.User, "q2"), (ChatRole.Assistant, "a2"), (ChatRole.User, "q3"), (ChatRole.Assistant, "a3")], history.Select(message => (message.Role, message.Text)));
     }
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    private DbRunRecorder Recorder(MarshalDbContext context, RecordingOptions? options = null) =>
-        new(context, [_observer], Options.Create(options ?? new RecordingOptions()), _time);
+    private DbRunRecorder Recorder(TestDatabase database, RecordingOptions? options = null) =>
+        new(database.Factory, [_observer], Options.Create(options ?? new RecordingOptions()), _time);
 
     private sealed class CollectingObserver : IRunObserver
     {

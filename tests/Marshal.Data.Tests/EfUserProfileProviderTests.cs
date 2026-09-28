@@ -18,7 +18,7 @@ public sealed class EfUserProfileProviderTests
         }
 
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        Result<UserProfile> profile = await new EfUserProfileProvider(context).GetAsync(OwnerA, Ct);
+        Result<UserProfile> profile = await new EfUserProfileProvider(database.Factory).GetAsync(OwnerA, Ct);
 
         Assert.Equal(new UserProfile(OwnerA, "Alice", "de", "Europe/Vienna"), profile.Value);
     }
@@ -29,7 +29,7 @@ public sealed class EfUserProfileProviderTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerB);
 
-        Result<UserProfile> profile = await new EfUserProfileProvider(context).GetAsync(OwnerB, Ct);
+        Result<UserProfile> profile = await new EfUserProfileProvider(database.Factory).GetAsync(OwnerB, Ct);
 
         Assert.Equal(new UserProfile(OwnerB, "Bob", "en", "UTC"), profile.Value);
     }
@@ -40,7 +40,7 @@ public sealed class EfUserProfileProviderTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
 
-        Result<UserProfile> profile = await new EfUserProfileProvider(context).GetAsync(OwnerId.New(), Ct);
+        Result<UserProfile> profile = await new EfUserProfileProvider(database.Factory).GetAsync(OwnerId.New(), Ct);
 
         Assert.Equal("user.not_found", profile.Error.Code);
     }

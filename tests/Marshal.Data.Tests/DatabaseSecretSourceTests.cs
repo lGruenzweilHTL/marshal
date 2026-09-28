@@ -21,7 +21,7 @@ public sealed class DatabaseSecretSourceTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
 
-        await Source(context).SetAsync(_freshRss, "plain-password", OwnerA, TestContext.Current.CancellationToken);
+        await Source(database).SetAsync(_freshRss, "plain-password", OwnerA, TestContext.Current.CancellationToken);
 
         Marshal.Data.Secrets.Secret row = await context.Secrets.SingleAsync(TestContext.Current.CancellationToken);
         Assert.DoesNotContain("plain-password", Encoding.UTF8.GetString(row.Ciphertext), StringComparison.Ordinal);
@@ -33,11 +33,11 @@ public sealed class DatabaseSecretSourceTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using (MarshalDbContext context = database.CreateContext(OwnerA))
-            await Source(context).SetAsync(_freshRss, "a-value", OwnerA, TestContext.Current.CancellationToken);
+            await Source(database).SetAsync(_freshRss, "a-value", OwnerA, TestContext.Current.CancellationToken);
 
         await using MarshalDbContext asB = database.CreateContext(OwnerB);
-        string? forB = await Source(asB).TryGetAsync(_freshRss, OwnerB, TestContext.Current.CancellationToken);
-        string? instance = await Source(asB).TryGetAsync(_freshRss, null, TestContext.Current.CancellationToken);
+        string? forB = await Source(database).TryGetAsync(_freshRss, OwnerB, TestContext.Current.CancellationToken);
+        string? instance = await Source(database).TryGetAsync(_freshRss, null, TestContext.Current.CancellationToken);
 
         Assert.Null(forB);
         Assert.Null(instance);
@@ -49,13 +49,13 @@ public sealed class DatabaseSecretSourceTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using (MarshalDbContext context = database.CreateContext(OwnerA))
         {
-            await Source(context).SetAsync(_freshRss, "instance-value", null, TestContext.Current.CancellationToken);
-            await Source(context).SetAsync(SecretName.Create("owner_only").Value, "a-value", OwnerA, TestContext.Current.CancellationToken);
+            await Source(database).SetAsync(_freshRss, "instance-value", null, TestContext.Current.CancellationToken);
+            await Source(database).SetAsync(SecretName.Create("owner_only").Value, "a-value", OwnerA, TestContext.Current.CancellationToken);
         }
 
         database.Accessor.Current = null;
         await using MarshalDbContext noContext = database.CreateContext();
-        string? value = await Source(noContext).TryGetAsync(_freshRss, null, TestContext.Current.CancellationToken);
+        string? value = await Source(database).TryGetAsync(_freshRss, null, TestContext.Current.CancellationToken);
         int visible = await noContext.Secrets.CountAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal("instance-value", value);
@@ -67,7 +67,7 @@ public sealed class DatabaseSecretSourceTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        DatabaseSecretSource source = Source(context);
+        DatabaseSecretSource source = Source(database);
 
         await source.SetAsync(_freshRss, "first", OwnerA, TestContext.Current.CancellationToken);
         await source.SetAsync(_freshRss, "second", OwnerA, TestContext.Current.CancellationToken);
@@ -76,5 +76,5 @@ public sealed class DatabaseSecretSourceTests
         Assert.Equal(1, await context.Secrets.CountAsync(TestContext.Current.CancellationToken));
     }
 
-    private DatabaseSecretSource Source(MarshalDbContext context) => new(context, _protection, _time);
+    private DatabaseSecretSource Source(TestDatabase database) => new(database.Factory, _protection, _time);
 }

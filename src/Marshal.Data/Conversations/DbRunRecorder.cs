@@ -12,7 +12,7 @@ namespace Marshal.Data.Conversations;
 /// Writes runs and steps to the domain tables and passes the same (redacted) data to observers such as the
 /// OpenTelemetry exporter. Results of sensitive tools are stored as references only.
 /// </summary>
-public sealed class DbRunRecorder(MarshalDbContext db, IEnumerable<IRunObserver> observers, IOptions<RecordingOptions> options, TimeProvider timeProvider) : IRunRecorder
+public sealed class DbRunRecorder(IDbContextFactory<MarshalDbContext> contexts, IEnumerable<IRunObserver> observers, IOptions<RecordingOptions> options, TimeProvider timeProvider) : IRunRecorder
 {
     private const string TruncationMarker = " [truncated]";
 
@@ -28,6 +28,7 @@ public sealed class DbRunRecorder(MarshalDbContext db, IEnumerable<IRunObserver>
 
     public async Task<RunId> StartRunAsync(RunStart start, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         DateTimeOffset now = timeProvider.GetUtcNow();
         var run = new Run
         {
@@ -53,6 +54,7 @@ public sealed class DbRunRecorder(MarshalDbContext db, IEnumerable<IRunObserver>
 
     public async Task<int> RecordStepAsync(RunId runId, RunStepRecord step, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         Run run = await db.Runs.SingleAsync(candidate => candidate.Id == runId, cancellationToken);
         int sequence = await db.RunSteps.CountAsync(candidate => candidate.RunId == runId, cancellationToken);
         RunStepRecord redacted = Redact(step);
@@ -88,6 +90,7 @@ public sealed class DbRunRecorder(MarshalDbContext db, IEnumerable<IRunObserver>
 
     public async Task CompleteRunAsync(RunId runId, RunCompletion completion, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         Run run = await db.Runs.SingleAsync(candidate => candidate.Id == runId, cancellationToken);
         List<decimal?> costs = await db.RunSteps.Where(step => step.RunId == runId).Select(step => step.Cost).ToListAsync(cancellationToken);
         run.Cost = costs.Sum(cost => cost ?? 0m);

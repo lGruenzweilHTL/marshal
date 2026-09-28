@@ -10,7 +10,7 @@ namespace Marshal.Data.Tokens;
 /// <summary>
 /// Machine tokens: <c>mrs_</c> + 32 random bytes (base64url). Only the SHA-256 of the token is stored.
 /// </summary>
-public sealed class ApiTokenService(MarshalDbContext db, IExecutionContextAccessor executionContext, TimeProvider timeProvider) : IApiTokenService
+public sealed class ApiTokenService(IDbContextFactory<MarshalDbContext> contexts, IExecutionContextAccessor executionContext, TimeProvider timeProvider) : IApiTokenService
 {
     private const string Prefix = "mrs_";
 
@@ -18,6 +18,7 @@ public sealed class ApiTokenService(MarshalDbContext db, IExecutionContextAccess
 
     public async Task<Result<CreatedApiToken>> CreateAsync(string name, IReadOnlyList<string> scopes, DateTimeOffset? expiresAt, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         if (string.IsNullOrWhiteSpace(name))
             return new Error("token.invalid_name", "A token needs a name.", ErrorType.Validation);
         if (scopes.Count == 0)
@@ -47,12 +48,14 @@ public sealed class ApiTokenService(MarshalDbContext db, IExecutionContextAccess
 
     public async Task<IReadOnlyList<ApiTokenInfo>> ListAsync(CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         List<ApiToken> rows = await db.ApiTokens.AsNoTracking().OrderBy(token => token.CreatedAt).ToListAsync(cancellationToken);
         return [.. rows.Select(ToInfo)];
     }
 
     public async Task<Result> RevokeAsync(ApiTokenId id, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         ApiToken? row = await db.ApiTokens.SingleOrDefaultAsync(token => token.Id == id, cancellationToken);
         if (row is null)
             return new Error("token.not_found", "The token does not exist.", ErrorType.NotFound);
@@ -64,6 +67,7 @@ public sealed class ApiTokenService(MarshalDbContext db, IExecutionContextAccess
 
     public async Task<Result<ApiTokenInfo>> ValidateAsync(string plaintext, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         if (!plaintext.StartsWith(Prefix, StringComparison.Ordinal))
             return _invalid;
 

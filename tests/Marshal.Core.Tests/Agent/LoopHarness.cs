@@ -44,6 +44,12 @@ internal sealed class LoopHarness
 
     public Channel<TurnEvent> Events { get; } = Channel.CreateUnbounded<TurnEvent>();
 
+    /// <summary>Wraps <see cref="Runner"/> and records the requests it receives.</summary>
+    public RunnerSpy RunnerSpy { get; private set; } = null!;
+
+    /// <summary>History source counting loads (returns nothing).</summary>
+    public CountingHistory History { get; } = new();
+
     public static async Task<LoopHarness> CreateAsync(string rules = "risk: []", SatelliteProfile? kitchen = null, bool withAdvisor = true, Func<LoopHarness, ITool[]>? builtIns = null, params ITool[] tools)
     {
         var harness = new LoopHarness();
@@ -69,6 +75,7 @@ internal sealed class LoopHarness
             Microsoft.Extensions.Options.Options.Create(new ConfirmationOptions()),
             harness.Time,
             NullLogger<AgentRunner>.Instance);
+        harness.RunnerSpy = new RunnerSpy(harness.Runner);
         return harness;
     }
 
@@ -80,5 +87,27 @@ internal sealed class LoopHarness
             events.Add(turnEvent);
 
         return events;
+    }
+}
+
+internal sealed class RunnerSpy(IAgentRunner inner) : IAgentRunner
+{
+    public List<TimeSpan?> LatencyCaps { get; } = [];
+
+    public Task<AgentRunResult> RunAsync(AgentRunRequest request, CancellationToken cancellationToken)
+    {
+        LatencyCaps.Add(request.LatencyCap);
+        return inner.RunAsync(request, cancellationToken);
+    }
+}
+
+internal sealed class CountingHistory : Marshal.Abstractions.Sessions.IConversationHistory
+{
+    public int Loads { get; private set; }
+
+    public Task<IReadOnlyList<Microsoft.Extensions.AI.ChatMessage>> LoadAsync(Marshal.Abstractions.Sessions.SessionId sessionId, int maxTurns, CancellationToken cancellationToken)
+    {
+        Loads++;
+        return Task.FromResult<IReadOnlyList<Microsoft.Extensions.AI.ChatMessage>>([]);
     }
 }

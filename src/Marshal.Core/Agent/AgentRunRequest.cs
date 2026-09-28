@@ -19,8 +19,11 @@ public sealed record AgentRunRequest
 
     public string? UserText { get; init; }
 
-    /// <summary>A confirmed frozen action executed just before this run.</summary>
-    public ConfirmedCall? Confirmed { get; init; }
+    /// <summary>Decision on the session's pending action made at the start of the turn, if any.</summary>
+    public ConfirmationStep? Confirmation { get; init; }
+
+    /// <summary>When set, the run replies with this text and makes no model call (e.g. "cancelled").</summary>
+    public string? FixedReply { get; init; }
 
     /// <summary>Receives deltas and status events, if streaming.</summary>
     public ChannelWriter<TurnEvent>? Events { get; init; }

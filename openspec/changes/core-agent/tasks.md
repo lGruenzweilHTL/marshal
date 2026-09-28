@@ -62,7 +62,7 @@
 - [x] 7.8 Implement `ConfiguredConfirmationKeywords`
 - [x] 7.9 Write judge tests with a fake client: positive executes, neutral drops and continues as a normal turn, negative cancels, timeout and parse errors drop
 - [x] 7.10 Implement `LlmConfirmationJudge` (fast tier, structured output, 3 s timeout)
-- [ ] 7.11 Write test: tool output containing a confirmation keyword never confirms
+- [x] 7.11 Write test: tool output containing a confirmation keyword never confirms
 - [ ] 7.12 Verify 100 % branch coverage for risk engine, visibility filter and guard
 
 ## 8. Context builder
@@ -97,8 +97,8 @@
 - [ ] 12.2 Implement API versioning (`ApiVersions.V1`, versioned route group), OpenAPI per version, base path
 - [ ] 12.3 Write turn endpoint tests: missing scope 403, SSE `delta` / `status` / final events, id echo, `continueConversation` on pending action, keyword confirmation turn, unknown `followupRef` ignored
 - [ ] 12.4 Implement `POST /api/v1/conversation/turns` with `TypedResults.ServerSentEvents`
-- [ ] 12.5 Write latency cap tests with `FakeTimeProvider` (voice and text caps, outcome `cancelled` / `latency_cap`)
-- [ ] 12.6 Implement the latency cap
+- [x] 12.5 Write latency cap tests with `FakeTimeProvider` (voice and text caps, outcome `cancelled` / `latency_cap`)
+- [x] 12.6 Implement the latency cap
 - [ ] 12.7 Write `/health` tests (DB, config, required secrets, warnings without values)
 - [ ] 12.8 Implement `/health`
 

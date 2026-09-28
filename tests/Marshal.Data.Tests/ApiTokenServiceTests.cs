@@ -19,7 +19,7 @@ public sealed class ApiTokenServiceTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
 
-        CreatedApiToken created = (await Service(context, database).CreateAsync("ha", [ApiScopes.ConversationWrite], null, Ct)).Value;
+        CreatedApiToken created = (await Service(database).CreateAsync("ha", [ApiScopes.ConversationWrite], null, Ct)).Value;
 
         ApiToken row = await context.ApiTokens.SingleAsync(Ct);
         Assert.StartsWith("mrs_", created.Plaintext, StringComparison.Ordinal);
@@ -37,7 +37,7 @@ public sealed class ApiTokenServiceTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
 
-        Result<CreatedApiToken> result = await Service(context, database).CreateAsync("ha", ["everything"], null, Ct);
+        Result<CreatedApiToken> result = await Service(database).CreateAsync("ha", ["everything"], null, Ct);
 
         Assert.Equal("token.invalid_scope", result.Error.Code);
     }
@@ -48,8 +48,8 @@ public sealed class ApiTokenServiceTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
 
-        Assert.True((await Service(context, database).CreateAsync("ha", [], null, Ct)).IsFailure);
-        Assert.True((await Service(context, database).CreateAsync(" ", [ApiScopes.TasksRead], null, Ct)).IsFailure);
+        Assert.True((await Service(database).CreateAsync("ha", [], null, Ct)).IsFailure);
+        Assert.True((await Service(database).CreateAsync(" ", [ApiScopes.TasksRead], null, Ct)).IsFailure);
     }
 
     [Fact]
@@ -58,11 +58,11 @@ public sealed class ApiTokenServiceTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         string plaintext;
         await using (MarshalDbContext asB = database.CreateContext(OwnerB))
-            plaintext = (await Service(asB, database).CreateAsync("api", [ApiScopes.TasksRead, ApiScopes.ConversationWrite], null, Ct)).Value.Plaintext;
+            plaintext = (await Service(database).CreateAsync("api", [ApiScopes.TasksRead, ApiScopes.ConversationWrite], null, Ct)).Value.Plaintext;
 
         database.Accessor.Current = null;
         await using MarshalDbContext context = database.CreateContext();
-        Result<ApiTokenInfo> result = await Service(context, database).ValidateAsync(plaintext, Ct);
+        Result<ApiTokenInfo> result = await Service(database).ValidateAsync(plaintext, Ct);
 
         Assert.Equal(OwnerB, result.Value.OwnerId);
         Assert.Equal([ApiScopes.TasksRead, ApiScopes.ConversationWrite], result.Value.Scopes);
@@ -76,7 +76,7 @@ public sealed class ApiTokenServiceTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext();
 
-        Assert.Equal("token.invalid", (await Service(context, database).ValidateAsync(plaintext, Ct)).Error.Code);
+        Assert.Equal("token.invalid", (await Service(database).ValidateAsync(plaintext, Ct)).Error.Code);
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public sealed class ApiTokenServiceTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        ApiTokenService service = Service(context, database);
+        ApiTokenService service = Service(database);
         CreatedApiToken created = (await service.CreateAsync("ha", [ApiScopes.ConversationWrite], null, Ct)).Value;
 
         Assert.True((await service.RevokeAsync(created.Info.Id, Ct)).IsSuccess);
@@ -98,7 +98,7 @@ public sealed class ApiTokenServiceTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        ApiTokenService service = Service(context, database);
+        ApiTokenService service = Service(database);
         CreatedApiToken created = (await service.CreateAsync("ha", [ApiScopes.ConversationWrite], _time.GetUtcNow().AddDays(1), Ct)).Value;
         Assert.True((await service.ValidateAsync(created.Plaintext, Ct)).IsSuccess);
 
@@ -113,10 +113,10 @@ public sealed class ApiTokenServiceTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         ApiTokenId others;
         await using (MarshalDbContext asA = database.CreateContext(OwnerA))
-            others = (await Service(asA, database).CreateAsync("a", [ApiScopes.TasksRead], null, Ct)).Value.Info.Id;
+            others = (await Service(database).CreateAsync("a", [ApiScopes.TasksRead], null, Ct)).Value.Info.Id;
 
         await using MarshalDbContext asB = database.CreateContext(OwnerB);
-        ApiTokenService service = Service(asB, database);
+        ApiTokenService service = Service(database);
 
         Assert.Empty(await service.ListAsync(Ct));
         Assert.Equal("token.not_found", (await service.RevokeAsync(others, Ct)).Error.Code);
@@ -124,5 +124,5 @@ public sealed class ApiTokenServiceTests
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    private ApiTokenService Service(MarshalDbContext context, TestDatabase database) => new(context, database.Accessor, _time);
+    private ApiTokenService Service(TestDatabase database) => new(database.Factory, database.Accessor, _time);
 }

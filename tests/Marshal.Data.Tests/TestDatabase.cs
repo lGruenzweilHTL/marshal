@@ -20,6 +20,9 @@ internal sealed class TestDatabase : IAsyncDisposable
 
     public FakeExecutionContextAccessor Accessor { get; } = new();
 
+    /// <summary>Factory for services that create a context per operation.</summary>
+    public IDbContextFactory<MarshalDbContext> Factory => new ContextFactory(this);
+
     public static async Task<TestDatabase> CreateAsync()
     {
         var database = new TestDatabase();
@@ -53,4 +56,9 @@ internal sealed class TestDatabase : IAsyncDisposable
     }
 
     public async ValueTask DisposeAsync() => await _connection.DisposeAsync();
+
+    private sealed class ContextFactory(TestDatabase database) : IDbContextFactory<MarshalDbContext>
+    {
+        public MarshalDbContext CreateDbContext() => database.CreateContext();
+    }
 }

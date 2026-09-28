@@ -2,15 +2,18 @@ using System.Text.Json;
 using Marshal.Abstractions.Audit;
 using Marshal.Abstractions.Execution;
 
+using Microsoft.EntityFrameworkCore;
+
 namespace Marshal.Data.Audit;
 
 /// <summary>
 /// Audit events in the <c>audit_events</c> table, owned by the current execution context's owner.
 /// </summary>
-public sealed class DbAuditLog(MarshalDbContext db, IExecutionContextAccessor executionContext, TimeProvider timeProvider) : IAuditLog
+public sealed class DbAuditLog(IDbContextFactory<MarshalDbContext> contexts, IExecutionContextAccessor executionContext, TimeProvider timeProvider) : IAuditLog
 {
     public async Task RecordAsync(AuditEntry entry, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         MarshalExecutionContext context = executionContext.Current
             ?? throw new InvalidOperationException("Audit events require an execution context.");
         db.AuditEvents.Add(new AuditEvent

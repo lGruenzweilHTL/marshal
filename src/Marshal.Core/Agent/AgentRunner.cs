@@ -83,8 +83,16 @@ public sealed partial class AgentRunner(
         List<ChatMessage> messages = [new(ChatRole.System, systemPrompt), .. request.History];
         if (request.UserText is not null)
             messages.Add(new ChatMessage(ChatRole.User, request.UserText));
-        if (request.Confirmed is not null)
-            await AppendConfirmedCallAsync(request.Confirmed, context, messages, ct);
+        if (request.Confirmation is not null)
+            await AppendConfirmationAsync(request.Confirmation, context, messages, ct);
+
+        if (request.FixedReply is not null)
+        {
+            if (request.Events is not null)
+                await request.Events.WriteAsync(new DeltaEvent(request.FixedReply), ct);
+
+            return new LoopResult(request.FixedReply, null, RunOutcome.Ok, null);
+        }
 
         ModelTier tier = context.InputMode == InputMode.Voice ? ModelTier.Fast : ModelTier.Standard;
         Result<RoutedModel> routed = router.Route(new ModelRequest(tier, Tools: true));
@@ -237,24 +245,30 @@ public sealed partial class AgentRunner(
         }
     }
 
-    private async Task AppendConfirmedCallAsync(ConfirmedCall confirmed, MarshalExecutionContext context, List<ChatMessage> messages, CancellationToken ct)
+    private async Task AppendConfirmationAsync(ConfirmationStep confirmation, MarshalExecutionContext context, List<ChatMessage> messages, CancellationToken ct)
     {
-        string callId = $"confirmed_{confirmed.Action.Id.Value:N}";
-        string modelName = confirmed.Tool?.ModelName ?? confirmed.Action.Tool.ToString();
-        using var document = JsonDocument.Parse(confirmed.Action.ArgumentsJson);
+        string modelName = confirmation.Tool?.ModelName ?? confirmation.Action.Tool.ToString();
+        using var document = JsonDocument.Parse(confirmation.Action.ArgumentsJson);
         JsonElement arguments = document.RootElement.Clone();
+        if (confirmation.Result is not { } result)
+        {
+            await RecordToolStepAsync(confirmation.Tool, modelName, arguments, RiskTier.Confirm, confirmation.Decision, confirmation.Action.Reasons, null, null, 0, ct);
+            return;
+        }
+
+        string callId = $"confirmed_{confirmation.Action.Id.Value:N}";
         var argumentMap = arguments.EnumerateObject().ToDictionary(property => property.Name, property => (object?)property.Value.Clone());
         messages.Add(new ChatMessage(ChatRole.Assistant, [new FunctionCallContent(callId, modelName, argumentMap)]));
 
         string text;
-        if (confirmed.Tool is null)
+        if (confirmation.Tool is null)
         {
-            await RecordToolStepAsync(null, modelName, arguments, RiskTier.Confirm, confirmed.Decision, confirmed.Action.Reasons, null, confirmed.Result.IsFailure ? confirmed.Result.Error : null, 0, ct);
-            text = ErrorText(confirmed.Result.Error);
+            await RecordToolStepAsync(null, modelName, arguments, RiskTier.Confirm, confirmation.Decision, confirmation.Action.Reasons, null, result.IsFailure ? result.Error : null, 0, ct);
+            text = ErrorText(result.Error);
         }
         else
         {
-            text = await CompleteToolCallAsync(confirmed.Tool, modelName, arguments, RiskTier.Confirm, confirmed.Decision, confirmed.Result, 0, context, ct);
+            text = await CompleteToolCallAsync(confirmation.Tool, modelName, arguments, RiskTier.Confirm, confirmation.Decision, result, 0, context, ct);
         }
 
         messages.Add(new ChatMessage(ChatRole.Tool, [new FunctionResultContent(callId, text)]));

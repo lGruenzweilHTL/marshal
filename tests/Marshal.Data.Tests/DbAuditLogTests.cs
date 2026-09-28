@@ -16,7 +16,7 @@ public sealed class DbAuditLogTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
 
-        await new DbAuditLog(context, database.Accessor, _time).RecordAsync(
+        await new DbAuditLog(database.Factory, database.Accessor, _time).RecordAsync(
             new AuditEntry(AuditActorKind.System, "cli", "token.create", "token-id", new { name = "ha", scopes = new[] { "conversation:write" } }), Ct);
 
         AuditEvent row = await context.AuditEvents.SingleAsync(Ct);
@@ -34,7 +34,7 @@ public sealed class DbAuditLogTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using (MarshalDbContext asA = database.CreateContext(OwnerA))
-            await new DbAuditLog(asA, database.Accessor, _time).RecordAsync(new AuditEntry(AuditActorKind.User, "a", "secret.set"), Ct);
+            await new DbAuditLog(database.Factory, database.Accessor, _time).RecordAsync(new AuditEntry(AuditActorKind.User, "a", "secret.set"), Ct);
 
         await using MarshalDbContext asB = database.CreateContext(OwnerB);
 

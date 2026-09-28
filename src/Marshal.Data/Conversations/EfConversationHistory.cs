@@ -9,10 +9,11 @@ namespace Marshal.Data.Conversations;
 /// <summary>
 /// Rebuilds the user / assistant exchange of a session from the context and reply steps of its runs.
 /// </summary>
-public sealed class EfConversationHistory(MarshalDbContext db) : IConversationHistory
+public sealed class EfConversationHistory(IDbContextFactory<MarshalDbContext> contexts) : IConversationHistory
 {
     public async Task<IReadOnlyList<ChatMessage>> LoadAsync(SessionId sessionId, int maxTurns, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         List<RunId> runs = await db.Runs.AsNoTracking()
             .Where(run => run.SessionId == sessionId)
             .OrderByDescending(run => run.StartedAt)

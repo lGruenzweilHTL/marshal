@@ -14,7 +14,7 @@ public sealed class EfInstanceOwnerTests
         context.Users.Add(new User { Id = OwnerId.New(), UserName = "late", DisplayName = "Late", SecurityStamp = "s", CreatedAt = DateTimeOffset.UnixEpoch.AddDays(-1) });
         await context.SaveChangesAsync(Ct);
 
-        OwnerId owner = await new EfInstanceOwner(context).GetAsync(Ct);
+        OwnerId owner = await new EfInstanceOwner(database.Factory).GetAsync(Ct);
 
         Assert.Equal("Late", context.Users.Single(user => user.Id == owner).DisplayName);
     }
@@ -25,7 +25,7 @@ public sealed class EfInstanceOwnerTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext();
 
-        IReadOnlyList<OwnerId> owners = await new EfUserDirectory(context).ListAsync(Ct);
+        IReadOnlyList<OwnerId> owners = await new EfUserDirectory(database.Factory).ListAsync(Ct);
 
         Assert.Equal(new HashSet<OwnerId> { TestExecutionContext.OwnerA, TestExecutionContext.OwnerB }, owners.ToHashSet());
     }

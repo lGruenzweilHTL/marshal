@@ -6,10 +6,13 @@ namespace Marshal.Data.Identity;
 /// <summary>
 /// The instance owner is the first user created (seeded on first start).
 /// </summary>
-public sealed class EfInstanceOwner(MarshalDbContext db) : IInstanceOwner
+public sealed class EfInstanceOwner(IDbContextFactory<MarshalDbContext> contexts) : IInstanceOwner
 {
-    public async Task<OwnerId> GetAsync(CancellationToken cancellationToken) =>
-        await db.Users.AsNoTracking().OrderBy(user => user.CreatedAt).Select(user => user.Id).FirstOrDefaultAsync(cancellationToken) is { } owner && owner != default
+    public async Task<OwnerId> GetAsync(CancellationToken cancellationToken)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        return await db.Users.AsNoTracking().OrderBy(user => user.CreatedAt).Select(user => user.Id).FirstOrDefaultAsync(cancellationToken) is { } owner && owner != default
             ? owner
             : throw new InvalidOperationException("The instance owner has not been created yet.");
+    }
 }

@@ -20,7 +20,7 @@ public sealed class EfPendingActionStoreTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         SessionId session = await SeedSessionAsync(database, OwnerA);
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        var store = new EfPendingActionStore(context, database.Accessor, _time);
+        var store = new EfPendingActionStore(database.Factory, database.Accessor, _time);
 
         PendingActionRecord frozen = await store.FreezeAsync(Request(session, """{"name":"front door"}"""), Ct);
 
@@ -41,7 +41,7 @@ public sealed class EfPendingActionStoreTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         SessionId session = await SeedSessionAsync(database, OwnerA);
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        var store = new EfPendingActionStore(context, database.Accessor, _time);
+        var store = new EfPendingActionStore(database.Factory, database.Accessor, _time);
 
         PendingActionRecord first = await store.FreezeAsync(Request(session, "{}"), Ct);
         PendingActionRecord second = await store.FreezeAsync(Request(session, """{"n":2}"""), Ct);
@@ -59,7 +59,7 @@ public sealed class EfPendingActionStoreTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         SessionId session = await SeedSessionAsync(database, OwnerA);
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        var store = new EfPendingActionStore(context, database.Accessor, _time);
+        var store = new EfPendingActionStore(database.Factory, database.Accessor, _time);
         PendingActionRecord frozen = await store.FreezeAsync(Request(session, "{}"), Ct);
 
         Result approved = await store.DecideAsync(frozen.Id, PendingActionStatus.Approved, DecidedBy.Keyword, Ct);
@@ -79,7 +79,7 @@ public sealed class EfPendingActionStoreTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         SessionId session = await SeedSessionAsync(database, OwnerA);
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        var store = new EfPendingActionStore(context, database.Accessor, _time);
+        var store = new EfPendingActionStore(database.Factory, database.Accessor, _time);
         await store.FreezeAsync(Request(session, "{}"), Ct);
 
         await store.DropForSessionAsync(session, Ct);
@@ -94,10 +94,10 @@ public sealed class EfPendingActionStoreTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         SessionId session = await SeedSessionAsync(database, OwnerA);
         await using (MarshalDbContext context = database.CreateContext(OwnerA))
-            await new EfPendingActionStore(context, database.Accessor, _time).FreezeAsync(Request(session, "{}"), Ct);
+            await new EfPendingActionStore(database.Factory, database.Accessor, _time).FreezeAsync(Request(session, "{}"), Ct);
 
         await using MarshalDbContext asB = database.CreateContext(OwnerB);
-        var storeB = new EfPendingActionStore(asB, database.Accessor, _time);
+        var storeB = new EfPendingActionStore(database.Factory, database.Accessor, _time);
 
         Assert.Null(await storeB.GetPendingAsync(session, Ct));
     }

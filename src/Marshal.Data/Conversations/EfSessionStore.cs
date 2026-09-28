@@ -9,12 +9,13 @@ namespace Marshal.Data.Conversations;
 /// <summary>
 /// Sessions of the current owner.
 /// </summary>
-public sealed class EfSessionStore(MarshalDbContext db, IExecutionContextAccessor executionContext, TimeProvider timeProvider) : ISessionStore
+public sealed class EfSessionStore(IDbContextFactory<MarshalDbContext> contexts, IExecutionContextAccessor executionContext, TimeProvider timeProvider) : ISessionStore
 {
     private static readonly JsonSerializerOptions _json = new(JsonSerializerDefaults.Web) { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 
     public async Task<SessionRecord?> FindOpenByTokenAsync(ApiTokenId apiTokenId, string externalId, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         Session? row = await db.Sessions.AsNoTracking()
             .SingleOrDefaultAsync(session => session.ApiTokenId == apiTokenId && session.ExternalId == externalId && session.ClosedAt == null, cancellationToken);
         return row is null ? null : ToRecord(row);
@@ -22,12 +23,14 @@ public sealed class EfSessionStore(MarshalDbContext db, IExecutionContextAccesso
 
     public async Task<SessionRecord?> FindOpenAsync(SessionId id, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         Session? row = await db.Sessions.AsNoTracking().SingleOrDefaultAsync(session => session.Id == id && session.ClosedAt == null, cancellationToken);
         return row is null ? null : ToRecord(row);
     }
 
     public async Task<SessionRecord> CreateAsync(NewSession session, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         MarshalExecutionContext context = executionContext.Current
             ?? throw new InvalidOperationException("Creating a session requires an execution context.");
         DateTimeOffset now = timeProvider.GetUtcNow();
@@ -50,6 +53,7 @@ public sealed class EfSessionStore(MarshalDbContext db, IExecutionContextAccesso
 
     public async Task TouchAsync(SessionId id, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         Session? row = await db.Sessions.SingleOrDefaultAsync(session => session.Id == id, cancellationToken);
         if (row is null)
             return;
@@ -60,6 +64,7 @@ public sealed class EfSessionStore(MarshalDbContext db, IExecutionContextAccesso
 
     public async Task CloseAsync(SessionId id, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         Session? row = await db.Sessions.SingleOrDefaultAsync(session => session.Id == id && session.ClosedAt == null, cancellationToken);
         if (row is null)
             return;
@@ -68,11 +73,14 @@ public sealed class EfSessionStore(MarshalDbContext db, IExecutionContextAccesso
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<SessionId>> FindIdleAsync(DateTimeOffset idleBefore, CancellationToken cancellationToken) =>
-        await db.Sessions.AsNoTracking()
+    public async Task<IReadOnlyList<SessionId>> FindIdleAsync(DateTimeOffset idleBefore, CancellationToken cancellationToken)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        return await db.Sessions.AsNoTracking()
             .Where(session => session.ClosedAt == null && session.LastTurnAt < idleBefore)
             .Select(session => session.Id)
             .ToListAsync(cancellationToken);
+    }
 
     private static SessionRecord ToRecord(Session row) =>
         new(row.Id, row.OwnerId, row.Source, row.ApiTokenId, row.ExternalId, row.ResolvedBy, row.LastTurnAt);

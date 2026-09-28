@@ -28,15 +28,15 @@ public sealed class TokenCommandTests : IAsyncDisposable
     {
         await using MarshalDbContext context = await ContextAsync();
 
-        int exit = await Command(context).RunAsync(["create", "--name", "ha", "--scope", "conversation:write"], Ct);
+        int exit = await Command().RunAsync(["create", "--name", "ha", "--scope", "conversation:write"], Ct);
 
         Assert.Equal(0, exit);
         string printed = _output.ToString();
         string token = printed.Split('\n').Single(line => line.StartsWith("mrs_", StringComparison.Ordinal)).Trim();
-        OwnerId owner = await new EfInstanceOwner(context).GetAsync(Ct);
+        OwnerId owner = await new EfInstanceOwner(Factory).GetAsync(Ct);
         using (_accessor.Use(new Abstractions.Execution.MarshalExecutionContext { OwnerId = owner, Source = Abstractions.Execution.SessionSource.Api }))
         {
-            ApiTokenInfo info = Assert.Single(await new ApiTokenService(context, _accessor, _time).ListAsync(Ct));
+            ApiTokenInfo info = Assert.Single(await new ApiTokenService(Factory, _accessor, _time).ListAsync(Ct));
             Assert.Equal("ha", info.Name);
             Assert.Equal([ApiScopes.ConversationWrite], info.Scopes);
             Assert.Equal(owner, info.OwnerId);
@@ -55,7 +55,7 @@ public sealed class TokenCommandTests : IAsyncDisposable
     {
         await using MarshalDbContext context = await ContextAsync();
 
-        await Command(context).RunAsync(["create", "--name", "api", "--scope", "tasks:read", "--scope", "conversation:write"], Ct);
+        await Command().RunAsync(["create", "--name", "api", "--scope", "tasks:read", "--scope", "conversation:write"], Ct);
 
         Assert.Contains("tasks:read, conversation:write", _output.ToString(), StringComparison.Ordinal);
     }
@@ -65,7 +65,7 @@ public sealed class TokenCommandTests : IAsyncDisposable
     {
         await using MarshalDbContext context = await ContextAsync();
 
-        int exit = await Command(context).RunAsync(["create", "--name", "x", "--scope", "root"], Ct);
+        int exit = await Command().RunAsync(["create", "--name", "x", "--scope", "root"], Ct);
 
         Assert.Equal(1, exit);
         Assert.Contains("Unknown scope 'root'", _error.ToString(), StringComparison.Ordinal);
@@ -75,11 +75,11 @@ public sealed class TokenCommandTests : IAsyncDisposable
     public async Task List_ShowsTokensWithoutSecrets()
     {
         await using MarshalDbContext context = await ContextAsync();
-        await Command(context).RunAsync(["create", "--name", "ha", "--scope", "conversation:write"], Ct);
+        await Command().RunAsync(["create", "--name", "ha", "--scope", "conversation:write"], Ct);
         string token = _output.ToString().Split('\n').Single(line => line.StartsWith("mrs_", StringComparison.Ordinal)).Trim();
         _output.GetStringBuilder().Clear();
 
-        int exit = await Command(context).RunAsync(["list"], Ct);
+        int exit = await Command().RunAsync(["list"], Ct);
 
         Assert.Equal(0, exit);
         Assert.Contains("ha", _output.ToString(), StringComparison.Ordinal);
@@ -91,10 +91,10 @@ public sealed class TokenCommandTests : IAsyncDisposable
     public async Task Revoke_MarksRevokedAndAudits()
     {
         await using MarshalDbContext context = await ContextAsync();
-        await Command(context).RunAsync(["create", "--name", "ha", "--scope", "conversation:write"], Ct);
+        await Command().RunAsync(["create", "--name", "ha", "--scope", "conversation:write"], Ct);
         string id = (await context.ApiTokens.IgnoreQueryFilters().SingleAsync(Ct)).Id.ToString();
 
-        int exit = await Command(context).RunAsync(["revoke", id], Ct);
+        int exit = await Command().RunAsync(["revoke", id], Ct);
 
         Assert.Equal(0, exit);
         Assert.NotNull((await context.ApiTokens.IgnoreQueryFilters().AsNoTracking().SingleAsync(Ct)).RevokedAt);
@@ -112,7 +112,7 @@ public sealed class TokenCommandTests : IAsyncDisposable
     {
         await using MarshalDbContext context = await ContextAsync();
 
-        int exit = await Command(context).RunAsync(args, Ct);
+        int exit = await Command().RunAsync(args, Ct);
 
         Assert.Equal(2, exit);
         Assert.Contains("Usage", _error.ToString(), StringComparison.Ordinal);
@@ -127,8 +127,10 @@ public sealed class TokenCommandTests : IAsyncDisposable
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    private TokenCommand Command(MarshalDbContext context) =>
-        new(new ApiTokenService(context, _accessor, _time), new DbAuditLog(context, _accessor, _time), new EfInstanceOwner(context), _accessor, _time, _output, _error);
+    private IDbContextFactory<MarshalDbContext> Factory => new ContextFactory(_connection, _accessor);
+
+    private TokenCommand Command() =>
+        new(new ApiTokenService(Factory, _accessor, _time), new DbAuditLog(Factory, _accessor, _time), new EfInstanceOwner(Factory), _accessor, _time, _output, _error);
 
     private async Task<MarshalDbContext> ContextAsync()
     {
@@ -136,6 +138,12 @@ public sealed class TokenCommandTests : IAsyncDisposable
         var context = new MarshalDbContext(new DbContextOptionsBuilder<MarshalDbContext>().UseMarshalSqlite(_connection).Options, _accessor);
         await new DatabaseInitializer(context, _time, NullLogger<DatabaseInitializer>.Instance).InitializeAsync(new InstanceOwnerSeed("Lukas", "de", "Europe/Vienna"), Ct);
         return context;
+    }
+
+    private sealed class ContextFactory(SqliteConnection connection, AsyncLocalExecutionContextAccessor accessor) : IDbContextFactory<MarshalDbContext>
+    {
+        public MarshalDbContext CreateDbContext() =>
+            new(new DbContextOptionsBuilder<MarshalDbContext>().UseMarshalSqlite(connection).Options, accessor);
     }
 
     private async Task<string> AllTextInDatabaseAsync()

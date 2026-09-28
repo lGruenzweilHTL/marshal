@@ -13,7 +13,7 @@ namespace Marshal.Data.Conversations;
 /// <summary>
 /// Pending actions in the <c>pending_actions</c> table, scoped to the current owner.
 /// </summary>
-public sealed class EfPendingActionStore(MarshalDbContext db, IExecutionContextAccessor executionContext, TimeProvider timeProvider) : IPendingActionStore
+public sealed class EfPendingActionStore(IDbContextFactory<MarshalDbContext> contexts, IExecutionContextAccessor executionContext, TimeProvider timeProvider) : IPendingActionStore
 {
     private static readonly JsonSerializerOptions _json = new(JsonSerializerDefaults.Web)
     {
@@ -22,6 +22,7 @@ public sealed class EfPendingActionStore(MarshalDbContext db, IExecutionContextA
 
     public async Task<PendingActionRecord> FreezeAsync(FreezeRequest request, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         MarshalExecutionContext context = executionContext.Current
             ?? throw new InvalidOperationException("Freezing an action requires an execution context.");
         DateTimeOffset now = timeProvider.GetUtcNow();
@@ -58,6 +59,7 @@ public sealed class EfPendingActionStore(MarshalDbContext db, IExecutionContextA
 
     public async Task<PendingActionRecord?> GetPendingAsync(SessionId sessionId, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         PendingAction? row = await db.PendingActions.AsNoTracking()
             .Where(action => action.SessionId == sessionId && action.Status == PendingActionStatus.Pending)
             .OrderByDescending(action => action.CreatedAt)
@@ -67,6 +69,7 @@ public sealed class EfPendingActionStore(MarshalDbContext db, IExecutionContextA
 
     public async Task<Result> DecideAsync(PendingActionId id, PendingActionStatus status, DecidedBy decidedBy, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         PendingAction? row = await db.PendingActions.SingleOrDefaultAsync(action => action.Id == id, cancellationToken);
         if (row is null)
             return new Error("pending_action.not_found", "The pending action does not exist.", ErrorType.NotFound);
@@ -82,6 +85,7 @@ public sealed class EfPendingActionStore(MarshalDbContext db, IExecutionContextA
 
     public async Task DropForSessionAsync(SessionId sessionId, CancellationToken cancellationToken)
     {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         DateTimeOffset now = timeProvider.GetUtcNow();
         foreach (PendingAction row in await db.PendingActions.Where(action => action.SessionId == sessionId && action.Status == PendingActionStatus.Pending).ToListAsync(cancellationToken))
         {

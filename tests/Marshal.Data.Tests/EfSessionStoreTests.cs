@@ -22,7 +22,7 @@ public sealed class EfSessionStoreTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         ApiTokenId token = await SeedTokenAsync(database, OwnerA);
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        var store = new EfSessionStore(context, database.Accessor, _time);
+        var store = new EfSessionStore(database.Factory, database.Accessor, _time);
         SessionRecord created = await store.CreateAsync(new NewSession(SessionSource.Voice, token, "01JABC", _evidence, "owner_default"), Ct);
 
         SessionRecord? found = await store.FindOpenByTokenAsync(token, "01JABC", Ct);
@@ -39,7 +39,7 @@ public sealed class EfSessionStoreTests
         ApiTokenId first = await SeedTokenAsync(database, OwnerA);
         ApiTokenId second = await SeedTokenAsync(database, OwnerA);
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        var store = new EfSessionStore(context, database.Accessor, _time);
+        var store = new EfSessionStore(database.Factory, database.Accessor, _time);
         await store.CreateAsync(new NewSession(SessionSource.Voice, first, "01JABC", _evidence, "owner_default"), Ct);
 
         Assert.Null(await store.FindOpenByTokenAsync(second, "01JABC", Ct));
@@ -51,7 +51,7 @@ public sealed class EfSessionStoreTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         ApiTokenId token = await SeedTokenAsync(database, OwnerA);
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        var store = new EfSessionStore(context, database.Accessor, _time);
+        var store = new EfSessionStore(database.Factory, database.Accessor, _time);
         SessionRecord first = await store.CreateAsync(new NewSession(SessionSource.Voice, token, "01JABC", _evidence, "owner_default"), Ct);
         await store.CloseAsync(first.Id, Ct);
 
@@ -67,7 +67,7 @@ public sealed class EfSessionStoreTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        var store = new EfSessionStore(context, database.Accessor, _time);
+        var store = new EfSessionStore(database.Factory, database.Accessor, _time);
 
         SessionRecord created = await store.CreateAsync(new NewSession(SessionSource.Web, null, null, _evidence, "cookie"), Ct);
 
@@ -85,11 +85,11 @@ public sealed class EfSessionStoreTests
         await using TestDatabase database = await TestDatabase.CreateAsync();
         SessionId id;
         await using (MarshalDbContext asA = database.CreateContext(OwnerA))
-            id = (await new EfSessionStore(asA, database.Accessor, _time).CreateAsync(new NewSession(SessionSource.Web, null, null, _evidence, "cookie"), Ct)).Id;
+            id = (await new EfSessionStore(database.Factory, database.Accessor, _time).CreateAsync(new NewSession(SessionSource.Web, null, null, _evidence, "cookie"), Ct)).Id;
 
         await using MarshalDbContext asB = database.CreateContext(OwnerB);
 
-        Assert.Null(await new EfSessionStore(asB, database.Accessor, _time).FindOpenAsync(id, Ct));
+        Assert.Null(await new EfSessionStore(database.Factory, database.Accessor, _time).FindOpenAsync(id, Ct));
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public sealed class EfSessionStoreTests
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
         await using MarshalDbContext context = database.CreateContext(OwnerA);
-        var store = new EfSessionStore(context, database.Accessor, _time);
+        var store = new EfSessionStore(database.Factory, database.Accessor, _time);
         SessionRecord old = await store.CreateAsync(new NewSession(SessionSource.Web, null, null, _evidence, "cookie"), Ct);
         _time.Advance(TimeSpan.FromMinutes(10));
         SessionRecord fresh = await store.CreateAsync(new NewSession(SessionSource.Web, null, null, _evidence, "cookie"), Ct);
