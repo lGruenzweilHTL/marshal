@@ -472,6 +472,27 @@
         }
       }
     },
+    "/api/v1/config": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Loaded skills, templates, MCP servers, risk rules, models and satellites, plus the last load error per file.",
+        "operationId": "GetConfigSummary",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/conversation/turns": {
       "post": {
         "tags": [
@@ -870,6 +891,93 @@
         },
         "description": "A machine token without its secret."
       },
+      "ConfigError": {
+        "required": [
+          "file",
+          "message",
+          "previousVersionActive"
+        ],
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "description": "Path relative to \u0060/config\u0060."
+          },
+          "message": {
+            "type": "string",
+            "description": "What is wrong (never contains secret values)."
+          },
+          "previousVersionActive": {
+            "type": "boolean",
+            "description": "True when the previous version of the file stays active; false when the entry is skipped."
+          }
+        },
+        "description": "A config file whose last load failed."
+      },
+      "ConfigSummary": {
+        "required": [
+          "errors",
+          "skills",
+          "templates",
+          "mcpServers",
+          "riskRules",
+          "models",
+          "satellites"
+        ],
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConfigError"
+            },
+            "description": "Files whose last load failed."
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkillSummary"
+            },
+            "description": "Loaded skills."
+          },
+          "templates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateSummary"
+            },
+            "description": "Loaded agent templates, including the built-in default unless replaced."
+          },
+          "mcpServers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/McpServerSummary"
+            },
+            "description": "Configured MCP servers with their connection status."
+          },
+          "riskRules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RiskRuleSummary"
+            },
+            "description": "Active risk rules in evaluation order (first match wins)."
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelSummary"
+            },
+            "description": "Configured models; API keys by secret name only."
+          },
+          "satellites": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SatelliteSummary"
+            },
+            "description": "Satellite profiles."
+          }
+        },
+        "description": "Read-only summary of the loaded \u0060/config\u0060."
+      },
       "ConfirmationReason": {
         "required": [
           "code",
@@ -1243,6 +1351,86 @@
         },
         "description": "A login provider as shown on the login page."
       },
+      "McpServerState": {
+        "enum": [
+          "connecting",
+          "connected",
+          "down"
+        ]
+      },
+      "McpServerSummary": {
+        "required": [
+          "id",
+          "namespace",
+          "transport",
+          "target",
+          "untrusted",
+          "authTokenSecret",
+          "environmentSecrets",
+          "state",
+          "error",
+          "toolCount",
+          "file"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Server id."
+          },
+          "namespace": {
+            "type": "string",
+            "description": "Tool namespace (id or \u0060toolPrefix\u0060)."
+          },
+          "transport": {
+            "type": "string",
+            "description": "\u0060http\u0060 or \u0060stdio\u0060."
+          },
+          "target": {
+            "type": "string",
+            "description": "URL (http) or command line (stdio)."
+          },
+          "untrusted": {
+            "type": "boolean",
+            "description": "Its tool output taints the run."
+          },
+          "authTokenSecret": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Secret name of the bearer token, if any."
+          },
+          "environmentSecrets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Secret names passed as environment variables (stdio)."
+          },
+          "state": {
+            "description": "Connection state.",
+            "$ref": "#/components/schemas/McpServerState"
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Last connection error, if any."
+          },
+          "toolCount": {
+            "type": "integer",
+            "description": "Tools offered while connected.",
+            "format": "int32"
+          },
+          "file": {
+            "type": "string",
+            "description": "Config file, relative to \u0060/config/mcp\u0060."
+          }
+        },
+        "description": "A configured MCP server."
+      },
       "MeResponse": {
         "required": [
           "id",
@@ -1276,6 +1464,74 @@
           }
         },
         "description": "The current user."
+      },
+      "ModelSummary": {
+        "required": [
+          "key",
+          "tier",
+          "provider",
+          "model",
+          "endpoint",
+          "apiKeySecret",
+          "vision",
+          "tools",
+          "contextLength"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Model key in \u0060marshal.yaml\u0060."
+          },
+          "tier": {
+            "description": "Model tier.",
+            "$ref": "#/components/schemas/ModelTier"
+          },
+          "provider": {
+            "type": "string",
+            "description": "Provider."
+          },
+          "model": {
+            "type": "string",
+            "description": "Provider model name."
+          },
+          "endpoint": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Server URL, if any."
+          },
+          "apiKeySecret": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Secret name of the API key, if any."
+          },
+          "vision": {
+            "type": "boolean",
+            "description": "Accepts images."
+          },
+          "tools": {
+            "type": "boolean",
+            "description": "Supports tool calls."
+          },
+          "contextLength": {
+            "type": "integer",
+            "description": "Context window in tokens.",
+            "format": "int32"
+          }
+        },
+        "description": "A configured model."
+      },
+      "ModelTier": {
+        "enum": [
+          "fast",
+          "standard",
+          "advisor",
+          null
+        ]
       },
       "NotificationTargets": {
         "required": [
@@ -1368,6 +1624,46 @@
             "format": "time"
           }
         }
+      },
+      "RiskRuleSummary": {
+        "required": [
+          "tool",
+          "match",
+          "args",
+          "tier"
+        ],
+        "type": "object",
+        "properties": {
+          "tool": {
+            "type": "string",
+            "description": "Tool id glob."
+          },
+          "match": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Target attribute conditions (e.g. \u0060domain\u0060, \u0060area\u0060)."
+          },
+          "args": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Argument conditions."
+          },
+          "tier": {
+            "description": "Tier when the rule matches.",
+            "$ref": "#/components/schemas/RiskTier"
+          }
+        },
+        "description": "An active risk rule."
       },
       "RiskTier": {
         "enum": [
@@ -1668,6 +1964,48 @@
           }
         }
       },
+      "SatelliteSummary": {
+        "required": [
+          "id",
+          "verbosity",
+          "notes",
+          "denyTools",
+          "denyConfirm"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Satellite entity id."
+          },
+          "verbosity": {
+            "type": "string",
+            "description": "Reply verbosity."
+          },
+          "notes": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Operator notes."
+          },
+          "denyTools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tool globs hidden on this satellite."
+          },
+          "denyConfirm": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tool globs whose confirm-tier calls are refused on this satellite."
+          }
+        },
+        "description": "A satellite profile."
+      },
       "SecretItem": {
         "required": [
           "name",
@@ -1756,6 +2094,32 @@
           "task",
           "api"
         ]
+      },
+      "SkillSummary": {
+        "required": [
+          "name",
+          "description",
+          "files"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Skill name."
+          },
+          "description": {
+            "type": "string",
+            "description": "When to use it."
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Additional files, relative to the skill."
+          }
+        },
+        "description": "A loaded skill."
       },
       "SseItemOfLiveEventMessage": {
         "type": "object",
@@ -1854,6 +2218,78 @@
           }
         }
       },
+      "TemplateSummary": {
+        "required": [
+          "name",
+          "description",
+          "modelTier",
+          "tools",
+          "skills",
+          "maxSteps",
+          "maxAdvisorCalls",
+          "builtIn"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Template name."
+          },
+          "description": {
+            "type": "string",
+            "description": "What it is for."
+          },
+          "modelTier": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ModelTier"
+              }
+            ],
+            "description": "Fixed model tier; null = by input mode."
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tool id globs it may use."
+          },
+          "skills": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Skills it may use; null = all."
+          },
+          "maxSteps": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Step limit; null = \u0060agent.maxSteps\u0060.",
+            "format": "int32"
+          },
+          "maxAdvisorCalls": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Advisor calls per run; null = \u0060agent.advisor.maxCallsPerRun\u0060.",
+            "format": "int32"
+          },
+          "builtIn": {
+            "type": "boolean",
+            "description": "True for the built-in default (no \u0060default.md\u0060)."
+          }
+        },
+        "description": "A loaded agent template."
+      },
       "UnresolvedSecret": {
         "required": [
           "name",
@@ -1932,6 +2368,9 @@
     },
     {
       "name": "System"
+    },
+    {
+      "name": "Config"
     },
     {
       "name": "Marshal"

@@ -73,6 +73,7 @@ public static class MarshalApp
         v1.MapLiveEventEndpoints();
         v1.MapRunEndpoints();
         v1.MapSystemEndpoints();
+        v1.MapConfigEndpoints();
         v1.MapConversationEndpoints();
         app.MapSpaFallback();
         return app;

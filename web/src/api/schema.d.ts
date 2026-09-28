@@ -277,6 +277,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Loaded skills, templates, MCP servers, risk rules, models and satellites, plus the last load error per file. */
+        get: operations["GetConfigSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/conversation/turns": {
         parameters: {
             query?: never;
@@ -457,6 +474,32 @@ export interface components {
             /** @description True for tokens users cannot manage (executor callback tokens). */
             readOnly: boolean;
         };
+        /** @description A config file whose last load failed. */
+        ConfigError: {
+            /** @description Path relative to `/config`. */
+            file: string;
+            /** @description What is wrong (never contains secret values). */
+            message: string;
+            /** @description True when the previous version of the file stays active; false when the entry is skipped. */
+            previousVersionActive: boolean;
+        };
+        /** @description Read-only summary of the loaded `/config`. */
+        ConfigSummary: {
+            /** @description Files whose last load failed. */
+            errors: components["schemas"]["ConfigError"][];
+            /** @description Loaded skills. */
+            skills: components["schemas"]["SkillSummary"][];
+            /** @description Loaded agent templates, including the built-in default unless replaced. */
+            templates: components["schemas"]["TemplateSummary"][];
+            /** @description Configured MCP servers with their connection status. */
+            mcpServers: components["schemas"]["McpServerSummary"][];
+            /** @description Active risk rules in evaluation order (first match wins). */
+            riskRules: components["schemas"]["RiskRuleSummary"][];
+            /** @description Configured models; API keys by secret name only. */
+            models: components["schemas"]["ModelSummary"][];
+            /** @description Satellite profiles. */
+            satellites: components["schemas"]["SatelliteSummary"][];
+        };
         ConfirmationReason: {
             code: components["schemas"]["ConfirmationReasonCode"];
             sentence: string;
@@ -575,6 +618,36 @@ export interface components {
             /** @description Button label. */
             displayName: string;
         };
+        /** @enum {unknown} */
+        McpServerState: "connecting" | "connected" | "down";
+        /** @description A configured MCP server. */
+        McpServerSummary: {
+            /** @description Server id. */
+            id: string;
+            /** @description Tool namespace (id or `toolPrefix`). */
+            namespace: string;
+            /** @description `http` or `stdio`. */
+            transport: string;
+            /** @description URL (http) or command line (stdio). */
+            target: string;
+            /** @description Its tool output taints the run. */
+            untrusted: boolean;
+            /** @description Secret name of the bearer token, if any. */
+            authTokenSecret: null | string;
+            /** @description Secret names passed as environment variables (stdio). */
+            environmentSecrets: string[];
+            /** @description Connection state. */
+            state: components["schemas"]["McpServerState"];
+            /** @description Last connection error, if any. */
+            error: null | string;
+            /**
+             * Format: int32
+             * @description Tools offered while connected.
+             */
+            toolCount: number;
+            /** @description Config file, relative to `/config/mcp`. */
+            file: string;
+        };
         /** @description The current user. */
         MeResponse: {
             /** @description Owner id of the user. */
@@ -586,6 +659,32 @@ export interface components {
             /** @description Scopes: granted by the roles for cookie sessions, the token's own for tokens. */
             scopes: string[];
         };
+        /** @description A configured model. */
+        ModelSummary: {
+            /** @description Model key in `marshal.yaml`. */
+            key: string;
+            /** @description Model tier. */
+            tier: components["schemas"]["ModelTier"];
+            /** @description Provider. */
+            provider: string;
+            /** @description Provider model name. */
+            model: string;
+            /** @description Server URL, if any. */
+            endpoint: null | string;
+            /** @description Secret name of the API key, if any. */
+            apiKeySecret: null | string;
+            /** @description Accepts images. */
+            vision: boolean;
+            /** @description Supports tool calls. */
+            tools: boolean;
+            /**
+             * Format: int32
+             * @description Context window in tokens.
+             */
+            contextLength: number;
+        };
+        /** @enum {unknown} */
+        ModelTier: "fast" | "standard" | "advisor" | null;
         NotificationTargets: {
             person: null | string;
             push: string[];
@@ -611,6 +710,21 @@ export interface components {
             start: string;
             /** Format: time */
             end: string;
+        };
+        /** @description An active risk rule. */
+        RiskRuleSummary: {
+            /** @description Tool id glob. */
+            tool: string;
+            /** @description Target attribute conditions (e.g. `domain`, `area`). */
+            match: {
+                [key: string]: string[];
+            };
+            /** @description Argument conditions. */
+            args: {
+                [key: string]: string[];
+            };
+            /** @description Tier when the rule matches. */
+            tier: components["schemas"]["RiskTier"];
         };
         /** @enum {unknown} */
         RiskTier: "safe" | "confirm" | "forbidden" | null;
@@ -674,6 +788,19 @@ export interface components {
             /** Format: double */
             cost: number;
         };
+        /** @description A satellite profile. */
+        SatelliteSummary: {
+            /** @description Satellite entity id. */
+            id: string;
+            /** @description Reply verbosity. */
+            verbosity: string;
+            /** @description Operator notes. */
+            notes: null | string;
+            /** @description Tool globs hidden on this satellite. */
+            denyTools: string[];
+            /** @description Tool globs whose confirm-tier calls are refused on this satellite. */
+            denyConfirm: string[];
+        };
         /** @description A secret without its value. */
         SecretItem: {
             /** @description Secret name. */
@@ -705,6 +832,15 @@ export interface components {
         SessionId: string;
         /** @enum {unknown} */
         SessionSource: "voice" | "web" | "task" | "api";
+        /** @description A loaded skill. */
+        SkillSummary: {
+            /** @description Skill name. */
+            name: string;
+            /** @description When to use it. */
+            description: string;
+            /** @description Additional files, relative to the skill. */
+            files: string[];
+        };
         SseItemOfLiveEventMessage: {
             data?: components["schemas"]["LiveEventMessage"];
             eventType?: null | string;
@@ -730,6 +866,31 @@ export interface components {
             kind: string;
             /** Format: int32 */
             firstStep: number;
+        };
+        /** @description A loaded agent template. */
+        TemplateSummary: {
+            /** @description Template name. */
+            name: string;
+            /** @description What it is for. */
+            description: string;
+            /** @description Fixed model tier; null = by input mode. */
+            modelTier: null | components["schemas"]["ModelTier"];
+            /** @description Tool id globs it may use. */
+            tools: string[];
+            /** @description Skills it may use; null = all. */
+            skills: null | string[];
+            /**
+             * Format: int32
+             * @description Step limit; null = `agent.maxSteps`.
+             */
+            maxSteps: null | number;
+            /**
+             * Format: int32
+             * @description Advisor calls per run; null = `agent.advisor.maxCallsPerRun`.
+             */
+            maxAdvisorCalls: null | number;
+            /** @description True for the built-in default (no `default.md`). */
+            builtIn: boolean;
         };
         /** @description A referenced secret that no source provides. */
         UnresolvedSecret: {
@@ -1120,6 +1281,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SystemInfo"];
+                };
+            };
+        };
+    };
+    GetConfigSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigSummary"];
                 };
             };
         };
