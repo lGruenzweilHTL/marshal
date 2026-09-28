@@ -15,8 +15,8 @@
 
 ## 4. Conversation entity
 
-- [ ] 4.1 Write tests for `TurnMapper`: field mapping, area lookup from device registry, generated conversation id, `inputMode` detection, `followupRef` extraction (marker present / absent / malformed)
-- [ ] 4.2 Implement `TurnMapper`
+- [x] 4.1 Write tests for `TurnMapper`: field mapping, area lookup from device registry, generated conversation id, `inputMode` detection, `followupRef` extraction (marker present / absent / malformed)
+- [x] 4.2 Implement `TurnMapper`
 - [ ] 4.3 Write entity tests: turn forwarded with mocked Marshal, deltas streamed in order, final speech and `continue_conversation`, `status` not spoken, errors spoken in the turn language
 - [ ] 4.4 Implement the conversation entity with streaming
 

@@ -7,12 +7,14 @@ requires-python = ">=3.14.2"
 [dependency-groups]
 dev = [
     "pytest-homeassistant-custom-component==0.13.367",
-    # Requirements of the HA components the tests set up (conversation, assist_pipeline), as pinned by HA 2026.9.4.
+    # Requirements of the HA components the tests set up (conversation, assist_pipeline, tts), as pinned by HA 2026.9.4.
     "gazetteer-matcher==1.1.0",
     "hassil==3.12.1",
     "home-assistant-intents==2026.8.28",
     "pymicro-vad==1.0.1",
     "pyspeex-noise==1.0.2",
+    "mutagen==1.48.1",
+    "ha-ffmpeg==3.2.2",
 ]
 
 [tool.uv]
