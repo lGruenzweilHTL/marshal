@@ -28,7 +28,7 @@
 - [x] 3.6 Implement mail tools
 - [x] 3.7 Write account API tests: create IMAP account, OAuth connect flow with state check, ownership
 - [x] 3.8 Implement accounts endpoints, OAuth callback and the accounts view
-- [ ] 3.9 Add an architecture test asserting no SMTP types are referenced anywhere in the solution
+- [x] 3.9 Add an architecture test asserting no SMTP types are referenced anywhere in the solution
 
 ## 4. RSS
 
