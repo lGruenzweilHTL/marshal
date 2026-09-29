@@ -1,3 +1,4 @@
+using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Identity;
 using Marshal.Data;
 using Marshal.Data.Identity;
@@ -10,26 +11,38 @@ using Microsoft.EntityFrameworkCore;
 namespace Marshal.Testing;
 
 /// <summary>
-/// In-memory SQLite database shared by the contexts created from it.
+/// SQLite database for tests: in memory with one shared connection (<see cref="CreateAsync()"/>), or a temporary
+/// file with a connection per context for tests with concurrent workers (<see cref="CreateFileAsync"/>).
 /// </summary>
 public sealed class TestDatabase : IAsyncDisposable
 {
-    private readonly SqliteConnection _connection = new("Data Source=:memory:");
+    private readonly SqliteConnection _connection;
+    private readonly string? _file;
+    private readonly IExecutionContextAccessor? _contextAccessor;
 
-    private TestDatabase()
+    private TestDatabase(string? file, IExecutionContextAccessor? contextAccessor)
     {
+        _file = file;
+        _contextAccessor = contextAccessor;
+        _connection = new(file is null ? "Data Source=:memory:" : ConnectionString(file));
     }
 
+    /// <summary>The accessor of in-memory databases; file databases use the accessor they were created with.</summary>
     public FakeExecutionContextAccessor Accessor { get; } = new();
 
     /// <summary>Factory for services that create a context per operation.</summary>
     public IDbContextFactory<MarshalDbContext> Factory => new ContextFactory(this);
 
-    public static async Task<TestDatabase> CreateAsync()
+    public static Task<TestDatabase> CreateAsync() => InitializeAsync(new TestDatabase(null, null));
+
+    /// <summary>A temporary file database whose contexts each open their own connection and read the owner from <paramref name="accessor"/>.</summary>
+    public static Task<TestDatabase> CreateFileAsync(IExecutionContextAccessor accessor) =>
+        InitializeAsync(new TestDatabase(Path.Combine(Path.GetTempPath(), $"marshal-test-{Guid.NewGuid():N}.db"), accessor));
+
+    private static async Task<TestDatabase> InitializeAsync(TestDatabase database)
     {
-        var database = new TestDatabase();
         await database._connection.OpenAsync();
-        await using MarshalDbContext context = database.CreateContext();
+        await using MarshalDbContext context = new(new DbContextOptionsBuilder<MarshalDbContext>().UseMarshalSqlite(database._connection).Options, database.Accessor);
         await context.Database.EnsureCreatedAsync();
         foreach (string statement in MemorySchema.Create.Concat(NotesSchema.Create))
             await context.Database.ExecuteSqlRawAsync(statement);
@@ -48,8 +61,9 @@ public sealed class TestDatabase : IAsyncDisposable
         return database;
     }
 
-    public MarshalDbContext CreateContext() =>
-        new(new DbContextOptionsBuilder<MarshalDbContext>().UseMarshalSqlite(_connection).Options, Accessor);
+    public MarshalDbContext CreateContext() => _file is null
+        ? new(new DbContextOptionsBuilder<MarshalDbContext>().UseMarshalSqlite(_connection).Options, Accessor)
+        : new(new DbContextOptionsBuilder<MarshalDbContext>().UseMarshalSqlite(ConnectionString(_file)).Options, _contextAccessor!);
 
     /// <summary>Creates a context that runs as <paramref name="owner"/>.</summary>
     public MarshalDbContext CreateContext(OwnerId owner)
@@ -58,7 +72,17 @@ public sealed class TestDatabase : IAsyncDisposable
         return CreateContext();
     }
 
-    public async ValueTask DisposeAsync() => await _connection.DisposeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        await _connection.DisposeAsync();
+        if (_file is not null)
+        {
+            SqliteConnection.ClearAllPools();
+            File.Delete(_file);
+        }
+    }
+
+    private static string ConnectionString(string file) => $"Data Source={file};Pooling=False";
 
     private sealed class ContextFactory(TestDatabase database) : IDbContextFactory<MarshalDbContext>
     {

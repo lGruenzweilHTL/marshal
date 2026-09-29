@@ -93,6 +93,13 @@ Checked against the HA core source (`dev` branch: `assist_satellite/services.yam
 - **Deep links**: tap target is `data.url` (iOS) and `data.clickAction` (Android); both accept relative paths, so Marshal sends both with the result URL. `data.tag` replaces a notification with the same tag; `message: clear_notification` with the tag clears it (used after an approval is decided elsewhere).
 - **Priority mapping**: silent push = iOS `push.interruption-level: passive`, Android `importance: low`; `critical` = iOS `push.interruption-level: critical`, Android `channel: alarm` with `priority: high` and `ttl: 0`.
 
+## Implementation notes
+
+- **Run outcomes and re-arming.** A run ends `done`, `waiting` or `failed`. `done` on a `cron` task re-arms it (`waiting`, next occurrence in the owner's time zone); on an `event` task (a watch) it re-arms it without a run time (the matcher makes it due); on `now`, `at` and `after` tasks it is final. `waiting` keeps the task's trigger and sets only `next_run_at` (wakeup) or leaves it empty (approval decision, follow-up reply), so a cron task that waits for an approval keeps its schedule. `failed` is final. An `after(A)` task becomes due when a run of A ends `done`.
+- **Claiming.** The worker moves a due task to `running` with the row version it read; a second claim fails with `tasks.conflict` and is dropped. The outcome is applied to a fresh copy (tools may have changed notes during the run); a task cancelled during its run stays cancelled.
+- **Cross-owner reads.** The scheduler's due queries (`GetDueAsync`, `GetNextRunAtAsync`, `GetRunningAsync`) are the only task queries that bypass the owner filter; they return ids and owners only, and each task is then loaded and run as its owner.
+- **SQLite concurrency.** Workers, web requests and background services write concurrently. Every connection sets `busy_timeout = 5000` (EF Core already creates the database in WAL mode), and the pre-migration copy runs a `wal_checkpoint(TRUNCATE)` first so the copy holds every committed row.
+
 ## Risks / Trade-offs
 
 - [Runaway agent loops in the background] → budgets, depth, fan-out, minimum wakeup interval, global daily cap, kill switch; all server-side.

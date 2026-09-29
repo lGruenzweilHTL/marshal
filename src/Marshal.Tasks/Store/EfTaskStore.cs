@@ -67,7 +67,7 @@ public sealed partial class EfTaskStore(
             OriginSatelliteId = task.OriginSatelliteId,
             TriggerKind = task.Trigger.Kind,
             TriggerSpec = task.Trigger.Spec,
-            NextRunAt = TaskTriggers.NextRun(task.Trigger, now, await TimeZoneAsync(owner, cancellationToken)),
+            NextRunAt = TaskTriggers.NextRun(task.Trigger, now, await profiles.TimeZoneAsync(owner, cancellationToken)),
             Notes = task.Notes,
             Budget = TaskJson.Serialize(task.Budget),
             Spent = TaskJson.Serialize(TaskSpend.Zero),
@@ -209,12 +209,6 @@ public sealed partial class EfTaskStore(
 
     private OwnerId CurrentOwner() =>
         executionContext.Current?.OwnerId ?? throw new InvalidOperationException("Tasks accessed without an execution context.");
-
-    private async Task<TimeZoneInfo> TimeZoneAsync(OwnerId owner, CancellationToken cancellationToken)
-    {
-        Result<UserProfile> profile = await profiles.GetAsync(owner, cancellationToken);
-        return profile.IsSuccess && TimeZoneInfo.TryFindSystemTimeZoneById(profile.Value.TimeZone, out TimeZoneInfo? zone) ? zone : TimeZoneInfo.Utc;
-    }
 
     private static Result Validate(string goal, TaskTrigger trigger, TaskBudget? budget)
     {

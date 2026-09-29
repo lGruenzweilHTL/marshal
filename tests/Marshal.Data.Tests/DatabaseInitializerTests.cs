@@ -34,6 +34,42 @@ public sealed class DatabaseInitializerTests : IDisposable
     }
 
     [Fact]
+    public async Task Initialize_WalDatabaseWithUncheckpointedRows_BackupHasThem()
+    {
+        await using var legacy = new SqliteConnection($"Data Source={DatabasePath};Pooling=False");
+        await legacy.OpenAsync(TestContext.Current.CancellationToken);
+        await using (SqliteCommand command = legacy.CreateCommand())
+        {
+            command.CommandText = "PRAGMA journal_mode = WAL; PRAGMA wal_autocheckpoint = 0; CREATE TABLE legacy_marker (id INTEGER); INSERT INTO legacy_marker VALUES (1);";
+            await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+        }
+
+        await InitializeAsync();
+
+        await using var backup = new SqliteConnection($"Data Source={Path.Combine(_directory, "marshal.db.20260928073015.bak")};Mode=ReadOnly;Pooling=False");
+        await backup.OpenAsync(TestContext.Current.CancellationToken);
+        await using SqliteCommand count = backup.CreateCommand();
+        count.CommandText = "SELECT count(*) FROM legacy_marker";
+        Assert.Equal(1L, await count.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task Initialize_FileDatabase_UsesWriteAheadLog()
+    {
+        await InitializeAsync();
+
+        Assert.Equal("wal", await PragmaAsync("journal_mode"));
+    }
+
+    [Fact]
+    public async Task Connections_WaitForLocksInsteadOfFailing()
+    {
+        await InitializeAsync();
+
+        Assert.Equal(5000L, await PragmaAsync("busy_timeout"));
+    }
+
+    [Fact]
     public async Task Initialize_NoPendingMigration_CreatesNoCopy()
     {
         await InitializeAsync();
@@ -90,6 +126,15 @@ public sealed class DatabaseInitializerTests : IDisposable
         await using MarshalDbContext context = CreateContext();
         var initializer = new DatabaseInitializer(context, _time, NullLogger<DatabaseInitializer>.Instance);
         await initializer.InitializeAsync(_seed, TestContext.Current.CancellationToken);
+    }
+
+    private async Task<object?> PragmaAsync(string name)
+    {
+        await using MarshalDbContext context = CreateContext();
+        await context.Database.OpenConnectionAsync(TestContext.Current.CancellationToken);
+        await using System.Data.Common.DbCommand command = context.Database.GetDbConnection().CreateCommand();
+        command.CommandText = $"PRAGMA {name}";
+        return await command.ExecuteScalarAsync(TestContext.Current.CancellationToken);
     }
 
     private async Task CreateLegacyDatabaseAsync()

@@ -8,8 +8,8 @@
 
 - [x] 2.1 Write task store tests: validation, unique names per owner, ownership, optimistic concurrency
 - [x] 2.2 Implement `EfTaskStore`
-- [ ] 2.3 Write scheduler tests with `FakeTimeProvider`: `at`, `cron` in owner time zone across DST, `after`, restart recovery of `running` tasks, no double runs
-- [ ] 2.4 Implement `TaskScheduler` and worker pool
+- [x] 2.3 Write scheduler tests with `FakeTimeProvider`: `at`, `cron` in owner time zone across DST, `after`, restart recovery of `running` tasks, no double runs
+- [x] 2.4 Implement `TaskScheduler` and worker pool
 - [ ] 2.5 Write runner tests: headless run as owner, template / project / origin satellite policy applied (incl. child tasks), background visibility rules, resume with goal + notes + payload only
 - [ ] 2.6 Implement `AgentTaskRunner`
 - [ ] 2.7 Write limit tests: budgets incl. parent draw-down, daily cap, depth, fan-out, minimum wakeup interval

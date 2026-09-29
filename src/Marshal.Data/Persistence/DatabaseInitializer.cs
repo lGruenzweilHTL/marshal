@@ -18,7 +18,7 @@ public sealed partial class DatabaseInitializer(MarshalDbContext db, TimeProvide
         List<string> pending = [.. await db.Database.GetPendingMigrationsAsync(ct)];
         if (pending.Count > 0)
         {
-            BackupDatabaseFile();
+            await BackupDatabaseFileAsync(ct);
             await db.Database.MigrateAsync(ct);
             LogMigrated(logger, pending.Count);
         }
@@ -26,12 +26,14 @@ public sealed partial class DatabaseInitializer(MarshalDbContext db, TimeProvide
         await SeedInstanceOwnerAsync(seed, ct);
     }
 
-    private void BackupDatabaseFile()
+    private async Task BackupDatabaseFileAsync(CancellationToken ct)
     {
         string? path = new SqliteConnectionStringBuilder(db.Database.GetConnectionString()).DataSource;
         if (string.IsNullOrEmpty(path) || path == ":memory:" || !File.Exists(path) || new FileInfo(path).Length == 0)
             return;
 
+        // Databases use the write-ahead log; committed pages still in it are moved into the file before copying it.
+        await db.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)", ct);
         SqliteConnection.ClearAllPools();
         string stamp = timeProvider.GetUtcNow().ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
         string backup = $"{path}.{stamp}.bak";
