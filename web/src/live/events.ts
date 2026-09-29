@@ -1,3 +1,5 @@
+import type { Schemas } from '../api/client'
+
 /**
  * Payloads of the live-update stream (`GET /api/v1/events`), hand-written to match the server records; the stream's
  * OpenAPI description only knows the envelope (`LiveEventMessage`).
@@ -27,10 +29,17 @@ export interface RunCompletedPayload {
   endedAt: string
 }
 
+/** `printer.state` on topic `printer`: the printer's new state, null when it went offline. */
+export interface PrinterStatePayload {
+  printer: string
+  state: Schemas['PrinterState'] | null
+}
+
 /** Event type → payload. Later changes add their topics' events here. */
 export interface LiveEventMap {
   'run.started': RunStartedPayload
   'run.completed': RunCompletedPayload
+  'printer.state': PrinterStatePayload
 }
 
 export type LiveEventType = keyof LiveEventMap

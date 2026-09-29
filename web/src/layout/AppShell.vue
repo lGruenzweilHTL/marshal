@@ -8,6 +8,7 @@ const links = [
   { to: '/', label: 'Dashboard' },
   { to: '/chat', label: 'Chat' },
   { to: '/memory', label: 'Memory' },
+  { to: '/printers', label: 'Printer' },
   { to: '/runs', label: 'Runs' },
   { to: '/cost', label: 'Cost' },
   { to: '/security', label: 'Security' },

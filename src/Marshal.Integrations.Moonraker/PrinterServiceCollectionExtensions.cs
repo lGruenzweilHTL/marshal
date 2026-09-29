@@ -22,6 +22,7 @@ public static partial class PrinterServiceCollectionExtensions
             .Validate(options => options.Printers.All(printer => PrinterName().IsMatch(printer.Name)), "printers[].name must be letters, digits, '-' or '_'.")
             .Validate(options => options.Printers.Select(printer => printer.Name.ToUpperInvariant()).Distinct().Count() == options.Printers.Count, "printers[].name must be unique.")
             .Validate(options => options.Printers.All(printer => printer.Url is { IsAbsoluteUri: true } url && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps)), "printers[].url must be an absolute http(s) URL.")
+            .Validate(options => options.Printers.All(printer => printer.WebUrl is null || printer.WebUrl is { IsAbsoluteUri: true } url && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps)), "printers[].webUrl must be an absolute http(s) URL.")
             .Validate(options => options.PrinterSnapshots is { MaxSize: >= 64, Quality: >= 1 and <= 100, Retention: >= 1 }, "printerSnapshots needs maxSize >= 64, quality 1-100 and retention >= 1.")
             .ValidateOnStart();
 

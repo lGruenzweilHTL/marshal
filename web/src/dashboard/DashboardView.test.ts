@@ -19,6 +19,7 @@ function server(healthBody = health()) {
       advisor: 0,
     })
     .on('GET', '/health', 200, healthBody)
+    .on('GET', '/api/v1/printers', 200, [])
 }
 
 async function mountDashboard(fake: FakeServer) {

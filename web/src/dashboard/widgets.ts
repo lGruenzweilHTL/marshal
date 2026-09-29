@@ -1,5 +1,6 @@
 import type { Component } from 'vue'
 import HealthWidget from './HealthWidget.vue'
+import PrinterWidget from './PrinterWidget.vue'
 import RecentRunsWidget from './RecentRunsWidget.vue'
 import TodayCostWidget from './TodayCostWidget.vue'
 
@@ -7,5 +8,6 @@ import TodayCostWidget from './TodayCostWidget.vue'
 export const widgets: { id: string; component: Component }[] = [
   { id: 'recent-runs', component: RecentRunsWidget },
   { id: 'today-cost', component: TodayCostWidget },
+  { id: 'printer', component: PrinterWidget },
   { id: 'health', component: HealthWidget },
 ]

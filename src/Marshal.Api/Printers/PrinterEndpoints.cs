@@ -45,7 +45,7 @@ internal static class PrinterEndpoints
         TypedResults.Ok(directory.Printers.Select(printer =>
         {
             Result<PrinterState> state = states.Get(printer.Name);
-            return new PrinterSummary(printer.Name, state.IsSuccess, state.IsSuccess ? state.Value : null, printer.Macros);
+            return new PrinterSummary(printer.Name, state.IsSuccess, state.IsSuccess ? state.Value : null, printer.Macros, printer.WebUrl);
         }).ToList());
 
     private static Results<Ok<PrinterState>, ProblemHttpResult> GetStatus(string printer, IPrinterDirectory directory, IPrinterStateCache states)

@@ -93,8 +93,8 @@ public sealed record PrinterControlResult(string Status, string Description, str
 /// <summary>Confirms a frozen control.</summary>
 public sealed record PrinterControlConfirmation(string Token);
 
-/// <summary>A printer with its live state (null while offline).</summary>
-public sealed record PrinterSummary(string Name, bool Online, PrinterState? State, IReadOnlyList<string> Macros);
+/// <summary>A printer with its live state (null while offline), its macros and its own web UI, if configured.</summary>
+public sealed record PrinterSummary(string Name, bool Online, PrinterState? State, IReadOnlyList<string> Macros, Uri? WebUrl);
 
 /// <summary>A stored snapshot.</summary>
 public sealed record PrinterSnapshotInfo(string Id, string Url, int Width, int Height, DateTimeOffset CapturedAt);

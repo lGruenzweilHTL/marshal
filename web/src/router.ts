@@ -15,6 +15,7 @@ import ProjectsView from './memory/ProjectsView.vue'
 import ScatterView from './memory/ScatterView.vue'
 import NotFoundView from './layout/NotFoundView.vue'
 import PreferencesView from './preferences/PreferencesView.vue'
+import PrinterView from './printers/PrinterView.vue'
 import CostView from './runs/CostView.vue'
 import RunDetailView from './runs/RunDetailView.vue'
 import RunsView from './runs/RunsView.vue'
@@ -45,6 +46,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'runs', name: 'runs', component: RunsView, meta: { title: 'Runs' } },
       { path: 'runs/:id', name: 'run', component: RunDetailView, meta: { title: 'Run' } },
       { path: 'cost', name: 'cost', component: CostView, meta: { title: 'Cost' } },
+      { path: 'printers/:name?', name: 'printers', component: PrinterView, meta: { title: 'Printer' } },
       {
         path: 'memory',
         component: MemoryLayout,

@@ -3532,7 +3532,8 @@
           "name",
           "online",
           "state",
-          "macros"
+          "macros",
+          "webUrl"
         ],
         "type": "object",
         "properties": {
@@ -3557,9 +3558,16 @@
             "items": {
               "type": "string"
             }
+          },
+          "webUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uri"
           }
         },
-        "description": "A printer with its live state (null while offline)."
+        "description": "A printer with its live state (null while offline), its macros and its own web UI, if configured."
       },
       "PrintJob": {
         "required": [

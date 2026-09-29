@@ -22,6 +22,9 @@ public sealed class PrinterConfig
     /// <summary>Moonraker base URL, e.g. <c>http://voron.lan:7125</c>.</summary>
     public Uri? Url { get; set; }
 
+    /// <summary>The printer's web UI (Mainsail / Fluidd), linked from the printer page for actions Marshal does not offer.</summary>
+    public Uri? WebUrl { get; set; }
+
     /// <summary>Name of the secret holding the Moonraker API key; none when Moonraker trusts the network.</summary>
     public string? ApiKeySecret { get; set; }
 

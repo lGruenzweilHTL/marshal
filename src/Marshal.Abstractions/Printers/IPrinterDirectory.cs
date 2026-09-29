@@ -18,4 +18,5 @@ public interface IPrinterDirectory
 /// <summary>A configured printer.</summary>
 /// <param name="Name">Name used in tools and the UI.</param>
 /// <param name="Macros">Allowlisted Klipper macros (upper case).</param>
-public sealed record PrinterInfo(string Name, IReadOnlyList<string> Macros);
+/// <param name="WebUrl">The printer's own web UI (Mainsail / Fluidd) for everything Marshal does not offer.</param>
+public sealed record PrinterInfo(string Name, IReadOnlyList<string> Macros, Uri? WebUrl = null);

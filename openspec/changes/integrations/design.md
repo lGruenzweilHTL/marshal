@@ -192,3 +192,8 @@ They should be replaced with real captures when a printer is available.
   `printer.state` events (`{printer, state}`, state null when offline) to every user, since printers belong to the
   instance. The webcam stream and snapshots are served from Marshal's origin; the webcam HTTP client has no timeout
   and no retries, the command client retries only safe methods.
+- Printer page (task 2.11): `/printers/:name?` with live status, a temperature chart built from `printer.state`
+  events since the page opened, the proxied webcam stream plus on-demand snapshots, controls, files, queue and
+  history. Confirm-tier controls open an in-page dialog; only its Confirm button posts the token. An optional
+  `printers[].webUrl` (Mainsail / Fluidd) is linked for the actions Marshal does not offer. The dashboard gains a
+  printer widget.

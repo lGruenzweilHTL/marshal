@@ -1384,12 +1384,14 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
-        /** @description A printer with its live state (null while offline). */
+        /** @description A printer with its live state (null while offline), its macros and its own web UI, if configured. */
         PrinterSummary: {
             name: string;
             online: boolean;
             state: null | components["schemas"]["PrinterState"];
             macros: string[];
+            /** Format: uri */
+            webUrl: null | string;
         };
         PrintJob: {
             jobId: string;

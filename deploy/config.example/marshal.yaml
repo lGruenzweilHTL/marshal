@@ -16,6 +16,7 @@ instance:
 # printers:
 #   - name: voron
 #     url: http://voron.local:7125
+#     webUrl: http://voron.local           # Mainsail / Fluidd, linked for actions Marshal does not offer
 #     apiKeySecret: moonraker_voron
 #     macros: [PARK, LOAD_FILAMENT, UNLOAD_FILAMENT]
 # printerSnapshots: { maxSize: 1024, quality: 85, retention: 20 }

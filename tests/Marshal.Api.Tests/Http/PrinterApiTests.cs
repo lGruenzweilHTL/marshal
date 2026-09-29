@@ -34,6 +34,7 @@ public sealed class PrinterApiTests : IAsyncLifetime
         settings["printers:0:name"] = "voron";
         settings["printers:0:url"] = "http://voron.invalid:7125";
         settings["printers:0:macros:0"] = "PARK";
+        settings["printers:0:webUrl"] = "http://voron.invalid/";
         _factory = new MarshalApiFactory(settings)
         {
             TestServices = services =>
@@ -67,7 +68,11 @@ public sealed class PrinterApiTests : IAsyncLifetime
         JsonElement status = await _browser.GetFromJsonAsync<JsonElement>(Voron, Ct);
 
         JsonElement voron = Assert.Single(printers);
-        Assert.Equal(("voron", true), (voron.GetProperty("name").GetString(), voron.GetProperty("online").GetBoolean()));
+        Assert.Equal(("voron", true, "PARK", "http://voron.invalid/"), (
+            voron.GetProperty("name").GetString(),
+            voron.GetProperty("online").GetBoolean(),
+            voron.GetProperty("macros")[0].GetString(),
+            voron.GetProperty("webUrl").GetString()));
         Assert.Equal(("printing", 0.25, 200.0, 30), (
             status.GetProperty("printState").GetString(),
             status.GetProperty("progress").GetDouble(),

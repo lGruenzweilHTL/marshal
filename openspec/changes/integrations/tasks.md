@@ -16,7 +16,7 @@
 - [x] 2.8 Implement `printer.inspect`
 - [x] 2.9 Write API tests for printer UI endpoints: status, controls with tiers, confirm-tier controls require a confirmation token from the dialog, audit events, webcam proxy auth
 - [x] 2.10 Implement printer endpoints and the `printer` live-event topic
-- [ ] 2.11 Write component tests and implement the printer page and dashboard printer widget
+- [x] 2.11 Write component tests and implement the printer page and dashboard printer widget
 
 ## 3. Mail
 
