@@ -147,7 +147,8 @@ public sealed class McpToolSourcesTests : IAsyncDisposable
 
     private static async Task EventuallyAsync(Func<Task<bool>> condition)
     {
-        DateTime deadline = DateTime.UtcNow.AddSeconds(10);
+        // Generous: the full suite runs containers in parallel, and a reconnect then takes seconds.
+        DateTime deadline = DateTime.UtcNow.AddSeconds(30);
         while (!await HoldsAsync(condition))
         {
             Assert.True(DateTime.UtcNow < deadline, "Condition not met in time.");

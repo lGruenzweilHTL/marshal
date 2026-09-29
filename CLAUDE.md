@@ -104,6 +104,7 @@ Key dependencies and what they are for. Keep this list current when adding or re
 | `Cronos` | Cron expression parsing for the scheduler |
 | `MailKit` | IMAP provider (search, drafts via `APPEND`, XOAUTH2); never its SMTP client |
 | `SmartReader` | Readability full-text extraction for RSS articles |
+| `AngleSharp` | HTML parsing (SmartReader's parser): plain text of RSS summaries |
 | `Google.Apis.Gmail.v1`, `Microsoft.Graph` | Gmail API and Graph mail providers (later, build order §14) |
 | `SkiaSharp` (+ `SkiaSharp.NativeAssets.Linux.NoDependencies`) | Image resizing (printer and camera snapshots before VLM calls); MIT licensed; the native asset package runs in the slim container without fontconfig |
 | `Microsoft.Extensions.Http` | `IHttpClientFactory` named clients (MCP streamable HTTP, Home Assistant REST) |

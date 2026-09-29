@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Tech News</title>
+    <link>http://localhost/feeds/</link>
+    <description>Test feed</description>
+    <item>
+      <title>Rust 2.0 released</title>
+      <link>http://localhost/feeds/rust.html</link>
+      <guid>tech-1</guid>
+      <pubDate>Mon, 28 Sep 2026 08:00:00 GMT</pubDate>
+      <description><![CDATA[<p>The <b>Rust</b> team announced&nbsp;a new edition.</p><script>alert(1)</script>]]></description>
+    </item>
+    <item>
+      <title>New GPU benchmarks</title>
+      <link>http://localhost/feeds/gpu.html</link>
+      <guid>tech-2</guid>
+      <pubDate>Mon, 28 Sep 2026 09:00:00 GMT</pubDate>
+      <description>Graphics cards compared.</description>
+    </item>
+    <item>
+      <title>Kernel 7.1 notes</title>
+      <link>http://localhost/feeds/kernel.html</link>
+      <guid>tech-3</guid>
+      <pubDate>Mon, 28 Sep 2026 10:00:00 GMT</pubDate>
+      <description>Scheduler changes.</description>
+    </item>
+  </channel>
+</rss>

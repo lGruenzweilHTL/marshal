@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Science Daily</title>
+    <link>http://localhost/feeds/</link>
+    <description>Test feed</description>
+    <item>
+      <title>Comet visible tonight</title>
+      <link>http://localhost/feeds/comet.html</link>
+      <guid>science-1</guid>
+      <pubDate>Sun, 27 Sep 2026 20:00:00 GMT</pubDate>
+      <description>Look north after sunset.</description>
+    </item>
+    <item>
+      <title>Ocean temperatures rise</title>
+      <link>http://localhost/feeds/ocean.html</link>
+      <guid>science-2</guid>
+      <pubDate>Sun, 27 Sep 2026 21:00:00 GMT</pubDate>
+      <description>Measurements from 2026.</description>
+    </item>
+  </channel>
+</rss>

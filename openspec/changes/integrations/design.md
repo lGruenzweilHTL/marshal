@@ -229,3 +229,18 @@ They should be replaced with real captures when a printer is available.
   be on and the proxy's public URL registered with the provider. OAuth accounts use `imap.gmail.com` or
   `outlook.office365.com` on port 993 with the address as login name (both from the providers' IMAP OAuth
   documentation). Pending flows live in memory: a restart between start and callback means connecting again.
+
+### RSS (tasks 4.1–4.4)
+
+- `FreshRssClient` logs in with `ClientLogin` (user name and API password), keeps the auth token and renews it once
+  when a request comes back 401/403; edit tokens (`T`) are fetched per `edit-tag`. Tool-facing article ids are the
+  decimal form of the Google Reader item id (`tag:google.com,2005:reader/item/<hex>`), which FreshRSS also accepts.
+  Unread lists use `xt=user/-/state/com.google/read`, `ot` for `since` (crawl time, seconds) and follow
+  `continuation` in pages of `freshrss.pageSize` until the limit. Single articles come from
+  `POST stream/items/contents`; an id of another user returns no item and becomes `rss.article_not_found`.
+  Summaries are converted to plain text (AngleSharp, scripts and styles dropped). FreshRSS always has the
+  `Uncategorized` folder, so it is listed as a category.
+- Container tests run the official `freshrss/freshrss:1.27.1` image, installed through `FRESHRSS_INSTALL`, with one
+  user per test created by `cli/create-user.php --no-default-feeds`. The container serves the two test feeds itself
+  (`http://localhost/feeds/*.xml` from `p/`), and subscribing through the API fetches them at once, so no test
+  reaches the internet.
