@@ -10,7 +10,16 @@ const detail = {
   language: 'en',
   taintSources: [{ kind: 'mail', firstStep: 2 }],
   steps: [
-    runStep({ sequence: 1, kind: 'context', content: 'system prompt v3, 2 memory chunks' }),
+    runStep({
+      sequence: 1,
+      kind: 'context',
+      content: 'system prompt v3, 2 memory chunks',
+      notes: [
+        { kind: 'project', label: 'Voron', detail: 'centroid', score: 0.812 },
+        { kind: 'memory', label: 'Voron nozzle', detail: 'device via vector', score: 0.64 },
+        { kind: 'memory', label: 'Allergy', detail: 'fact, pinned', score: null },
+      ],
+    }),
     runStep({ sequence: 2, kind: 'modelCall', model: 'qwen3:8b', tier: 'fast', tokensIn: 1200, tokensOut: 80, tokensCached: 1000, firstTokenMs: 310, durationMs: 900, cost: 0.0004 }),
     runStep({
       sequence: 3,
@@ -63,6 +72,17 @@ describe('RunDetailView', () => {
     const model = wrapper.get('[data-step="2"]').text()
     for (const part of ['qwen3:8b', 'fast', '1200', '80', '1000', '310 ms', '900 ms', '0.0004']) expect(model).toContain(part)
     expect(wrapper.get('[data-step="4"]').text()).toContain('Should I remember that?')
+  })
+
+  it('shows active projects and retrieved memory of the context build', async () => {
+    const wrapper = await mountDetail()
+
+    const projects = wrapper.get('[data-step="1"] [data-notes="project"]')
+    expect(projects.text()).toContain('Voron')
+    expect(projects.text()).toContain('centroid')
+    expect(projects.text()).toContain('0.81')
+    const memory = wrapper.get('[data-step="1"] [data-notes="memory"]')
+    expect(memory.findAll('li').map((item) => item.text())).toEqual(['Voron nozzle – device via vector (0.64)', 'Allergy – fact, pinned'])
   })
 
   it('marks subagent steps with their depth', async () => {

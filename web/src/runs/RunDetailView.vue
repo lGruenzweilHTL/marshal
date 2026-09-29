@@ -17,6 +17,19 @@ const kindLabels: Record<Schemas['RunStepKind'], string> = {
   reply: 'Reply',
 }
 
+const noteHeadings: Record<string, string> = { project: 'Active projects', memory: 'Memory in context' }
+
+/** Context-build notes grouped by kind: projects first, then memory, then anything else in order of appearance. */
+function noteGroups(step: Schemas['RunStepDetail']): { kind: string; notes: Schemas['ContextNote'][] }[] {
+  const kinds = [...new Set(step.notes.map((note) => note.kind))].sort((a, b) => rank(a) - rank(b))
+  return kinds.map((kind) => ({ kind, notes: step.notes.filter((note) => note.kind === kind) }))
+}
+
+function rank(kind: string): number {
+  const index = Object.keys(noteHeadings).indexOf(kind)
+  return index < 0 ? Number.MAX_SAFE_INTEGER : index
+}
+
 watch(
   () => route.params.id,
   async (id) => {
@@ -104,6 +117,14 @@ watch(
               <dd>{{ step.durationMs }} ms</dd>
             </template>
           </dl>
+          <div v-for="group in noteGroups(step)" :key="group.kind" :data-notes="group.kind">
+            <h3>{{ noteHeadings[group.kind] ?? group.kind }}</h3>
+            <ul>
+              <li v-for="(note, index) in group.notes" :key="index">
+                {{ note.label }}<template v-if="note.detail"> – {{ note.detail }}</template><template v-if="note.score != null"> ({{ note.score.toFixed(2) }})</template>
+              </li>
+            </ul>
+          </div>
           <template v-if="step.arguments">
             <h3>Arguments</h3>
             <pre>{{ step.arguments }}</pre>
