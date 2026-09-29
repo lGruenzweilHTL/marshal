@@ -34,8 +34,8 @@
 
 - [x] 4.1 Write FreshRSS client tests against the official container: login, feeds, categories, unread with continuation, search, mark read
 - [x] 4.2 Implement `FreshRssClient`
-- [ ] 4.3 Write tool tests: taint on article content, `fetch_full_text` accepts only article ids and resolves the link via the API, size / time limits
-- [ ] 4.4 Implement RSS tools and `SmartReaderExtractor`
+- [x] 4.3 Write tool tests: taint on article content, `fetch_full_text` accepts only article ids and resolves the link via the API, size / time limits
+- [x] 4.4 Implement RSS tools and `SmartReaderExtractor`
 - [ ] 4.5 Add `deploy/config/skills/rss-digest/SKILL.md` and `deploy/config/templates/rss-scorer.md`; test that both load and pass the secret scanner
 
 ## 5. Calendar

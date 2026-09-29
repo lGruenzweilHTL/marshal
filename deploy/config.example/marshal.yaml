@@ -21,6 +21,14 @@ instance:
 #     macros: [PARK, LOAD_FILAMENT, UNLOAD_FILAMENT]
 # printerSnapshots: { maxSize: 1024, quality: 85, retention: 20 }
 
+# FreshRSS (optional). The API password is set in FreshRSS under Profile → API management.
+# freshrss:
+#   url: http://freshrss.local
+#   userName: lukas
+#   apiPasswordSecret: freshrss_api
+#   searchWindow: 500                              # recent articles rss.search looks through
+#   fullText: { maxBytes: 2097152, timeout: "00:00:15", maxCharacters: 20000 }
+
 # OAuth clients for connecting mail accounts in the web UI (optional; without one the connect button is disabled).
 # Register the redirect URI <public URL>/oauth/callback/google (or /microsoft) with the provider. Google needs the
 # https://mail.google.com/ scope, Microsoft IMAP.AccessAsUser.All and offline_access.

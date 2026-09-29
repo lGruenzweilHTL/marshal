@@ -15,6 +15,7 @@ using Marshal.Core.Satellites;
 using Marshal.Core.Secrets;
 using Marshal.Data;
 using Marshal.Data.Persistence;
+using Marshal.Integrations.FreshRss;
 using Marshal.Integrations.HomeAssistant;
 using Marshal.Integrations.Mail.Credentials;
 using Marshal.Integrations.Moonraker;
@@ -37,6 +38,7 @@ internal sealed partial class MarshalStartup(
     IOptions<HomeAssistantOptions> homeAssistant,
     IOptions<PrinterOptions> printers,
     IOptions<MailOAuthOptions> mailOAuth,
+    IOptions<FreshRssOptions> freshRss,
     IConfigSecretScanner scanner,
     IDbContextFactory<MarshalDbContext> contexts,
     SecretBinder secretBinder,
@@ -71,6 +73,7 @@ internal sealed partial class MarshalStartup(
             await secretBinder.BindAsync(homeAssistant.Value, "ha", cancellationToken),
             await secretBinder.BindAsync(printers.Value, "", cancellationToken),
             await secretBinder.BindAsync(mailOAuth.Value, "oauth", cancellationToken),
+            await secretBinder.BindAsync(freshRss.Value, "freshrss", cancellationToken),
         ];
         List<string> fromConfiguration = [.. reports.SelectMany(report => report.BoundFromConfiguration)];
         if (fromConfiguration.Count > 0)

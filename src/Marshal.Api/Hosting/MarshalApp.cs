@@ -13,6 +13,7 @@ using Marshal.Api.Versioning;
 using Marshal.Core;
 using Marshal.Core.Configuration;
 using Marshal.Data;
+using Marshal.Integrations.FreshRss;
 using Marshal.Integrations.HomeAssistant;
 using Marshal.Integrations.Mail;
 using Marshal.Integrations.Moonraker;
@@ -42,6 +43,7 @@ public static class MarshalApp
         builder.Services.AddMarshalMemory(builder.Configuration);
         builder.Services.AddMarshalPrinters(builder.Configuration, SnapshotDirectory);
         builder.Services.AddMarshalMail(builder.Configuration);
+        builder.Services.AddMarshalFreshRss(builder.Configuration);
         builder.Services.AddMarshalData(builder.Configuration, ConnectionString);
         builder.Services.AddMarshalApi(builder.Configuration);
 

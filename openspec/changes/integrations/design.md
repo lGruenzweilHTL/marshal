@@ -244,3 +244,9 @@ They should be replaced with real captures when a printer is available.
   user per test created by `cli/create-user.php --no-default-feeds`. The container serves the two test feeds itself
   (`http://localhost/feeds/*.xml` from `p/`), and subscribing through the API fetches them at once, so no test
   reaches the internet.
+- Tools (tasks 4.3–4.4): `rss.fetch_full_text` declares `additionalProperties: false` and validates, before the
+  guard's tiers, that its only argument is an article id (digits). The link comes from `GET` of that article in
+  FreshRSS; the extractor then accepts only http(s), only HTML, at most `freshrss.fullText.maxBytes` (2 MB) within
+  `timeout` (15 s), follows at most 5 redirects and cuts the text at `maxCharacters` (20 000). The link itself is
+  still chosen by a feed author, so it can point into the local network; the tool only reads, its output is
+  untrusted, and no credentials are sent. `mark_read` and the list tools are not untrusted.
