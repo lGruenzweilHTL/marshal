@@ -86,6 +86,27 @@ public sealed class MemoryContributorTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Retrieved_NotesActiveProjectsAndChunksForTheRunDetail()
+    {
+        await MemoryTestKit.AddProjectAsync(_database, "Voron");
+        ChunkId pinned = await WriteAsync("Allergy", "Allergic to peanuts.", Vec(4, 1));
+        await _store.SetPinnedAsync(pinned, pinned: true, Ct);
+        await WriteAsync("Coffee", "Likes oat milk.", Vec(0, 1), ChunkType.Preference);
+        _embeddings.Pin("Coffee while the Voron prints?", Vec(0, 1));
+        var request = new ContextRequest(TestExecutionContext.Text(), "Coffee while the Voron prints?");
+
+        await new PinnedMemoryContributor(_retriever).ContributeAsync(request, Ct);
+        string? section = await Retrieved().ContributeAsync(request, Ct);
+
+        Assert.DoesNotContain("Voron", section, StringComparison.Ordinal);
+        Assert.Contains(new ContextNote("project", "Voron", "name"), request.Notes.All);
+        Assert.Contains(new ContextNote("memory", "Allergy", "fact, pinned"), request.Notes.All);
+        ContextNote coffee = Assert.Single(request.Notes.All, note => note.Label == "Coffee");
+        Assert.Equal(("memory", "preference via vector"), (coffee.Kind, coffee.Detail));
+        Assert.NotNull(coffee.Score);
+    }
+
+    [Fact]
     public async Task Retrieved_NoUserText_NothingAndNoEmbedding()
     {
         int before = _embeddings.CallCount;

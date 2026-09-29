@@ -1,3 +1,4 @@
+using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Runs;
@@ -88,6 +89,21 @@ public sealed class EfRunQueriesTests
         RunDetail? detail = await Queries(database, OwnerA).GetAsync(run, Ct);
 
         Assert.Equal([0, 1], detail!.Steps.Select(step => step.Depth));
+    }
+
+    [Fact]
+    public async Task Get_ContextNotes_RoundTrip()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        DbRunRecorder recorder = Recorder(database);
+        database.Accessor.Current = Text(OwnerA);
+        RunId run = await recorder.StartRunAsync(new RunStart(Text(OwnerA), "turn"), Ct);
+        ContextNote[] notes = [new("project", "Voron", "centroid", 0.81), new("memory", "Nozzle", "device via vector", 0.4)];
+        await recorder.RecordStepAsync(run, new RunStepRecord { Kind = RunStepKind.Context, Content = "prompt", Notes = notes }, Ct);
+
+        RunDetail? detail = await Queries(database, OwnerA).GetAsync(run, Ct);
+
+        Assert.Equal(notes, detail!.Steps.Single().Notes);
     }
 
     [Fact]

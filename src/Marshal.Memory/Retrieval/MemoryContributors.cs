@@ -16,6 +16,9 @@ public sealed class PinnedMemoryContributor(IMemoryRetriever retriever) : IConte
     public async Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken)
     {
         IReadOnlyList<MemoryChunk> pinned = await retriever.GetPinnedAsync(cancellationToken);
+        foreach (MemoryChunk chunk in pinned)
+            request.Notes.Add(new ContextNote("memory", chunk.Title, $"{MemoryText.Type(chunk.Type)}, pinned"));
+
         return pinned.Count == 0 ? null : MemoryText.Section("Pinned memory (always applies):", pinned);
     }
 }
@@ -33,12 +36,20 @@ public sealed class RetrievedMemoryContributor(IMemoryRetriever retriever, ITurn
         if (turn.Text is null)
             return null;
 
+        foreach (ProjectActivation activation in turn.Activations)
+            request.Notes.Add(new ContextNote("project", activation.Name, MemoryText.Snake(activation.Reason.ToString()), Round(activation.Score)));
+
         IReadOnlyList<RetrievedChunk> chunks = await retriever.RetrieveAsync(
             new MemoryQuery(turn.Text, turn.Embedding, turn.ActiveProjects, options.Value.Retrieval.TokenBudget), cancellationToken);
+        foreach (RetrievedChunk chunk in chunks)
+            request.Notes.Add(new ContextNote("memory", chunk.Chunk.Title, $"{MemoryText.Type(chunk.Chunk.Type)} via {MemoryText.Snake(chunk.Source.ToString())}", Round(chunk.Score)));
+
         return chunks.Count == 0
             ? null
             : MemoryText.Section("Relevant memory (retrieved automatically; it may be outdated, and what the user says now wins):", [.. chunks.Select(chunk => chunk.Chunk)]);
     }
+
+    private static double? Round(double? score) => score is { } value ? Math.Round(value, 3) : null;
 }
 
 /// <summary>How chunks appear in the system prompt and in tool results.</summary>
@@ -56,5 +67,7 @@ internal static class MemoryText
     public static string Line(MemoryChunk chunk) =>
         string.Create(CultureInfo.InvariantCulture, $"- [{Type(chunk.Type)}] {chunk.Title}: {chunk.Content}");
 
-    private static string Type(ChunkType type) => System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(type.ToString());
+    public static string Type(ChunkType type) => Snake(type.ToString());
+
+    public static string Snake(string name) => System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(name);
 }

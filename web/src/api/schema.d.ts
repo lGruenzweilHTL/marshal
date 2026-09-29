@@ -506,6 +506,13 @@ export interface components {
         };
         /** @enum {unknown} */
         ConfirmationReasonCode: "rule" | "unresolvedTarget" | "taint" | "quietHoursOverride";
+        ContextNote: {
+            kind: string;
+            label: string;
+            detail?: null | string;
+            /** Format: double */
+            score?: null | number;
+        };
         /** @description A conversation turn. */
         ConversationTurnRequest: {
             /**
@@ -768,6 +775,7 @@ export interface components {
             error: null | string;
             /** Format: int32 */
             depth: number;
+            notes: components["schemas"]["ContextNote"][];
         };
         /** @enum {unknown} */
         RunStepKind: "context" | "modelCall" | "toolCall" | "reply";

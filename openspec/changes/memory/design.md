@@ -162,3 +162,12 @@ EF migration adds memory tables; the FTS and vector virtual tables are created b
 - **Uncorrected inferences.** When a turn leaves the two-turn window (the following turn could have corrected it)
   and no correction or confirmation handled it, each inferred project counts one confirmation of the phrase. An
   alias candidate becomes active at `aliasPromotion` (3) confirmations; rejected aliases stay rejected.
+
+### Run recording (tasks 3.5, 3.6)
+
+- `ContextRequest` carries a `ContextNotes` collection. Contributors add `ContextNote(Kind, Label, Detail, Score)` entries
+  that explain the build but never reach the prompt: one `project` note per active project (reason as detail, score
+  for inferred activations) and one `memory` note per pinned or retrieved chunk (type plus `pinned` or the retrieval
+  source, rounded score).
+- `AgentRunner` copies the notes onto the context step's `RunStepRecord.Notes`; `DbRunRecorder` stores them in the
+  step payload JSON (no schema change), and `RunStepDetail.Notes` exposes them to the web run detail.

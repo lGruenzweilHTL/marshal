@@ -1001,6 +1001,34 @@
           "quietHoursOverride"
         ]
       },
+      "ContextNote": {
+        "required": [
+          "kind",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "score": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          }
+        }
+      },
       "ConversationTurnRequest": {
         "required": [
           "conversationId",
@@ -1739,7 +1767,8 @@
           "reference",
           "continueConversation",
           "error",
-          "depth"
+          "depth",
+          "notes"
         ],
         "type": "object",
         "properties": {
@@ -1872,6 +1901,12 @@
           "depth": {
             "type": "integer",
             "format": "int32"
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextNote"
+            }
           }
         }
       },

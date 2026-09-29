@@ -127,7 +127,8 @@ public sealed class DbRunRecorder(IDbContextFactory<MarshalDbContext> contexts, 
             step.Arguments,
             step.Reference,
             step.Reasons.Count == 0 ? null : step.Reasons,
-            step.ContinueConversation);
+            step.ContinueConversation,
+            step.Notes.Count == 0 ? null : step.Notes);
         return payload == StepPayload.Empty ? null : JsonSerializer.Serialize(payload, _json);
     }
 
@@ -139,7 +140,8 @@ public sealed class DbRunRecorder(IDbContextFactory<MarshalDbContext> contexts, 
         string? Arguments,
         string? Reference,
         IReadOnlyList<Abstractions.Guard.ConfirmationReason>? Reasons,
-        bool? ContinueConversation)
+        bool? ContinueConversation,
+        IReadOnlyList<Abstractions.Context.ContextNote>? Notes = null)
     {
         public static StepPayload Empty { get; } = new(null, null, null, null, null, null);
 

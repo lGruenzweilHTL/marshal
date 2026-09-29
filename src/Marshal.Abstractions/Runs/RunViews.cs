@@ -77,6 +77,7 @@ public sealed record RunDetail(RunSummary Run, string? Language, IReadOnlyList<T
 /// <param name="ContinueConversation">Whether the reply asked something.</param>
 /// <param name="Error">Error, if the step failed.</param>
 /// <param name="Depth">Delegation depth: 0 for the run's own loop, 1 and more for subagent steps.</param>
+/// <param name="Notes">Context steps: active projects, retrieved memory and similar notes of the context build.</param>
 public sealed record RunStepDetail(
     int Sequence,
     RunStepKind Kind,
@@ -98,7 +99,8 @@ public sealed record RunStepDetail(
     string? Reference,
     bool? ContinueConversation,
     string? Error,
-    int Depth);
+    int Depth,
+    IReadOnlyList<Context.ContextNote> Notes);
 
 /// <summary>
 /// Cost over a date range.

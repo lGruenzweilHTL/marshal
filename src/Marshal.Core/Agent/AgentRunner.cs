@@ -86,9 +86,11 @@ public sealed partial class AgentRunner(
 
     private async Task<LoopResult> LoopAsync(AgentRunRequest request, MarshalExecutionContext context, CancellationToken ct)
     {
-        string systemPrompt = await contextBuilder.BuildSystemPromptAsync(new ContextRequest(context, request.UserText), ct);
+        var contextRequest = new ContextRequest(context, request.UserText);
+        string systemPrompt = await contextBuilder.BuildSystemPromptAsync(contextRequest, ct);
         await RecordAsync(new RunStepRecord
         {
+            Notes = contextRequest.Notes.All,
             Kind = RunStepKind.Context,
             Content = systemPrompt,
             Input = request.UserText,

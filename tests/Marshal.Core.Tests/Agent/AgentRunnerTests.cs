@@ -1,3 +1,4 @@
+using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Conversation;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
@@ -78,6 +79,20 @@ public sealed class AgentRunnerTests
         Assert.Equal("step_limit", harness.Recorder.OnlyRun.Completion?.Reason);
         Assert.Equal(ModelTier.Fast, harness.Router.Requests[0].Tier);
         Assert.Contains("Score items from 0 to 3.", harness.Model.Requests[0].SystemPrompt, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Run_ContextNotes_RecordedOnContextStepNotInPrompt()
+    {
+        LoopHarness harness = await LoopHarness.CreateAsync(contributors: [new NotingContributor()]);
+        harness.Model.ThenText("ok");
+
+        await harness.Runner.RunAsync(Request("about the voron"), Ct);
+
+        RunStepRecord context = harness.Recorder.OnlyRun.Steps[0];
+        Assert.Equal(RunStepKind.Context, context.Kind);
+        Assert.Equal([new ContextNote("project", "Voron", "alias", 1)], context.Notes);
+        Assert.DoesNotContain("alias", harness.Model.Requests[0].SystemPrompt, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -326,4 +341,15 @@ public sealed class AgentRunnerTests
 
     private static List<string> ToolResults(FakeChatRequest request) =>
         [.. request.Messages.SelectMany(message => message.Contents).OfType<FunctionResultContent>().Select(result => result.Result?.ToString() ?? "")];
+
+    private sealed class NotingContributor : IContextContributor
+    {
+        public int Order => 500;
+
+        public Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken)
+        {
+            request.Notes.Add(new ContextNote("project", "Voron", "alias", 1));
+            return Task.FromResult<string?>(null);
+        }
+    }
 }

@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Conversation;
 using Marshal.Abstractions.Satellites;
 using Marshal.Abstractions.Tools;
@@ -59,7 +60,7 @@ internal sealed class LoopHarness
     /// <summary>History source counting loads (returns nothing).</summary>
     public CountingHistory History { get; } = new();
 
-    public static async Task<LoopHarness> CreateAsync(string rules = "risk: []", SatelliteProfile? kitchen = null, bool withAdvisor = true, Func<LoopHarness, ITool[]>? builtIns = null, params ITool[] tools)
+    public static async Task<LoopHarness> CreateAsync(string rules = "risk: []", SatelliteProfile? kitchen = null, bool withAdvisor = true, Func<LoopHarness, ITool[]>? builtIns = null, IContextContributor[]? contributors = null, params ITool[] tools)
     {
         var harness = new LoopHarness();
         harness.Store = new InMemoryPendingActionStore(harness.Time);
@@ -77,7 +78,7 @@ internal sealed class LoopHarness
             harness.Router,
             harness.Registry,
             harness.Templates,
-            new ContextBuilder([new BasePromptContributor(), new OutputModeContributor(), new TemplatePromptContributor(harness.Templates), new DelegationIndexContributor(harness.Templates, Microsoft.Extensions.Options.Options.Create(harness.Options))]),
+            new ContextBuilder([new BasePromptContributor(), new OutputModeContributor(), new TemplatePromptContributor(harness.Templates), new DelegationIndexContributor(harness.Templates, Microsoft.Extensions.Options.Options.Create(harness.Options)), .. contributors ?? []]),
             visibility,
             guard,
             harness.Store,
