@@ -12,8 +12,8 @@
 
 ## 2. Retrieval
 
-- [ ] 2.1 Write scorer tests: similarity × importance × freshness, per-type half-life, quotas, token budget, project boost / penalty
-- [ ] 2.2 Implement `ChunkScorer`
+- [x] 2.1 Write scorer tests: similarity × importance × freshness, per-type half-life, quotas, token budget, project boost / penalty
+- [x] 2.2 Implement `ChunkScorer`
 - [ ] 2.3 Write retriever tests with deterministic fake embeddings: vector + FTS seeds, edge expansion, superseded replaced, soft-deleted excluded, pinned always included
 - [ ] 2.4 Implement `HybridMemoryRetriever`, `PinnedMemoryContributor`, `RetrievedMemoryContributor` (single turn embedding shared with activation)
 - [ ] 2.5 Write `memory.recall` tests (type / project filters, larger budget)
