@@ -20,8 +20,8 @@
 
 ## 3. Mail
 
-- [ ] 3.1 Write credential tests: password, OAuth2 token refresh with google / microsoft presets, refresh token as owner secret
-- [ ] 3.2 Implement `PasswordCredentialSource` and `OAuth2CredentialSource`
+- [x] 3.1 Write credential tests: password, OAuth2 token refresh with google / microsoft presets, refresh token as owner secret
+- [x] 3.2 Implement `PasswordCredentialSource` and `OAuth2CredentialSource`
 - [ ] 3.3 Write IMAP provider tests against a GreenMail / Dovecot container: search translation, read message, thread rebuild, folders, drafts via `APPEND` to `\Drafts` with `\Draft` flag, missing drafts folder error
 - [ ] 3.4 Implement `ImapMailProvider` with capability flags
 - [ ] 3.5 Write mail tool tests: all-accounts search, alias resolution, taint source `mail`, redaction to message references, drafts not escalated in tainted runs, no send / delete / move tools exist
