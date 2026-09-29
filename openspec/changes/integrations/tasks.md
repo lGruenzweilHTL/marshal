@@ -12,8 +12,8 @@
 - [x] 2.4 Implement `MoonrakerPrinterClient` and printer tools with tiers and visibility conditions
 - [x] 2.5 Write snapshot tests: webcam discovery, resize, storage and retention, same-origin URL
 - [x] 2.6 Implement `MoonrakerSnapshotSource` and `SkiaImageResizer`
-- [ ] 2.7 Write `printer.inspect` tests with a fake vision client: vision model selection by tier, fallback, hidden without vision model
-- [ ] 2.8 Implement `printer.inspect`
+- [x] 2.7 Write `printer.inspect` tests with a fake vision client: vision model selection by tier, fallback, hidden without vision model
+- [x] 2.8 Implement `printer.inspect`
 - [ ] 2.9 Write API tests for printer UI endpoints: status, controls with tiers, confirm-tier controls require a confirmation token from the dialog, audit events, webcam proxy auth
 - [ ] 2.10 Implement printer endpoints and the `printer` live-event topic
 - [ ] 2.11 Write component tests and implement the printer page and dashboard printer widget

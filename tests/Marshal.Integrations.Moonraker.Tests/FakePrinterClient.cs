@@ -52,3 +52,29 @@ internal sealed class FakePrinterStateCache : IPrinterStateCache
         }
     }
 }
+
+/// <summary>Webcams per printer; printers without one answer <c>printer.no_webcam</c>.</summary>
+internal sealed class FakeWebcams : IPrinterWebcams
+{
+    public Dictionary<string, PrinterWebcam> Webcams { get; } = [];
+
+    public Task<Result<PrinterWebcam>> FindAsync(string printer, CancellationToken cancellationToken) =>
+        Task.FromResult(Webcams.TryGetValue(printer, out PrinterWebcam? webcam) ? Result.Success(webcam) : Result.Failure<PrinterWebcam>(PrinterErrors.NoWebcam(printer)));
+}
+
+/// <summary>Returns a fixed snapshot for every capture.</summary>
+internal sealed class FakeSnapshotSource : ISnapshotSource
+{
+    public byte[] Jpeg { get; set; } = [0xFF, 0xD8, 0xFF, 0xE0];
+
+    public int Captures { get; private set; }
+
+    public Task<Result<PrinterSnapshot>> CaptureAsync(string printer, CancellationToken cancellationToken)
+    {
+        Captures++;
+        return Task.FromResult(Result.Success(new PrinterSnapshot(printer, "snap1", $"/api/printers/{printer}/snapshots/snap1", Jpeg, 1024, 768, DateTimeOffset.UnixEpoch)));
+    }
+
+    public Task<Result<byte[]>> OpenAsync(string printer, string id, CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Success(Jpeg));
+}

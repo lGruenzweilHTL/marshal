@@ -3,10 +3,10 @@ using Marshal.Abstractions.Tools;
 
 namespace Marshal.Integrations.Moonraker;
 
-/// <summary>The <c>printer.*</c> tools (a built-in source); none without a configured printer.</summary>
-public sealed class PrinterToolSource(IPrinterDirectory directory, IPrinterClient client, IPrinterStateCache states) : IToolSource
+/// <summary>The <c>printer.*</c> tools (a built-in source), including the camera tools; none without a configured printer.</summary>
+public sealed class PrinterToolSource(IPrinterDirectory directory, IPrinterClient client, IPrinterStateCache states, PrinterCameraTools camera) : IToolSource
 {
-    private readonly IReadOnlyList<ITool> _tools = directory.Printers.Count == 0 ? [] : PrinterTools.Create(directory, client, states);
+    private readonly IReadOnlyList<ITool> _tools = directory.Printers.Count == 0 ? [] : [.. PrinterTools.Create(directory, client, states), .. camera.Create()];
 
     public string Name => "printer";
 

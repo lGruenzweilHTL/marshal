@@ -22,7 +22,7 @@ public sealed class PrinterToolsTests
             ["printer.cancel", "printer.edit_queue", "printer.home", "printer.move", "printer.resume", "printer.run_macro", "printer.set_temperature", "printer.start_print"],
             tools.Where(tool => tool.Descriptor.DefaultTier == RiskTier.Confirm).Select(tool => tool.Descriptor.Id.ToString()).Order());
         Assert.Equal(
-            ["printer.emergency_stop", "printer.history", "printer.job_queue", "printer.list_files", "printer.pause", "printer.status"],
+            ["printer.emergency_stop", "printer.history", "printer.inspect", "printer.job_queue", "printer.list_files", "printer.pause", "printer.snapshot", "printer.status"],
             tools.Where(tool => tool.Descriptor.DefaultTier == RiskTier.Safe).Select(tool => tool.Descriptor.Id.ToString()).Order());
     }
 
@@ -176,7 +176,8 @@ public sealed class PrinterToolsTests
     private Task<IReadOnlyList<ITool>> ToolsAsync(params PrinterConfig[] printers)
     {
         var directory = new ConfiguredPrinterDirectory(Microsoft.Extensions.Options.Options.Create(new PrinterOptions { Printers = [.. printers] }));
-        return new PrinterToolSource(directory, _client, _states).GetToolsAsync(Ct);
+        var camera = new PrinterCameraTools(directory, new FakeWebcams(), new FakeSnapshotSource(), new FakeVisionRouter(), new FakeTemplateCatalog(), new InMemoryRunRecorder(), new ZeroCost(), TimeProvider.System);
+        return new PrinterToolSource(directory, _client, _states, camera).GetToolsAsync(Ct);
     }
 
     private async Task<ITool> ToolAsync(PrinterConfig printer, string name) =>
@@ -193,4 +194,9 @@ public sealed class PrinterToolsTests
     }
 
     private static JsonElement Json(object arguments) => JsonSerializer.SerializeToElement(arguments);
+
+    private sealed class ZeroCost : Marshal.Abstractions.Models.ICostCalculator
+    {
+        public decimal Calculate(string modelKey, Microsoft.Extensions.AI.UsageDetails? usage) => 0;
+    }
 }

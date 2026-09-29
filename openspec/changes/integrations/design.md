@@ -179,3 +179,8 @@ They should be replaced with real captures when a printer is available.
   Stored files are `<paths.data>/snapshots/<printer>/<yyyyMMddTHHmmssfff>-<random>.jpg`; ids are checked against that
   pattern before any file access. Webcam rotation and flip settings are not applied yet. The same-origin link comes
   from `ISnapshotLinks`, implemented by the host (it knows the path base and API version).
+- `printer.snapshot` and `printer.inspect` (tasks 2.7–2.8) live in `PrinterCameraTools`. Webcam presence for their
+  visibility is cached per printer for five minutes; an unreachable printer keeps them visible (the call then reports
+  the error). `inspect` routes `ModelRequest(runTier, Vision: true)` where the run tier is the template's tier, else
+  `fast` for voice and `standard` otherwise, then falls back to `standard` + vision; the call is recorded as a model
+  step of the run. `printer.snapshot` answers with a Markdown image of the same-origin link, which the web chat renders.
