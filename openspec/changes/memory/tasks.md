@@ -21,8 +21,8 @@
 
 ## 3. Project activation
 
-- [ ] 3.1 Write activator tests: name / alias match, centroid tiers, negative examples, recency prior, stickiness decay, topic shift drop
-- [ ] 3.2 Implement `ProjectActivator` and centroid maintenance
+- [x] 3.1 Write activator tests: name / alias match, centroid tiers, negative examples, recency prior, stickiness decay, topic shift drop
+- [x] 3.2 Implement `ProjectActivator` and centroid maintenance
 - [ ] 3.3 Write correction tests: rejected / switched / confirmed feedback rows, alias candidate promotion after 3 confirmations
 - [ ] 3.4 Implement `memory.correct_project` and alias learning
 - [ ] 3.5 Write test: active projects and reasons recorded in the context-build step

@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Memory;
 using Marshal.Abstractions.Satellites;
+using Marshal.Memory.Projects;
 using Microsoft.Extensions.AI;
 
 namespace Marshal.Memory.Retrieval;
@@ -19,17 +20,21 @@ public interface ITurnMemory
 /// <summary>Memory inputs of one turn.</summary>
 /// <param name="Text">Turn text as embedded (with the area name), or null without user text.</param>
 /// <param name="Embedding">Embedding of <paramref name="Text"/>.</param>
-/// <param name="ActiveProjects">Projects active for the turn.</param>
-public sealed record TurnMemoryContext(string? Text, ReadOnlyMemory<float>? Embedding, IReadOnlySet<ProjectId> ActiveProjects)
+/// <param name="Activations">Projects active for the turn and why.</param>
+public sealed record TurnMemoryContext(string? Text, ReadOnlyMemory<float>? Embedding, IReadOnlyList<ProjectActivation> Activations)
 {
     /// <summary>A turn without user text: nothing to retrieve.</summary>
-    public static TurnMemoryContext Empty { get; } = new(null, null, new HashSet<ProjectId>());
+    public static TurnMemoryContext Empty { get; } = new(null, null, []);
+
+    /// <summary>Ids of the active projects.</summary>
+    public IReadOnlySet<ProjectId> ActiveProjects { get; } = Activations.Select(activation => activation.ProjectId).ToHashSet();
 }
 
 /// <summary>
-/// <see cref="ITurnMemory"/> that embeds the turn text once per <see cref="ContextRequest"/> instance.
+/// <see cref="ITurnMemory"/> that embeds the turn text once per <see cref="ContextRequest"/> instance and activates
+/// projects with that embedding (no extra model call).
 /// </summary>
-public sealed class TurnMemory(IEmbeddingGenerator<string, Embedding<float>> embeddings, IAreaDirectory areas) : ITurnMemory
+public sealed class TurnMemory(IEmbeddingGenerator<string, Embedding<float>> embeddings, IAreaDirectory areas, IProjectActivator activator) : ITurnMemory
 {
     private readonly ConditionalWeakTable<ContextRequest, Task<TurnMemoryContext>> _turns = [];
 
@@ -43,7 +48,8 @@ public sealed class TurnMemory(IEmbeddingGenerator<string, Embedding<float>> emb
 
         string? area = request.Context.AreaId is { } areaId ? (await areas.DescribeAsync(areaId, cancellationToken)).AreaName : null;
         string text = area is null ? request.UserText : $"{request.UserText} (in {area})";
-        ReadOnlyMemory<float> embedding = (await embeddings.GenerateAsync([text], cancellationToken: cancellationToken)).Single().Vector;
-        return new TurnMemoryContext(text, embedding, new HashSet<ProjectId>());
+        float[] embedding = (await embeddings.GenerateAsync([text], cancellationToken: cancellationToken)).Single().Vector.ToArray();
+        IReadOnlyList<ProjectActivation> activations = await activator.ActivateAsync(new ActivationInput(request.UserText, embedding, request.Context.SessionId), cancellationToken);
+        return new TurnMemoryContext(text, embedding, activations);
     }
 }

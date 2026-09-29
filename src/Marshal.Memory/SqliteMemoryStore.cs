@@ -93,6 +93,7 @@ public sealed class SqliteMemoryStore(
         chunk.DeletedAt = timeProvider.GetUtcNow();
         await db.SaveChangesAsync(cancellationToken);
         await MemoryIndexes.RemoveAsync(db, id, cancellationToken);
+        await MemoryIndexes.InvalidateCentroidAsync(db, chunk.ProjectId, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return Result.Success();
     }
@@ -222,6 +223,7 @@ public sealed class SqliteMemoryStore(
 
         await db.SaveChangesAsync(cancellationToken);
         await MemoryIndexes.PutAsync(db, chunk, prepared.Vector, cancellationToken);
+        await MemoryIndexes.InvalidateCentroidAsync(db, chunk.ProjectId, cancellationToken);
         return new ChunkWriteResult(prepared.Id, outcome);
     }
 

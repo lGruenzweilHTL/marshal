@@ -119,3 +119,32 @@ EF migration adds memory tables; the FTS and vector virtual tables are created b
   round-trip format, no embeddings and no `last_retrieved_at` (runtime statistics).
 - Import recomputes chunk ids for the importing owner (identical for the same owner), maps versions and edges,
   skips rows that exist, and re-embeds the imported live chunks in the same transaction as the rows.
+
+### Retrieval (tasks 2.1–2.6)
+
+- **Seeds.** Vector KNN on `chunk_vectors` (k = `seedCount`, partition = owner; similarity = 1 − cosine distance)
+  and FTS5 on `chunks_fts` (every word of the query quoted and OR-ed, so user text never becomes FTS syntax;
+  similarity = 0.9 × bm25 relative to the best hit). The union keeps the higher similarity per chunk.
+- **Expansion.** One breadth-first step from seeds along `relates_to` / `depends_on` in both directions,
+  similarity = seed × `neighbourFactor` (0.7). Then every candidate follows `supersedes` edges to its newest live
+  successor. Deleted chunks are dropped; pinned chunks are left to the pinned layer (recall includes them).
+- **Scoring.** similarity × importance / 5 × 0.5^(age / half-life of the type) × project factor (active 1.5,
+  inactive 0.5, general 1); per-type quotas, a token budget estimated at four characters per token, minimum score
+  0.05. Selected chunks get `last_retrieved_at` (stale audit).
+- **Context.** `PinnedMemoryContributor` (order 150) and `RetrievedMemoryContributor` (order 160). `TurnMemory`
+  embeds the turn text (with " (in <area>)" when the turn has an area) once per `ContextRequest` and runs project
+  activation with that embedding. `memory.recall` uses the recall budget (2000), type / project filters, pinned
+  chunks included and a `limit` (default 10, max 30); a project filter also counts as active for scoring.
+
+### Project activation (tasks 3.1, 3.2)
+
+- **Order.** Name, then active alias: whole-word match on the normalized turn text; both sticky. Then, for the
+  other live projects not rejected in this session: centroid score = cosine(turn, centroid) − 0.5 × the highest
+  cosine to one of the project's rejected phrases, plus a recency prior of 0.05 halving every 7 days since the
+  project was last active. ≥ 0.75 sticky, ≥ 0.6 this turn only; reason `recency` when only the prior crossed
+  the threshold. Remaining sticky projects are active with reason `sticky` and their weight as score.
+- **Stickiness.** Per session in memory (`ProjectSessions`): weight 1 on a sticky activation, × 0.7 per turn,
+  dropped below 0.3; a turn with cosine < 0.3 to the previous turn clears all.
+- **Centroid.** Normalized mean of the embedding of "name + description" and the vectors of the 10 most important
+  live project chunks; stored in `projects.centroid`, cleared by every write or delete of a project chunk (and by
+  description edits), recomputed on the next activation.

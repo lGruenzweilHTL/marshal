@@ -83,6 +83,29 @@ internal static class MemoryIndexes
             await ExecuteAsync(db, $"DELETE FROM {VectorTable} WHERE chunk_id = $id", cancellationToken, ("$id", id.Value));
     }
 
+    /// <summary>Stored vectors of the given chunks (those without one are skipped).</summary>
+    public static async Task<IReadOnlyList<float[]>> ReadVectorsAsync(MarshalDbContext db, IReadOnlyList<ChunkId> ids, CancellationToken cancellationToken)
+    {
+        var vectors = new List<float[]>();
+        if (ids.Count == 0 || await ReadInfoAsync(db, cancellationToken) is null)
+            return vectors;
+
+        foreach (ChunkId id in ids)
+        {
+            await using DbCommand command = Command(db, $"SELECT embedding FROM {VectorTable} WHERE chunk_id = $id", ("$id", id.Value));
+            if (await command.ExecuteScalarAsync(cancellationToken) is byte[] blob)
+                vectors.Add(Vectors.FromBlob(blob));
+        }
+
+        return vectors;
+    }
+
+    /// <summary>Clears a project's stored centroid; it is recomputed on the next activation.</summary>
+    public static Task InvalidateCentroidAsync(MarshalDbContext db, ProjectId? project, CancellationToken cancellationToken) =>
+        project is { } id
+            ? db.Projects.Where(candidate => candidate.Id == id).ExecuteUpdateAsync(update => update.SetProperty(candidate => candidate.Centroid, (byte[]?)null), cancellationToken)
+            : Task.CompletedTask;
+
     /// <summary>float32 little-endian, the sqlite-vec blob format.</summary>
     public static byte[] ToBlob(ReadOnlySpan<float> vector) => MemoryMarshal.AsBytes(vector).ToArray();
 

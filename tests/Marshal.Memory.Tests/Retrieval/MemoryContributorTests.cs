@@ -1,7 +1,9 @@
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Memory;
 using Marshal.Abstractions.Satellites;
+using Marshal.Memory.Projects;
 using Marshal.Memory.Retrieval;
+using Marshal.Memory.Tests.Projects;
 using Marshal.Testing;
 using Microsoft.Extensions.Time.Testing;
 using static Marshal.Memory.Tests.Retrieval.HybridMemoryRetrieverTests;
@@ -25,7 +27,7 @@ public sealed class MemoryContributorTests : IAsyncLifetime
         _database.Accessor.Current = TestExecutionContext.Text();
         _store = MemoryTestKit.Store(_database, _embeddings, _time);
         _retriever = MemoryTestKit.Retriever(_database, _embeddings, _time);
-        _turns = new TurnMemory(_embeddings, new Areas());
+        _turns = new TurnMemory(_embeddings, new Areas(), ProjectTestKit.Activator(_database, _embeddings, new ProjectSessions(), new MemoryOptions(), _time));
     }
 
     public async ValueTask DisposeAsync() => await _database.DisposeAsync();
@@ -68,6 +70,19 @@ public sealed class MemoryContributorTests : IAsyncLifetime
         Assert.Same(first, second);
         Assert.Equal(before + 1, _embeddings.CallCount);
         Assert.Equal("Turn on the light (in Kitchen)", first.Text);
+    }
+
+    [Fact]
+    public async Task TurnMemory_NamedProjectActiveWithSameEmbedding()
+    {
+        ProjectId voron = await MemoryTestKit.AddProjectAsync(_database, "Voron");
+        int before = _embeddings.CallCount;
+
+        TurnMemoryContext turn = await _turns.GetAsync(new ContextRequest(TestExecutionContext.Text(), "Is the Voron printing?"), Ct);
+
+        Assert.Equal([voron], turn.ActiveProjects);
+        Assert.Equal(ActivationReason.Name, Assert.Single(turn.Activations).Reason);
+        Assert.Equal(before + 1, _embeddings.CallCount);
     }
 
     [Fact]
