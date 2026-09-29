@@ -31,6 +31,7 @@ public static class MemoryServiceCollectionExtensions
         services.AddSingleton<IMemoryRetriever, HybridMemoryRetriever>();
         services.AddSingleton<IMemoryAudit, MemoryAudit>();
         services.AddSingleton<IMemoryBrowser, MemoryBrowser>();
+        services.AddSingleton<IMemoryMaps, MemoryMaps>();
         services.AddSingleton<IProjectStore, ProjectStore>();
         services.AddSingleton<MemoryIndexRebuilder>();
         services.AddSingleton<IHostedService, MemoryIndexStartup>();

@@ -40,6 +40,10 @@ internal static class MemoryEndpoints
             .WithSummary("Predecessors, earlier versions and the current content, oldest first.");
         memory.MapGet("/audit", GetAuditAsync).WithName("GetMemoryAudit")
             .WithSummary("Stale chunks, open contradictions, orphans and dangling edges.");
+        memory.MapGet("/graph", GraphAsync).WithName("GetMemoryGraph")
+            .WithSummary("Live chunks and the edges between them, for the force-directed graph.");
+        memory.MapGet("/scatter", ScatterAsync).WithName("GetMemoryScatter")
+            .WithSummary("Live chunks' embeddings projected onto their first two principal components.");
         memory.MapGet("/export", Export).WithName("ExportMemory")
             .WithSummary("Chunks, versions, edges and projects as NDJSON (without embeddings).");
 
@@ -149,6 +153,12 @@ internal static class MemoryEndpoints
 
     private static async Task<Ok<MemoryAuditReport>> GetAuditAsync(IMemoryAudit memoryAudit, CancellationToken ct) =>
         TypedResults.Ok(await memoryAudit.RunAsync(ct));
+
+    private static async Task<Ok<MemoryGraph>> GraphAsync(IMemoryMaps maps, CancellationToken ct) =>
+        TypedResults.Ok(await maps.GetGraphAsync(ct));
+
+    private static async Task<Ok<IReadOnlyList<MemoryScatterPoint>>> ScatterAsync(IMemoryMaps maps, CancellationToken ct) =>
+        TypedResults.Ok(await maps.GetScatterAsync(ct));
 
     private static PushStreamHttpResult Export(IMemoryExporter exporter, CancellationToken ct) =>
         TypedResults.Stream(stream => exporter.ExportAsync(stream, ct), "application/x-ndjson", "marshal-memory.ndjson");

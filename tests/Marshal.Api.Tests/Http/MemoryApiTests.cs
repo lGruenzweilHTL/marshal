@@ -134,6 +134,21 @@ public sealed class MemoryApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Maps_GraphAndScatterOfTheUsersChunks()
+    {
+        string printer = await CreateAsync(new { scope = "general", type = "device", title = "Printer", content = "A Voron 2.4." });
+        string nozzle = await CreateAsync(new { scope = "general", type = "device", title = "Nozzle", content = "0.6 mm." });
+
+        JsonElement graph = await _browser.GetFromJsonAsync<JsonElement>("/api/v1/memory/graph", Ct);
+        List<JsonElement> scatter = (await _browser.GetFromJsonAsync<List<JsonElement>>("/api/v1/memory/scatter", Ct))!;
+
+        Assert.Equal(2, graph.GetProperty("nodes").GetArrayLength());
+        Assert.Equal(JsonValueKind.Array, graph.GetProperty("edges").ValueKind);
+        Assert.Equal(new HashSet<string?> { printer, nozzle }, scatter.Select(point => point.GetProperty("id").GetString()).ToHashSet());
+        Assert.All(scatter, point => Assert.Equal(JsonValueKind.Number, point.GetProperty("x").ValueKind));
+    }
+
+    [Fact]
     public async Task Projects_CreateAliasesAndChunksOfTheProject()
     {
         HttpResponseMessage created = await _browser.PostAsJsonAsync(Projects, new { name = "Voron", description = "The 3D printer." }, Ct);

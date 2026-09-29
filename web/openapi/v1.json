@@ -1159,6 +1159,51 @@
         }
       }
     },
+    "/api/v1/memory/graph": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Live chunks and the edges between them, for the force-directed graph.",
+        "operationId": "GetMemoryGraph",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryGraph"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/scatter": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Live chunks\u0027 embeddings projected onto their first two principal components.",
+        "operationId": "GetMemoryScatter",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemoryScatterPoint"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/memory/export": {
       "get": {
         "tags": [
@@ -2499,6 +2544,66 @@
           }
         }
       },
+      "MemoryGraph": {
+        "required": [
+          "nodes",
+          "edges"
+        ],
+        "type": "object",
+        "properties": {
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryGraphNode"
+            }
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryEdge"
+            }
+          }
+        }
+      },
+      "MemoryGraphNode": {
+        "required": [
+          "id",
+          "title",
+          "type",
+          "projectId",
+          "pinned",
+          "importance"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ChunkType"
+          },
+          "projectId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectId"
+              }
+            ]
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "importance": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "MemoryHistoryEntry": {
         "required": [
           "chunkId",
@@ -2538,6 +2643,46 @@
           "version",
           "current"
         ]
+      },
+      "MemoryScatterPoint": {
+        "required": [
+          "id",
+          "title",
+          "type",
+          "projectId",
+          "x",
+          "y"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ChunkType"
+          },
+          "projectId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectId"
+              }
+            ]
+          },
+          "x": {
+            "type": "number",
+            "format": "double"
+          },
+          "y": {
+            "type": "number",
+            "format": "double"
+          }
+        }
       },
       "MeResponse": {
         "required": [

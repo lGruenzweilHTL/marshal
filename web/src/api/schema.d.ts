@@ -540,6 +540,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/memory/graph": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Live chunks and the edges between them, for the force-directed graph. */
+        get: operations["GetMemoryGraph"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/scatter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Live chunks' embeddings projected onto their first two principal components. */
+        get: operations["GetMemoryScatter"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/memory/export": {
         parameters: {
             query?: never;
@@ -981,6 +1015,19 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        MemoryGraph: {
+            nodes: components["schemas"]["MemoryGraphNode"][];
+            edges: components["schemas"]["MemoryEdge"][];
+        };
+        MemoryGraphNode: {
+            id: components["schemas"]["ChunkId"];
+            title: string;
+            type: components["schemas"]["ChunkType"];
+            projectId: null | components["schemas"]["ProjectId"];
+            pinned: boolean;
+            /** Format: int32 */
+            importance: number;
+        };
         MemoryHistoryEntry: {
             chunkId: components["schemas"]["ChunkId"];
             kind: components["schemas"]["MemoryHistoryKind"];
@@ -993,6 +1040,16 @@ export interface components {
         };
         /** @enum {unknown} */
         MemoryHistoryKind: "predecessor" | "version" | "current";
+        MemoryScatterPoint: {
+            id: components["schemas"]["ChunkId"];
+            title: string;
+            type: components["schemas"]["ChunkType"];
+            projectId: null | components["schemas"]["ProjectId"];
+            /** Format: double */
+            x: number;
+            /** Format: double */
+            y: number;
+        };
         /** @description The current user. */
         MeResponse: {
             /** @description Owner id of the user. */
@@ -2177,6 +2234,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemoryAuditReport"];
+                };
+            };
+        };
+    };
+    GetMemoryGraph: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryGraph"];
+                };
+            };
+        };
+    };
+    GetMemoryScatter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryScatterPoint"][];
                 };
             };
         };
