@@ -17,6 +17,7 @@ using Marshal.Integrations.FreshRss;
 using Marshal.Integrations.HomeAssistant;
 using Marshal.Integrations.Mail;
 using Marshal.Integrations.Moonraker;
+using Marshal.Integrations.Notes;
 using Marshal.Memory;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
@@ -44,6 +45,7 @@ public static class MarshalApp
         builder.Services.AddMarshalPrinters(builder.Configuration, SnapshotDirectory);
         builder.Services.AddMarshalMail(builder.Configuration);
         builder.Services.AddMarshalFreshRss(builder.Configuration);
+        builder.Services.AddMarshalNotes(builder.Configuration, NotesDirectory);
         builder.Services.AddMarshalData(builder.Configuration, ConnectionString);
         builder.Services.AddMarshalApi(builder.Configuration);
 
@@ -96,6 +98,9 @@ public static class MarshalApp
 
     internal static string SnapshotDirectory(IServiceProvider services) =>
         Path.Combine(services.GetRequiredService<IOptions<PathsOptions>>().Value.Data, "snapshots");
+
+    internal static string NotesDirectory(IServiceProvider services) =>
+        Path.Combine(services.GetRequiredService<IOptions<PathsOptions>>().Value.Data, "notes");
 
     internal static string ConnectionString(IServiceProvider services) =>
         $"Data Source={Path.Combine(services.GetRequiredService<IOptions<PathsOptions>>().Value.Data, "marshal.db")}";

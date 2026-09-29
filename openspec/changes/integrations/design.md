@@ -293,3 +293,7 @@ They should be replaced with real captures when a printer is available.
   stored hash and rebuilds only changed files; entries of files that disappeared are dropped. A different embedding
   model empties the whole index (every owner's vectors are unusable), and the same update rebuilds it. Search merges
   vector KNN and bm25 hits like memory retrieval, without edges or scoring.
+- Tools and sync: `notes.list`, `notes.read` and `notes.search` are safe, untrusted (taint `notes`) and sensitive,
+  with note paths (and `path#heading` for search hits) as the recorded references. The integration registers no
+  context contributor, so notes never enter a run unless a tool is called. `NotesSyncService` pulls and updates the
+  index on start and every `notes.pullInterval` under the instance owner, who owns the notes repository.

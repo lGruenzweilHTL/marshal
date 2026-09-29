@@ -51,5 +51,5 @@
 - [x] 6.2 Implement `GitNotesSource`
 - [x] 6.3 Write index tests: heading chunking, per-file rebuild on change, hybrid search with fake embeddings, ownership
 - [x] 6.4 Implement `SqliteNotesIndex`, `NoteIndexEntry` migration; align `erd.puml`
-- [ ] 6.5 Write tool tests: taint source `notes`, redaction, no automatic context injection
-- [ ] 6.6 Implement notes tools
+- [x] 6.5 Write tool tests: taint source `notes`, redaction, no automatic context injection
+- [x] 6.6 Implement notes tools

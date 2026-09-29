@@ -29,6 +29,14 @@ instance:
 #   searchWindow: 500                              # recent articles rss.search looks through
 #   fullText: { maxBytes: 2097152, timeout: "00:00:15", maxCharacters: 20000 }
 
+# Notes (optional): Markdown files in a git repository. Without a remote, put a repository into /data/notes; with
+# one, Marshal clones it there and mirrors it read-only. credentialSecret holds an https token or an SSH deploy key.
+# notes:
+#   remote: https://git.example.com/lukas/notes.git
+#   branch: main
+#   credentialSecret: notes_token
+#   pullInterval: "00:15:00"
+
 # OAuth clients for connecting mail accounts in the web UI (optional; without one the connect button is disabled).
 # Register the redirect URI <public URL>/oauth/callback/google (or /microsoft) with the provider. Google needs the
 # https://mail.google.com/ scope, Microsoft IMAP.AccessAsUser.All and offline_access.
