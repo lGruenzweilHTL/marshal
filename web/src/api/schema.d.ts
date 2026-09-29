@@ -711,7 +711,7 @@ export interface components {
             /** @description Origin reference, if any. */
             sourceRef: null | string;
         };
-        ChunkId: unknown;
+        ChunkId: string;
         /** @enum {unknown} */
         ChunkScope: "general" | "project";
         /** @enum {unknown} */

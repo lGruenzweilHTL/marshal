@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Asp.Versioning;
 using Marshal.Abstractions;
+using Marshal.Abstractions.Memory;
 using Marshal.Api.Auth;
 using Marshal.Api.Health;
 using Marshal.Api.Models;
@@ -66,6 +67,13 @@ public static class ApiServiceCollectionExtensions
                     {
                         schema.Type = JsonSchemaType.String;
                         schema.Format = "uuid";
+                    }
+                    else if ((Nullable.GetUnderlyingType(context.JsonTypeInfo.Type) ?? context.JsonTypeInfo.Type) == typeof(ChunkId))
+                    {
+                        // Chunk ids are 26-character base32 hashes (ChunkIdJsonConverter).
+                        schema.Type = JsonSchemaType.String;
+                        schema.MinLength = ChunkId.Length;
+                        schema.MaxLength = ChunkId.Length;
                     }
 
                     return Task.CompletedTask;

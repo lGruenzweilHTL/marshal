@@ -66,6 +66,18 @@ public sealed class OpenApiExportTests : IDisposable
     }
 
     [Fact]
+    public async Task Document_DescribesChunkIdsAsFixedLengthStrings()
+    {
+        await using var factory = new MarshalApiFactory();
+
+        JsonNode document = (await factory.CreateClient().GetFromJsonAsync<JsonNode>("/openapi/v1.json", Ct))!;
+
+        JsonNode id = document["components"]!["schemas"]!["ChunkId"]!;
+        Assert.Equal("string", id["type"]!.GetValue<string>());
+        Assert.Equal((26, 26), (id["minLength"]!.GetValue<int>(), id["maxLength"]!.GetValue<int>()));
+    }
+
+    [Fact]
     public async Task CommittedSpaDocument_MatchesTheExport()
     {
         string root = RepositoryRoot();

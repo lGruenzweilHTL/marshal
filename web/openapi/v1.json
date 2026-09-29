@@ -1607,7 +1607,11 @@
         },
         "description": "New content of a chunk; identity fields cannot change (supersede instead)."
       },
-      "ChunkId": {},
+      "ChunkId": {
+        "maxLength": 26,
+        "minLength": 26,
+        "type": "string"
+      },
       "ChunkScope": {
         "enum": [
           "general",
