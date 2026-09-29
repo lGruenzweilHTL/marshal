@@ -12,6 +12,15 @@ public sealed class MemoryOptions
     public ProjectActivationOptions Projects { get; set; } = new();
 
     public SummarizerOptions Summarizer { get; set; } = new();
+
+    public AuditOptions Audit { get; set; } = new();
+}
+
+/// <summary>Memory audit.</summary>
+public sealed class AuditOptions
+{
+    /// <summary>A chunk neither updated nor retrieved for this many days is stale.</summary>
+    public int StaleAfterDays { get; set; } = 180;
 }
 
 /// <summary>Session-close summarization.</summary>

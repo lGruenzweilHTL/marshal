@@ -194,3 +194,13 @@ EF migration adds memory tables; the FTS and vector virtual tables are created b
     edge to the stored chunk, which stays unchanged; the audit lists the pair until the user resolves it.
   - Candidates for soft-deleted chunks are skipped (a deleted chunk is never revived by consolidation); an unknown
     project falls back to general scope. Candidates are written with `CreatedBy = consolidation`.
+
+### Audit (tasks 4.5, 4.6)
+
+- `MemoryAudit` reads the owner's chunks, edges and deleted projects once and evaluates in memory (personal corpus).
+- Stale: live, unpinned chunks whose last activity (later of update and retrieval) is older than
+  `memory.audit.staleAfterDays` (180). Pinned chunks are injected without retrieval, so they never count as stale.
+- Open contradictions: `contradicts` edges between two live chunks with no `supersedes` edge between them in either
+  direction.
+- Orphans: live chunks of soft-deleted projects. Dangling edges: edges from a deleted chunk, or to a deleted chunk
+  unless the edge is `supersedes` (the replaced version is history).

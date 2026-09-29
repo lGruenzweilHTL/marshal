@@ -34,8 +34,8 @@
 - [x] 4.2 Implement `memory.remember`
 - [x] 4.3 Write summarizer tests with a fake client: input has only user turns and replies, candidates upserted, contradictions create edges, never pinned
 - [x] 4.4 Implement `LlmMemorySummarizer` on session close
-- [ ] 4.5 Write audit tests: stale, contradictions, orphans
-- [ ] 4.6 Implement `MemoryAudit`
+- [x] 4.5 Write audit tests: stale, contradictions, orphans
+- [x] 4.6 Implement `MemoryAudit`
 
 ## 5. API and UI
 
