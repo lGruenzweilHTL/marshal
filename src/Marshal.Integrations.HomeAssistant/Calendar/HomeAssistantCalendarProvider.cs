@@ -26,6 +26,15 @@ public sealed partial class HomeAssistantCalendarProvider(
 
     public bool IsConfigured => options.Value.Url is not null;
 
+    public CalendarOverview Overview
+    {
+        get
+        {
+            List<string> calendars = [.. cache.Current?.States.Keys.Where(id => id.StartsWith("calendar.", StringComparison.Ordinal)) ?? []];
+            return new CalendarOverview(calendars.Count, calendars.Aggregate(CalendarCapabilities.None, (all, id) => all | Capabilities(id)));
+        }
+    }
+
     public async Task<Result<IReadOnlyList<CalendarInfo>>> ListCalendarsAsync(CancellationToken cancellationToken)
     {
         Result<JsonElement> list = await client.GetAsync("api/calendars", cancellationToken);

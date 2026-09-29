@@ -1,8 +1,10 @@
+using Marshal.Abstractions.Calendar;
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Satellites;
 using Marshal.Abstractions.Tools;
+using Marshal.Integrations.HomeAssistant.Calendar;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -14,7 +16,7 @@ namespace Marshal.Integrations.HomeAssistant;
 /// <summary>
 /// Registers the Home Assistant integration. Without <c>ha.url</c> every part stays inert (no connection, no timer
 /// tools, no context, ids as area names, time zone from config or UTC). Call after the core services: it replaces
-/// the area directory and the instance time zone source.
+/// the area directory and the instance time zone source. Calendar tools stay hidden until HA reports calendars.
 /// </summary>
 public static class HomeAssistantServiceCollectionExtensions
 {
@@ -34,6 +36,7 @@ public static class HomeAssistantServiceCollectionExtensions
         services.AddSingleton<HomeAssistantCache>();
         services.AddSingleton<IHomeAssistantCache>(provider => provider.GetRequiredService<HomeAssistantCache>());
         services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<HomeAssistantCache>());
+        services.AddSingleton<IHomeAssistantCommands>(provider => provider.GetRequiredService<HomeAssistantCache>());
 
         services.AddSingleton<IRiskTargetResolver, HaTargetResolver>();
         services.AddSingleton<IContextContributor, HaAreaContextContributor>();
@@ -48,6 +51,8 @@ public static class HomeAssistantServiceCollectionExtensions
         }));
 
         services.AddSingleton<IToolSource, TimerToolSource>();
+        services.AddSingleton<ICalendarProvider, HomeAssistantCalendarProvider>();
+        services.AddSingleton<IToolSource, CalendarToolSource>();
         return services;
     }
 }

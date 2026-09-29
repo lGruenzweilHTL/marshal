@@ -267,3 +267,10 @@ They should be replaced with real captures when a printer is available.
 - The fake Home Assistant's calendar endpoints are transcribed from the HA REST / websocket documentation and the
   `calendar` component source (the recorded fixtures contain no calendar requests; the demo calendars in the
   recording have no `supported_features`).
+- Tools: times without offset are wall-clock times in the owner's time zone (profile), converted with the zone's
+  rules for that date (a time skipped by DST moves forward, a repeated one takes the first). Dates alone mean whole
+  days with an inclusive end date; the tool adds the day HA's exclusive end needs. `calendar.update_event` replaces
+  every field (HA's update command needs the whole event), so the model passes unchanged fields from
+  `calendar_list_events`. Visibility uses the cached overview (number of calendar entities and the union of their
+  capabilities), so no request is made before model calls: all tools hide without calendars, `create_event`
+  without a calendar that can create, `update_event` without one that can update.

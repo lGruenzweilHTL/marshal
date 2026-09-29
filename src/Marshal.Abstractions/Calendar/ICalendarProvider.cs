@@ -9,6 +9,12 @@ public interface ICalendarProvider
     /// <summary>False when no calendar source is configured; the calendar tools are hidden then.</summary>
     bool IsConfigured { get; }
 
+    /// <summary>
+    /// How many calendars exist and what they support together, from cached state: cheap enough for the visibility
+    /// check before every model call.
+    /// </summary>
+    CalendarOverview Overview { get; }
+
     /// <summary>The calendars with what each supports; empty when none exist.</summary>
     Task<Result<IReadOnlyList<CalendarInfo>>> ListCalendarsAsync(CancellationToken cancellationToken);
 
@@ -29,6 +35,11 @@ public enum CalendarCapabilities
     Create = 1,
     Update = 2,
 }
+
+/// <summary>The calendars at a glance.</summary>
+/// <param name="Count">Number of calendars.</param>
+/// <param name="Capabilities">Changes at least one calendar supports.</param>
+public sealed record CalendarOverview(int Count, CalendarCapabilities Capabilities);
 
 /// <summary>A calendar.</summary>
 /// <param name="Id">Calendar id (e.g. <c>calendar.personal</c>).</param>
