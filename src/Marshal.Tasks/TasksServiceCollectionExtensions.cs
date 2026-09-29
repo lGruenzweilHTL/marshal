@@ -6,6 +6,7 @@ using Marshal.Abstractions.LiveEvents;
 using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
+using Marshal.Core.Agent;
 using Marshal.Tasks.Approvals;
 using Marshal.Tasks.Deliveries;
 using Marshal.Tasks.Events;
@@ -50,6 +51,9 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<IKillSwitch, EfKillSwitch>();
         services.AddSingleton<ActiveTaskRuns>();
         services.AddSingleton<ITaskRunner, AgentTaskRunner>();
+        services.AddSingleton<TaskContinuations>();
+        services.AddSingleton<IBackgroundHandoff, TaskHandoff>();
+        services.AddSingleton<ITool, MoveToBackgroundTool>();
         services.AddSingleton<IContextContributor, TaskPromptContributor>();
         services.AddSingleton<IToolSource, TaskToolSource>();
         services.AddSingleton<TaskSignals>();

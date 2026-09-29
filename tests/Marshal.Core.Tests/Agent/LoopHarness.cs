@@ -63,6 +63,9 @@ internal sealed class LoopHarness
     /// <summary>History source counting loads (returns nothing).</summary>
     public CountingHistory History { get; } = new();
 
+    /// <summary>Background handoffs of the runner; refuses until <see cref="RecordingHandoff.Accepts"/> is set.</summary>
+    public RecordingHandoff Handoff { get; } = new();
+
     public static async Task<LoopHarness> CreateAsync(string rules = "risk: []", SatelliteProfile? kitchen = null, bool withAdvisor = true, Func<LoopHarness, ITool[]>? builtIns = null, IContextContributor[]? contributors = null, params ITool[] tools)
     {
         var harness = new LoopHarness();
@@ -91,7 +94,8 @@ internal sealed class LoopHarness
             Microsoft.Extensions.Options.Options.Create(harness.Options),
             Microsoft.Extensions.Options.Options.Create(new ConfirmationOptions()),
             harness.Time,
-            NullLogger<AgentRunner>.Instance);
+            NullLogger<AgentRunner>.Instance,
+            handoff: harness.Handoff);
         harness.RunnerSpy = new RunnerSpy(harness.Runner);
         return harness;
     }
@@ -115,6 +119,22 @@ internal sealed class RunnerSpy(IAgentRunner inner) : IAgentRunner
     {
         LatencyCaps.Add(request.LatencyCap);
         return inner.RunAsync(request, cancellationToken);
+    }
+}
+
+internal sealed class RecordingHandoff : IBackgroundHandoff
+{
+    public bool Accepts { get; set; }
+
+    public List<BackgroundHandoff> HandOffs { get; } = [];
+
+    public Task<Marshal.Abstractions.Result<Marshal.Abstractions.Tasks.TaskId>> HandOffAsync(BackgroundHandoff handoff, CancellationToken cancellationToken)
+    {
+        if (!Accepts)
+            return Task.FromResult<Marshal.Abstractions.Result<Marshal.Abstractions.Tasks.TaskId>>(new Marshal.Abstractions.Error("tasks.paused", "Background work is paused.", Marshal.Abstractions.ErrorType.Conflict));
+
+        HandOffs.Add(handoff);
+        return Task.FromResult<Marshal.Abstractions.Result<Marshal.Abstractions.Tasks.TaskId>>(Marshal.Abstractions.Tasks.TaskId.New());
     }
 }
 

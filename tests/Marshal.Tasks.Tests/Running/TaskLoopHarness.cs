@@ -50,6 +50,9 @@ internal sealed class TaskLoopHarness
 
     public ActiveTaskRuns ActiveRuns { get; } = new();
 
+    /// <summary>Transcripts of turns moved to the background.</summary>
+    public TaskContinuations Continuations { get; } = new();
+
     public AgentTaskRunner Runner { get; private set; } = null!;
 
     /// <summary>The agent loop behind <see cref="Runner"/>, for interactive turns.</summary>
@@ -85,7 +88,7 @@ internal sealed class TaskLoopHarness
             NullLogger<AgentRunner>.Instance,
             harness.Approvals);
         harness.Agent = agent;
-        harness.Runner = new AgentTaskRunner(agent, new Profiles(), harness.ActiveRuns);
+        harness.Runner = new AgentTaskRunner(agent, new Profiles(), harness.ActiveRuns, harness.Continuations);
         return harness;
     }
 

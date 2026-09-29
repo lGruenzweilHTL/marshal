@@ -25,6 +25,14 @@ public static class FixedReplies
         ? "Das dauert zu lange, ich breche ab."
         : "This is taking too long, stopping.";
 
+    public static string Backgrounded(string language) => German(language)
+        ? "Ich arbeite daran und sage dir Bescheid, wenn ich fertig bin."
+        : "I'm working on it and will let you know when it's done.";
+
+    public static string BackgroundUnavailable(string language) => German(language)
+        ? "Das kann ich gerade nicht im Hintergrund weitermachen."
+        : "I can't continue this in the background right now.";
+
     public static string ModelUnavailable(string language) => German(language)
         ? "Ich kann mein Sprachmodell gerade nicht erreichen."
         : "I can't reach my language model right now.";

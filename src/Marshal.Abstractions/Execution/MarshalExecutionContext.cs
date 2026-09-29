@@ -58,6 +58,9 @@ public sealed record MarshalExecutionContext
     /// <summary>Model usage of the run. Shared by all copies within one run.</summary>
     public RunUsage Usage { get; init; } = new();
 
+    /// <summary>Requests of the run's tools to its loop. Shared by all copies within one run.</summary>
+    public RunControl Control { get; init; } = new();
+
     /// <summary>Agent template of the run.</summary>
     public string Template { get; init; } = "default";
 

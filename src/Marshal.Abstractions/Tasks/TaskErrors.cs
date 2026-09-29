@@ -13,5 +13,7 @@ public static class TaskErrors
 
     public static Error DailyCap() => new("tasks.daily_cap", "Today's cost cap for background tasks is reached.", ErrorType.Conflict);
 
+    public static Error Paused() => new("tasks.paused", "Background tasks are stopped (kill switch).", ErrorType.Conflict);
+
     public static Error Conflict() => new("tasks.conflict", "The task was changed by someone else; reload it and try again.", ErrorType.Conflict);
 }

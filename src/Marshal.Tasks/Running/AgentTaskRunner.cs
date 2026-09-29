@@ -15,10 +15,11 @@ namespace Marshal.Tasks.Running;
 /// <summary>
 /// Runs an agent task headless as its owner: the task's template and project, the origin satellite's policy (as the
 /// run's satellite), background rules (not interactive, text output). The model gets the goal, the notes and the
-/// trigger payload, never an earlier run's transcript. The reply's first paragraph is the result's speech, the whole
-/// reply its body.
+/// trigger payload, never an earlier run's transcript; the one exception is the first run of a turn moved to the
+/// background, which continues that turn's transcript (and its taint). The reply's first paragraph is the result's
+/// speech, the whole reply its body.
 /// </summary>
-public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider profiles, ActiveTaskRuns activeRuns) : ITaskRunner
+public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider profiles, ActiveTaskRuns activeRuns, TaskContinuations continuations) : ITaskRunner
 {
     /// <summary>Taint kind of runs started by an event payload (events can carry third-party text, e.g. mail subjects).</summary>
     public const string EventTaint = "event";
@@ -41,12 +42,20 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
             TaskId = task.Id,
             ProjectId = task.ProjectId,
         };
-        string? taint = PayloadTaint(task);
-        if (taint is not null)
+        var request = new AgentRunRequest { Context = context, Trigger = "task", UserText = Input(task), Limits = limits };
+        if (continuations.TryTake(task.Id, out Continuation? continuation))
+        {
+            request = request with { Trigger = "continuation", History = continuation.Transcript, UserText = null };
+            foreach (TaintSource source in continuation.Taint)
+                context.Taint.Mark(source.Kind, 0);
+        }
+        else if (PayloadTaint(task) is { } taint)
+        {
             context.Taint.Mark(taint, 0);
+        }
 
         using ActiveTaskRuns.Scope run = activeRuns.Begin(task.Id);
-        AgentRunResult result = await agent.RunAsync(new AgentRunRequest { Context = context, Trigger = "task", UserText = Input(task), Limits = limits }, cancellationToken);
+        AgentRunResult result = await agent.RunAsync(request, cancellationToken);
 
         TaskRunOutcome outcome;
         if (result.Outcome != RunOutcome.Ok)

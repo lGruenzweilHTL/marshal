@@ -37,7 +37,8 @@ public sealed partial class AgentRunner(
     IOptions<ConfirmationOptions> confirmationOptions,
     TimeProvider timeProvider,
     ILogger<AgentRunner> logger,
-    IApprovalQueue? approvals = null) : IAgentRunner
+    IApprovalQueue? approvals = null,
+    IBackgroundHandoff? handoff = null) : IAgentRunner
 {
     private static readonly JsonSerializerOptions _argumentJson = new(AIJsonUtilities.DefaultOptions) { WriteIndented = false };
 
@@ -65,10 +66,11 @@ public sealed partial class AgentRunner(
         using CancellationTokenSource latencyCap = request.LatencyCap is { } cap ? new CancellationTokenSource(cap, timeProvider) : new CancellationTokenSource();
         using CancellationTokenSource wallTime = request.Limits?.MaxDuration is { } duration ? new CancellationTokenSource(duration, timeProvider) : new CancellationTokenSource();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, latencyCap.Token, wallTime.Token);
+        var transcript = new Transcript();
         LoopResult result;
         try
         {
-            result = await LoopAsync(request, context, linked.Token);
+            result = await LoopAsync(request, context, transcript, linked.Token);
         }
         catch (OperationCanceledException) when (wallTime.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
         {
@@ -76,10 +78,9 @@ public sealed partial class AgentRunner(
         }
         catch (OperationCanceledException) when (latencyCap.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
         {
-            if (request.Events is not null)
-                await request.Events.WriteAsync(new StatusEvent(FixedReplies.LatencyStatus(context.Language)), cancellationToken);
-
-            result = new LoopResult(FixedReplies.LatencyCap(context.Language), null, RunOutcome.Cancelled, "latency_cap");
+            // An interactive turn continues as a background task from its last completed tool round.
+            result = await HandOffAsync(request, context, transcript, "latency_cap", FixedReplies.Backgrounded(context.Language), cancellationToken)
+                ?? await TooLongAsync(request, context, cancellationToken);
         }
 
         bool continueConversation = result.Pending is not null;
@@ -90,7 +91,32 @@ public sealed partial class AgentRunner(
         return new AgentRunResult(runId, result.Reply, continueConversation, result.Outcome, result.Reason, result.Pending);
     }
 
-    private async Task<LoopResult> LoopAsync(AgentRunRequest request, MarshalExecutionContext context, CancellationToken ct)
+    private static async Task<LoopResult> TooLongAsync(AgentRunRequest request, MarshalExecutionContext context, CancellationToken cancellationToken)
+    {
+        if (request.Events is not null)
+            await request.Events.WriteAsync(new StatusEvent(FixedReplies.LatencyStatus(context.Language)), cancellationToken);
+
+        return new LoopResult(FixedReplies.LatencyCap(context.Language), null, RunOutcome.Cancelled, "latency_cap");
+    }
+
+    // Null when the run cannot move: not an interactive top-level turn, no task system, or the handoff was refused.
+    private async Task<LoopResult?> HandOffAsync(AgentRunRequest request, MarshalExecutionContext context, Transcript transcript, string reason, string reply, CancellationToken ct)
+    {
+        if (handoff is null || !context.IsInteractive || context.IsSubagent || request.UserText is null)
+            return null;
+
+        Result<Abstractions.Tasks.TaskId> task = await handoff.HandOffAsync(new BackgroundHandoff(context, request.UserText, transcript.Messages, reason), ct);
+        if (task.IsFailure)
+        {
+            LogHandoffRefused(logger, context.RunId?.Value ?? Guid.Empty, task.Error.Code);
+            return null;
+        }
+
+        LogHandedOff(logger, context.RunId?.Value ?? Guid.Empty, task.Value.Value, reason);
+        return new LoopResult(reply, null, RunOutcome.Backgrounded, reason);
+    }
+
+    private async Task<LoopResult> LoopAsync(AgentRunRequest request, MarshalExecutionContext context, Transcript transcript, CancellationToken ct)
     {
         var contextRequest = new ContextRequest(context, request.UserText);
         string systemPrompt = await contextBuilder.BuildSystemPromptAsync(contextRequest, ct);
@@ -107,6 +133,7 @@ public sealed partial class AgentRunner(
             messages.Add(new ChatMessage(ChatRole.User, request.UserText));
         if (request.Confirmation is not null)
             await AppendConfirmationAsync(request.Confirmation, context, messages, ct);
+        transcript.Update(messages);
 
         if (request.FixedReply is not null)
         {
@@ -153,6 +180,13 @@ public sealed partial class AgentRunner(
             }
 
             messages.Add(new ChatMessage(ChatRole.Tool, results));
+            transcript.Update(messages);
+
+            if (context.Control.BackgroundMessage is { } status)
+            {
+                return await HandOffAsync(request, context, transcript, "move_to_background", status, ct)
+                    ?? new LoopResult(FixedReplies.BackgroundUnavailable(context.Language), null, RunOutcome.Error, "background_refused");
+            }
 
             // A background task run does not wait for its approval: it ends, and the decision resumes the task.
             if (pending is not null && Suspends(context))
@@ -364,6 +398,12 @@ public sealed partial class AgentRunner(
         return $"Confirmation pending. The action was NOT done yet. Ask the user to confirm: {action.Summary}. Include this reason in your question: {reasons}";
     }
 
+    [LoggerMessage(Level = LogLevel.Information, Message = "Run {RunId} continues as background task {TaskId} ({Reason})")]
+    private static partial void LogHandedOff(ILogger logger, Guid runId, Guid taskId, string reason);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Run {RunId} could not move to the background: {Code}")]
+    private static partial void LogHandoffRefused(ILogger logger, Guid runId, string code);
+
     [LoggerMessage(Level = LogLevel.Information, Message = "Run {RunId} started ({Trigger})")]
     private static partial void LogRunStarted(ILogger logger, Guid runId, string trigger);
 
@@ -377,4 +417,13 @@ public sealed partial class AgentRunner(
     private static partial void LogToolCrashed(ILogger logger, Exception exception, string tool);
 
     private sealed record LoopResult(string Reply, PendingActionRecord? Pending, RunOutcome Outcome, string? Reason);
+
+    // The run's messages after the system prompt as of the last completed tool round: what a background
+    // continuation resumes from (never a tool call without its result).
+    private sealed class Transcript
+    {
+        public IReadOnlyList<ChatMessage> Messages { get; private set; } = [];
+
+        public void Update(List<ChatMessage> messages) => Messages = [.. messages.Skip(1)];
+    }
 }

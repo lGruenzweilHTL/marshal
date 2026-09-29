@@ -87,6 +87,32 @@ public sealed class AgentTaskRunnerTests
     }
 
     [Fact]
+    public async Task Continuation_FirstRunContinuesTheTranscriptOnceWithItsTaint()
+    {
+        TaskLoopHarness harness = await TaskLoopHarness.CreateAsync();
+        harness.Model.ThenText("Found it: ACME invoice.").ThenText("Done.");
+        TaskRecord task = Task() with { Goal = "find the invoice" };
+        harness.Continuations.Add(task.Id, new Continuation(
+            [
+                new ChatMessage(ChatRole.User, "find the invoice"),
+                new ChatMessage(ChatRole.Assistant, [new FunctionCallContent("call-1", "mail_search", new Dictionary<string, object?> { ["query"] = "invoice" })]),
+                new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-1", "<untrusted-data source=\"mail\">ACME</untrusted-data>")]),
+            ],
+            [new TaintSource("mail", 1)]));
+
+        TaskRunOutcome first = await harness.Runner.RunAsync(task, new RunLimits(), Ct);
+        await harness.Runner.RunAsync(task, new RunLimits(), Ct);
+
+        Assert.Equal([ChatRole.System, ChatRole.User, ChatRole.Assistant, ChatRole.Tool], harness.Model.Requests[0].Messages.Select(message => message.Role));
+        Assert.Equal("find the invoice", harness.Model.Requests[0].Messages[1].Text);
+        Assert.Equal(["mail"], harness.Recorder.Runs[0].Start.Context.Taint.Sources.Select(source => source.Kind));
+        Assert.Equal("continuation", harness.Recorder.Runs[0].Start.Trigger);
+        Assert.Equal("Found it: ACME invoice.", first.Result?.Speech);
+        Assert.Contains("Task goal:", harness.Model.Requests[1].Messages[1].Text, StringComparison.Ordinal);
+        Assert.False(harness.Recorder.Runs[1].Start.Context.Taint.IsTainted);
+    }
+
+    [Fact]
     public async Task ApprovalPayload_OfAWatch_DescribedAsDecisionAndNotTainted()
     {
         TaskLoopHarness harness = await TaskLoopHarness.CreateAsync();
