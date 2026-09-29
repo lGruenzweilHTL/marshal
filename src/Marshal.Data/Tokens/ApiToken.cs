@@ -1,4 +1,5 @@
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tokens;
 
 namespace Marshal.Data.Tokens;
@@ -22,7 +23,7 @@ public sealed class ApiToken : IOwned
     public ApiTokenKind Kind { get; init; } = ApiTokenKind.Standard;
 
     /// <summary>Owning task for executor callback tokens (background-work).</summary>
-    public Guid? TaskId { get; init; }
+    public TaskId? TaskId { get; init; }
 
     public required DateTimeOffset CreatedAt { get; init; }
 

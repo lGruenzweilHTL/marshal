@@ -6,8 +6,8 @@
 ' column or relationship, and re-render the SVG (see docs/diagrams/README.md).
 '
 ' Status: PARTLY BUILT — User (+ Identity tables), AuthTicket, UserPreferences, ApiToken, Session,
-' Run, RunStep, PendingAction, AuditEvent, Secret, MailAccount, NoteIndexEntry and the Memory package exist in Marshal.Data;
-' the other entities are still planned (docs/brainstorm-notes.md).
+' Run, RunStep, PendingAction, FollowUp, AuditEvent, Secret, MailAccount, NoteIndexEntry, the Memory package and the
+' Background Work package exist in Marshal.Data; the other entities are still planned (docs/brainstorm-notes.md).
 
 !pragma layout smetana
 hide circle
@@ -214,7 +214,7 @@ package "Conversations & Runs" {
     * id : Guid <<PK>>
     --
     * owner_id : OwnerId <<FK>>
-    * nonce : string  <<sent as extra_system_prompt>>
+    * nonce : string  <<unique, sent as extra_system_prompt>>
     * satellite_id : string
     pending_action_id : PendingActionId <<FK>>
     task_id : TaskId <<FK>>
@@ -329,7 +329,7 @@ package "Memory" {
 
 ' ------------------------------------------------------------------
 package "Background Work" {
-  entity AgentTask {
+  entity AgentTask <<agent_tasks>> {
     * id : TaskId <<PK>>
     --
     * owner_id : OwnerId <<FK>>
@@ -337,22 +337,29 @@ package "Background Work" {
     * created_by : user | task | system
     * kind : agent | system
     * goal : string
+    job : string  <<registered job of a system task>>
     template : string
     project_id : ProjectId <<FK>>
     origin_satellite_id : string  <<policy applies to all runs + children>>
     * trigger_kind : now | at | cron | event | after
-    * trigger_spec : string
+    * trigger_spec : string  <<time, cron, event filter json or task id>>
+    trigger_payload : json  <<handed to the next run>>
     * status : pending | running | waiting | done | failed | cancelled
+    status_reason : string  <<e.g. budget_exceeded>>
     next_run_at : DateTimeOffset
     notes : string
     * budget : json
     * spent : json
-    name : string  <<unique (owner_id, name)>>
-    * deliveries : json  <<[{channel, target, priority, followUp, when, expires, fallback}]>>
+    name : string  <<unique (owner_id, name) where name is not null>>
+    * deliveries : json  <<[{channel, target, priority, followUp, when, expires, fallback, state}]>>
     override_quiet_hours_until : DateTimeOffset
     result_speech : string
     result_body : string  <<markdown>>
+    result_at : DateTimeOffset
     * depth : int
+    * created_at : DateTimeOffset
+    * updated_at : DateTimeOffset
+    * row_version : long  <<optimistic concurrency>>
   }
 
   entity ExecutorSession {
@@ -362,7 +369,7 @@ package "Background Work" {
     * task_id : TaskId <<FK>>
     * executor : string
     * handle : string
-    * callback_token_id : ApiTokenId <<FK>>
+    callback_token_id : ApiTokenId <<FK, unique>>
     * status : starting | running | done | failed | cancelled
     * started_at : DateTimeOffset
     finished_at : DateTimeOffset
@@ -395,6 +402,7 @@ package "Background Work" {
     * target : string  <<repo / sink>>
     * branch : string
     * title : string
+    * diff : string  <<unified diff>>
     * status : open | merged | rejected
     * created_at : DateTimeOffset
     decided_at : DateTimeOffset
@@ -475,6 +483,7 @@ User ||--o{ FollowUp
 User ||--o{ NoteIndexEntry
 PendingAction |o--o{ FollowUp
 AgentTask |o--o{ FollowUp
+Session |o--o{ FollowUp : linked
 
 ApiToken |o--o{ Session : created by
 Session ||--o{ Run
@@ -493,12 +502,14 @@ Chunk ||--o| ChunkFts : indexed in
 Chunk ||--o| ChunkVectors : embedded in
 
 AgentTask |o--o{ AgentTask : parent
-AgentTask ||--o{ Run
-AgentTask ||--o{ PendingAction
+AgentTask |o--o{ Run
+AgentTask |o--o{ ApiToken : callback tokens
+AgentTask |o--o{ PendingAction
 AgentTask ||--o{ ExecutorSession
 AgentTask |o--o{ Notification
+Notification |o--o{ Notification : coalesced into
 AgentTask |o--o{ Proposal
-ApiToken ||--o| ExecutorSession : callback
+ApiToken |o--o| ExecutorSession : callback
 Run |o--o{ AuditEvent
 
 note bottom of Chunk

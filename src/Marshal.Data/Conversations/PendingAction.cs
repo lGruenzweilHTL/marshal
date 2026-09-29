@@ -1,6 +1,7 @@
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Sessions;
+using Marshal.Abstractions.Tasks;
 
 namespace Marshal.Data.Conversations;
 
@@ -15,7 +16,7 @@ public sealed class PendingAction : IOwned
 
     public SessionId? SessionId { get; init; }
 
-    public Guid? TaskId { get; init; }
+    public TaskId? TaskId { get; init; }
 
     public string? SatelliteId { get; init; }
 

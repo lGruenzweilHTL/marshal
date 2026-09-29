@@ -2,6 +2,7 @@ using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Sessions;
+using Marshal.Abstractions.Tasks;
 
 namespace Marshal.Data.Conversations;
 
@@ -16,7 +17,7 @@ public sealed class Run : IOwned
 
     public SessionId? SessionId { get; init; }
 
-    public Guid? TaskId { get; init; }
+    public TaskId? TaskId { get; init; }
 
     public required SessionSource Source { get; init; }
 

@@ -1,12 +1,15 @@
 using System.Linq.Expressions;
 using Marshal.Abstractions.Audit;
 using Marshal.Abstractions.Execution;
+using Marshal.Abstractions.Executors;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Mail;
 using Marshal.Abstractions.Memory;
+using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Sessions;
+using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tokens;
 using Marshal.Abstractions.Tools;
 using Marshal.Data.Audit;
@@ -16,8 +19,10 @@ using Marshal.Data.Identity;
 using Marshal.Data.Mail;
 using Marshal.Data.Memory;
 using Marshal.Data.Notes;
+using Marshal.Data.Notifications;
 using Marshal.Data.Persistence;
 using Marshal.Data.Secrets;
+using Marshal.Data.Tasks;
 using Marshal.Data.Tokens;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -69,6 +74,16 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
 
     public DbSet<ProjectFeedback> ProjectFeedback => Set<ProjectFeedback>();
 
+    public DbSet<AgentTask> AgentTasks => Set<AgentTask>();
+
+    public DbSet<ExecutorSession> ExecutorSessions => Set<ExecutorSession>();
+
+    public DbSet<Notification> Notifications => Set<Notification>();
+
+    public DbSet<Proposal> Proposals => Set<Proposal>();
+
+    public DbSet<FollowUp> FollowUps => Set<FollowUp>();
+
     /// <summary>The current owner. Throws when there is no execution context (fail closed).</summary>
     internal OwnerId CurrentOwnerId =>
         executionContext.Current?.OwnerId
@@ -82,6 +97,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         EnsureWritesBelongToCurrentOwner();
+        IncrementRowVersions();
         return base.SaveChanges(acceptAllChangesOnSuccess);
     }
 
@@ -89,6 +105,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
         EnsureWritesBelongToCurrentOwner();
+        IncrementRowVersions();
         return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
     }
 
@@ -102,6 +119,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         configurationBuilder.Properties<ApiTokenId>().HaveConversion<GuidIdConverter<ApiTokenId>>();
         configurationBuilder.Properties<ProjectId>().HaveConversion<GuidIdConverter<ProjectId>>();
         configurationBuilder.Properties<MailAccountId>().HaveConversion<GuidIdConverter<MailAccountId>>();
+        configurationBuilder.Properties<TaskId>().HaveConversion<GuidIdConverter<TaskId>>();
         configurationBuilder.Properties<ChunkId>().HaveConversion<ChunkIdConverter>();
 
         configurationBuilder.Properties<SessionSource>().HaveConversion<SnakeCaseEnumConverter<SessionSource>>();
@@ -123,6 +141,15 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         configurationBuilder.Properties<MailProviderKind>().HaveConversion<SnakeCaseEnumConverter<MailProviderKind>>();
         configurationBuilder.Properties<MailCredentialStrategy>().HaveConversion<SnakeCaseEnumConverter<MailCredentialStrategy>>();
         configurationBuilder.Properties<MailSecurity>().HaveConversion<SnakeCaseEnumConverter<MailSecurity>>();
+        configurationBuilder.Properties<TaskCreator>().HaveConversion<SnakeCaseEnumConverter<TaskCreator>>();
+        configurationBuilder.Properties<TaskKind>().HaveConversion<SnakeCaseEnumConverter<TaskKind>>();
+        configurationBuilder.Properties<TaskTriggerKind>().HaveConversion<SnakeCaseEnumConverter<TaskTriggerKind>>();
+        configurationBuilder.Properties<AgentTaskStatus>().HaveConversion<SnakeCaseEnumConverter<AgentTaskStatus>>();
+        configurationBuilder.Properties<ExecutorSessionStatus>().HaveConversion<SnakeCaseEnumConverter<ExecutorSessionStatus>>();
+        configurationBuilder.Properties<ProposalKind>().HaveConversion<SnakeCaseEnumConverter<ProposalKind>>();
+        configurationBuilder.Properties<ProposalStatus>().HaveConversion<SnakeCaseEnumConverter<ProposalStatus>>();
+        configurationBuilder.Properties<NotificationPriority>().HaveConversion<SnakeCaseEnumConverter<NotificationPriority>>();
+        configurationBuilder.Properties<NotificationOutcome>().HaveConversion<SnakeCaseEnumConverter<NotificationOutcome>>();
 
         // SQLite cannot compare or order DateTimeOffset / decimal values natively; binary and REAL storage keeps
         // range queries and sums on the server.
@@ -185,6 +212,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             token.HasKey(entity => entity.Id);
             token.HasIndex(entity => entity.TokenHash).IsUnique();
             token.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            token.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.TaskId);
             OwnerFilter(token);
         });
 
@@ -205,6 +233,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             run.HasIndex(entity => entity.SessionId);
             run.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
             run.HasOne<Session>().WithMany().HasForeignKey(entity => entity.SessionId);
+            run.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.TaskId);
             OwnerFilter(run);
         });
 
@@ -222,6 +251,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             action.HasIndex(entity => new { entity.SessionId, entity.Status });
             action.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
             action.HasOne<Session>().WithMany().HasForeignKey(entity => entity.SessionId);
+            action.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.TaskId);
             OwnerFilter(action);
         });
 
@@ -316,6 +346,62 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             edge.ToTable(table => table.HasCheckConstraint("ck_chunk_edges_no_self_supersede", "kind <> 'supersedes' OR from_id <> to_id"));
             OwnerFilter(edge);
         });
+
+        builder.Entity<AgentTask>(task =>
+        {
+            task.ToTable("agent_tasks");
+            task.HasKey(entity => entity.Id);
+            task.HasIndex(entity => new { entity.OwnerId, entity.Name }).IsUnique().HasFilter("name IS NOT NULL");
+            task.HasIndex(entity => new { entity.Status, entity.NextRunAt });
+            task.HasIndex(entity => entity.ParentId);
+            task.Property(entity => entity.RowVersion).IsConcurrencyToken();
+            task.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            task.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.ParentId);
+            task.HasOne<Project>().WithMany().HasForeignKey(entity => entity.ProjectId);
+            OwnerFilter(task);
+        });
+
+        builder.Entity<ExecutorSession>(session =>
+        {
+            session.HasKey(entity => entity.Id);
+            session.HasIndex(entity => entity.TaskId);
+            session.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            session.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.TaskId);
+            session.HasOne<ApiToken>().WithOne().HasForeignKey<ExecutorSession>(entity => entity.CallbackTokenId);
+            OwnerFilter(session);
+        });
+
+        builder.Entity<Notification>(notification =>
+        {
+            notification.HasKey(entity => entity.Id);
+            notification.HasIndex(entity => new { entity.OwnerId, entity.CreatedAt });
+            notification.HasIndex(entity => new { entity.OwnerId, entity.Outcome });
+            notification.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            notification.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.TaskId);
+            notification.HasOne<Notification>().WithMany().HasForeignKey(entity => entity.CoalescedInto);
+            OwnerFilter(notification);
+        });
+
+        builder.Entity<Proposal>(proposal =>
+        {
+            proposal.HasKey(entity => entity.Id);
+            proposal.HasIndex(entity => new { entity.OwnerId, entity.Status });
+            proposal.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            proposal.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.TaskId);
+            OwnerFilter(proposal);
+        });
+
+        builder.Entity<FollowUp>(followUp =>
+        {
+            followUp.HasKey(entity => entity.Id);
+            followUp.HasIndex(entity => entity.Nonce).IsUnique();
+            followUp.HasIndex(entity => new { entity.SatelliteId, entity.ExpiresAt });
+            followUp.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            followUp.HasOne<PendingAction>().WithMany().HasForeignKey(entity => entity.PendingActionId);
+            followUp.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.TaskId);
+            followUp.HasOne<Session>().WithMany().HasForeignKey(entity => entity.LinkedSessionId);
+            OwnerFilter(followUp);
+        });
     }
 
     private void OwnerFilter<TEntity>(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<TEntity> builder)
@@ -341,6 +427,15 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             // Instance secrets (null owner) may be written in any context; admin checks happen in the API.
             if (owner is not null && owner != CurrentOwnerId)
                 throw new InvalidOperationException($"Refusing to write a {entry.Metadata.ClrType.Name} row of another owner.");
+        }
+    }
+
+    private void IncrementRowVersions()
+    {
+        foreach (EntityEntry<IVersioned> entry in ChangeTracker.Entries<IVersioned>())
+        {
+            if (entry.State == EntityState.Modified)
+                entry.Entity.RowVersion++;
         }
     }
 }
