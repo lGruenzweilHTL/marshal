@@ -12,5 +12,16 @@ public static class MailErrors
     public static Error OAuthNotConfigured(string provider) =>
         new("mail.oauth_not_configured", $"OAuth for {provider} is not configured on this instance.", ErrorType.Unavailable);
 
+    public static Error MessageNotFound(string id) => new("mail.message_not_found", $"There is no message '{id}'.", ErrorType.NotFound);
+
+    public static Error DraftsFolderMissing(string alias) =>
+        new("mail.drafts_folder_missing", $"Mail account '{alias}' has no folder marked as drafts; name one in the account settings.", ErrorType.Failure);
+
+    public static Error AuthFailed(string alias) =>
+        new("mail.auth_failed", $"The mail server rejected the login of account '{alias}'.", ErrorType.Unavailable);
+
+    public static Error Unreachable(string alias, string reason) =>
+        new("mail.unreachable", $"The mail server of account '{alias}' could not be reached: {reason}", ErrorType.Unavailable);
+
     public static Error OAuthFailed(string message) => new("mail.oauth_failed", message, ErrorType.Unavailable);
 }

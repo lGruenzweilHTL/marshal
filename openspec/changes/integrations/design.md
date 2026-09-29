@@ -197,3 +197,20 @@ They should be replaced with real captures when a printer is available.
   history. Confirm-tier controls open an in-page dialog; only its Confirm button posts the token. An optional
   `printers[].webUrl` (Mainsail / Fluidd) is linked for the actions Marshal does not offer. The dashboard gains a
   printer widget.
+
+### Mail (tasks 3.1–3.4)
+
+- Credentials: `PasswordCredentialSource` reads the account's owner secret; `OAuth2CredentialSource` (one per preset)
+  refreshes access tokens with the refresh token in the owner secret, keeps them until five minutes before expiry
+  and writes a rotated refresh token back (Microsoft rotates them). `invalid_grant` becomes
+  `mail.reauthorize_required`. The connect flow uses PKCE (S256) in addition to the client secret.
+- `ImapMailProvider` opens one connection per call and folders read-only for reading (reading never sets `\Seen`).
+  `since` / `before` compare the Date header (`SENTSINCE` / `SENTBEFORE`): IMAP's internal date is the time a
+  message reached the mailbox, which differs for imported mail. Search fetches at most 500 of the newest UIDs and
+  sorts by date. Threads are rebuilt from Message-ID, In-Reply-To and References across the message's folder, the
+  inbox and the `\Sent` folder. `update_draft` appends the new version and then expunges only the superseded draft,
+  after checking it is in the drafts folder and carries `\Draft`; there is still no tool or provider method that
+  deletes or moves mail.
+- Container tests: Dovecot 2.4 with a test config (German `Entwürfe` marked `\Drafts`, `Sent` marked `\Sent`) and
+  GreenMail 2.1 (no SPECIAL-USE) for the configured-drafts-folder fallback and the missing-folder error. Neither
+  offers XOAUTH2, so a tiny in-process IMAP responder checks the `AUTHENTICATE XOAUTH2` exchange.

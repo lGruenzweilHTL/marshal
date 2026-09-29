@@ -25,4 +25,8 @@
     <ProjectReference Include="..\..\src\Marshal.Integrations.Mail\Marshal.Integrations.Mail.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Imap\dovecot-marshal-test.conf" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
