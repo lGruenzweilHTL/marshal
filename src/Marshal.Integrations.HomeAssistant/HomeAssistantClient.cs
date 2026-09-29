@@ -37,6 +37,12 @@ public sealed class HomeAssistantClient(IHttpClientFactory httpClients, IOptions
             : new Error("ha.no_time_zone", "Home Assistant reported no time zone.", ErrorType.Unavailable);
     }
 
+    public Task<Result<JsonElement>> GetAsync(string path, CancellationToken cancellationToken) =>
+        SendAsync(HttpMethod.Get, path, null, cancellationToken);
+
+    public Task<Result<JsonElement>> CallServiceAsync(string domain, string service, JsonObject data, CancellationToken cancellationToken) =>
+        SendAsync(HttpMethod.Post, $"api/services/{Uri.EscapeDataString(domain)}/{Uri.EscapeDataString(service)}", data, cancellationToken);
+
     private async Task<Result<JsonElement>> SendAsync(HttpMethod method, string path, JsonObject? body, CancellationToken cancellationToken)
     {
         HomeAssistantOptions ha = options.Value;

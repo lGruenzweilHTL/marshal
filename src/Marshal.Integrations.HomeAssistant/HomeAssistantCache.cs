@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Marshal.Abstractions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -18,7 +19,7 @@ public sealed partial class HomeAssistantCache(
     IHomeAssistantSocketFactory sockets,
     HomeAssistantCacheTimings timings,
     TimeProvider time,
-    ILogger<HomeAssistantCache> logger) : BackgroundService, IHomeAssistantCache
+    ILogger<HomeAssistantCache> logger) : BackgroundService, IHomeAssistantCache, IHomeAssistantCommands
 {
     private const string StateChanged = "state_changed";
 
@@ -26,10 +27,30 @@ public sealed partial class HomeAssistantCache(
 
     private volatile HaSnapshot? _current;
     private volatile string? _lastError;
+    private volatile HaConnection? _connection;
 
     public HaSnapshot? Current => _current;
 
     public string? LastError => _lastError;
+
+    public async Task<Result<JsonElement>> CommandAsync(string type, JsonObject fields, CancellationToken cancellationToken)
+    {
+        if (_connection is not { } connection || _current is null)
+            return new Error("ha.unavailable", "Home Assistant is not connected.", ErrorType.Unavailable);
+
+        try
+        {
+            return await connection.CommandAsync(type, fields, cancellationToken);
+        }
+        catch (HomeAssistantException exception)
+        {
+            return new Error("ha.command_failed", exception.Message, ErrorType.Unavailable);
+        }
+        catch (ObjectDisposedException)
+        {
+            return new Error("ha.unavailable", "Home Assistant is not connected.", ErrorType.Unavailable);
+        }
+    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -43,7 +64,15 @@ public sealed partial class HomeAssistantCache(
             try
             {
                 await using HaConnection connection = await HaConnection.ConnectAsync(sockets, ha.WebSocketUri(), ha.Token ?? "", timings.CommandTimeout, stoppingToken);
-                await RunAsync(connection, () => attempt = 0, stoppingToken);
+                _connection = connection;
+                try
+                {
+                    await RunAsync(connection, () => attempt = 0, stoppingToken);
+                }
+                finally
+                {
+                    _connection = null;
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

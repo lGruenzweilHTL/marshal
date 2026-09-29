@@ -40,8 +40,8 @@
 
 ## 5. Calendar
 
-- [ ] 5.1 Write provider tests against a fake HA server: list calendars, get events in the owner's time zone, create, update capability detection
-- [ ] 5.2 Implement `HomeAssistantCalendarProvider`
+- [x] 5.1 Write provider tests against a fake HA server: list calendars, get events in the owner's time zone, create, update capability detection
+- [x] 5.2 Implement `HomeAssistantCalendarProvider`
 - [ ] 5.3 Write tool tests: tiers, update hidden without capability, no delete tool, list_events taints with source `calendar`
 - [ ] 5.4 Implement calendar tools
 

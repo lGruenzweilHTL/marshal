@@ -253,3 +253,17 @@ They should be replaced with real captures when a printer is available.
 - Digest (task 4.5): the skill and template live in `deploy/config.example/` (the repository has no
   `deploy/config/`; the example directory is what gets copied to `/config`). "Since the last digest" needs no
   state: the digest marks every article it processed as read, so the unread list is exactly what is new.
+
+### Calendar (tasks 5.1–5.4)
+
+- `HomeAssistantCalendarProvider` lists calendars with `GET /api/calendars` and reads events with
+  `GET /api/calendars/<entity>?start&end` (ISO times with offset); event times are converted to the owner's time
+  zone. Creation calls `calendar.create_event` (`start_date_time` / `end_date_time` with offset, or `start_date` /
+  `end_date` for all-day events); updates send the whole event (`summary`, `dtstart`, `dtend`, optional
+  `description` / `location`) with `calendar/event/update` over the cache's websocket connection, which
+  `HomeAssistantCache` now offers as `IHomeAssistantCommands`. Capabilities come from `supported_features` in the
+  cached state (`CREATE_EVENT = 1`, `UPDATE_EVENT = 4`); unknown state means no capability. Calendar ids must match
+  `calendar.[a-z0-9_]+` before any request is made.
+- The fake Home Assistant's calendar endpoints are transcribed from the HA REST / websocket documentation and the
+  `calendar` component source (the recorded fixtures contain no calendar requests; the demo calendars in the
+  recording have no `supported_features`).

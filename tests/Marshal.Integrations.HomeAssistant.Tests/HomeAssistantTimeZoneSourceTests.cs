@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Marshal.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -57,5 +58,11 @@ public sealed class HomeAssistantTimeZoneSourceTests : IAsyncLifetime
 
         public Task<Result<string>> GetTimeZoneAsync(CancellationToken cancellationToken) =>
             Task.FromResult<Result<string>>(new Error("ha.unreachable", "down", ErrorType.Unavailable));
+
+        public Task<Result<JsonElement>> GetAsync(string path, CancellationToken cancellationToken) =>
+            Task.FromResult<Result<JsonElement>>(new Error("ha.unreachable", "down", ErrorType.Unavailable));
+
+        public Task<Result<JsonElement>> CallServiceAsync(string domain, string service, JsonObject data, CancellationToken cancellationToken) =>
+            Task.FromResult<Result<JsonElement>>(new Error("ha.unreachable", "down", ErrorType.Unavailable));
     }
 }

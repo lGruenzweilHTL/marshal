@@ -37,6 +37,20 @@ internal sealed class FakeHomeAssistant : IAsyncDisposable
     /// <summary>Response body of <c>POST /api/intent/handle</c>.</summary>
     public JsonNode IntentResponse { get; set; } = JsonNode.Parse("""{"response_type":"action_done","speech":{}}""")!;
 
+    /// <summary>Response of <c>GET /api/calendars</c>.</summary>
+    public JsonArray Calendars { get; } = JsonNode.Parse("""
+        [{"entity_id":"calendar.personal","name":"Personal"},{"entity_id":"calendar.work","name":"Work"}]
+        """)!.AsArray();
+
+    /// <summary>Events returned by <c>GET /api/calendars/&lt;entity&gt;</c>, per entity (the range is not applied).</summary>
+    public ConcurrentDictionary<string, JsonArray> CalendarEvents { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>Query strings of calendar event requests, in order.</summary>
+    public ConcurrentQueue<string> CalendarQueries { get; } = new();
+
+    /// <summary>Websocket command types answered with <c>success: false</c> and this error message.</summary>
+    public ConcurrentDictionary<string, string> FailingCommands { get; } = new(StringComparer.Ordinal);
+
     /// <summary>Number of authenticated websocket connections so far.</summary>
     public int Connections => _nextSession;
 
@@ -57,6 +71,14 @@ internal sealed class FakeHomeAssistant : IAsyncDisposable
         app.MapGet("/api/config", (HttpContext context) => fake.Rest(context, null, fake.Responses["get_config"]));
         app.MapPost("/api/intent/handle", async (HttpContext context) =>
             await fake.Rest(context, await JsonNode.ParseAsync(context.Request.Body), fake.IntentResponse).ExecuteAsync(context));
+        app.MapGet("/api/calendars", (HttpContext context) => fake.Rest(context, null, fake.Calendars));
+        app.MapGet("/api/calendars/{entity}", (string entity, HttpContext context) =>
+        {
+            fake.CalendarQueries.Enqueue(context.Request.QueryString.Value ?? "");
+            return fake.CalendarEvents.TryGetValue(entity, out JsonArray? events) ? fake.Rest(context, null, events) : Results.NotFound();
+        });
+        app.MapPost("/api/services/{**service}", async (string service, HttpContext context) =>
+            await fake.Rest(context, await JsonNode.ParseAsync(context.Request.Body), new JsonArray()).ExecuteAsync(context));
         await app.StartAsync();
         return fake;
     }
@@ -70,6 +92,15 @@ internal sealed class FakeHomeAssistant : IAsyncDisposable
     {
         JsonObject entry = Responses["get_states"]!.AsArray().OfType<JsonObject>().Single(candidate => (string?)candidate["entity_id"] == entityId);
         entry["state"] = state;
+    }
+
+    /// <summary>Adds (or replaces) an entity state in the <c>get_states</c> result.</summary>
+    public void AddState(string entityId, string state, JsonObject attributes)
+    {
+        JsonArray states = Responses["get_states"]!.AsArray();
+        if (states.OfType<JsonObject>().FirstOrDefault(candidate => (string?)candidate["entity_id"] == entityId) is { } existing)
+            states.Remove(existing);
+        states.Add(new JsonObject { ["entity_id"] = entityId, ["state"] = state, ["attributes"] = attributes, ["last_updated"] = "2026-09-29T08:00:00+00:00" });
     }
 
     /// <summary>Sends an event to every connection subscribed to its type.</summary>
@@ -169,6 +200,18 @@ internal sealed class FakeHomeAssistant : IAsyncDisposable
                 string type = (string)command["type"]!;
                 if (type == "subscribe_events")
                     session.Subscriptions[(string)command["event_type"]!] = (int)command["id"]!;
+
+                if (FailingCommands.TryGetValue(type, out string? failure))
+                {
+                    await session.SendAsync(new JsonObject
+                    {
+                        ["id"] = (int)command["id"]!,
+                        ["type"] = "result",
+                        ["success"] = false,
+                        ["error"] = new JsonObject { ["code"] = "home_assistant_error", ["message"] = failure },
+                    });
+                    continue;
+                }
 
                 JsonNode? result = type == "subscribe_events" ? null : Responses.GetValueOrDefault(type)?.DeepClone();
                 await session.SendAsync(new JsonObject { ["id"] = (int)command["id"]!, ["type"] = "result", ["success"] = true, ["result"] = result });
