@@ -9,8 +9,10 @@ import DashboardView from './dashboard/DashboardView.vue'
 import AuditView from './memory/AuditView.vue'
 import ChunkEditorView from './memory/ChunkEditorView.vue'
 import ChunkListView from './memory/ChunkListView.vue'
+import GraphView from './memory/GraphView.vue'
 import MemoryLayout from './memory/MemoryLayout.vue'
 import ProjectsView from './memory/ProjectsView.vue'
+import ScatterView from './memory/ScatterView.vue'
 import NotFoundView from './layout/NotFoundView.vue'
 import PreferencesView from './preferences/PreferencesView.vue'
 import CostView from './runs/CostView.vue'
@@ -52,6 +54,8 @@ const routes: RouteRecordRaw[] = [
           { path: 'chunks/:id', name: 'memory-chunk', component: ChunkEditorView, meta: { title: 'Memory' } },
           { path: 'projects', name: 'memory-projects', component: ProjectsView, meta: { title: 'Projects' } },
           { path: 'audit', name: 'memory-audit', component: AuditView, meta: { title: 'Memory audit' } },
+          { path: 'graph', name: 'memory-graph', component: GraphView, meta: { title: 'Memory graph' } },
+          { path: 'scatter', name: 'memory-scatter', component: ScatterView, meta: { title: 'Memory scatter' } },
         ],
       },
       { path: 'security', name: 'security', component: SecurityView, meta: { title: 'Security' } },

@@ -242,3 +242,8 @@ EF migration adds memory tables; the FTS and vector virtual tables are created b
   `/memory/new` and `/memory/chunks/:id` (editor: identity fields fixed after creation, pin / unpin, supersede with a
   replacement, delete, history and links), `/memory/projects` (projects with description, aliases and candidates to
   accept or reject, correction log on demand) and `/memory/audit`. A "Memory" link in the main navigation.
+- Graph and scatter (task 5.5): `IMemoryMaps` serves `/memory/graph` (live chunks, edges between live chunks) and
+  `/memory/scatter` (PCA: power iteration on the centered embeddings, two components with a fixed sign, so the picture
+  is stable between loads). The SPA lays the graph out with a small deterministic force layout (`forceLayout.ts`, no
+  extra package) and draws both as SVG scaled to the page width, so phones need no horizontal scroll; the list stays
+  the default memory view.

@@ -43,5 +43,5 @@
 - [x] 5.2 Implement memory endpoints
 - [x] 5.3 Write component tests for list, editor, history, audit, projects views
 - [x] 5.4 Implement list, editor, history, audit and projects views
-- [ ] 5.5 Implement force graph and PCA scatter views (PCA computed server-side)
+- [x] 5.5 Implement force graph and PCA scatter views (PCA computed server-side)
 - [ ] 5.6 Show active projects and retrieved chunks in the run detail view
