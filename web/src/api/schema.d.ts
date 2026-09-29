@@ -434,10 +434,231 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/memory/chunks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chunks newest first, or ranked by relevance with query; filter by type, scope, projectId and pinned. */
+        get: operations["ListMemoryChunks"];
+        put?: never;
+        /** Writes a chunk through its deterministic id (an existing chunk with the same identity is updated). */
+        post: operations["CreateMemoryChunk"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/chunks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A chunk (also when deleted) with its earlier versions and its edges. */
+        get: operations["GetMemoryChunk"];
+        /** Changes content, importance and source; the previous content becomes a version. */
+        put: operations["EditMemoryChunk"];
+        post?: never;
+        /** Soft-deletes a chunk; it is no longer retrieved. */
+        delete: operations["DeleteMemoryChunk"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/chunks/{id}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Pins a chunk: it is injected in full in every turn. */
+        put: operations["PinMemoryChunk"];
+        post?: never;
+        /** Unpins a chunk. */
+        delete: operations["UnpinMemoryChunk"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/chunks/{id}/supersede": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Writes a replacement with a new identity and a supersedes edge to the chunk. */
+        post: operations["SupersedeMemoryChunk"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/chunks/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Predecessors, earlier versions and the current content, oldest first. */
+        get: operations["GetMemoryChunkHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stale chunks, open contradictions, orphans and dangling edges. */
+        get: operations["GetMemoryAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chunks, versions, edges and projects as NDJSON (without embeddings). */
+        get: operations["ExportMemory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Live projects with aliases, alias candidates and chunk counts. */
+        get: operations["ListProjects"];
+        put?: never;
+        /** Creates a project; names are unique. */
+        post: operations["CreateProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/projects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Renames or re-describes a project. */
+        put: operations["UpdateProject"];
+        post?: never;
+        /** Deletes a project; its chunks stay and show up as orphans in the audit. */
+        delete: operations["DeleteProject"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/projects/{id}/aliases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Adds an active alias (or activates an existing candidate). */
+        post: operations["AddProjectAlias"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/projects/{id}/aliases/{aliasId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Promotes or rejects an alias or alias candidate. */
+        put: operations["SetProjectAliasStatus"];
+        post?: never;
+        /** Removes an alias or alias candidate. */
+        delete: operations["RemoveProjectAlias"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/projects/{id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The project's correction log, newest first. */
+        get: operations["GetProjectFeedback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description An alias phrase. */
+        AliasRequest: {
+            /** @description The phrase; normalized when stored. */
+            phrase: string;
+        };
+        /** @description A new alias status. */
+        AliasStatusRequest: {
+            /** @description Active or rejected. */
+            status: components["schemas"]["ProjectAliasStatus"];
+        };
         /** @description Value for the `X-XSRF-TOKEN` header. */
         AntiforgeryToken: {
             token: string;
@@ -473,6 +694,53 @@ export interface components {
             revokedAt: null | string;
             /** @description True for tokens users cannot manage (executor callback tokens). */
             readOnly: boolean;
+        };
+        /** @enum {unknown} */
+        ChunkAuthor: "user" | "agent" | "consolidation" | "import";
+        /** @enum {unknown} */
+        ChunkEdgeKind: "supersedes" | "contradicts" | "dependsOn" | "relatesTo";
+        /** @description New content of a chunk; identity fields cannot change (supersede instead). */
+        ChunkEditRequest: {
+            /** @description English content. */
+            content: string;
+            /**
+             * Format: int32
+             * @description 1–5.
+             */
+            importance: number;
+            /** @description Origin reference, if any. */
+            sourceRef: null | string;
+        };
+        ChunkId: unknown;
+        /** @enum {unknown} */
+        ChunkScope: "general" | "project";
+        /** @enum {unknown} */
+        ChunkType: "fact" | "preference" | "event" | "procedure" | "person" | "device";
+        /** @enum {unknown} */
+        ChunkWriteOutcome: "created" | "updated" | "unchanged";
+        /** @description A chunk to write (create or supersede replacement). */
+        ChunkWriteRequest: {
+            /** @description General or project. */
+            scope: components["schemas"]["ChunkScope"];
+            /** @description Required for project scope. */
+            projectId: null | components["schemas"]["ProjectId"];
+            /** @description Kind of knowledge. */
+            type: components["schemas"]["ChunkType"];
+            /** @description Short English title (part of the identity). */
+            title: string;
+            /** @description English content. */
+            content: string;
+            /**
+             * Format: int32
+             * @description 1–5 (default 3).
+             */
+            importance: null | number;
+            /** @description Origin reference, if any. */
+            sourceRef: null | string;
+        };
+        ChunkWriteResult: {
+            id: components["schemas"]["ChunkId"];
+            outcome: components["schemas"]["ChunkWriteOutcome"];
         };
         /** @description A config file whose last load failed. */
         ConfigError: {
@@ -655,6 +923,76 @@ export interface components {
             /** @description Config file, relative to `/config/mcp`. */
             file: string;
         };
+        MemoryAuditReport: {
+            stale: components["schemas"]["MemoryChunk"][];
+            contradictions: components["schemas"]["MemoryContradiction"][];
+            orphans: components["schemas"]["MemoryChunk"][];
+            danglingEdges: components["schemas"]["MemoryEdge"][];
+        };
+        MemoryChunk: {
+            id: components["schemas"]["ChunkId"];
+            scope: components["schemas"]["ChunkScope"];
+            projectId: null | components["schemas"]["ProjectId"];
+            type: components["schemas"]["ChunkType"];
+            title: string;
+            content: string;
+            /** Format: int32 */
+            importance: number;
+            pinned: boolean;
+            sourceRef: null | string;
+            createdBy: components["schemas"]["ChunkAuthor"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            deletedAt: null | string;
+            /** Format: date-time */
+            lastRetrievedAt: null | string;
+        };
+        /** @description A chunk with its history data. */
+        MemoryChunkDetail: {
+            /** @description The chunk. */
+            chunk: components["schemas"]["MemoryChunk"];
+            /** @description Earlier versions, oldest first. */
+            versions: components["schemas"]["MemoryChunkVersion"][];
+            /** @description Edges from and to the chunk. */
+            edges: components["schemas"]["MemoryEdge"][];
+        };
+        MemoryChunkVersion: {
+            chunkId: components["schemas"]["ChunkId"];
+            content: string;
+            /** Format: int32 */
+            importance: number;
+            sourceRef: null | string;
+            /** Format: date-time */
+            replacedAt: string;
+        };
+        MemoryContradiction: {
+            from: components["schemas"]["MemoryChunk"];
+            to: components["schemas"]["MemoryChunk"];
+            /** Format: date-time */
+            since: string;
+        };
+        MemoryEdge: {
+            from: components["schemas"]["ChunkId"];
+            to: components["schemas"]["ChunkId"];
+            kind: components["schemas"]["ChunkEdgeKind"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        MemoryHistoryEntry: {
+            chunkId: components["schemas"]["ChunkId"];
+            kind: components["schemas"]["MemoryHistoryKind"];
+            title: string;
+            content: string;
+            /** Format: int32 */
+            importance: number;
+            /** Format: date-time */
+            validFrom: string;
+        };
+        /** @enum {unknown} */
+        MemoryHistoryKind: "predecessor" | "version" | "current";
         /** @description The current user. */
         MeResponse: {
             /** @description Owner id of the user. */
@@ -710,6 +1048,50 @@ export interface components {
         PasskeyRegistrationRequest: {
             credentialJson: string;
             name: null | string;
+        };
+        /** @enum {unknown} */
+        ProjectAliasStatus: "candidate" | "active" | "rejected";
+        ProjectAliasView: {
+            /** Format: uuid */
+            id: string;
+            phrase: string;
+            status: components["schemas"]["ProjectAliasStatus"];
+            /** Format: int32 */
+            confirmations: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /** @enum {unknown} */
+        ProjectFeedbackKind: "confirmed" | "rejected" | "switched";
+        ProjectFeedbackView: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["ProjectFeedbackKind"];
+            phrase: string;
+            runId: null | components["schemas"]["RunId"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /** Format: uuid */
+        ProjectId: string;
+        /** @description Name and description of a project. */
+        ProjectRequest: {
+            /** @description Name (explicit activation by name). */
+            name: string;
+            /** @description Description (part of the centroid). */
+            description: null | string;
+        };
+        ProjectView: {
+            id: components["schemas"]["ProjectId"];
+            name: string;
+            description: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            lastActiveAt: null | string;
+            /** Format: int32 */
+            chunkCount: number;
+            aliases: components["schemas"]["ProjectAliasView"][];
         };
         QuietHoursWindow: {
             day: components["schemas"]["DayOfWeek"];
@@ -1568,6 +1950,438 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ListMemoryChunks: {
+        parameters: {
+            query?: {
+                query?: string;
+                type?: string;
+                scope?: string;
+                projectId?: string;
+                pinned?: boolean;
+                includeDeleted?: boolean;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryChunk"][];
+                };
+            };
+        };
+    };
+    CreateMemoryChunk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChunkWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChunkWriteResult"];
+                };
+            };
+        };
+    };
+    GetMemoryChunk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryChunkDetail"];
+                };
+            };
+        };
+    };
+    EditMemoryChunk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChunkEditRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChunkWriteResult"];
+                };
+            };
+        };
+    };
+    DeleteMemoryChunk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PinMemoryChunk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UnpinMemoryChunk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SupersedeMemoryChunk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChunkWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChunkWriteResult"];
+                };
+            };
+        };
+    };
+    GetMemoryChunkHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryHistoryEntry"][];
+                };
+            };
+        };
+    };
+    GetMemoryAudit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryAuditReport"];
+                };
+            };
+        };
+    };
+    ExportMemory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ListProjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectView"][];
+                };
+            };
+        };
+    };
+    CreateProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectView"];
+                };
+            };
+        };
+    };
+    UpdateProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectView"];
+                };
+            };
+        };
+    };
+    DeleteProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AddProjectAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AliasRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectAliasView"];
+                };
+            };
+        };
+    };
+    SetProjectAliasStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                aliasId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AliasStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectAliasView"];
+                };
+            };
+        };
+    };
+    RemoveProjectAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                aliasId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetProjectFeedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectFeedbackView"][];
+                };
             };
         };
     };

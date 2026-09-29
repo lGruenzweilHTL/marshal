@@ -4,6 +4,7 @@ using Marshal.Api.Configuration;
 using Marshal.Api.Conversation;
 using Marshal.Api.Health;
 using Marshal.Api.LiveEvents;
+using Marshal.Api.Memory;
 using Marshal.Api.Runs;
 using Marshal.Api.Security;
 using Marshal.Api.Versioning;
@@ -76,6 +77,7 @@ public static class MarshalApp
         v1.MapRunEndpoints();
         v1.MapSystemEndpoints();
         v1.MapConfigEndpoints();
+        v1.MapMemoryEndpoints();
         v1.MapConversationEndpoints();
         app.MapSpaFallback();
         return app;

@@ -805,10 +805,683 @@
           }
         }
       }
+    },
+    "/api/v1/memory/chunks": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Chunks newest first, or ranked by relevance with query; filter by type, scope, projectId and pinned.",
+        "operationId": "ListMemoryChunks",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pinned",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "includeDeleted",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemoryChunk"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Writes a chunk through its deterministic id (an existing chunk with the same identity is updated).",
+        "operationId": "CreateMemoryChunk",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChunkWriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChunkWriteResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/chunks/{id}": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "A chunk (also when deleted) with its earlier versions and its edges.",
+        "operationId": "GetMemoryChunk",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryChunkDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Changes content, importance and source; the previous content becomes a version.",
+        "operationId": "EditMemoryChunk",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChunkEditRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChunkWriteResult"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Soft-deletes a chunk; it is no longer retrieved.",
+        "operationId": "DeleteMemoryChunk",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/memory/chunks/{id}/pin": {
+      "put": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Pins a chunk: it is injected in full in every turn.",
+        "operationId": "PinMemoryChunk",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Unpins a chunk.",
+        "operationId": "UnpinMemoryChunk",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/memory/chunks/{id}/supersede": {
+      "post": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Writes a replacement with a new identity and a supersedes edge to the chunk.",
+        "operationId": "SupersedeMemoryChunk",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChunkWriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChunkWriteResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/chunks/{id}/history": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Predecessors, earlier versions and the current content, oldest first.",
+        "operationId": "GetMemoryChunkHistory",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemoryHistoryEntry"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/audit": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Stale chunks, open contradictions, orphans and dangling edges.",
+        "operationId": "GetMemoryAudit",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryAuditReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/export": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Chunks, versions, edges and projects as NDJSON (without embeddings).",
+        "operationId": "ExportMemory",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/memory/projects": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Live projects with aliases, alias candidates and chunk counts.",
+        "operationId": "ListProjects",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Creates a project; names are unique.",
+        "operationId": "CreateProject",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/projects/{id}": {
+      "put": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Renames or re-describes a project.",
+        "operationId": "UpdateProject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectView"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Deletes a project; its chunks stay and show up as orphans in the audit.",
+        "operationId": "DeleteProject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/memory/projects/{id}/aliases": {
+      "post": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Adds an active alias (or activates an existing candidate).",
+        "operationId": "AddProjectAlias",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AliasRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectAliasView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/projects/{id}/aliases/{aliasId}": {
+      "put": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Promotes or rejects an alias or alias candidate.",
+        "operationId": "SetProjectAliasStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "aliasId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AliasStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectAliasView"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Removes an alias or alias candidate.",
+        "operationId": "RemoveProjectAlias",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "aliasId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/memory/projects/{id}/feedback": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "The project\u0027s correction log, newest first.",
+        "operationId": "GetProjectFeedback",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectFeedbackView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AliasRequest": {
+        "required": [
+          "phrase"
+        ],
+        "type": "object",
+        "properties": {
+          "phrase": {
+            "type": "string",
+            "description": "The phrase; normalized when stored."
+          }
+        },
+        "description": "An alias phrase."
+      },
+      "AliasStatusRequest": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "description": "Active or rejected.",
+            "$ref": "#/components/schemas/ProjectAliasStatus"
+          }
+        },
+        "description": "A new alias status."
+      },
       "AntiforgeryToken": {
         "required": [
           "token"
@@ -890,6 +1563,145 @@
           }
         },
         "description": "A machine token without its secret."
+      },
+      "ChunkAuthor": {
+        "enum": [
+          "user",
+          "agent",
+          "consolidation",
+          "import"
+        ]
+      },
+      "ChunkEdgeKind": {
+        "enum": [
+          "supersedes",
+          "contradicts",
+          "dependsOn",
+          "relatesTo"
+        ]
+      },
+      "ChunkEditRequest": {
+        "required": [
+          "content",
+          "importance",
+          "sourceRef"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "English content."
+          },
+          "importance": {
+            "type": "integer",
+            "description": "1\u20135.",
+            "format": "int32"
+          },
+          "sourceRef": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Origin reference, if any."
+          }
+        },
+        "description": "New content of a chunk; identity fields cannot change (supersede instead)."
+      },
+      "ChunkId": {},
+      "ChunkScope": {
+        "enum": [
+          "general",
+          "project"
+        ]
+      },
+      "ChunkType": {
+        "enum": [
+          "fact",
+          "preference",
+          "event",
+          "procedure",
+          "person",
+          "device"
+        ]
+      },
+      "ChunkWriteOutcome": {
+        "enum": [
+          "created",
+          "updated",
+          "unchanged"
+        ]
+      },
+      "ChunkWriteRequest": {
+        "required": [
+          "scope",
+          "projectId",
+          "type",
+          "title",
+          "content",
+          "importance",
+          "sourceRef"
+        ],
+        "type": "object",
+        "properties": {
+          "scope": {
+            "description": "General or project.",
+            "$ref": "#/components/schemas/ChunkScope"
+          },
+          "projectId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectId"
+              }
+            ],
+            "description": "Required for project scope."
+          },
+          "type": {
+            "description": "Kind of knowledge.",
+            "$ref": "#/components/schemas/ChunkType"
+          },
+          "title": {
+            "type": "string",
+            "description": "Short English title (part of the identity)."
+          },
+          "content": {
+            "type": "string",
+            "description": "English content."
+          },
+          "importance": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "1\u20135 (default 3).",
+            "format": "int32"
+          },
+          "sourceRef": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Origin reference, if any."
+          }
+        },
+        "description": "A chunk to write (create or supersede replacement)."
+      },
+      "ChunkWriteResult": {
+        "required": [
+          "id",
+          "outcome"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/ChunkWriteOutcome"
+          }
+        }
       },
       "ConfigError": {
         "required": [
@@ -1459,6 +2271,270 @@
         },
         "description": "A configured MCP server."
       },
+      "MemoryAuditReport": {
+        "required": [
+          "stale",
+          "contradictions",
+          "orphans",
+          "danglingEdges"
+        ],
+        "type": "object",
+        "properties": {
+          "stale": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryChunk"
+            }
+          },
+          "contradictions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryContradiction"
+            }
+          },
+          "orphans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryChunk"
+            }
+          },
+          "danglingEdges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryEdge"
+            }
+          }
+        }
+      },
+      "MemoryChunk": {
+        "required": [
+          "id",
+          "scope",
+          "projectId",
+          "type",
+          "title",
+          "content",
+          "importance",
+          "pinned",
+          "sourceRef",
+          "createdBy",
+          "createdAt",
+          "updatedAt",
+          "deletedAt",
+          "lastRetrievedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ChunkScope"
+          },
+          "projectId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectId"
+              }
+            ]
+          },
+          "type": {
+            "$ref": "#/components/schemas/ChunkType"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "importance": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "sourceRef": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/ChunkAuthor"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deletedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "lastRetrievedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "MemoryChunkDetail": {
+        "required": [
+          "chunk",
+          "versions",
+          "edges"
+        ],
+        "type": "object",
+        "properties": {
+          "chunk": {
+            "description": "The chunk.",
+            "$ref": "#/components/schemas/MemoryChunk"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryChunkVersion"
+            },
+            "description": "Earlier versions, oldest first."
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryEdge"
+            },
+            "description": "Edges from and to the chunk."
+          }
+        },
+        "description": "A chunk with its history data."
+      },
+      "MemoryChunkVersion": {
+        "required": [
+          "chunkId",
+          "content",
+          "importance",
+          "sourceRef",
+          "replacedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "chunkId": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "content": {
+            "type": "string"
+          },
+          "importance": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sourceRef": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "replacedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MemoryContradiction": {
+        "required": [
+          "from",
+          "to",
+          "since"
+        ],
+        "type": "object",
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/MemoryChunk"
+          },
+          "to": {
+            "$ref": "#/components/schemas/MemoryChunk"
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MemoryEdge": {
+        "required": [
+          "from",
+          "to",
+          "kind",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "to": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ChunkEdgeKind"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MemoryHistoryEntry": {
+        "required": [
+          "chunkId",
+          "kind",
+          "title",
+          "content",
+          "importance",
+          "validFrom"
+        ],
+        "type": "object",
+        "properties": {
+          "chunkId": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/MemoryHistoryKind"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "importance": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MemoryHistoryKind": {
+        "enum": [
+          "predecessor",
+          "version",
+          "current"
+        ]
+      },
       "MeResponse": {
         "required": [
           "id",
@@ -1631,6 +2707,155 @@
           }
         },
         "description": "A new passkey for the signed-in user."
+      },
+      "ProjectAliasStatus": {
+        "enum": [
+          "candidate",
+          "active",
+          "rejected"
+        ]
+      },
+      "ProjectAliasView": {
+        "required": [
+          "id",
+          "phrase",
+          "status",
+          "confirmations",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "phrase": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProjectAliasStatus"
+          },
+          "confirmations": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProjectFeedbackKind": {
+        "enum": [
+          "confirmed",
+          "rejected",
+          "switched"
+        ]
+      },
+      "ProjectFeedbackView": {
+        "required": [
+          "id",
+          "kind",
+          "phrase",
+          "runId",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ProjectFeedbackKind"
+          },
+          "phrase": {
+            "type": "string"
+          },
+          "runId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunId"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProjectId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "ProjectRequest": {
+        "required": [
+          "name",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name (explicit activation by name)."
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Description (part of the centroid)."
+          }
+        },
+        "description": "Name and description of a project."
+      },
+      "ProjectView": {
+        "required": [
+          "id",
+          "name",
+          "description",
+          "createdAt",
+          "lastActiveAt",
+          "chunkCount",
+          "aliases"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ProjectId"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastActiveAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "chunkCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectAliasView"
+            }
+          }
+        }
       },
       "QuietHoursWindow": {
         "required": [
@@ -2418,6 +3643,9 @@
     },
     {
       "name": "Preferences"
+    },
+    {
+      "name": "Memory"
     }
   ]
 }

@@ -2,6 +2,7 @@ using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Memory;
 using Marshal.Abstractions.Sessions;
 using Marshal.Abstractions.Tools;
+using Marshal.Memory.Browsing;
 using Marshal.Memory.Consolidation;
 using Marshal.Memory.Projects;
 using Marshal.Memory.Retrieval;
@@ -29,6 +30,8 @@ public static class MemoryServiceCollectionExtensions
         services.AddSingleton<IChunkScorer, ChunkScorer>();
         services.AddSingleton<IMemoryRetriever, HybridMemoryRetriever>();
         services.AddSingleton<IMemoryAudit, MemoryAudit>();
+        services.AddSingleton<IMemoryBrowser, MemoryBrowser>();
+        services.AddSingleton<IProjectStore, ProjectStore>();
         services.AddSingleton<MemoryIndexRebuilder>();
         services.AddSingleton<IHostedService, MemoryIndexStartup>();
 

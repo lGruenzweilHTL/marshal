@@ -223,3 +223,15 @@ EF migration adds memory tables; the FTS and vector virtual tables are created b
   the index `rebuild-pending`, recreates the vector table with the new dimension, re-embeds every owner's live chunks
   (per owner, in owner scope, batches of 32) and feedback phrases, clears project centroids, then records the new
   model. An interrupted rebuild (embedding server down) is logged and runs again on the next start.
+
+### Memory API (tasks 5.1, 5.2)
+
+- `/api/v1/memory/...`, human (cookie) sessions only, owner-scoped through the stores. Chunks: list / search
+  (`query` runs the hybrid retriever with `MarkRetrieved: false`), create (deterministic id), edit (content,
+  importance, source; identity changes go through supersede), pin / unpin (`PUT` / `DELETE .../pin`, the only pin
+  path), supersede, soft delete, detail (versions and edges) and history. Also the audit, the NDJSON export and
+  projects (create, rename / describe, delete, aliases add / promote / reject / remove, correction log).
+- Read models: `IMemoryBrowser` (list and history: predecessors via `supersedes`, versions, current, oldest first)
+  and `IProjectStore`. Project names are unique among live projects (normalized); an active alias cannot belong to two
+  live projects. Deleting a project soft-deletes it; its chunks remain as audit orphans.
+- Every change writes an audit event `memory.chunk.*`, `memory.project.*` or `memory.alias.*` with the user as actor.

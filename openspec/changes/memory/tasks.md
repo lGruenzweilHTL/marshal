@@ -39,8 +39,8 @@
 
 ## 5. API and UI
 
-- [ ] 5.1 Write API tests: CRUD, pin / unpin (UI-only path), supersede, soft delete, history, audit, export, projects and aliases, audit-log entries, ownership
-- [ ] 5.2 Implement memory endpoints
+- [x] 5.1 Write API tests: CRUD, pin / unpin (UI-only path), supersede, soft delete, history, audit, export, projects and aliases, audit-log entries, ownership
+- [x] 5.2 Implement memory endpoints
 - [ ] 5.3 Write component tests for list, editor, history, audit, projects views
 - [ ] 5.4 Implement list, editor, history, audit and projects views
 - [ ] 5.5 Implement force graph and PCA scatter views (PCA computed server-side)
