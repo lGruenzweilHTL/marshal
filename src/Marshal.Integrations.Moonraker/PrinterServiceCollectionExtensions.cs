@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Marshal.Abstractions.Events;
 using Marshal.Abstractions.Images;
 using Marshal.Abstractions.Printers;
 using Marshal.Abstractions.Tools;
@@ -42,6 +43,9 @@ public static partial class PrinterServiceCollectionExtensions
         services.AddSingleton<MoonrakerStateCache>();
         services.AddSingleton<IPrinterStateCache>(provider => provider.GetRequiredService<MoonrakerStateCache>());
         services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<MoonrakerStateCache>());
+        services.AddSingleton<MoonrakerEventSource>();
+        services.AddSingleton<IEventSource>(provider => provider.GetRequiredService<MoonrakerEventSource>());
+        services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<MoonrakerEventSource>());
         services.AddSingleton<PrinterCameraTools>();
         services.AddSingleton<IToolSource, PrinterToolSource>();
         return services;

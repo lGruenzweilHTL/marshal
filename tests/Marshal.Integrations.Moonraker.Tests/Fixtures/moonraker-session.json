@@ -38,12 +38,27 @@
     "pause": [
       { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "print_stats": { "state": "paused" }, "virtual_sdcard": { "is_active": false } }, 579100.0 ] }
     ],
+    "resume": [
+      { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "print_stats": { "state": "printing" }, "virtual_sdcard": { "is_active": true } }, 579200.0 ] }
+    ],
+    "progress": [
+      { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "print_stats": { "print_duration": 1200.0, "total_duration": 1400.0, "info": { "current_layer": 60 } }, "virtual_sdcard": { "progress": 0.5 }, "display_status": { "progress": 0.5 } }, 580000.0 ] },
+      { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "print_stats": { "print_duration": 1920.0, "total_duration": 2120.0, "info": { "current_layer": 96 } }, "virtual_sdcard": { "progress": 0.8 }, "display_status": { "progress": 0.8 } }, 580720.0 ] }
+    ],
     "complete": [
       { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "print_stats": { "state": "complete", "print_duration": 2400.0, "total_duration": 2600.0 }, "virtual_sdcard": { "progress": 1.0, "is_active": false }, "display_status": { "progress": 1.0 } }, 581000.0 ] },
       { "jsonrpc": "2.0", "method": "notify_history_changed", "params": [ { "action": "finished", "job": { "job_id": "000001", "filename": "benchy.gcode", "status": "completed", "start_time": 1759132800.0, "end_time": 1759135400.0 } } ] }
     ],
+    "cancel": [
+      { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "print_stats": { "state": "cancelled" }, "virtual_sdcard": { "is_active": false } }, 579300.0 ] }
+    ],
     "error": [
       { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "print_stats": { "state": "error", "message": "Heater extruder not heating at expected rate" } }, 579500.0 ] }
+    ],
+    "temperatures": [
+      { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "extruder": { "temperature": 244.6, "power": 0.42 } }, 579400.0 ] },
+      { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "heater_bed": { "temperature": 99.8, "power": 0.31 } }, 579401.0 ] },
+      { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "extruder": { "temperature": 245.1, "power": 0.38 }, "heater_bed": { "temperature": 100.1 } }, 579402.0 ] }
     ],
     "shutdown": [
       { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "webhooks": { "state": "shutdown", "state_message": "Emergency stop" } }, 579600.0 ] },

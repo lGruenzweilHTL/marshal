@@ -23,8 +23,8 @@
 - [x] 3.2 Implement `ChannelEventBus`, `DeclarativeTriggerMatcher`, `IEventPublisher` in Abstractions
 - [x] 3.3 Write HA event source tests with a fake websocket: state changes, push action events
 - [x] 3.4 Implement `HomeAssistantEventSource`
-- [ ] 3.5 Write Moonraker semantic event tests with recorded fixtures: transitions, milestones, first layer, no temperature events, missed transition after reconnect
-- [ ] 3.6 Implement `MoonrakerEventSource`
+- [x] 3.5 Write Moonraker semantic event tests with recorded fixtures: transitions, milestones, first layer, no temperature events, missed transition after reconnect
+- [x] 3.6 Implement `MoonrakerEventSource`
 - [ ] 3.7 Write IMAP new-mail tests against the container: IDLE, polling fallback
 - [ ] 3.8 Implement `ImapNewMailSource`
 
