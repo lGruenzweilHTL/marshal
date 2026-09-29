@@ -24,4 +24,8 @@
     <ProjectReference Include="..\..\src\Marshal.Integrations.Moonraker\Marshal.Integrations.Moonraker.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

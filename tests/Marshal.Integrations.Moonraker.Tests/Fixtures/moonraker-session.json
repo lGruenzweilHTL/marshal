@@ -1,0 +1,56 @@
+{
+  "_comment": "Transcribed from the Moonraker external API docs (no live printer available); replace with captures when possible.",
+  "results": {
+    "server.connection.identify": { "connection_id": 1730367696 },
+    "server.info": {
+      "klippy_connected": true,
+      "klippy_state": "ready",
+      "components": ["file_manager", "history", "job_queue", "webcam"],
+      "moonraker_version": "v0.9.3-0"
+    },
+    "printer.objects.subscribe": {
+      "eventtime": 578243.57824499,
+      "status": {
+        "print_stats": {
+          "filename": "",
+          "total_duration": 0.0,
+          "print_duration": 0.0,
+          "filament_used": 0.0,
+          "state": "standby",
+          "message": "",
+          "info": { "total_layer": null, "current_layer": null }
+        },
+        "virtual_sdcard": { "file_path": null, "progress": 0.0, "is_active": false, "file_position": 0, "file_size": 0 },
+        "extruder": { "temperature": 25.1, "target": 0.0, "power": 0.0 },
+        "heater_bed": { "temperature": 24.8, "target": 0.0, "power": 0.0 },
+        "webhooks": { "state": "ready", "state_message": "Printer is ready" },
+        "display_status": { "progress": 0.0, "message": null }
+      }
+    }
+  },
+  "sequences": {
+    "print_start": [
+      { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "extruder": { "target": 245.0, "power": 1.0 }, "heater_bed": { "target": 100.0, "power": 1.0 } }, 578250.1 ] },
+      { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "print_stats": { "state": "printing", "filename": "benchy.gcode", "info": { "total_layer": 120, "current_layer": 1 } }, "virtual_sdcard": { "is_active": true, "file_size": 3145728 } }, 578251.0 ] },
+      { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "extruder": { "temperature": 200.0 } }, 578320.0 ] },
+      { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "print_stats": { "print_duration": 600.0, "total_duration": 720.0, "filament_used": 812.5, "info": { "current_layer": 30 } }, "virtual_sdcard": { "progress": 0.25, "file_position": 786432 }, "display_status": { "progress": 0.25 } }, 579000.0 ] }
+    ],
+    "pause": [
+      { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "print_stats": { "state": "paused" }, "virtual_sdcard": { "is_active": false } }, 579100.0 ] }
+    ],
+    "complete": [
+      { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "print_stats": { "state": "complete", "print_duration": 2400.0, "total_duration": 2600.0 }, "virtual_sdcard": { "progress": 1.0, "is_active": false }, "display_status": { "progress": 1.0 } }, 581000.0 ] },
+      { "jsonrpc": "2.0", "method": "notify_history_changed", "params": [ { "action": "finished", "job": { "job_id": "000001", "filename": "benchy.gcode", "status": "completed", "start_time": 1759132800.0, "end_time": 1759135400.0 } } ] }
+    ],
+    "error": [
+      { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "print_stats": { "state": "error", "message": "Heater extruder not heating at expected rate" } }, 579500.0 ] }
+    ],
+    "shutdown": [
+      { "jsonrpc": "2.0", "method": "notify_status_update", "params": [ { "webhooks": { "state": "shutdown", "state_message": "Emergency stop" } }, 579600.0 ] },
+      { "jsonrpc": "2.0", "method": "notify_klippy_shutdown" }
+    ],
+    "ready": [
+      { "jsonrpc": "2.0", "method": "notify_klippy_ready" }
+    ]
+  }
+}
