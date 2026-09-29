@@ -17,14 +17,14 @@ namespace Marshal.Tasks.Scheduling;
 /// <c>running</c> with its row version, so a task is never run twice, run it as its owner and apply the outcome.
 /// Tasks left <c>running</c> by a crash become <c>pending</c> again at startup.
 /// </summary>
-public sealed partial class TaskScheduler(
+public sealed partial class BackgroundTaskScheduler(
     ITaskStore store,
     IEnumerable<ITaskRunner> runners,
     IExecutionContextAccessor executionContext,
     IUserProfileProvider profiles,
     IOptions<TaskOptions> options,
     TimeProvider time,
-    ILogger<TaskScheduler> logger) : BackgroundService, ITaskScheduler
+    ILogger<BackgroundTaskScheduler> logger) : BackgroundService, ITaskScheduler
 {
     private const int DueBatch = 100;
     private const int ApplyAttempts = 5;

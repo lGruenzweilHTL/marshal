@@ -124,6 +124,17 @@ public sealed class EfTaskStoreTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Create_Child_KeepsTheParentsOriginSatellite()
+    {
+        TaskRecord parent = (await Store().CreateAsync(New(null) with { OriginSatelliteId = "assist_satellite.kitchen" }, Ct)).Value;
+
+        TaskRecord child = (await Store().CreateAsync(New(null) with { ParentId = parent.Id, OriginSatelliteId = "assist_satellite.office" }, Ct)).Value;
+        TaskRecord grandchild = (await Store().CreateAsync(New(null) with { ParentId = child.Id }, Ct)).Value;
+
+        Assert.Equal(("assist_satellite.kitchen", "assist_satellite.kitchen", 2), (child.OriginSatelliteId, grandchild.OriginSatelliteId, grandchild.Depth));
+    }
+
+    [Fact]
     public async Task Create_ParentOfAnotherOwner_NotFound()
     {
         _database.Accessor.Current = Text(OwnerB);

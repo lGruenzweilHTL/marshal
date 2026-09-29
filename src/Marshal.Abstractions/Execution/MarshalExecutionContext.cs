@@ -1,6 +1,8 @@
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.Memory;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Sessions;
+using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
 
 namespace Marshal.Abstractions.Execution;
@@ -34,6 +36,12 @@ public sealed record MarshalExecutionContext
 
     /// <summary>Session the run belongs to, if any.</summary>
     public SessionId? SessionId { get; init; }
+
+    /// <summary>Task the run belongs to, for task runs.</summary>
+    public TaskId? TaskId { get; init; }
+
+    /// <summary>Project that is active on every turn of the run (a task's project).</summary>
+    public ProjectId? ProjectId { get; init; }
 
     /// <summary>The run, once recording started.</summary>
     public RunId? RunId { get; init; }

@@ -49,7 +49,7 @@ public sealed class TurnMemory(IEmbeddingGenerator<string, Embedding<float>> emb
         string? area = request.Context.AreaId is { } areaId ? (await areas.DescribeAsync(areaId, cancellationToken)).AreaName : null;
         string text = area is null ? request.UserText : $"{request.UserText} (in {area})";
         float[] embedding = (await embeddings.GenerateAsync([text], cancellationToken: cancellationToken)).Single().Vector.ToArray();
-        IReadOnlyList<ProjectActivation> activations = await activator.ActivateAsync(new ActivationInput(request.UserText, embedding, request.Context.SessionId), cancellationToken);
+        IReadOnlyList<ProjectActivation> activations = await activator.ActivateAsync(new ActivationInput(request.UserText, embedding, request.Context.SessionId, request.Context.ProjectId), cancellationToken);
         return new TurnMemoryContext(text, embedding, activations);
     }
 }

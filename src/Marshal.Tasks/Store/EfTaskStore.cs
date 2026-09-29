@@ -41,12 +41,15 @@ public sealed partial class EfTaskStore(
             return afterValid.Error;
 
         int depth = 0;
+        string? originSatellite = task.OriginSatelliteId;
         if (task.ParentId is TaskId parentId)
         {
             AgentTask? parent = await db.AgentTasks.AsNoTracking().SingleOrDefaultAsync(row => row.Id == parentId, cancellationToken);
             if (parent is null)
                 return TaskErrors.NotFound(parentId.ToString());
             depth = parent.Depth + 1;
+            // The origin satellite's policy binds the whole task tree; a child cannot pick another satellite.
+            originSatellite = parent.OriginSatelliteId ?? originSatellite;
         }
 
         if (name.Value is string taken && await db.AgentTasks.AnyAsync(row => row.Name == taken, cancellationToken))
@@ -64,7 +67,7 @@ public sealed partial class EfTaskStore(
             Job = task.Job,
             Template = task.Template,
             ProjectId = task.ProjectId,
-            OriginSatelliteId = task.OriginSatelliteId,
+            OriginSatelliteId = originSatellite,
             TriggerKind = task.Trigger.Kind,
             TriggerSpec = task.Trigger.Spec,
             NextRunAt = TaskTriggers.NextRun(task.Trigger, now, await profiles.TimeZoneAsync(owner, cancellationToken)),

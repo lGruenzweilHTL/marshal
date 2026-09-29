@@ -15,7 +15,7 @@ Sources: brainstorm notes §4 (approval queue, taint, reasons), §6 (auto-backgr
 ## Decisions
 
 ### D1. Scheduler and worker pool
-`TaskScheduler : BackgroundService` loads the earliest `next_run_at`, waits with `TimeProvider.CreateTimer` (woken early by a signal when tasks change), and enqueues due tasks into a bounded `Channel<TaskId>`; N `TaskWorker`s consume it. Status transitions use optimistic concurrency (`row_version`) so a task never runs twice. On startup, tasks left `running` by a crash become `pending` with a note.
+`BackgroundTaskScheduler : BackgroundService` loads the earliest `next_run_at`, waits with `TimeProvider.CreateTimer` (woken early by a signal when tasks change), and enqueues due tasks into a bounded `Channel<TaskId>`; N `TaskWorker`s consume it. Status transitions use optimistic concurrency (`row_version`) so a task never runs twice. On startup, tasks left `running` by a crash become `pending` with a note.
 *Alternatives:* Quartz.NET / Hangfire — rejected as too heavy (notes §10).
 
 ### D2. Resume model
@@ -51,7 +51,7 @@ The conversation runner holds the run in memory; on cap or `agent.move_to_backgr
 | Interface | Purpose | v1 implementation |
 |---|---|---|
 | `ITaskStore` | tasks CRUD, due queries | `EfTaskStore` |
-| `ITaskScheduler` | scheduling signals | `TaskScheduler` |
+| `ITaskScheduler` | scheduling signals | `BackgroundTaskScheduler` (not `TaskScheduler`, which clashes with `System.Threading.Tasks.TaskScheduler`) |
 | `ITaskRunner` | one headless task run | `AgentTaskRunner`, `SystemTaskRunner` |
 | `ISystemJob` | code-only jobs | `BackupJob`, `MemoryExportJob`, `ConsolidationJob`, `RetentionPurgeJob` |
 | `IEventPublisher` / `IEventSubscriber` | EventBus | `ChannelEventBus` |

@@ -17,6 +17,9 @@ public enum ActivationReason
 
     /// <summary>Still active from an earlier turn of the session (decaying).</summary>
     Sticky,
+
+    /// <summary>The run belongs to a task of the project (active on every run of the task).</summary>
+    Task,
 }
 
 /// <summary>A project active for a turn.</summary>

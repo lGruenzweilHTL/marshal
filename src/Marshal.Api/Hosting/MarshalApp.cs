@@ -19,6 +19,7 @@ using Marshal.Integrations.Mail;
 using Marshal.Integrations.Moonraker;
 using Marshal.Integrations.Notes;
 using Marshal.Memory;
+using Marshal.Tasks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
 
@@ -46,6 +47,7 @@ public static class MarshalApp
         builder.Services.AddMarshalMail(builder.Configuration);
         builder.Services.AddMarshalFreshRss(builder.Configuration);
         builder.Services.AddMarshalNotes(builder.Configuration, NotesDirectory);
+        builder.Services.AddMarshalTasks(builder.Configuration);
         builder.Services.AddMarshalData(builder.Configuration, ConnectionString);
         builder.Services.AddMarshalApi(builder.Configuration);
 

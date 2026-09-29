@@ -124,6 +124,9 @@ confirmation:
 sessions:
   idleTtl: "00:05:00"
 
+tasks:
+  workers: 2                # background task runs at the same time
+
 recording:
   redactTools: []           # tool id globs stored as references only (tools flagged sensitive always are)
   keepContentTools: []

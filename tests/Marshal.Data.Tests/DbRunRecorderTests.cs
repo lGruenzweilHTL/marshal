@@ -2,8 +2,10 @@ using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Sessions;
+using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
 using Marshal.Data.Conversations;
+using Marshal.Data.Tasks;
 using Marshal.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
@@ -54,6 +56,31 @@ public sealed class DbRunRecorderTests
         Assert.Equal(("ha.GetLiveContext", RiskTier.Safe, GuardDecision.Safe), (tool.Tool, tool.RiskTier, tool.GuardDecision));
         Assert.Contains("21 °C", tool.Payload, StringComparison.Ordinal);
         Assert.Contains("wie warm?", steps[0].Payload, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Start_TaskRun_RecordsTheTask()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        await using MarshalDbContext context = database.CreateContext(OwnerA);
+        var task = new AgentTask
+        {
+            Id = TaskId.New(),
+            OwnerId = OwnerA,
+            CreatedBy = TaskCreator.User,
+            Kind = TaskKind.Agent,
+            Goal = "Check the print.",
+            TriggerKind = TaskTriggerKind.Now,
+            TriggerSpec = "",
+            CreatedAt = _time.GetUtcNow(),
+            UpdatedAt = _time.GetUtcNow(),
+        };
+        context.AgentTasks.Add(task);
+        await context.SaveChangesAsync(Ct);
+
+        RunId run = await Recorder(database).StartRunAsync(new RunStart(Text(OwnerA) with { Source = SessionSource.Task, TaskId = task.Id, IsInteractive = false }, "task"), Ct);
+
+        Assert.Equal(task.Id, (await context.Runs.SingleAsync(row => row.Id == run, Ct)).TaskId);
     }
 
     [Fact]

@@ -21,7 +21,8 @@ public interface IProjectActivator
 /// <param name="Text">Turn text.</param>
 /// <param name="Embedding">Turn embedding (the one retrieval uses).</param>
 /// <param name="Session">Session for stickiness; null disables it.</param>
-public sealed record ActivationInput(string Text, float[] Embedding, SessionId? Session);
+/// <param name="Pinned">Project of the task the run belongs to; always active.</param>
+public sealed record ActivationInput(string Text, float[] Embedding, SessionId? Session, ProjectId? Pinned = null);
 
 /// <summary>
 /// Explicit name / alias matches first, then the centroid score (cosine to the project centroid minus the penalty for
@@ -50,6 +51,8 @@ public sealed class ProjectActivator(
         var activations = new Dictionary<ProjectId, ProjectActivation>();
         if (projects.Count > 0)
         {
+            if (input.Pinned is { } pinned && projects.FirstOrDefault(project => project.Id == pinned) is { } task)
+                activations[pinned] = new ProjectActivation(pinned, task.Name, ActivationReason.Task, null, Sticky: false);
             await MatchExplicitAsync(db, projects, phrase, activations, cancellationToken);
             HashSet<ProjectId> rejected = state is null ? [] : Locked(state, () => state.Rejected.ToHashSet());
             await InferAsync(db, [.. projects.Where(project => !activations.ContainsKey(project.Id) && !rejected.Contains(project.Id))], input.Embedding, activations, settings, cancellationToken);

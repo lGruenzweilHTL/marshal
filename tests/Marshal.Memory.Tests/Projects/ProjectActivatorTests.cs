@@ -41,6 +41,17 @@ public sealed class ProjectActivatorTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task TaskProject_AlwaysActiveWithReasonTask()
+    {
+        ProjectId voron = await AddProjectAsync("Voron", Axis(0));
+        await AddProjectAsync("Marshal", Axis(1));
+
+        ProjectActivation activation = Assert.Single(await _activator.ActivateAsync(new ActivationInput("Unrelated words", Axis(9), null, Pinned: voron), Ct));
+
+        Assert.Equal((voron, ActivationReason.Task, false), (activation.ProjectId, activation.Reason, activation.Sticky));
+    }
+
+    [Fact]
     public async Task ActiveAlias_ActivatesWithReasonAlias_CandidateDoesNot()
     {
         ProjectId marshal = await AddProjectAsync("Marshal", Axis(0));

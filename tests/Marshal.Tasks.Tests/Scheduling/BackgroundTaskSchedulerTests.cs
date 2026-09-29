@@ -5,17 +5,17 @@ using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Tasks;
 using Marshal.Core.Execution;
 using Marshal.Tasks.Running;
+using Marshal.Tasks.Scheduling;
 using Marshal.Tasks.Store;
 using Marshal.Testing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using static Marshal.Testing.TestExecutionContext;
-using TaskScheduler = Marshal.Tasks.Scheduling.TaskScheduler;
 
 namespace Marshal.Tasks.Tests.Scheduling;
 
-public sealed class TaskSchedulerTests : IAsyncLifetime
+public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
 {
     private static readonly TimeSpan _patience = TimeSpan.FromSeconds(10);
     private readonly FakeTimeProvider _time = new(new DateTimeOffset(2026, 9, 29, 10, 0, 0, TimeSpan.Zero));
@@ -23,7 +23,7 @@ public sealed class TaskSchedulerTests : IAsyncLifetime
     private TestDatabase _database = null!;
     private FakeRunner _runner = null!;
     private readonly ListLogger _log = new();
-    private TaskScheduler? _scheduler;
+    private BackgroundTaskScheduler? _scheduler;
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -217,7 +217,7 @@ public sealed class TaskSchedulerTests : IAsyncLifetime
 
     private async Task StartAsync(int workers = 2)
     {
-        _scheduler = new TaskScheduler(Store(), [_runner], _accessor, new ViennaProfiles(), Options.Create(new TaskOptions { Workers = workers }), _time, _log);
+        _scheduler = new BackgroundTaskScheduler(Store(), [_runner], _accessor, new ViennaProfiles(), Options.Create(new TaskOptions { Workers = workers }), _time, _log);
         await _scheduler.StartAsync(Ct);
         await WaitIdleAsync();
     }
@@ -305,7 +305,7 @@ public sealed class TaskSchedulerTests : IAsyncLifetime
         }
     }
 
-    private sealed class ListLogger : ILogger<TaskScheduler>
+    private sealed class ListLogger : ILogger<BackgroundTaskScheduler>
     {
         public ConcurrentQueue<string> Entries { get; } = new();
 
