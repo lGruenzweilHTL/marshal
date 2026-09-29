@@ -91,7 +91,7 @@ package "src/ (.NET 10)" {
     component "HomeAssistant (REST, websocket,\nMCP, calendar v1), Moonraker,\nMail, FreshRss, Notes" as IntParts
     component "MailKit" <<nuget>>
     component "Google.Apis.Gmail.v1 (later)\nMicrosoft.Graph (later)" <<nuget>>
-    component "SmartReader" <<nuget>>
+    component "SmartReader\n+ AngleSharp" <<nuget>>
     component "SkiaSharp" <<nuget>>
     component "Microsoft.Extensions\n.Http.Resilience" <<nuget>>
     component "git CLI (notes repository)" as GitCli
