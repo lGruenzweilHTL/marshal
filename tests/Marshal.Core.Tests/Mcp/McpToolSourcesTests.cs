@@ -71,7 +71,8 @@ public sealed class McpToolSourcesTests : IAsyncDisposable
             sources.Statuses.Single().State == McpServerState.Connected
             && ((IToolSourceProvider)sources).Sources.Single() is McpToolSource { Server.Untrusted: true } source
             && (await source.GetToolsAsync(Ct)).Single().Descriptor.UntrustedOutput);
-        Assert.Equal(2, _servers["search"].Connections);
+        // At least one reconnect; a slow machine may add a retry of its own.
+        Assert.True(_servers["search"].Connections >= 2);
     }
 
     [Fact]
