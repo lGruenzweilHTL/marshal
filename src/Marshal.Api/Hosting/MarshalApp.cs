@@ -5,6 +5,7 @@ using Marshal.Api.Conversation;
 using Marshal.Api.Health;
 using Marshal.Api.LiveEvents;
 using Marshal.Api.Memory;
+using Marshal.Api.Printers;
 using Marshal.Api.Runs;
 using Marshal.Api.Security;
 using Marshal.Api.Versioning;
@@ -12,6 +13,7 @@ using Marshal.Core;
 using Marshal.Core.Configuration;
 using Marshal.Data;
 using Marshal.Integrations.HomeAssistant;
+using Marshal.Integrations.Moonraker;
 using Marshal.Memory;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
@@ -36,6 +38,7 @@ public static class MarshalApp
         builder.Services.AddMarshalCore(builder.Configuration, environment);
         builder.Services.AddMarshalHomeAssistant(builder.Configuration);
         builder.Services.AddMarshalMemory(builder.Configuration);
+        builder.Services.AddMarshalPrinters(builder.Configuration, SnapshotDirectory);
         builder.Services.AddMarshalData(builder.Configuration, ConnectionString);
         builder.Services.AddMarshalApi(builder.Configuration);
 
@@ -78,10 +81,14 @@ public static class MarshalApp
         v1.MapSystemEndpoints();
         v1.MapConfigEndpoints();
         v1.MapMemoryEndpoints();
+        v1.MapPrinterEndpoints();
         v1.MapConversationEndpoints();
         app.MapSpaFallback();
         return app;
     }
+
+    internal static string SnapshotDirectory(IServiceProvider services) =>
+        Path.Combine(services.GetRequiredService<IOptions<PathsOptions>>().Value.Data, "snapshots");
 
     internal static string ConnectionString(IServiceProvider services) =>
         $"Data Source={Path.Combine(services.GetRequiredService<IOptions<PathsOptions>>().Value.Data, "marshal.db")}";

@@ -10,6 +10,16 @@ instance:
 #   url: http://homeassistant.local:8123
 #   tokenSecret: ha_token
 
+# 3D printers via Moonraker (optional). apiKeySecret is only needed when Moonraker requires an API key.
+# macros is the allowlist for printer.run_macro (no arguments are ever passed). Snapshots are stored under
+# /data/snapshots.
+# printers:
+#   - name: voron
+#     url: http://voron.local:7125
+#     apiKeySecret: moonraker_voron
+#     macros: [PARK, LOAD_FILAMENT, UNLOAD_FILAMENT]
+# printerSnapshots: { maxSize: 1024, quality: 85, retention: 20 }
+
 owner:                      # the instance owner created on first start
   displayName: "Your name"
   language: en              # de | en

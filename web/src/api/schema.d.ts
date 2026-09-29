@@ -679,6 +679,176 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/printers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Configured printers with their live state (null while offline) and allowlisted macros. */
+        get: operations["ListPrinters"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/printers/{printer}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Live state from the websocket cache. */
+        get: operations["GetPrinterStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/printers/{printer}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Printable files, newest first. */
+        get: operations["ListPrinterFiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/printers/{printer}/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The job queue. */
+        get: operations["GetPrinterQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/printers/{printer}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recent jobs, newest first. */
+        get: operations["GetPrinterHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/printers/{printer}/controls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Runs a safe control, or freezes a confirm-tier control and returns its confirmation token. */
+        post: operations["ControlPrinter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/printers/{printer}/controls/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Runs a frozen control with the token from the confirmation dialog (single use, expires). */
+        post: operations["ConfirmPrinterControl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/printers/{printer}/snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Takes, resizes and stores a webcam snapshot. */
+        post: operations["CapturePrinterSnapshot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/printers/{printer}/snapshots/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A stored snapshot as JPEG. */
+        get: operations["GetPrinterSnapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/printers/{printer}/webcam/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The webcam's live stream, proxied so the browser never contacts the printer. */
+        get: operations["StreamPrinterWebcam"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -890,8 +1060,20 @@ export interface components {
         DayOfWeek: "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
         /** @enum {unknown} */
         GuardDecision: "safe" | "pending" | "confirmedByKeyword" | "judgePositive" | "judgeNeutral" | "judgeNegative" | "escalatedByTaint" | "denied" | "expired" | null;
+        HeaterState: {
+            /** Format: double */
+            temperature: number;
+            /** Format: double */
+            target: number;
+            /** Format: double */
+            power: number;
+        };
         /** @enum {unknown} */
         InputMode: "text" | "voice" | null;
+        JobQueueStatus: {
+            state: string;
+            jobs: components["schemas"]["QueuedJob"][];
+        };
         /** @description One live update. */
         LiveEventMessage: {
             /** @description Topic, e.g. `runs`. */
@@ -1106,6 +1288,125 @@ export interface components {
             credentialJson: string;
             name: null | string;
         };
+        /** @description Confirms a frozen control. */
+        PrinterControlConfirmation: {
+            token: string;
+        };
+        /** @description A printer page control. `action` names the command; the other fields are its arguments. */
+        PrinterControlRequest: {
+            /**
+             * @description start_print, pause, resume, cancel, emergency_stop, set_temperature, home, move, run_macro,
+             *     queue_add, queue_remove, queue_clear, queue_pause, queue_start or queue_jump.
+             */
+            action: string;
+            /** @description File for start_print. */
+            file?: null | string;
+            /** @description extruder or bed, for set_temperature. */
+            heater?: null | string;
+            /**
+             * Format: double
+             * @description Target °C for set_temperature.
+             */
+            target?: null | number;
+            /** @description x, y and / or z for home (all when empty). */
+            axes?: null | string[];
+            /** @description x, y or z for move. */
+            axis?: null | string;
+            /**
+             * Format: double
+             * @description mm for move.
+             */
+            distance?: null | number;
+            /** @description Allowlisted macro for run_macro. */
+            macro?: null | string;
+            /** @description Files for queue_add. */
+            files?: null | string[];
+            /** @description Jobs for queue_remove. */
+            jobIds?: null | string[];
+            /** @description Job for queue_jump. */
+            jobId?: null | string;
+        };
+        /** @description Outcome of a control: `done`, or `confirmation_required` with a token for the dialog. */
+        PrinterControlResult: {
+            /** @description done or confirmation_required. */
+            status: string;
+            /** @description What the control does, for the dialog. */
+            description: string;
+            /** @description Single-use confirmation token (confirm tier only). */
+            token?: null | string;
+            /**
+             * Format: date-time
+             * @description When the token expires.
+             */
+            expiresAt?: null | string;
+        };
+        PrinterFile: {
+            path: string;
+            /** Format: date-time */
+            modified: string;
+            /** Format: int64 */
+            size: number;
+        };
+        /** @description A stored snapshot. */
+        PrinterSnapshotInfo: {
+            id: string;
+            url: string;
+            /** Format: int32 */
+            width: number;
+            /** Format: int32 */
+            height: number;
+            /** Format: date-time */
+            capturedAt: string;
+        };
+        PrinterState: {
+            printer: string;
+            klippyState: string;
+            stateMessage: null | string;
+            printState: string;
+            filename: null | string;
+            /** Format: double */
+            progress: number;
+            /** Format: double */
+            printDuration: number;
+            /** Format: double */
+            totalDuration: number;
+            /** Format: double */
+            filamentUsed: number;
+            /** Format: int32 */
+            currentLayer: null | number;
+            /** Format: int32 */
+            totalLayers: null | number;
+            /** Format: double */
+            etaSeconds: null | number;
+            message: null | string;
+            extruder: components["schemas"]["HeaterState"];
+            bed: components["schemas"]["HeaterState"];
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /** @description A printer with its live state (null while offline). */
+        PrinterSummary: {
+            name: string;
+            online: boolean;
+            state: null | components["schemas"]["PrinterState"];
+            macros: string[];
+        };
+        PrintJob: {
+            jobId: string;
+            filename: string;
+            status: string;
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            endedAt: null | string;
+            /** Format: double */
+            printDuration: number;
+            /** Format: double */
+            totalDuration: number;
+            /** Format: double */
+            filamentUsed: number;
+            exists: boolean;
+        };
         /** @enum {unknown} */
         ProjectAliasStatus: "candidate" | "active" | "rejected";
         ProjectAliasView: {
@@ -1149,6 +1450,12 @@ export interface components {
             /** Format: int32 */
             chunkCount: number;
             aliases: components["schemas"]["ProjectAliasView"][];
+        };
+        QueuedJob: {
+            jobId: string;
+            filename: string;
+            /** Format: date-time */
+            addedAt: string;
         };
         QuietHoursWindow: {
             day: components["schemas"]["DayOfWeek"];
@@ -2479,6 +2786,231 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProjectFeedbackView"][];
                 };
+            };
+        };
+    };
+    ListPrinters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrinterSummary"][];
+                };
+            };
+        };
+    };
+    GetPrinterStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                printer: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrinterState"];
+                };
+            };
+        };
+    };
+    ListPrinterFiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                printer: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrinterFile"][];
+                };
+            };
+        };
+    };
+    GetPrinterQueue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                printer: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobQueueStatus"];
+                };
+            };
+        };
+    };
+    GetPrinterHistory: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                printer: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrintJob"][];
+                };
+            };
+        };
+    };
+    ControlPrinter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                printer: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrinterControlRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrinterControlResult"];
+                };
+            };
+        };
+    };
+    ConfirmPrinterControl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                printer: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrinterControlConfirmation"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrinterControlResult"];
+                };
+            };
+        };
+    };
+    CapturePrinterSnapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                printer: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrinterSnapshotInfo"];
+                };
+            };
+        };
+    };
+    GetPrinterSnapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                printer: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StreamPrinterWebcam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                printer: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

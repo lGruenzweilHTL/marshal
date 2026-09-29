@@ -184,3 +184,11 @@ They should be replaced with real captures when a printer is available.
   the error). `inspect` routes `ModelRequest(runTier, Vision: true)` where the run tier is the template's tier, else
   `fast` for voice and `standard` otherwise, then falls back to `standard` + vision; the call is recorded as a model
   step of the run. `printer.snapshot` answers with a Markdown image of the same-origin link, which the web chat renders.
+- Printer page API (tasks 2.9–2.10) under `/api/v1/printers` (signed-in users only, not API tokens). A confirm-tier
+  control returns `confirmation_required` with a single-use token (32 random bytes, two minutes, bound to user and
+  printer) that freezes the validated command in memory; the dialog posts it to `controls/confirm`. A restart drops
+  open confirmations, which only means asking again. Executed controls are audited as `printer.control` with the
+  command description, whether it was confirmed and the outcome. The `printer` live topic carries
+  `printer.state` events (`{printer, state}`, state null when offline) to every user, since printers belong to the
+  instance. The webcam stream and snapshots are served from Marshal's origin; the webcam HTTP client has no timeout
+  and no retries, the command client retries only safe methods.

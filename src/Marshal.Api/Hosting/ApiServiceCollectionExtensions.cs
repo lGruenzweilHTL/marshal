@@ -2,10 +2,13 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Asp.Versioning;
 using Marshal.Abstractions;
+using Marshal.Abstractions.LiveEvents;
 using Marshal.Abstractions.Memory;
+using Marshal.Abstractions.Printers;
 using Marshal.Api.Auth;
 using Marshal.Api.Health;
 using Marshal.Api.Models;
+using Marshal.Api.Printers;
 using Marshal.Api.Versioning;
 using Marshal.Core.Configuration;
 using Marshal.Core.Models;
@@ -28,6 +31,11 @@ public static class ApiServiceCollectionExtensions
     {
         services.AddOptions<HttpOptions>().Bind(configuration.GetSection("http"));
         services.AddOptions<OwnerOptions>().Bind(configuration.GetSection("owner")).ValidateDataAnnotations().ValidateOnStart();
+
+        services.AddSingleton<ISnapshotLinks, ApiSnapshotLinks>();
+        services.AddSingleton<PrinterControlConfirmations>();
+        services.AddSingleton(new LiveTopic(PrinterLiveEvents.Topic));
+        services.AddHostedService<PrinterLiveEvents>();
 
         services.AddSingleton<IChatClientFactory, ProviderChatClientFactory>();
         services.AddSingleton<IEmbeddingGeneratorFactory, ProviderEmbeddingGeneratorFactory>();

@@ -1497,6 +1497,348 @@
           }
         }
       }
+    },
+    "/api/v1/printers": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Configured printers with their live state (null while offline) and allowlisted macros.",
+        "operationId": "ListPrinters",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrinterSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Live state from the websocket cache.",
+        "operationId": "GetPrinterStatus",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/files": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Printable files, newest first.",
+        "operationId": "ListPrinterFiles",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrinterFile"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/queue": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "The job queue.",
+        "operationId": "GetPrinterQueue",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobQueueStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/history": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Recent jobs, newest first.",
+        "operationId": "GetPrinterHistory",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrintJob"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/controls": {
+      "post": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Runs a safe control, or freezes a confirm-tier control and returns its confirmation token.",
+        "operationId": "ControlPrinter",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrinterControlRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterControlResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/controls/confirm": {
+      "post": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Runs a frozen control with the token from the confirmation dialog (single use, expires).",
+        "operationId": "ConfirmPrinterControl",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrinterControlConfirmation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterControlResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/snapshots": {
+      "post": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Takes, resizes and stores a webcam snapshot.",
+        "operationId": "CapturePrinterSnapshot",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterSnapshotInfo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/snapshots/{id}": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "A stored snapshot as JPEG.",
+        "operationId": "GetPrinterSnapshot",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/webcam/stream": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "The webcam\u0027s live stream, proxied so the browser never contacts the printer.",
+        "operationId": "StreamPrinterWebcam",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2132,12 +2474,52 @@
           null
         ]
       },
+      "HeaterState": {
+        "required": [
+          "temperature",
+          "target",
+          "power"
+        ],
+        "type": "object",
+        "properties": {
+          "temperature": {
+            "type": "number",
+            "format": "double"
+          },
+          "target": {
+            "type": "number",
+            "format": "double"
+          },
+          "power": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
       "InputMode": {
         "enum": [
           "text",
           "voice",
           null
         ]
+      },
+      "JobQueueStatus": {
+        "required": [
+          "state",
+          "jobs"
+        ],
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string"
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueuedJob"
+            }
+          }
+        }
       },
       "LiveEventMessage": {
         "required": [
@@ -2857,6 +3239,379 @@
         },
         "description": "A new passkey for the signed-in user."
       },
+      "PrinterControlConfirmation": {
+        "required": [
+          "token"
+        ],
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "description": "Confirms a frozen control."
+      },
+      "PrinterControlRequest": {
+        "required": [
+          "action"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "start_print, pause, resume, cancel, emergency_stop, set_temperature, home, move, run_macro,\nqueue_add, queue_remove, queue_clear, queue_pause, queue_start or queue_jump."
+          },
+          "file": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "File for start_print."
+          },
+          "heater": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "extruder or bed, for set_temperature."
+          },
+          "target": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "Target \u00B0C for set_temperature.",
+            "format": "double"
+          },
+          "axes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "x, y and / or z for home (all when empty)."
+          },
+          "axis": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "x, y or z for move."
+          },
+          "distance": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "mm for move.",
+            "format": "double"
+          },
+          "macro": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Allowlisted macro for run_macro."
+          },
+          "files": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Files for queue_add."
+          },
+          "jobIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Jobs for queue_remove."
+          },
+          "jobId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Job for queue_jump."
+          }
+        },
+        "description": "A printer page control. \u0060action\u0060 names the command; the other fields are its arguments."
+      },
+      "PrinterControlResult": {
+        "required": [
+          "status",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "done or confirmation_required."
+          },
+          "description": {
+            "type": "string",
+            "description": "What the control does, for the dialog."
+          },
+          "token": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Single-use confirmation token (confirm tier only)."
+          },
+          "expiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the token expires.",
+            "format": "date-time"
+          }
+        },
+        "description": "Outcome of a control: \u0060done\u0060, or \u0060confirmation_required\u0060 with a token for the dialog."
+      },
+      "PrinterFile": {
+        "required": [
+          "path",
+          "modified",
+          "size"
+        ],
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "modified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PrinterSnapshotInfo": {
+        "required": [
+          "id",
+          "url",
+          "width",
+          "height",
+          "capturedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "width": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "height": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "capturedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A stored snapshot."
+      },
+      "PrinterState": {
+        "required": [
+          "printer",
+          "klippyState",
+          "stateMessage",
+          "printState",
+          "filename",
+          "progress",
+          "printDuration",
+          "totalDuration",
+          "filamentUsed",
+          "currentLayer",
+          "totalLayers",
+          "etaSeconds",
+          "message",
+          "extruder",
+          "bed",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "printer": {
+            "type": "string"
+          },
+          "klippyState": {
+            "type": "string"
+          },
+          "stateMessage": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "printState": {
+            "type": "string"
+          },
+          "filename": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "progress": {
+            "type": "number",
+            "format": "double"
+          },
+          "printDuration": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalDuration": {
+            "type": "number",
+            "format": "double"
+          },
+          "filamentUsed": {
+            "type": "number",
+            "format": "double"
+          },
+          "currentLayer": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "totalLayers": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "etaSeconds": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "message": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "extruder": {
+            "$ref": "#/components/schemas/HeaterState"
+          },
+          "bed": {
+            "$ref": "#/components/schemas/HeaterState"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PrinterSummary": {
+        "required": [
+          "name",
+          "online",
+          "state",
+          "macros"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "online": {
+            "type": "boolean"
+          },
+          "state": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PrinterState"
+              }
+            ]
+          },
+          "macros": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "A printer with its live state (null while offline)."
+      },
+      "PrintJob": {
+        "required": [
+          "jobId",
+          "filename",
+          "status",
+          "startedAt",
+          "endedAt",
+          "printDuration",
+          "totalDuration",
+          "filamentUsed",
+          "exists"
+        ],
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "printDuration": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalDuration": {
+            "type": "number",
+            "format": "double"
+          },
+          "filamentUsed": {
+            "type": "number",
+            "format": "double"
+          },
+          "exists": {
+            "type": "boolean"
+          }
+        }
+      },
       "ProjectAliasStatus": {
         "enum": [
           "candidate",
@@ -3003,6 +3758,26 @@
             "items": {
               "$ref": "#/components/schemas/ProjectAliasView"
             }
+          }
+        }
+      },
+      "QueuedJob": {
+        "required": [
+          "jobId",
+          "filename",
+          "addedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "addedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -3795,6 +4570,9 @@
     },
     {
       "name": "Memory"
+    },
+    {
+      "name": "Printers"
     }
   ]
 }

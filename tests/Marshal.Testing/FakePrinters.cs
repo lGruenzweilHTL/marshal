@@ -111,10 +111,14 @@ public sealed class FakeSnapshotSource : ISnapshotSource
 
     public int Captures { get; private set; }
 
+    /// <summary>Builds snapshot links (e.g. the host's); a fixed test path when not set.</summary>
+    public ISnapshotLinks? Links { get; set; }
+
     public Task<Result<PrinterSnapshot>> CaptureAsync(string printer, CancellationToken cancellationToken)
     {
         Captures++;
-        return Task.FromResult(Result.Success(new PrinterSnapshot(printer, "snap1", $"/api/printers/{printer}/snapshots/snap1", Jpeg, 1024, 768, DateTimeOffset.UnixEpoch)));
+        string url = Links?.For(printer, "snap1") ?? $"/api/printers/{printer}/snapshots/snap1";
+        return Task.FromResult(Result.Success(new PrinterSnapshot(printer, "snap1", url, Jpeg, 1024, 768, DateTimeOffset.UnixEpoch)));
     }
 
     public Task<Result<byte[]>> OpenAsync(string printer, string id, CancellationToken cancellationToken) =>
