@@ -66,6 +66,11 @@ embedding:
   model: "bge-m3"
   endpoint: "http://ollama:11434"
 
+# memory:
+#   summarizer: { enabled: true, maxTurns: 50 }   # summarize finished conversations into memory (fast tier)
+#   audit: { staleAfterDays: 180 }
+#   retrieval: { tokenBudget: 600 }              # memory added to each turn's prompt
+
 agent:
   maxSteps: 8
   voiceLatencyCap: "00:00:08"
