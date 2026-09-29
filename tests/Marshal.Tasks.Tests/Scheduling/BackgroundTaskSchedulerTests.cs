@@ -29,6 +29,7 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
     private readonly FakeSpending _spending = new();
     private readonly List<ITaskRunner> _extraRunners = [];
     private BackgroundTaskScheduler? _scheduler;
+    private readonly TaskSignals _signals = new();
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -47,6 +48,7 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
             _scheduler.Dispose();
         }
 
+        _signals.Dispose();
         await _database.DisposeAsync();
     }
 
@@ -162,7 +164,7 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
 
         for (int i = 0; i < 5; i++)
         {
-            _scheduler!.Wake();
+            _signals.Wake();
             await WaitIdleAsync();
         }
 
@@ -271,7 +273,7 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
 
         using (_accessor.Use(Text(OwnerA)))
             await Store().UpdateAsync((await Store().GetAsync(task.Id, Ct)).Value with { Status = AgentTaskStatus.Cancelled }, Ct);
-        _scheduler!.CancelRun(task.Id);
+        _signals.CancelRun(task.Id);
 
         await WaitForAsync(() => Task.FromResult(_runner.Finished == 1));
         await WaitIdleAsync();
@@ -313,7 +315,7 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
     {
         _options.Workers = workers;
         var budgets = new TaskBudgets(Store(), _spending, new ViennaProfiles(), new FakeTemplateCatalog(), Options.Create(_options), _time);
-        _scheduler = new BackgroundTaskScheduler(Store(), [_runner, .. _extraRunners], budgets, new TaskPauses(_database.Factory), _accessor, new ViennaProfiles(), Options.Create(_options), _time, _log);
+        _scheduler = new BackgroundTaskScheduler(Store(), _signals, [_runner, .. _extraRunners], budgets, new TaskPauses(_database.Factory), _accessor, new ViennaProfiles(), Options.Create(_options), _time, _log);
         await _scheduler.StartAsync(Ct);
         await WaitIdleAsync();
     }

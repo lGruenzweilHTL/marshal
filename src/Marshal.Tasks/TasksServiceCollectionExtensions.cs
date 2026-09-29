@@ -1,10 +1,12 @@
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Tasks;
+using Marshal.Abstractions.Tools;
 using Marshal.Tasks.KillSwitch;
 using Marshal.Tasks.Limits;
 using Marshal.Tasks.Running;
 using Marshal.Tasks.Scheduling;
 using Marshal.Tasks.Store;
+using Marshal.Tasks.Tools;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -35,9 +37,10 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<ActiveTaskRuns>();
         services.AddSingleton<ITaskRunner, AgentTaskRunner>();
         services.AddSingleton<IContextContributor, TaskPromptContributor>();
-        services.AddSingleton<BackgroundTaskScheduler>();
-        services.AddSingleton<ITaskScheduler>(provider => provider.GetRequiredService<BackgroundTaskScheduler>());
-        services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<BackgroundTaskScheduler>());
+        services.AddSingleton<IToolSource, TaskToolSource>();
+        services.AddSingleton<TaskSignals>();
+        services.AddSingleton<ITaskScheduler>(provider => provider.GetRequiredService<TaskSignals>());
+        services.AddSingleton<IHostedService, BackgroundTaskScheduler>();
         return services;
     }
 }

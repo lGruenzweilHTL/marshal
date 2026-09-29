@@ -174,6 +174,21 @@ public sealed class EfTaskStoreTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Create_UnknownOrForeignProject_ValidationError()
+    {
+        var foreign = new Marshal.Abstractions.Memory.ProjectId(Guid.CreateVersion7());
+        await using (Marshal.Data.MarshalDbContext db = _database.CreateContext(OwnerB))
+        {
+            db.Projects.Add(new Marshal.Data.Memory.Project { Id = foreign, OwnerId = OwnerB, Name = "Bob's", Description = "", CreatedAt = _time.GetUtcNow() });
+            await db.SaveChangesAsync(Ct);
+        }
+
+        _database.Accessor.Current = Text(OwnerA);
+
+        Assert.Equal("tasks.invalid", (await Store().CreateAsync(New(null) with { ProjectId = foreign }, Ct)).Error.Code);
+    }
+
+    [Fact]
     public async Task Create_ParentOfAnotherOwner_NotFound()
     {
         _database.Accessor.Current = Text(OwnerB);

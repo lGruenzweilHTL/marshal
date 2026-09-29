@@ -7,6 +7,7 @@ using Marshal.Abstractions.Tasks;
 using Marshal.Data;
 using Marshal.Data.Tasks;
 using Marshal.Tasks.Scheduling;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -63,6 +64,8 @@ public sealed partial class EfTaskStore(
 
         if (name.Value is string taken && await db.AgentTasks.AnyAsync(row => row.Name == taken, cancellationToken))
             return TaskErrors.NameTaken(taken);
+        if (task.ProjectId is { } project && !await db.Projects.AnyAsync(row => row.Id == project && row.DeletedAt == null, cancellationToken))
+            return TaskErrors.Invalid($"There is no project '{project}'.");
 
         DateTimeOffset now = timeProvider.GetUtcNow();
         var row = new AgentTask
@@ -95,7 +98,7 @@ public sealed partial class EfTaskStore(
         {
             await db.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException) when (name.Value is not null)
+        catch (DbUpdateException exception) when (name.Value is not null && IsUniqueViolation(exception))
         {
             return TaskErrors.NameTaken(name.Value);
         }
@@ -184,7 +187,7 @@ public sealed partial class EfTaskStore(
         {
             return TaskErrors.Conflict();
         }
-        catch (DbUpdateException) when (name.Value is not null)
+        catch (DbUpdateException exception) when (name.Value is not null && IsUniqueViolation(exception))
         {
             return TaskErrors.NameTaken(name.Value);
         }
@@ -300,6 +303,10 @@ public sealed partial class EfTaskStore(
         UpdatedAt = row.UpdatedAt,
         RowVersion = row.RowVersion,
     };
+
+    // SQLITE_CONSTRAINT_UNIQUE: another task got the name between the check and the insert.
+    private static bool IsUniqueViolation(DbUpdateException exception) =>
+        exception.InnerException is SqliteException { SqliteErrorCode: 19, SqliteExtendedErrorCode: 2067 };
 
     [GeneratedRegex("^[a-z0-9][a-z0-9_-]{0,63}$")]
     private static partial Regex NamePattern();

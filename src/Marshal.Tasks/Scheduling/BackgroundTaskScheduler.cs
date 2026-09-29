@@ -15,13 +15,14 @@ using Microsoft.Extensions.Options;
 namespace Marshal.Tasks.Scheduling;
 
 /// <summary>
-/// Runs due tasks. One loop sleeps until the earliest <c>next_run_at</c> (or a <see cref="Wake"/>), then queues the
+/// Runs due tasks. One loop sleeps until the earliest <c>next_run_at</c> (or a <see cref="TaskSignals.Wake"/>), then queues the
 /// due tasks in run-time order; <see cref="TaskOptions.Workers"/> workers claim each task by moving it to
 /// <c>running</c> with its row version, so a task is never run twice, run it as its owner and apply the outcome.
 /// Tasks left <c>running</c> by a crash become <c>pending</c> again at startup.
 /// </summary>
 public sealed partial class BackgroundTaskScheduler(
     ITaskStore store,
+    TaskSignals signals,
     IEnumerable<ITaskRunner> runners,
     TaskBudgets budgets,
     TaskPauses pauses,
@@ -29,7 +30,7 @@ public sealed partial class BackgroundTaskScheduler(
     IUserProfileProvider profiles,
     IOptions<TaskOptions> options,
     TimeProvider time,
-    ILogger<BackgroundTaskScheduler> logger) : BackgroundService, ITaskScheduler
+    ILogger<BackgroundTaskScheduler> logger) : BackgroundService
 {
     private const int DueBatch = 100;
     private const int ApplyAttempts = 5;
@@ -41,8 +42,6 @@ public sealed partial class BackgroundTaskScheduler(
     private readonly Dictionary<TaskKind, ITaskRunner> _runners = runners.ToDictionary(runner => runner.Kind);
     private readonly Channel<OwnedTask> _queue = Channel.CreateBounded<OwnedTask>(new BoundedChannelOptions(DueBatch) { SingleReader = false, SingleWriter = true });
     private readonly ConcurrentDictionary<TaskId, byte> _queued = new();
-    private readonly ConcurrentDictionary<TaskId, CancellationTokenSource> _running = new();
-    private readonly SemaphoreSlim _signal = new(0, 1);
     private volatile bool _sleeping;
     private int _busy;
     private int _idleWorkers;
@@ -50,31 +49,6 @@ public sealed partial class BackgroundTaskScheduler(
     /// <summary>True while the loop sleeps and no worker is claiming or finishing a task (for tests).</summary>
     internal bool IsIdle =>
         _sleeping && Volatile.Read(ref _busy) == 0 && (_queue.Reader.Count == 0 || Volatile.Read(ref _idleWorkers) == 0);
-
-    public void Wake()
-    {
-        try
-        {
-            if (_signal.CurrentCount == 0)
-                _signal.Release();
-        }
-        catch (SemaphoreFullException)
-        {
-            // Already signalled.
-        }
-    }
-
-    public void CancelRun(TaskId task)
-    {
-        if (_running.TryGetValue(task, out CancellationTokenSource? run))
-            run.Cancel();
-    }
-
-    public override void Dispose()
-    {
-        base.Dispose();
-        _signal.Dispose();
-    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -130,7 +104,7 @@ public sealed partial class BackgroundTaskScheduler(
     {
         using var sleeping = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
         var timer = Task.Delay(duration, time, sleeping.Token);
-        Task signal = _signal.WaitAsync(sleeping.Token);
+        Task signal = signals.WaitAsync(sleeping.Token);
         _sleeping = true;
         try
         {
@@ -183,7 +157,7 @@ public sealed partial class BackgroundTaskScheduler(
             {
                 _queued.TryRemove(due.Id, out _);
                 Interlocked.Decrement(ref _busy);
-                Wake();
+                signals.Wake();
             }
         }
     }
@@ -241,7 +215,7 @@ public sealed partial class BackgroundTaskScheduler(
             return TaskRunOutcome.Failed("no_runner");
 
         using var run = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-        _running[task.Id] = run;
+        signals.RunStarted(task.Id, run);
         Interlocked.Decrement(ref _busy);
         try
         {
@@ -258,7 +232,7 @@ public sealed partial class BackgroundTaskScheduler(
         }
         finally
         {
-            _running.TryRemove(new KeyValuePair<TaskId, CancellationTokenSource>(task.Id, run));
+            signals.RunEnded(task.Id, run);
             Interlocked.Increment(ref _busy);
         }
     }

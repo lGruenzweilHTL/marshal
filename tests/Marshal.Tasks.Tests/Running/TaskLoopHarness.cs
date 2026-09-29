@@ -48,6 +48,9 @@ internal sealed class TaskLoopHarness
 
     public AgentTaskRunner Runner { get; private set; } = null!;
 
+    /// <summary>The agent loop behind <see cref="Runner"/>, for interactive turns.</summary>
+    public AgentRunner Agent { get; private set; } = null!;
+
     /// <summary>The context of the last run, as the agent loop saw it.</summary>
     public MarshalExecutionContext LastContext => Recorder.Runs[^1].Start.Context;
 
@@ -75,6 +78,7 @@ internal sealed class TaskLoopHarness
             Options.Create(new ConfirmationOptions()),
             harness.Time,
             NullLogger<AgentRunner>.Instance);
+        harness.Agent = agent;
         harness.Runner = new AgentTaskRunner(agent, new Profiles(), harness.ActiveRuns);
         return harness;
     }

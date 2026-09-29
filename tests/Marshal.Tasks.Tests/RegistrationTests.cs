@@ -1,7 +1,9 @@
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Tasks;
+using Marshal.Abstractions.Tools;
 using Marshal.Tasks.Running;
 using Marshal.Tasks.Store;
+using Marshal.Tasks.Tools;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -22,5 +24,7 @@ public sealed class RegistrationTests
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IContextContributor) && descriptor.ImplementationType == typeof(TaskPromptContributor));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(ITaskScheduler));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IHostedService));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IToolSource) && descriptor.ImplementationType == typeof(TaskToolSource));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IKillSwitch));
     }
 }
