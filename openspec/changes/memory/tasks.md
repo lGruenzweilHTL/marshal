@@ -7,8 +7,8 @@
 - [x] 1.5 Implement `ChunkId` generation
 - [x] 1.6 Write store tests: validation (project scope needs project), same-id update creates `ChunkVersion`, identity change creates `supersedes`, no self-supersede, soft delete, FTS and vector index updated in the same transaction, ownership with a second user
 - [x] 1.7 Implement entities, migration (incl. FTS5 and vec virtual tables) and `SqliteMemoryStore`; align `erd.puml` and re-render
-- [ ] 1.8 Write export tests: NDJSON format, round trip, embeddings excluded and recomputed
-- [ ] 1.9 Implement `NdjsonMemoryExporter`
+- [x] 1.8 Write export tests: NDJSON format, round trip, embeddings excluded and recomputed
+- [x] 1.9 Implement `NdjsonMemoryExporter`
 
 ## 2. Retrieval
 

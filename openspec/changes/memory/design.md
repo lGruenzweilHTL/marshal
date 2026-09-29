@@ -110,3 +110,12 @@ EF migration adds memory tables; the FTS and vector virtual tables are created b
   soft-deleted chunk. Soft delete removes the index entries. Pinning is never changed by a write. New columns
   beyond the ERD sketch: `chunks.created_by`, `chunks.last_retrieved_at` (for the stale audit),
   `projects.created_at` / `deleted_at`, `project_aliases.created_at`.
+
+### Export (tasks 1.8, 1.9)
+
+- One JSON object per line with `kind` first: `project` lines (project chunks need their project; not listed in the
+  spec but required for a lossless round trip), then `chunk`, `version` (with its id, so a re-import skips it) and
+  `edge` lines, each sorted (id; chunk id + time; from / to / kind). Enum values in snake_case, times ISO 8601
+  round-trip format, no embeddings and no `last_retrieved_at` (runtime statistics).
+- Import recomputes chunk ids for the importing owner (identical for the same owner), maps versions and edges,
+  skips rows that exist, and re-embeds the imported live chunks in the same transaction as the rows.
