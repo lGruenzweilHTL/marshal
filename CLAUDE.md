@@ -50,7 +50,10 @@ src/                         .NET projects
   Marshal.Tasks/             scheduler, event bus, trigger matcher, executors, notifications (planned)
   Marshal.Integrations.HomeAssistant/  HA REST + websocket client, registry and state cache, target resolver,
                              area context, timer tools, time zone source
-  Marshal.Integrations.*/    Moonraker, Mail, FreshRss, Notes, ... (planned)
+  Marshal.Integrations.Moonraker/  printers: Moonraker REST + websocket state cache, snapshots, inspection, printer tools
+  Marshal.Integrations.Mail/ mail providers (IMAP via MailKit) and credential sources, mail tools (never a send path)
+  Marshal.Integrations.FreshRss/  FreshRSS Google Reader API client, full-text extraction, RSS tools
+  Marshal.Integrations.Notes/  git-backed Markdown notes source, own hybrid notes index, notes tools
   Marshal.Data/              EF Core DbContext, migrations, owner-scoped query filters
   Marshal.ExecutorHost/      separate coding-sandbox service (own deployment, never in the main container) (planned)
 tests/                       one test project per src project (Marshal.<Name>.Tests)
@@ -99,10 +102,10 @@ Key dependencies and what they are for. Keep this list current when adding or re
 | `Microsoft.EntityFrameworkCore.Design` + `dotnet-ef` (local tool, `.config/dotnet-tools.json`) | Creating migrations (`dotnet ef migrations add <Name> --project src/Marshal.Data --output-dir Migrations`) |
 | `sqlite-vec` | Vector search in SQLite: upstream NuGet with the native `vec0` binaries per RID (prerelease `0.1.7-alpha.2.1`, `contentFiles` excluded), loaded into every connection by `SqliteVectorExtension` (Marshal.Data) |
 | `Cronos` | Cron expression parsing for the scheduler |
-| `MailKit` | IMAP provider (search, drafts via `APPEND`, IDLE) |
+| `MailKit` | IMAP provider (search, drafts via `APPEND`, XOAUTH2); never its SMTP client |
 | `SmartReader` | Readability full-text extraction for RSS articles |
 | `Google.Apis.Gmail.v1`, `Microsoft.Graph` | Gmail API and Graph mail providers (later, build order §14) |
-| `SkiaSharp` | Image resizing (camera snapshots before VLM calls); MIT licensed |
+| `SkiaSharp` (+ `SkiaSharp.NativeAssets.Linux.NoDependencies`) | Image resizing (printer and camera snapshots before VLM calls); MIT licensed; the native asset package runs in the slim container without fontconfig |
 | `Microsoft.Extensions.Http` | `IHttpClientFactory` named clients (MCP streamable HTTP, Home Assistant REST) |
 | `Microsoft.Extensions.Http.Resilience` | Retries / backoff for integration HTTP clients |
 | `OpenTelemetry.*` (`Extensions.Hosting`, `Exporter.OpenTelemetryProtocol`) | Traces and metrics (`Marshal.Runs` activity source, `Marshal` meter), OTLP export |
