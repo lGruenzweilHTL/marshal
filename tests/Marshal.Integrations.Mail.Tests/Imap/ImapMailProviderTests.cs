@@ -1,11 +1,11 @@
+using MailKit;
+using MailKit.Net.Imap;
+using MailKit.Search;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Mail;
 using Marshal.Integrations.Mail.Credentials;
 using Marshal.Integrations.Mail.Imap;
 using Marshal.Testing;
-using MailKit;
-using MailKit.Net.Imap;
-using MailKit.Search;
 using MimeKit;
 using MailFolder = Marshal.Abstractions.Mail.MailFolder;
 

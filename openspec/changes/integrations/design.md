@@ -214,3 +214,7 @@ They should be replaced with real captures when a printer is available.
 - Container tests: Dovecot 2.4 with a test config (German `Entwürfe` marked `\Drafts`, `Sent` marked `\Sent`) and
   GreenMail 2.1 (no SPECIAL-USE) for the configured-drafts-folder fallback and the missing-folder error. Neither
   offers XOAUTH2, so a tiny in-process IMAP responder checks the `AUTHENTICATE XOAUTH2` exchange.
+- Mail tools (tasks 3.5–3.6): tool-facing message ids are `alias:providerId`, so reads and replies always go to the
+  account the message came from; a reply drafted in another account is rejected. `mail.search` without `account`
+  queries every account, merges by date and reports accounts that failed next to the results. The references
+  recorded for sensitive tools are the comma-separated tool-facing ids. JSON output keeps non-ASCII characters.

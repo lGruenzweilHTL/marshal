@@ -12,6 +12,10 @@ public static class MailErrors
     public static Error OAuthNotConfigured(string provider) =>
         new("mail.oauth_not_configured", $"OAuth for {provider} is not configured on this instance.", ErrorType.Unavailable);
 
+    public static Error AccountNotFound(string alias) => new("mail.account_not_found", $"There is no mail account '{alias}'.", ErrorType.NotFound);
+
+    public static Error AliasTaken(string alias) => new("mail.alias_taken", $"The alias '{alias}' is already used by another mail account.", ErrorType.Conflict);
+
     public static Error MessageNotFound(string id) => new("mail.message_not_found", $"There is no message '{id}'.", ErrorType.NotFound);
 
     public static Error DraftsFolderMissing(string alias) =>

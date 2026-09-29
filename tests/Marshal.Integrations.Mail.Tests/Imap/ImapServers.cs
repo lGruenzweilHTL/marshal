@@ -1,10 +1,10 @@
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
-using Marshal.Abstractions.Mail;
-using Marshal.Abstractions.Identity;
 using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Security;
+using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.Mail;
 using MimeKit;
 
 [assembly: AssemblyFixture(typeof(Marshal.Integrations.Mail.Tests.Imap.ImapServers))]

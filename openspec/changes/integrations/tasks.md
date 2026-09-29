@@ -24,8 +24,8 @@
 - [x] 3.2 Implement `PasswordCredentialSource` and `OAuth2CredentialSource`
 - [x] 3.3 Write IMAP provider tests against a GreenMail / Dovecot container: search translation, read message, thread rebuild, folders, drafts via `APPEND` to `\Drafts` with `\Draft` flag, missing drafts folder error
 - [x] 3.4 Implement `ImapMailProvider` with capability flags
-- [ ] 3.5 Write mail tool tests: all-accounts search, alias resolution, taint source `mail`, redaction to message references, drafts not escalated in tainted runs, no send / delete / move tools exist
-- [ ] 3.6 Implement mail tools
+- [x] 3.5 Write mail tool tests: all-accounts search, alias resolution, taint source `mail`, redaction to message references, drafts not escalated in tainted runs, no send / delete / move tools exist
+- [x] 3.6 Implement mail tools
 - [ ] 3.7 Write account API tests: create IMAP account, OAuth connect flow with state check, ownership
 - [ ] 3.8 Implement accounts endpoints, OAuth callback and the accounts view
 - [ ] 3.9 Add an architecture test asserting no SMTP types are referenced anywhere in the solution
