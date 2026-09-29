@@ -1,7 +1,7 @@
 ## 1. Setup and verification
 
 - [x] 1.1 Create projects `Marshal.Integrations.{Moonraker,Mail,FreshRss,Notes}` and test projects; update `packages.puml`, `CLAUDE.md` repository map and package index
-- [ ] 1.2 Verify current Moonraker websocket / webcam APIs, Google and Microsoft OAuth redirect rules for LAN hostnames, FreshRSS Google Reader API, HA calendar services; record in `design.md`
+- [x] 1.2 Verify current Moonraker websocket / webcam APIs, Google and Microsoft OAuth redirect rules for LAN hostnames, FreshRSS Google Reader API, HA calendar services; record in `design.md`
 - [ ] 1.3 Record Moonraker websocket traffic (idle, print start, pause, complete, error, klippy shutdown) as fixtures
 
 ## 2. Printer

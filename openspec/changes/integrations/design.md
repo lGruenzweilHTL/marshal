@@ -85,3 +85,77 @@ EF migration adds `MailAccount` and `NoteIndexEntry` plus notes FTS / vec tables
 
 - Exchange account details (deferred §14).
 - HA calendar event update API availability per integration.
+
+## Implementation Notes
+
+### Verification (task 1.2, checked 2026-09-29)
+
+**Moonraker** ([external API docs](https://moonraker.readthedocs.io/en/latest/external_api/introduction/)):
+- Websocket at `/websocket`, JSON-RPC 2.0 (`{"jsonrpc":"2.0","method","params","id"}`, errors `{"error":{"code","message"}}`).
+  HTTP responses are wrapped as `{"result": ...}`; HTTP auth is the `X-Api-Key` header.
+- `server.connection.identify` takes `client_name`, `version`, `type` (`web|mobile|desktop|display|bot|agent|other`),
+  `url` and optional `api_key` / `access_token`; it authenticates the websocket and may be called once per
+  connection. Marshal identifies as type `agent` with the API key. The `X-Api-Key` header on the upgrade request is
+  sent as well; the oneshot token (`/access/oneshot_token`) is only a fallback for proxies that strip headers.
+- `printer.objects.subscribe` / `printer.objects.query` take `objects: {name: null | [attrs]}` and return
+  `{eventtime, status}`. `notify_status_update` has `params: [statusDiff, eventtime]`.
+  `notify_klippy_ready`, `notify_klippy_shutdown`, `notify_klippy_disconnected` have no params.
+  `server.info` reports `klippy_state` (`disconnected|startup|ready|error|shutdown`).
+- Commands: `POST /printer/print/start?filename=`, `/printer/print/pause`, `/printer/print/resume`,
+  `/printer/print/cancel`, `/printer/emergency_stop`, all answering `"ok"`. Heating, homing, moving and macros go through
+  `POST /printer/gcode/script` with a script **built by Marshal** from typed, validated arguments
+  (`SET_HEATER_TEMPERATURE HEATER=… TARGET=…`, `G28 X Y`, `G91`/`G1`/`G90`, `<ALLOWLISTED_MACRO>`); the model never
+  supplies G-code text. Restart and firmware restart endpoints exist but have no code path in Marshal.
+- `GET /server/files/list?root=gcodes` (items `path`, `modified`, `size`, `permissions`); job queue
+  `GET /server/job_queue/status`, `POST /server/job_queue/job` (`filenames`, `reset`), `DELETE /server/job_queue/job`
+  (`job_ids` / `all`), `POST /server/job_queue/{pause,start,jump}`; history `GET /server/history/list`
+  (`limit`, `start`, `order`, `since`, `before`; jobs with `job_id`, `filename`, `status`, `start_time`, `end_time`,
+  `print_duration`, `total_duration`, `filament_used`, `exists`).
+- `GET /server/webcams/list` returns `webcams[]` with `name`, `enabled`, `service`, `snapshot_url`, `stream_url`,
+  `flip_horizontal`, `flip_vertical`, `rotation`, `uid`; URLs may be relative to Moonraker's host and are resolved
+  against the printer URL.
+
+**Google OAuth** ([web server flow](https://developers.google.com/identity/protocols/oauth2/web-server)):
+authorization `https://accounts.google.com/o/oauth2/v2/auth` with `access_type=offline` and `prompt=consent` (to
+always receive a refresh token), token endpoint `https://oauth2.googleapis.com/token`, IMAP scope
+`https://mail.google.com/`. Redirect URIs must be HTTPS (localhost excepted), must not be raw IP addresses and the host
+must end in a public-suffix TLD. So the redirect must use the reverse proxy's real domain name (a domain that only
+resolves on the LAN works); a bare LAN IP does not. The 7-day refresh-token lifetime of apps in "Testing" status
+is not on this page; the setup docs still tell users to publish the Cloud project to production.
+
+**Microsoft OAuth** ([redirect URI rules](https://learn.microsoft.com/en-us/entra/identity-platform/reply-url),
+[IMAP OAuth](https://learn.microsoft.com/en-us/exchange/client-developer/legacy-protocols/how-to-authenticate-an-imap-pop-smtp-application-by-using-oauth)):
+redirect URIs must be HTTPS except `localhost` / `127.0.0.1`, are case-sensitive, max 256 characters, and must not
+carry query parameters when personal accounts are allowed. Hence the callback is the fixed path
+`/oauth/callback/microsoft` and state travels in the `state` parameter. Delegated IMAP scope
+`https://outlook.office.com/IMAP.AccessAsUser.All` plus `offline_access`; works for Microsoft 365 and Outlook.com
+accounts through the `common` endpoints `https://login.microsoftonline.com/common/oauth2/v2.0/{authorize,token}`.
+SASL XOAUTH2 (`user=…^Aauth=Bearer …^A^A`) is MailKit's `SaslMechanismOAuth2`.
+
+**FreshRSS** ([Google Reader API](https://freshrss.github.io/FreshRSS/en/developers/06_GoogleReader_API.html),
+`p/api/greader.php`): `POST /api/greader.php/accounts/ClientLogin` (`Email`, `Passwd`) answers `Auth=<token>`; requests
+send `Authorization: GoogleLogin auth=<token>`; edits need `T=<token>` from `GET /reader/api/0/token`.
+`subscription/list`, `tag/list`, `stream/contents/<streamId>` (`n`, `c` continuation, `xt` exclude target, `ot` older
+than, `r=o` ascending), `stream/items/contents` (`i=` ids, decimal or `tag:google.com,2005:reader/item/<hex>`),
+`edit-tag` (`a=user/-/state/com.google/read`, `i=`). **The API has no search route**, so `rss.search(query)` filters
+the most recent items (`freshrss.searchWindow`, default 500, read and unread) client-side on title and summary. This
+satisfies the RSS spec (the tool exists and uses the API) without an extra channel.
+
+**Home Assistant calendar** ([REST API](https://developers.home-assistant.io/docs/api/rest/),
+[get_events](https://www.home-assistant.io/actions/calendar.get_events/),
+[create_event](https://www.home-assistant.io/actions/calendar.create_event/), `components/calendar`):
+`GET /api/calendars` lists `{entity_id, name}`; `GET /api/calendars/<entity>?start=&end=` returns events with
+`summary`, `start`/`end` (`{dateTime}` or `{date}`), `description`, `location` and `uid` / `recurrence_id`. The
+`calendar.get_events` action omits `uid`, so reads use the REST endpoint (the uid is needed for updates).
+Creation uses `calendar.create_event` (`summary`, `description`, `start_date_time`, `end_date_time`, `start_date`,
+`end_date`, `location`). Updates use the websocket command `calendar/event/update` (`entity_id`, `uid`, optional
+`recurrence_id` / `recurrence_range`, `event`); there is no update action. Capability detection: the entity's
+`supported_features` bit `UPDATE_EVENT = 4` (`CREATE_EVENT = 1`, `DELETE_EVENT = 2` is never used).
+
+### Moonraker fixtures (task 1.3)
+
+There is no printer in the development environment, so the websocket fixtures in
+`tests/Marshal.Integrations.Moonraker.Tests/Fixtures/` are transcribed from the documented message formats above
+(identify result, subscribe result with the initial state, `notify_status_update` diffs for print start, pause,
+complete and error, `notify_klippy_shutdown`, `notify_klippy_ready`) rather than captured from a live Moonraker.
+They should be replaced with real captures when a printer is available.
