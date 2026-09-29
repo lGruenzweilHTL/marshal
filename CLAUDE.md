@@ -47,7 +47,8 @@ src/                         .NET projects
                              context builder, model router, sessions
   Marshal.Memory/            memory chunks, versions and edges, hybrid retrieval, project activation,
                              consolidation (entities and migrations live in Marshal.Data)
-  Marshal.Tasks/             scheduler, event bus, trigger matcher, executors, notifications (planned)
+  Marshal.Tasks/             durable tasks, scheduler + worker pool, event bus, trigger matcher, deliveries,
+                             notifications, approval queue, follow-ups, executors, system jobs
   Marshal.Integrations.HomeAssistant/  HA REST + websocket client, registry and state cache, target resolver,
                              area context, timer tools, time zone source
   Marshal.Integrations.Moonraker/  printers: Moonraker REST + websocket state cache, snapshots, inspection, printer tools
@@ -55,7 +56,8 @@ src/                         .NET projects
   Marshal.Integrations.FreshRss/  FreshRSS Google Reader API client, full-text extraction, RSS tools
   Marshal.Integrations.Notes/  git-backed Markdown notes source, own hybrid notes index, notes tools
   Marshal.Data/              EF Core DbContext, migrations, owner-scoped query filters
-  Marshal.ExecutorHost/      separate coding-sandbox service (own deployment, never in the main container) (planned)
+  Marshal.ExecutorHost/      separate coding-sandbox service (own deployment and image, never in the main container,
+                             never referenced by Marshal)
 tests/                       one test project per src project (Marshal.<Name>.Tests)
   Marshal.Testing/           shared hand-written fakes (FakeChatClient, FakeEmbeddingGenerator, ...)
 web/                         Vue + Vite + TypeScript SPA (API client generated from OpenAPI), folders by feature;
@@ -101,7 +103,7 @@ Key dependencies and what they are for. Keep this list current when adding or re
 | `EFCore.NamingConventions` | snake_case table and column names for the EF Core model |
 | `Microsoft.EntityFrameworkCore.Design` + `dotnet-ef` (local tool, `.config/dotnet-tools.json`) | Creating migrations (`dotnet ef migrations add <Name> --project src/Marshal.Data --output-dir Migrations`) |
 | `sqlite-vec` | Vector search in SQLite: upstream NuGet with the native `vec0` binaries per RID (prerelease `0.1.7-alpha.2.1`, `contentFiles` excluded), loaded into every connection by `SqliteVectorExtension` (Marshal.Data) |
-| `Cronos` | Cron expression parsing for the scheduler |
+| `Cronos` | Cron expression parsing for the scheduler (owner time zone, DST-aware) |
 | `MailKit` | IMAP provider (search, drafts via `APPEND`, XOAUTH2); never its SMTP client |
 | `SmartReader` | Readability full-text extraction for RSS articles |
 | `AngleSharp` | HTML parsing (SmartReader's parser): plain text of RSS summaries |

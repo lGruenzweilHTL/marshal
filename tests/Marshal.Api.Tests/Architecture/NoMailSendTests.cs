@@ -28,6 +28,8 @@ public sealed class NoMailSendTests
         HashSet<string> scanned = [.. SolutionAssemblies().Select(AssemblyName)];
         IEnumerable<string> projects = Directory.GetFiles(Path.Combine(RepositoryRoot(), "src"), "*.csproj", SearchOption.AllDirectories)
             .Select(path => Path.GetFileNameWithoutExtension(path))
+            // The executor host is a separate service with its own image; nothing in Marshal references it.
+            .Where(name => name != "Marshal.ExecutorHost")
             .Select(name => name == "Marshal.Api" ? "marshal" : name);
 
         Assert.All(projects, project => Assert.Contains(project, scanned));

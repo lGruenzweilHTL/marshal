@@ -11,9 +11,9 @@
 ' Marshal.Api, Marshal.Testing and their test projects exist (core-agent),
 ' web/ exists (auth-web-shell), ha/ exists (ha-conversation-integration),
 ' Marshal.Integrations.HomeAssistant exists (extensibility), Marshal.Memory exists (memory),
-' Marshal.Integrations.{Moonraker,Mail,FreshRss,Notes} exist (integrations);
-' the other projects are still planned
-' (docs/brainstorm-notes.md).
+' Marshal.Integrations.{Moonraker,Mail,FreshRss,Notes} exist (integrations),
+' Marshal.Tasks and Marshal.ExecutorHost exist (background-work, in progress);
+' the companion push path is still planned (docs/brainstorm-notes.md).
 ' External packages are drawn inside the project that references them
 ' (grey boxes, <<nuget>> / <<npm>> / <<pip>>).
 
@@ -154,6 +154,8 @@ Tests --> Core
 Tests --> Data
 Tests --> Integrations
 Tests --> Memory
+Tests --> Tasks
+Tests ..> ExecutorHost
 
 note bottom of Abstractions
   Only interfaces, value types and Result

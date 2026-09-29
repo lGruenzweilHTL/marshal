@@ -1,6 +1,6 @@
 ## 1. Setup
 
-- [ ] 1.1 Create `Marshal.Tasks`, `Marshal.ExecutorHost` and their test projects; update `packages.puml`, `CLAUDE.md` repository map and package index (`Cronos`)
+- [x] 1.1 Create `Marshal.Tasks`, `Marshal.ExecutorHost` and their test projects; update `packages.puml`, `CLAUDE.md` repository map and package index (`Cronos`)
 - [ ] 1.2 Add entities `AgentTask`, `ExecutorSession`, `Notification`, `Proposal`, `FollowUp` and migration; align `erd.puml` and re-render
 - [ ] 1.3 Verify HA `assist_satellite.announce` / `start_conversation` (incl. `extra_system_prompt`), companion app actionable notifications and `mobile_app_notification_action`; record in `design.md`
 

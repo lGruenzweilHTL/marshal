@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- A separate service with its own image: never deployed in the Marshal container, never referenced by it. -->
+  <PropertyGroup>
+    <AssemblyName>marshal-executor-host</AssemblyName>
+    <RootNamespace>Marshal.ExecutorHost</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marshal.ExecutorHost.Tests" />
+  </ItemGroup>
+
+</Project>

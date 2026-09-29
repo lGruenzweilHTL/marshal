@@ -15,6 +15,7 @@
     <ProjectReference Include="..\Marshal.Integrations.Moonraker\Marshal.Integrations.Moonraker.csproj" />
     <ProjectReference Include="..\Marshal.Integrations.Notes\Marshal.Integrations.Notes.csproj" />
     <ProjectReference Include="..\Marshal.Memory\Marshal.Memory.csproj" />
+    <ProjectReference Include="..\Marshal.Tasks\Marshal.Tasks.csproj" />
   </ItemGroup>
 
   <ItemGroup>
