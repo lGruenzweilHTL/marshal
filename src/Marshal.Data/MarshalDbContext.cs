@@ -3,6 +3,7 @@ using Marshal.Abstractions.Audit;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.Memory;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Sessions;
 using Marshal.Abstractions.Tokens;
@@ -11,6 +12,7 @@ using Marshal.Data.Audit;
 using Marshal.Data.Auth;
 using Marshal.Data.Conversations;
 using Marshal.Data.Identity;
+using Marshal.Data.Memory;
 using Marshal.Data.Persistence;
 using Marshal.Data.Secrets;
 using Marshal.Data.Tokens;
@@ -48,6 +50,18 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
 
     public DbSet<AuthTicket> AuthTickets => Set<AuthTicket>();
 
+    public DbSet<Chunk> Chunks => Set<Chunk>();
+
+    public DbSet<ChunkVersion> ChunkVersions => Set<ChunkVersion>();
+
+    public DbSet<ChunkEdge> ChunkEdges => Set<ChunkEdge>();
+
+    public DbSet<Project> Projects => Set<Project>();
+
+    public DbSet<ProjectAlias> ProjectAliases => Set<ProjectAlias>();
+
+    public DbSet<ProjectFeedback> ProjectFeedback => Set<ProjectFeedback>();
+
     /// <summary>The current owner. Throws when there is no execution context (fail closed).</summary>
     internal OwnerId CurrentOwnerId =>
         executionContext.Current?.OwnerId
@@ -79,6 +93,8 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         configurationBuilder.Properties<RunId>().HaveConversion<GuidIdConverter<RunId>>();
         configurationBuilder.Properties<PendingActionId>().HaveConversion<GuidIdConverter<PendingActionId>>();
         configurationBuilder.Properties<ApiTokenId>().HaveConversion<GuidIdConverter<ApiTokenId>>();
+        configurationBuilder.Properties<ProjectId>().HaveConversion<GuidIdConverter<ProjectId>>();
+        configurationBuilder.Properties<ChunkId>().HaveConversion<ChunkIdConverter>();
 
         configurationBuilder.Properties<SessionSource>().HaveConversion<SnakeCaseEnumConverter<SessionSource>>();
         configurationBuilder.Properties<InputMode>().HaveConversion<SnakeCaseEnumConverter<InputMode>>();
@@ -90,6 +106,12 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         configurationBuilder.Properties<DecidedBy>().HaveConversion<SnakeCaseEnumConverter<DecidedBy>>();
         configurationBuilder.Properties<ApiTokenKind>().HaveConversion<SnakeCaseEnumConverter<ApiTokenKind>>();
         configurationBuilder.Properties<AuditActorKind>().HaveConversion<SnakeCaseEnumConverter<AuditActorKind>>();
+        configurationBuilder.Properties<ChunkScope>().HaveConversion<SnakeCaseEnumConverter<ChunkScope>>();
+        configurationBuilder.Properties<ChunkType>().HaveConversion<SnakeCaseEnumConverter<ChunkType>>();
+        configurationBuilder.Properties<ChunkEdgeKind>().HaveConversion<SnakeCaseEnumConverter<ChunkEdgeKind>>();
+        configurationBuilder.Properties<ChunkAuthor>().HaveConversion<SnakeCaseEnumConverter<ChunkAuthor>>();
+        configurationBuilder.Properties<ProjectAliasStatus>().HaveConversion<SnakeCaseEnumConverter<ProjectAliasStatus>>();
+        configurationBuilder.Properties<ProjectFeedbackKind>().HaveConversion<SnakeCaseEnumConverter<ProjectFeedbackKind>>();
 
         // SQLite cannot compare or order DateTimeOffset / decimal values natively; binary and REAL storage keeps
         // range queries and sums on the server.
@@ -209,6 +231,61 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             secret.HasIndex(entity => entity.Name).IsUnique().HasFilter("owner_id IS NULL").HasDatabaseName("ix_secrets_instance_name");
             secret.HasIndex(entity => new { entity.OwnerId, entity.Name }).IsUnique().HasFilter("owner_id IS NOT NULL").HasDatabaseName("ix_secrets_owner_id_name");
             secret.HasQueryFilter(entity => entity.OwnerId == null || entity.OwnerId == CurrentOwnerIdOrNull);
+        });
+
+        builder.Entity<Project>(project =>
+        {
+            project.HasKey(entity => entity.Id);
+            project.HasIndex(entity => new { entity.OwnerId, entity.Name });
+            project.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            OwnerFilter(project);
+        });
+
+        builder.Entity<ProjectAlias>(alias =>
+        {
+            alias.HasKey(entity => entity.Id);
+            alias.HasIndex(entity => new { entity.ProjectId, entity.Phrase }).IsUnique();
+            alias.HasOne<Project>().WithMany().HasForeignKey(entity => entity.ProjectId);
+            OwnerFilter(alias);
+        });
+
+        builder.Entity<ProjectFeedback>(feedback =>
+        {
+            feedback.HasKey(entity => entity.Id);
+            feedback.HasIndex(entity => new { entity.ProjectId, entity.CreatedAt });
+            feedback.HasOne<Project>().WithMany().HasForeignKey(entity => entity.ProjectId);
+            feedback.HasOne<Run>().WithMany().HasForeignKey(entity => entity.RunId);
+            OwnerFilter(feedback);
+        });
+
+        builder.Entity<Chunk>(chunk =>
+        {
+            chunk.HasKey(entity => entity.Id);
+            chunk.Property(entity => entity.Id).HasMaxLength(ChunkId.Length);
+            chunk.HasIndex(entity => new { entity.OwnerId, entity.Pinned });
+            chunk.HasIndex(entity => entity.ProjectId);
+            chunk.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            chunk.HasOne<Project>().WithMany().HasForeignKey(entity => entity.ProjectId);
+            chunk.ToTable(table => table.HasCheckConstraint("ck_chunks_scope_project", "(scope = 'project') = (project_id IS NOT NULL)"));
+            OwnerFilter(chunk);
+        });
+
+        builder.Entity<ChunkVersion>(version =>
+        {
+            version.HasKey(entity => entity.Id);
+            version.HasIndex(entity => new { entity.ChunkId, entity.ReplacedAt });
+            version.HasOne<Chunk>().WithMany().HasForeignKey(entity => entity.ChunkId);
+            OwnerFilter(version);
+        });
+
+        builder.Entity<ChunkEdge>(edge =>
+        {
+            edge.HasKey(entity => new { entity.FromId, entity.ToId, entity.Kind });
+            edge.HasIndex(entity => entity.ToId);
+            edge.HasOne<Chunk>().WithMany().HasForeignKey(entity => entity.FromId);
+            edge.HasOne<Chunk>().WithMany().HasForeignKey(entity => entity.ToId);
+            edge.ToTable(table => table.HasCheckConstraint("ck_chunk_edges_no_self_supersede", "kind <> 'supersedes' OR from_id <> to_id"));
+            OwnerFilter(edge);
         });
     }
 

@@ -90,3 +90,23 @@ EF migration adds memory tables; the FTS and vector virtual tables are created b
   the `memory` health check probes `vec_version()` on a fresh connection and reports unhealthy with the reason.
 - **Image.** `dotnet publish` copies `runtimes/*/native/vec0.*` into `/app`, which the Dockerfile ships as is;
   a published build answered `/health` with `memory: healthy, sqlite-vec v0.1.7-alpha.2.1`.
+
+### Store (tasks 1.4–1.7)
+
+- **Ids.** `ChunkIds.Compute`: SHA-256 over `owner|scope|project|type|normalize(title)` (owner and project as Guid
+  "D", scope and type lowercase), first 130 bits as lowercase RFC 4648 base32 (26 characters). `normalize` = NFKC,
+  lowercase (invariant), Unicode punctuation removed, whitespace collapsed and trimmed.
+- **Keyword index.** `chunks_fts` is a regular FTS5 table with its own copy of title and content plus unindexed
+  `chunk_id` / `owner_id`, not an external-content table: `chunks` has a text primary key, and the implicit rowid an
+  external-content index would rely on is not stable across `VACUUM`. Tokenizer `unicode61 remove_diacritics 2`.
+- **Vector index.** `chunk_vectors` is a vec0 table `(chunk_id TEXT PRIMARY KEY, owner_id TEXT PARTITION KEY,
+  embedding float[N] distance_metric=cosine)`; the partition key keeps KNN queries within one owner. N and the
+  model id are recorded in `memory_vector_index`. The migration creates `chunks_fts` and `memory_vector_index`; the
+  vec0 table is created on the first write with the embedding's length. A write with another model or dimension
+  fails; startup rebuilds the index (re-embedding) when the configured model changes.
+- **Writes.** Validation and embedding happen before the transaction; unchanged chunks are not re-embedded. Inside
+  one transaction: the EF Core rows, then the FTS row and the vector row (raw SQL joined to the transaction; owner
+  filters do not apply to raw SQL, so every index query filters by owner explicitly). A same-id write restores a
+  soft-deleted chunk. Soft delete removes the index entries. Pinning is never changed by a write. New columns
+  beyond the ERD sketch: `chunks.created_by`, `chunks.last_retrieved_at` (for the stale audit),
+  `projects.created_at` / `deleted_at`, `project_aliases.created_at`.

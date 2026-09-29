@@ -579,6 +579,302 @@ namespace Marshal.Data.Migrations
                     b.ToTable("user_preferences", (string)null);
                 });
 
+            modelBuilder.Entity("Marshal.Data.Memory.Chunk", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("content");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("created_by");
+
+                    b.Property<long?>("DeletedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<int>("Importance")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("importance");
+
+                    b.Property<long?>("LastRetrievedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("last_retrieved_at");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<bool>("Pinned")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("pinned");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("scope");
+
+                    b.Property<string>("SourceRef")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("source_ref");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("title");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("type");
+
+                    b.Property<long>("UpdatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_chunks");
+
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("ix_chunks_project_id");
+
+                    b.HasIndex("OwnerId", "Pinned")
+                        .HasDatabaseName("ix_chunks_owner_id_pinned");
+
+                    b.ToTable("chunks", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_chunks_scope_project", "(scope = 'project') = (project_id IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Marshal.Data.Memory.ChunkEdge", b =>
+                {
+                    b.Property<string>("FromId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("from_id");
+
+                    b.Property<string>("ToId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("to_id");
+
+                    b.Property<string>("Kind")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("kind");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.HasKey("FromId", "ToId", "Kind")
+                        .HasName("pk_chunk_edges");
+
+                    b.HasIndex("ToId")
+                        .HasDatabaseName("ix_chunk_edges_to_id");
+
+                    b.ToTable("chunk_edges", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_chunk_edges_no_self_supersede", "kind <> 'supersedes' OR from_id <> to_id");
+                        });
+                });
+
+            modelBuilder.Entity("Marshal.Data.Memory.ChunkVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ChunkId")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("chunk_id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("content");
+
+                    b.Property<int>("Importance")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("importance");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<long>("ReplacedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("replaced_at");
+
+                    b.Property<string>("SourceRef")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("source_ref");
+
+                    b.HasKey("Id")
+                        .HasName("pk_chunk_versions");
+
+                    b.HasIndex("ChunkId", "ReplacedAt")
+                        .HasDatabaseName("ix_chunk_versions_chunk_id_replaced_at");
+
+                    b.ToTable("chunk_versions", (string)null);
+                });
+
+            modelBuilder.Entity("Marshal.Data.Memory.Project", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<byte[]>("Centroid")
+                        .HasColumnType("BLOB")
+                        .HasColumnName("centroid");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<long?>("DeletedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("description");
+
+                    b.Property<long?>("LastActiveAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("last_active_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_projects");
+
+                    b.HasIndex("OwnerId", "Name")
+                        .HasDatabaseName("ix_projects_owner_id_name");
+
+                    b.ToTable("projects", (string)null);
+                });
+
+            modelBuilder.Entity("Marshal.Data.Memory.ProjectAlias", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Confirmations")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("confirmations");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("Phrase")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("phrase");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_project_aliases");
+
+                    b.HasIndex("ProjectId", "Phrase")
+                        .IsUnique()
+                        .HasDatabaseName("ix_project_aliases_project_id_phrase");
+
+                    b.ToTable("project_aliases", (string)null);
+                });
+
+            modelBuilder.Entity("Marshal.Data.Memory.ProjectFeedback", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<byte[]>("Embedding")
+                        .HasColumnType("BLOB")
+                        .HasColumnName("embedding");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("Phrase")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("phrase");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("project_id");
+
+                    b.Property<Guid?>("RunId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("run_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_project_feedback");
+
+                    b.HasIndex("RunId")
+                        .HasDatabaseName("ix_project_feedback_run_id");
+
+                    b.HasIndex("ProjectId", "CreatedAt")
+                        .HasDatabaseName("ix_project_feedback_project_id_created_at");
+
+                    b.ToTable("project_feedback", (string)null);
+                });
+
             modelBuilder.Entity("Marshal.Data.Secrets.Secret", b =>
                 {
                     b.Property<Guid>("Id")
@@ -921,6 +1217,83 @@ namespace Marshal.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_user_preferences_users_user_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Memory.Chunk", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_chunks_users_owner_id");
+
+                    b.HasOne("Marshal.Data.Memory.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .HasConstraintName("fk_chunks_projects_project_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Memory.ChunkEdge", b =>
+                {
+                    b.HasOne("Marshal.Data.Memory.Chunk", null)
+                        .WithMany()
+                        .HasForeignKey("FromId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_chunk_edges_chunks_from_id");
+
+                    b.HasOne("Marshal.Data.Memory.Chunk", null)
+                        .WithMany()
+                        .HasForeignKey("ToId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_chunk_edges_chunks_to_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Memory.ChunkVersion", b =>
+                {
+                    b.HasOne("Marshal.Data.Memory.Chunk", null)
+                        .WithMany()
+                        .HasForeignKey("ChunkId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_chunk_versions_chunks_chunk_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Memory.Project", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_projects_users_owner_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Memory.ProjectAlias", b =>
+                {
+                    b.HasOne("Marshal.Data.Memory.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_project_aliases_projects_project_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Memory.ProjectFeedback", b =>
+                {
+                    b.HasOne("Marshal.Data.Memory.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_project_feedback_projects_project_id");
+
+                    b.HasOne("Marshal.Data.Conversations.Run", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .HasConstraintName("fk_project_feedback_runs_run_id");
                 });
 
             modelBuilder.Entity("Marshal.Data.Secrets.Secret", b =>

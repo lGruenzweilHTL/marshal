@@ -53,6 +53,22 @@ public sealed class SqliteVectorExtensionTests : IDisposable
         Assert.Contains("vec_version", version.Error.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Migrate_CreatesTheMemoryIndexTablesOfMemorySchema()
+    {
+        DbContextOptions<MarshalDbContext> options = new DbContextOptionsBuilder<MarshalDbContext>()
+            .UseMarshalSqlite($"Data Source={Path.Combine(_directory, "migrated.db")}")
+            .Options;
+        await using var db = new MarshalDbContext(options, new FakeExecutionContextAccessor());
+
+        await db.Database.MigrateAsync(Ct);
+
+        List<string> tables = await db.Database.SqlQueryRaw<string>("SELECT name AS \"Value\" FROM sqlite_master WHERE name IN ('chunks_fts', 'memory_vector_index')").ToListAsync(Ct);
+        Assert.Equal(["chunks_fts", "memory_vector_index"], tables.Order(StringComparer.Ordinal));
+        foreach (string statement in Marshal.Data.Memory.MemorySchema.Create)
+            await db.Database.ExecuteSqlRawAsync(statement, Ct);
+    }
+
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();

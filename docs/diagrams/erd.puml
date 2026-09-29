@@ -6,7 +6,7 @@
 ' column or relationship, and re-render the SVG (see docs/diagrams/README.md).
 '
 ' Status: PARTLY BUILT — User (+ Identity tables), AuthTicket, UserPreferences, ApiToken, Session,
-' Run, RunStep, PendingAction, AuditEvent and Secret exist in Marshal.Data;
+' Run, RunStep, PendingAction, AuditEvent, Secret and the Memory package exist in Marshal.Data;
 ' the other entities are still planned (docs/brainstorm-notes.md).
 
 !pragma layout smetana
@@ -245,8 +245,10 @@ package "Memory" {
     * owner_id : OwnerId <<FK>>
     * name : string
     * description : string
-    centroid : vector
+    centroid : blob  <<float32 vector>>
     last_active_at : DateTimeOffset
+    * created_at : DateTimeOffset
+    deleted_at : DateTimeOffset  <<soft delete>>
   }
 
   entity ProjectFeedback {
@@ -257,7 +259,7 @@ package "Memory" {
     run_id : RunId <<FK>>
     * kind : confirmed | rejected | switched
     * phrase : string
-    embedding : vector  <<negative examples>>
+    embedding : blob  <<float32 vector, negative examples>>
     * created_at : DateTimeOffset
   }
 
@@ -265,10 +267,11 @@ package "Memory" {
     * id : Guid <<PK>>
     --
     * owner_id : OwnerId <<FK>>
-    * project_id : ProjectId <<FK>>
+    * project_id : ProjectId <<FK, unique with phrase>>
     * phrase : string
     * status : candidate | active | rejected
     * confirmations : int
+    * created_at : DateTimeOffset
   }
 
   entity Chunk {
@@ -283,10 +286,11 @@ package "Memory" {
     * importance : int (1-5)
     * pinned : bool
     source_ref : string  <<e.g. note path>>
-    embedding : vector  <<sqlite-vec>>
+    * created_by : user | agent | consolidation | import
     * created_at : DateTimeOffset
     * updated_at : DateTimeOffset
     deleted_at : DateTimeOffset  <<soft delete>>
+    last_retrieved_at : DateTimeOffset
   }
 
   entity ChunkVersion {
@@ -308,6 +312,18 @@ package "Memory" {
     --
     * owner_id : OwnerId <<FK>>
     * created_at : DateTimeOffset
+    <<no self-supersede (check)>>
+  }
+
+  entity "chunks_fts" as ChunkFts <<FTS5>> {
+    chunk_id, owner_id : unindexed
+    title, content : indexed
+  }
+
+  entity "chunk_vectors" as ChunkVectors <<sqlite-vec vec0>> {
+    * chunk_id : text <<PK>>
+    * owner_id : text <<partition key>>
+    * embedding : float[N] <<cosine, N from the embedding model>>
   }
 }
 
@@ -465,6 +481,8 @@ Chunk ||--o{ ChunkVersion
 Project |o--o{ AgentTask
 Chunk ||--o{ ChunkEdge : from
 Chunk ||--o{ ChunkEdge : to
+Chunk ||--o| ChunkFts : indexed in
+Chunk ||--o| ChunkVectors : embedded in
 
 AgentTask |o--o{ AgentTask : parent
 AgentTask ||--o{ Run
