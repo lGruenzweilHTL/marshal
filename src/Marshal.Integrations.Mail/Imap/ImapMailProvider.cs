@@ -1,8 +1,6 @@
-using System.Net.Sockets;
 using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
-using MailKit.Security;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Mail;
 using MimeKit;
@@ -18,10 +16,9 @@ namespace Marshal.Integrations.Mail.Imap;
 /// </summary>
 public sealed class ImapMailProvider(IEnumerable<ICredentialSource> credentials) : IMailProvider
 {
-    private const int TimeoutMilliseconds = 30_000;
     private const int MaxFetched = 500;
 
-    private readonly IReadOnlyList<ICredentialSource> _credentials = [.. credentials];
+    private readonly ImapConnector _connector = new(credentials);
 
     public MailProviderKind Kind => MailProviderKind.Imap;
 
@@ -315,43 +312,22 @@ public sealed class ImapMailProvider(IEnumerable<ICredentialSource> credentials)
 
     private async Task<Result<T>> WithClientAsync<T>(MailAccount account, Func<ImapClient, Task<Result<T>>> work, CancellationToken cancellationToken)
     {
-        ICredentialSource? source = _credentials.FirstOrDefault(candidate => candidate.Strategy == account.Strategy);
-        if (source is null)
-            return MailErrors.CredentialMissing(account.Alias);
+        Result<ImapClient> connected = await _connector.ConnectAsync(account, cancellationToken);
+        if (connected.IsFailure)
+            return connected.Error;
 
-        Result<MailCredential> credential = await source.GetAsync(account, cancellationToken);
-        if (credential.IsFailure)
-            return credential.Error;
-
-        using var client = new ImapClient { Timeout = TimeoutMilliseconds };
+        using ImapClient client = connected.Value;
         try
         {
-            await client.ConnectAsync(account.Settings.Host, account.Settings.Port, Security(account.Settings.Security), cancellationToken);
-            if (credential.Value.IsAccessToken)
-                await client.AuthenticateAsync(new SaslMechanismOAuth2(credential.Value.UserName, credential.Value.Secret), cancellationToken);
-            else
-                await client.AuthenticateAsync(credential.Value.UserName, credential.Value.Secret, cancellationToken);
-
             Result<T> result = await work(client);
             await client.DisconnectAsync(quit: true, cancellationToken);
             return result;
         }
-        catch (AuthenticationException)
-        {
-            return MailErrors.AuthFailed(account.Alias);
-        }
-        catch (Exception exception) when (exception is IOException or SocketException or ImapProtocolException or ImapCommandException or SslHandshakeException or ServiceNotConnectedException or TimeoutException)
+        catch (Exception exception) when (ImapConnector.IsConnectionFailure(exception))
         {
             return MailErrors.Unreachable(account.Alias, exception.Message);
         }
     }
-
-    private static SecureSocketOptions Security(MailSecurity security) => security switch
-    {
-        MailSecurity.Tls => SecureSocketOptions.SslOnConnect,
-        MailSecurity.StartTls => SecureSocketOptions.StartTls,
-        _ => SecureSocketOptions.None,
-    };
 
     private static string? SpecialUse(FolderAttributes attributes) => attributes switch
     {
