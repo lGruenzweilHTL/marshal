@@ -250,3 +250,6 @@ They should be replaced with real captures when a printer is available.
   `timeout` (15 s), follows at most 5 redirects and cuts the text at `maxCharacters` (20 000). The link itself is
   still chosen by a feed author, so it can point into the local network; the tool only reads, its output is
   untrusted, and no credentials are sent. `mark_read` and the list tools are not untrusted.
+- Digest (task 4.5): the skill and template live in `deploy/config.example/` (the repository has no
+  `deploy/config/`; the example directory is what gets copied to `/config`). "Since the last digest" needs no
+  state: the digest marks every article it processed as read, so the unread list is exactly what is new.

@@ -75,6 +75,23 @@ public sealed class ExampleConfigTests
         Assert.Contains(templates.Templates, template => template.Name != AgentTemplate.DefaultName);
     }
 
+    [Fact]
+    public void RssDigestSkillAndScorerTemplate_LoadAndPassTheSecretScanner()
+    {
+        var scanner = new ConfigSecretScanner();
+        using var skills = new FileSkillCatalog(Path.Combine(_directory, "skills"), null, "skills/**/*", scanner, NullLogger<FileSkillCatalog>.Instance);
+        using var templates = new FileTemplateCatalog(Path.Combine(_directory, "templates"), null, "templates/*.md", scanner, NullLogger<FileTemplateCatalog>.Instance);
+
+        Assert.Empty(skills.Errors);
+        Assert.Empty(templates.Errors);
+        Abstractions.Skills.Skill digest = Assert.Single(skills.Skills, skill => skill.Name == "rss-digest");
+        Assert.Contains("agent_delegate", digest.Body, StringComparison.Ordinal);
+        Assert.Contains("rss-scorer", digest.Body, StringComparison.Ordinal);
+        AgentTemplate scorer = Assert.Single(templates.Templates, template => template.Name == "rss-scorer");
+        Assert.Equal(Abstractions.Models.ModelTier.Fast, scorer.ModelTier);
+        Assert.Empty(scorer.Tools);
+    }
+
     private static string RepositoryRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
