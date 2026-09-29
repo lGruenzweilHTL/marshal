@@ -28,6 +28,9 @@ public interface ITaskStore
     /// <summary>The earliest <c>next_run_at</c> of any pending or waiting task of every owner.</summary>
     Task<DateTimeOffset?> GetNextRunAtAsync(CancellationToken cancellationToken);
 
+    /// <summary>Armed <c>event</c> tasks of every owner: pending or waiting, not already due.</summary>
+    Task<IReadOnlyList<TaskWatch>> GetWatchesAsync(CancellationToken cancellationToken);
+
     /// <summary>Tasks of every owner left <c>running</c> (by a crash when called at startup).</summary>
     Task<IReadOnlyList<OwnedTask>> GetRunningAsync(CancellationToken cancellationToken);
 }

@@ -1,6 +1,8 @@
 using Marshal.Abstractions.Context;
+using Marshal.Abstractions.Events;
 using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
+using Marshal.Tasks.Events;
 using Marshal.Tasks.KillSwitch;
 using Marshal.Tasks.Limits;
 using Marshal.Tasks.Running;
@@ -14,8 +16,8 @@ using Microsoft.Extensions.Hosting;
 namespace Marshal.Tasks;
 
 /// <summary>
-/// Registers the task system (<c>tasks</c> in <c>marshal.yaml</c>): the store, the scheduler with its worker pool
-/// and the task runners.
+/// Registers the task system (<c>tasks</c> in <c>marshal.yaml</c>): the store, the scheduler with its worker pool,
+/// the task runners and the event bus with its trigger matcher.
 /// </summary>
 public static class TasksServiceCollectionExtensions
 {
@@ -41,6 +43,12 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<TaskSignals>();
         services.AddSingleton<ITaskScheduler>(provider => provider.GetRequiredService<TaskSignals>());
         services.AddSingleton<IHostedService, BackgroundTaskScheduler>();
+
+        services.AddSingleton<ITriggerMatcher, DeclarativeTriggerMatcher>();
+        services.AddSingleton<ChannelEventBus>();
+        services.AddSingleton<IEventPublisher>(provider => provider.GetRequiredService<ChannelEventBus>());
+        services.AddSingleton<IEventSubscriber>(provider => provider.GetRequiredService<ChannelEventBus>());
+        services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<ChannelEventBus>());
         return services;
     }
 }

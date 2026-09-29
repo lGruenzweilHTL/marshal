@@ -1,8 +1,8 @@
 using System.Globalization;
-using System.Text.Json;
 using Cronos;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Tasks;
+using Marshal.Tasks.Events;
 
 namespace Marshal.Tasks.Scheduling;
 
@@ -18,7 +18,7 @@ internal static class TaskTriggers
         TaskTriggerKind.Now => Result.Success(),
         TaskTriggerKind.At => TryParseTime(trigger.Spec, out _) ? Result.Success() : TaskErrors.Invalid($"'{trigger.Spec}' is not an ISO 8601 time."),
         TaskTriggerKind.Cron => TryParseCron(trigger.Spec, out _) ? Result.Success() : TaskErrors.Invalid($"'{trigger.Spec}' is not a five-field cron expression."),
-        TaskTriggerKind.Event => IsJsonObject(trigger.Spec) ? Result.Success() : TaskErrors.Invalid("An event filter must be a JSON object."),
+        TaskTriggerKind.Event => EventFilter.Parse(trigger.Spec) is { IsFailure: true } invalid ? invalid.Error : Result.Success(),
         TaskTriggerKind.After => TaskId.TryParse(trigger.Spec, CultureInfo.InvariantCulture, out _) ? Result.Success() : TaskErrors.Invalid($"'{trigger.Spec}' is not a task id."),
         _ => TaskErrors.Invalid($"Unknown trigger kind {trigger.Kind}."),
     };
@@ -63,17 +63,4 @@ internal static class TaskTriggers
 
     private static bool TryParseCron(string spec, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out CronExpression? cron) =>
         CronExpression.TryParse(spec, CronFormat.Standard, out cron);
-
-    private static bool IsJsonObject(string spec)
-    {
-        try
-        {
-            using var document = JsonDocument.Parse(spec);
-            return document.RootElement.ValueKind == JsonValueKind.Object;
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
-    }
 }

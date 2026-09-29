@@ -212,6 +212,15 @@ public sealed partial class EfTaskStore(
         return await Schedulable(db).OrderBy(row => row.NextRunAt).Select(row => row.NextRunAt).FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<TaskWatch>> GetWatchesAsync(CancellationToken cancellationToken)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        return await db.AgentTasks.IgnoreQueryFilters().AsNoTracking()
+            .Where(row => row.TriggerKind == TaskTriggerKind.Event && _schedulable.Contains(row.Status) && row.NextRunAt == null)
+            .Select(row => new TaskWatch(row.Id, row.OwnerId, row.TriggerSpec))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<OwnedTask>> GetRunningAsync(CancellationToken cancellationToken)
     {
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);

@@ -309,7 +309,8 @@ public sealed partial class BackgroundTaskScheduler(
         }
     }
 
-    private static MarshalExecutionContext SystemContext(OwnerId owner) =>
+    /// <summary>The context background work runs in for <paramref name="owner"/>.</summary>
+    internal static MarshalExecutionContext SystemContext(OwnerId owner) =>
         new() { OwnerId = owner, Source = SessionSource.Task, IsInteractive = false };
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Task scheduler loop failed")]

@@ -297,6 +297,29 @@ public sealed class EfTaskStoreTests : IAsyncLifetime
         Assert.Equal([new OwnedTask(running.Id, OwnerA)], await Store().GetRunningAsync(Ct));
     }
 
+    [Fact]
+    public async Task GetWatches_ArmedEventTasksOfEveryOwner()
+    {
+        const string Home = """{"source":"ha","entity":"person.alice","to":"home"}""";
+        TaskRecord armed = (await Store().CreateAsync(New(null, TaskTrigger.Event(Home)), Ct)).Value;
+        TaskRecord fired = (await Store().CreateAsync(New(null, TaskTrigger.Event(Home)), Ct)).Value;
+        await Store().UpdateAsync(fired with { NextRunAt = _time.GetUtcNow(), TriggerPayload = "{}" }, Ct);
+        TaskRecord cancelled = (await Store().CreateAsync(New(null, TaskTrigger.Event(Home)), Ct)).Value;
+        await Store().UpdateAsync(cancelled with { Status = AgentTaskStatus.Cancelled }, Ct);
+        await Store().CreateAsync(New(null, TaskTrigger.Cron("0 6 * * *")), Ct);
+        _database.Accessor.Current = Text(OwnerB);
+        TaskRecord other = (await Store().CreateAsync(New(null, TaskTrigger.Event("""{"source":"printer"}""")), Ct)).Value;
+        TaskRecord rearmed = (await Store().CreateAsync(New(null, TaskTrigger.Event("""{"source":"mail"}""")), Ct)).Value;
+        await Store().UpdateAsync(rearmed with { Status = AgentTaskStatus.Waiting }, Ct);
+        _database.Accessor.Current = null;
+
+        IReadOnlyList<TaskWatch> watches = await Store().GetWatchesAsync(Ct);
+
+        Assert.Equal(
+            new[] { new TaskWatch(armed.Id, OwnerA, Home), new TaskWatch(other.Id, OwnerB, """{"source":"printer"}"""), new TaskWatch(rearmed.Id, OwnerB, """{"source":"mail"}""") }.OrderBy(watch => watch.Id.Value),
+            watches.OrderBy(watch => watch.Id.Value));
+    }
+
     private EfTaskStore Store() => new(_database.Factory, _database.Accessor, new ViennaProfiles(), Options.Create(_options), _time);
 
     private static NewTask New(string? name, TaskTrigger? trigger = null) => new()
