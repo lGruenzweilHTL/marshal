@@ -29,6 +29,7 @@ public static class ApiServiceCollectionExtensions
         services.AddOptions<OwnerOptions>().Bind(configuration.GetSection("owner")).ValidateDataAnnotations().ValidateOnStart();
 
         services.AddSingleton<IChatClientFactory, ProviderChatClientFactory>();
+        services.AddSingleton<IEmbeddingGeneratorFactory, ProviderEmbeddingGeneratorFactory>();
         services.AddDataProtection().SetApplicationName("Marshal");
         services.AddOptions<KeyManagementOptions>().Configure<IOptions<PathsOptions>, ILoggerFactory>((options, paths, loggers) =>
             options.XmlRepository = new FileSystemXmlRepository(new DirectoryInfo(Path.Combine(paths.Value.Data, "keys")), loggers));

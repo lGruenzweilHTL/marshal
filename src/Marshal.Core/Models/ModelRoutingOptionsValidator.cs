@@ -25,6 +25,14 @@ public sealed class ModelRoutingOptionsValidator : IValidateOptions<ModelRouting
                 failures.Add($"{path}.contextLength must be positive.");
         }
 
+        EmbeddingModelOptions embedding = options.Embedding ?? new();
+        if (embedding.Provider is not (ModelProviders.Ollama or ModelProviders.OpenAiCompatible))
+            failures.Add($"embedding.provider must be {ModelProviders.Ollama} or {ModelProviders.OpenAiCompatible}.");
+        if (string.IsNullOrWhiteSpace(embedding.Model))
+            failures.Add("embedding.model is required.");
+        if (embedding.Provider == ModelProviders.OpenAiCompatible && embedding.Endpoint is null)
+            failures.Add("embedding.endpoint is required for openai-compatible models.");
+
         return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
     }
 }

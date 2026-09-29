@@ -59,6 +59,13 @@ models:
   #   model: "qwen3"
   #   endpoint: "http://llama:8080/v1"
 
+# Embedding model for memory. Must be multilingual (bge-m3, multilingual-e5, nomic-embed-text-v2), otherwise a German
+# question misses an English memory. Changing it re-embeds all memory at the next start.
+embedding:
+  provider: ollama                     # ollama or openai-compatible
+  model: "bge-m3"
+  endpoint: "http://ollama:11434"
+
 agent:
   maxSteps: 8
   voiceLatencyCap: "00:00:08"

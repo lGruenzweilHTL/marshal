@@ -6,4 +6,7 @@ namespace Marshal.Core.Models;
 public sealed class ModelRoutingOptions
 {
     public Dictionary<string, ModelOptions> Models { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The embedding model (required: memory depends on it).</summary>
+    public EmbeddingModelOptions? Embedding { get; set; }
 }

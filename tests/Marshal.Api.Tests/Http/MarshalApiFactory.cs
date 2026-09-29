@@ -41,6 +41,8 @@ public sealed class MarshalApiFactory : WebApplicationFactory<Program>
             ["models:standard:tier"] = "standard",
             ["models:standard:provider"] = "ollama",
             ["models:standard:model"] = "qwen3",
+            ["embedding:provider"] = "ollama",
+            ["embedding:model"] = "bge-m3",
             ["owner:displayName"] = "Lukas",
             ["owner:language"] = "en",
             ["instance:timeZone"] = "Europe/Vienna",
@@ -61,6 +63,8 @@ public sealed class MarshalApiFactory : WebApplicationFactory<Program>
     public string WebRoot => Path.Combine(Root, "wwwroot");
 
     public FakeChatClient Model { get; } = new();
+
+    public FakeEmbeddingGenerator Embeddings { get; } = new();
 
     public IReadOnlyList<ITool> Tools { get; }
 
@@ -101,6 +105,8 @@ public sealed class MarshalApiFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<IChatClientFactory>();
             services.AddSingleton<IChatClientFactory>(new FakeFactory(Model));
+            services.RemoveAll<IEmbeddingGeneratorFactory>();
+            services.AddSingleton<IEmbeddingGeneratorFactory>(new FakeEmbeddingFactory(Embeddings));
             foreach (ITool tool in Tools)
                 services.AddSingleton(tool);
 
@@ -119,5 +125,10 @@ public sealed class MarshalApiFactory : WebApplicationFactory<Program>
     private sealed class FakeFactory(IChatClient client) : IChatClientFactory
     {
         public IChatClient Create(string key, ModelOptions options) => client;
+    }
+
+    private sealed class FakeEmbeddingFactory(IEmbeddingGenerator<string, Embedding<float>> generator) : IEmbeddingGeneratorFactory
+    {
+        public IEmbeddingGenerator<string, Embedding<float>> Create(EmbeddingModelOptions options) => generator;
     }
 }

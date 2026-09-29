@@ -54,9 +54,28 @@ public sealed class ModelRoutingOptionsValidatorTests
         Assert.Contains("models.fast.model", result.FailureMessage, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Validate_MissingEmbeddingModel_Fails()
+    {
+        ValidateOptionsResult result = _validator.Validate(null, new ModelRoutingOptions());
+
+        Assert.Contains("embedding.provider", result.FailureMessage, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("anthropic", null, "embedding.provider")]
+    [InlineData("openai-compatible", null, "embedding.endpoint")]
+    [InlineData("ollama", "", "embedding.model")]
+    public void Validate_InvalidEmbeddingModel_NamesKey(string provider, string? model, string key)
+    {
+        var options = new ModelRoutingOptions { Embedding = new EmbeddingModelOptions { Provider = provider, Model = model ?? "bge-m3" } };
+
+        Assert.Contains(key, _validator.Validate(null, options).FailureMessage, StringComparison.Ordinal);
+    }
+
     private ValidateOptionsResult Validate(params (string Key, ModelOptions Options)[] models)
     {
-        var options = new ModelRoutingOptions();
+        var options = new ModelRoutingOptions { Embedding = new EmbeddingModelOptions { Provider = "ollama", Model = "bge-m3" } };
         foreach ((string key, ModelOptions model) in models)
             options.Models[key] = model;
 

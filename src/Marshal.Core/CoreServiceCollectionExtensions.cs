@@ -70,6 +70,8 @@ public static class CoreServiceCollectionExtensions
 
         services.AddSingleton<IModelRouter, ConfiguredModelRouter>();
         services.AddSingleton<ICostCalculator, PriceTableCostCalculator>();
+        services.AddSingleton(provider => provider.GetRequiredService<IEmbeddingGeneratorFactory>().Create(
+            provider.GetRequiredService<IOptions<ModelRoutingOptions>>().Value.Embedding ?? throw new InvalidOperationException("embedding is not configured.")));
 
         services.AddSingleton<ITool, AskAdvisorTool>();
         services.AddSingleton<IToolSource, BuiltInToolSource>();

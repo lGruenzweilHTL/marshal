@@ -204,3 +204,10 @@ EF migration adds memory tables; the FTS and vector virtual tables are created b
   direction.
 - Orphans: live chunks of soft-deleted projects. Dangling edges: edges from a deleted chunk, or to a deleted chunk
   unless the edge is `supersedes` (the replaced version is history).
+
+### Host wiring
+
+- The embedding model is configured in `marshal.yaml` under `embedding` (`provider` `ollama` or `openai-compatible`,
+  `model`, `endpoint`, optional `apiKeySecret`) and bound as `ModelRoutingOptions.Embedding`, so the existing secret
+  binding covers its key. It is required: memory runs on every turn. `IEmbeddingGeneratorFactory` (Core) is implemented
+  by the host (`ProviderEmbeddingGeneratorFactory`, OllamaSharp / OpenAI SDK); Anthropic offers no embeddings.
