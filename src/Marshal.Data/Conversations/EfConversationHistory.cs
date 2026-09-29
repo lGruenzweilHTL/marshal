@@ -14,27 +14,29 @@ public sealed class EfConversationHistory(IDbContextFactory<MarshalDbContext> co
     public async Task<IReadOnlyList<ChatMessage>> LoadAsync(SessionId sessionId, int maxTurns, CancellationToken cancellationToken)
     {
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
-        List<RunId> runs = await db.Runs.AsNoTracking()
+        var runs = await db.Runs.AsNoTracking()
             .Where(run => run.SessionId == sessionId)
             .OrderByDescending(run => run.StartedAt)
             .Take(maxTurns)
-            .Select(run => run.Id)
+            .Select(run => new { run.Id, run.StartedAt })
             .ToListAsync(cancellationToken);
+        List<RunId> ids = [.. runs.Select(run => run.Id)];
 
         var steps = await db.RunSteps.AsNoTracking()
-            .Where(step => runs.Contains(step.RunId) && (step.Kind == RunStepKind.Context || step.Kind == RunStepKind.Reply))
+            // Subagent steps (depth 1 and more) are the loop's internals, not the exchange with the user.
+            .Where(step => ids.Contains(step.RunId) && step.Depth == 0 && (step.Kind == RunStepKind.Context || step.Kind == RunStepKind.Reply))
             .Select(step => new { step.RunId, step.Kind, step.Payload })
             .ToListAsync(cancellationToken);
 
         var messages = new List<ChatMessage>();
-        foreach (RunId run in Enumerable.Reverse(runs))
+        foreach (var run in Enumerable.Reverse(runs))
         {
-            string? input = Read(steps.FirstOrDefault(step => step.RunId == run && step.Kind == RunStepKind.Context)?.Payload)?.Input;
-            string? reply = Read(steps.FirstOrDefault(step => step.RunId == run && step.Kind == RunStepKind.Reply)?.Payload)?.Content;
+            string? input = Read(steps.FirstOrDefault(step => step.RunId == run.Id && step.Kind == RunStepKind.Context)?.Payload)?.Input;
+            string? reply = Read(steps.FirstOrDefault(step => step.RunId == run.Id && step.Kind == RunStepKind.Reply)?.Payload)?.Content;
             if (input is not null)
-                messages.Add(new ChatMessage(ChatRole.User, input));
+                messages.Add(new ChatMessage(ChatRole.User, input) { CreatedAt = run.StartedAt });
             if (reply is not null)
-                messages.Add(new ChatMessage(ChatRole.Assistant, reply));
+                messages.Add(new ChatMessage(ChatRole.Assistant, reply) { CreatedAt = run.StartedAt });
         }
 
         return messages;
