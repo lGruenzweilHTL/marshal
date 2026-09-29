@@ -215,3 +215,6 @@ EF migration adds memory tables; the FTS and vector virtual tables are created b
   contributors, the three memory tools, the summarizer with its inbox (as `ISessionCloseListener`) and worker, and
   the audit; `Marshal.Api` references `Marshal.Memory` and calls it after the Home Assistant integration. Options bind
   from `memory` in `marshal.yaml`.
+- `RetrievedMemoryContributor` catches embedding and retrieval failures: the turn continues without retrieved memory
+  (logged, and noted as `memory / unavailable` on the context step), so device control never depends on the
+  embedding server. Pinned memory needs no embedding and stays.

@@ -5,6 +5,8 @@ using Marshal.Memory.Projects;
 using Marshal.Memory.Retrieval;
 using Marshal.Memory.Tests.Projects;
 using Marshal.Testing;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 using static Marshal.Memory.Tests.Retrieval.HybridMemoryRetrieverTests;
 
@@ -107,6 +109,19 @@ public sealed class MemoryContributorTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Retrieved_EmbeddingServerDown_TurnContinuesWithoutRetrievedMemory()
+    {
+        var turns = new TurnMemory(new FailingEmbeddings(), new Areas(), ProjectTestKit.Activator(_database, _embeddings, new ProjectSessions(), new MemoryOptions(), _time));
+        var request = new ContextRequest(TestExecutionContext.Text(), "Turn on the light");
+
+        string? section = await new RetrievedMemoryContributor(_retriever, turns, Microsoft.Extensions.Options.Options.Create(new MemoryOptions()), NullLogger<RetrievedMemoryContributor>.Instance)
+            .ContributeAsync(request, Ct);
+
+        Assert.Null(section);
+        Assert.Equal(new ContextNote("memory", "unavailable", "embedding failed"), Assert.Single(request.Notes.All));
+    }
+
+    [Fact]
     public async Task Retrieved_NoUserText_NothingAndNoEmbedding()
     {
         int before = _embeddings.CallCount;
@@ -116,12 +131,24 @@ public sealed class MemoryContributorTests : IAsyncLifetime
     }
 
     private RetrievedMemoryContributor Retrieved() =>
-        new(_retriever, _turns, Microsoft.Extensions.Options.Options.Create(new MemoryOptions()));
+        new(_retriever, _turns, Microsoft.Extensions.Options.Options.Create(new MemoryOptions()), NullLogger<RetrievedMemoryContributor>.Instance);
 
     private async Task<ChunkId> WriteAsync(string title, string content, float[] vector, ChunkType type = ChunkType.Fact)
     {
         _embeddings.Pin($"{title}\n{content}", vector);
         return (await _store.WriteAsync(new ChunkDraft(ChunkScope.General, null, type, title, content), ChunkAuthor.User, Ct)).Value.Id;
+    }
+
+    private sealed class FailingEmbeddings : IEmbeddingGenerator<string, Embedding<float>>
+    {
+        public Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(IEnumerable<string> values, EmbeddingGenerationOptions? options = null, CancellationToken cancellationToken = default) =>
+            throw new HttpRequestException("Connection refused (ollama:11434)");
+
+        public object? GetService(Type serviceType, object? serviceKey = null) => null;
+
+        public void Dispose()
+        {
+        }
     }
 
     private sealed class Areas : IAreaDirectory

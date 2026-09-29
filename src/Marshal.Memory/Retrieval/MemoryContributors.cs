@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Marshal.Memory.Retrieval;
@@ -24,23 +25,46 @@ public sealed class PinnedMemoryContributor(IMemoryRetriever retriever) : IConte
 }
 
 /// <summary>
-/// Memory retrieved for the turn server-side, without a model tool call, using the turn embedding.
+/// Memory retrieved for the turn server-side, without a model tool call, using the turn embedding. When the embedding
+/// server or the index fails, the turn continues without retrieved memory (device control must not depend on it).
 /// </summary>
-public sealed class RetrievedMemoryContributor(IMemoryRetriever retriever, ITurnMemory turns, IOptions<MemoryOptions> options) : IContextContributor
+public sealed partial class RetrievedMemoryContributor(
+    IMemoryRetriever retriever,
+    ITurnMemory turns,
+    IOptions<MemoryOptions> options,
+    ILogger<RetrievedMemoryContributor> logger) : IContextContributor
 {
     public int Order => 160;
 
     public async Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken)
     {
-        TurnMemoryContext turn = await turns.GetAsync(request, cancellationToken);
+        TurnMemoryContext turn;
+        try
+        {
+            turn = await turns.GetAsync(request, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            return Unavailable(request, "embedding failed", exception);
+        }
+
         if (turn.Text is null)
             return null;
 
         foreach (ProjectActivation activation in turn.Activations)
             request.Notes.Add(new ContextNote("project", activation.Name, MemoryText.Snake(activation.Reason.ToString()), Round(activation.Score)));
 
-        IReadOnlyList<RetrievedChunk> chunks = await retriever.RetrieveAsync(
-            new MemoryQuery(turn.Text, turn.Embedding, turn.ActiveProjects, options.Value.Retrieval.TokenBudget), cancellationToken);
+        IReadOnlyList<RetrievedChunk> chunks;
+        try
+        {
+            chunks = await retriever.RetrieveAsync(
+                new MemoryQuery(turn.Text, turn.Embedding, turn.ActiveProjects, options.Value.Retrieval.TokenBudget), cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            return Unavailable(request, "retrieval failed", exception);
+        }
+
         foreach (RetrievedChunk chunk in chunks)
             request.Notes.Add(new ContextNote("memory", chunk.Chunk.Title, $"{MemoryText.Type(chunk.Chunk.Type)} via {MemoryText.Snake(chunk.Source.ToString())}", Round(chunk.Score)));
 
@@ -50,6 +74,16 @@ public sealed class RetrievedMemoryContributor(IMemoryRetriever retriever, ITurn
     }
 
     private static double? Round(double? score) => score is { } value ? Math.Round(value, 3) : null;
+
+    private string? Unavailable(ContextRequest request, string reason, Exception exception)
+    {
+        LogUnavailable(logger, exception, reason);
+        request.Notes.Add(new ContextNote("memory", "unavailable", reason));
+        return null;
+    }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Memory retrieval skipped for this turn: {Reason}")]
+    private static partial void LogUnavailable(ILogger logger, Exception exception, string reason);
 }
 
 /// <summary>How chunks appear in the system prompt and in tool results.</summary>
