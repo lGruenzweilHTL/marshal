@@ -63,6 +63,29 @@ public sealed class MoonrakerSnapshotSourceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Stream_ProxiesTheStreamUrl()
+    {
+        _fake.Raw["/webcam/"] = ("multipart/x-mixed-replace;boundary=frame", "--frame\r\n"u8.ToArray());
+
+        Result<WebcamFeed> stream = await Webcams().OpenStreamAsync("voron", Ct);
+
+        Assert.Equal("multipart/x-mixed-replace; boundary=frame", stream.Value.ContentType);
+        using var reader = new StreamReader(stream.Value.Body);
+        Assert.Equal("--frame\r\n", await reader.ReadToEndAsync(Ct));
+        await stream.Value.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task Stream_WebcamWithoutStream_NoWebcam()
+    {
+        _fake.Rest["GET /server/webcams/list"] = JsonNode.Parse("""
+            {"webcams":[{"name":"cam","enabled":true,"snapshot_url":"/snap.jpg","stream_url":""}]}
+            """);
+
+        Assert.Equal("printer.no_webcam", (await Webcams().OpenStreamAsync("voron", Ct)).Error.Code);
+    }
+
+    [Fact]
     public async Task Capture_ResizedStoredAndLinkedSameOrigin()
     {
         PrinterSnapshot snapshot = (await Source().CaptureAsync("voron", Ct)).Value;

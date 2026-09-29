@@ -1,10 +1,10 @@
 using Marshal.Abstractions;
 using Marshal.Abstractions.Printers;
 
-namespace Marshal.Integrations.Moonraker.Tests;
+namespace Marshal.Testing;
 
 /// <summary>Records commands; answers reads from settable values.</summary>
-internal sealed class FakePrinterClient : IPrinterClient
+public sealed class FakePrinterClient : IPrinterClient
 {
     public List<(string Printer, PrinterCommand Command)> Sent { get; } = [];
 
@@ -14,7 +14,11 @@ internal sealed class FakePrinterClient : IPrinterClient
 
     public IReadOnlyList<PrintJob> History { get; set; } = [];
 
+    /// <summary>Failure every read and send returns.</summary>
     public Error? Failure { get; set; }
+
+    /// <summary>Validation result per command (success when not set).</summary>
+    public Func<PrinterCommand, Result> Validation { get; set; } = _ => Result.Success();
 
     public Task<Result<IReadOnlyList<PrinterFile>>> ListFilesAsync(string printer, CancellationToken cancellationToken) =>
         Task.FromResult(Failure is { } error ? Result.Failure<IReadOnlyList<PrinterFile>>(error) : Result.Success(Files));
@@ -25,45 +29,83 @@ internal sealed class FakePrinterClient : IPrinterClient
     public Task<Result<IReadOnlyList<PrintJob>>> GetHistoryAsync(string printer, int limit, CancellationToken cancellationToken) =>
         Task.FromResult(Failure is { } error ? Result.Failure<IReadOnlyList<PrintJob>>(error) : Result.Success<IReadOnlyList<PrintJob>>([.. History.Take(limit)]));
 
+    public Result Validate(string printer, PrinterCommand command) => Validation(command);
+
     public Task<Result> SendAsync(string printer, PrinterCommand command, CancellationToken cancellationToken)
     {
+        Result valid = Validation(command);
+        if (valid.IsFailure)
+            return Task.FromResult(valid);
         if (Failure is { } error)
             return Task.FromResult(Result.Failure(error));
 
-        Sent.Add((printer, command));
+        lock (Sent)
+            Sent.Add((printer, command));
         return Task.FromResult(Result.Success());
     }
 }
 
-/// <summary>Printer states set by the test; unknown printers read as offline.</summary>
-internal sealed class FakePrinterStateCache : IPrinterStateCache
+/// <summary>Printer states set by the test; unknown printers read as offline. <see cref="Set"/> notifies subscribers.</summary>
+public sealed class FakePrinterStateCache : IPrinterStateCache
 {
+    private readonly List<Action<string, PrinterState?>> _subscribers = [];
+
     public Dictionary<string, PrinterState> States { get; } = [];
 
     public Result<PrinterState> Get(string printer) =>
         States.TryGetValue(printer, out PrinterState? state) ? state : PrinterErrors.Offline(printer);
 
-    public IDisposable Subscribe(Action<PrinterState> changed) => new Nothing();
-
-    private sealed class Nothing : IDisposable
+    /// <summary>Sets (or with null removes) a printer's state and notifies subscribers.</summary>
+    public void Set(string printer, PrinterState? state)
     {
-        public void Dispose()
+        if (state is null)
+            States.Remove(printer);
+        else
+            States[printer] = state;
+
+        Action<string, PrinterState?>[] subscribers;
+        lock (_subscribers)
+            subscribers = [.. _subscribers];
+        foreach (Action<string, PrinterState?> subscriber in subscribers)
+            subscriber(printer, state);
+    }
+
+    public IDisposable Subscribe(Action<string, PrinterState?> changed)
+    {
+        lock (_subscribers)
+            _subscribers.Add(changed);
+        return new Subscription(() =>
         {
-        }
+            lock (_subscribers)
+                _subscribers.Remove(changed);
+        });
+    }
+
+    private sealed class Subscription(Action dispose) : IDisposable
+    {
+        public void Dispose() => dispose();
     }
 }
 
 /// <summary>Webcams per printer; printers without one answer <c>printer.no_webcam</c>.</summary>
-internal sealed class FakeWebcams : IPrinterWebcams
+public sealed class FakeWebcams : IPrinterWebcams
 {
     public Dictionary<string, PrinterWebcam> Webcams { get; } = [];
 
+    /// <summary>Stream content type and bytes served by <see cref="OpenStreamAsync"/>.</summary>
+    public (string ContentType, byte[] Body) Stream { get; set; } = ("multipart/x-mixed-replace;boundary=frame", "--frame\r\n"u8.ToArray());
+
     public Task<Result<PrinterWebcam>> FindAsync(string printer, CancellationToken cancellationToken) =>
         Task.FromResult(Webcams.TryGetValue(printer, out PrinterWebcam? webcam) ? Result.Success(webcam) : Result.Failure<PrinterWebcam>(PrinterErrors.NoWebcam(printer)));
+
+    public Task<Result<WebcamFeed>> OpenStreamAsync(string printer, CancellationToken cancellationToken) =>
+        Task.FromResult(Webcams.ContainsKey(printer)
+            ? Result.Success(new WebcamFeed(Stream.ContentType, new MemoryStream(Stream.Body)))
+            : Result.Failure<WebcamFeed>(PrinterErrors.NoWebcam(printer)));
 }
 
-/// <summary>Returns a fixed snapshot for every capture.</summary>
-internal sealed class FakeSnapshotSource : ISnapshotSource
+/// <summary>Returns a fixed snapshot for every capture and serves it back by id.</summary>
+public sealed class FakeSnapshotSource : ISnapshotSource
 {
     public byte[] Jpeg { get; set; } = [0xFF, 0xD8, 0xFF, 0xE0];
 
@@ -76,5 +118,5 @@ internal sealed class FakeSnapshotSource : ISnapshotSource
     }
 
     public Task<Result<byte[]>> OpenAsync(string printer, string id, CancellationToken cancellationToken) =>
-        Task.FromResult(Result.Success(Jpeg));
+        Task.FromResult(id == "snap1" && Captures > 0 ? Result.Success(Jpeg) : Result.Failure<byte[]>(PrinterErrors.SnapshotNotFound(id)));
 }

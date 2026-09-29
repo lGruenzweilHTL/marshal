@@ -33,6 +33,34 @@ public sealed class MoonrakerWebcams(IOptions<PrinterOptions> options, IHttpClie
         return PrinterErrors.NoWebcam(config.Name);
     }
 
+    public async Task<Result<WebcamFeed>> OpenStreamAsync(string printer, CancellationToken cancellationToken)
+    {
+        Result<PrinterWebcam> webcam = await FindAsync(printer, cancellationToken);
+        if (webcam.IsFailure)
+            return webcam.Error;
+        if (webcam.Value.StreamUrl is not { } url)
+            return PrinterErrors.NoWebcam(webcam.Value.Name);
+
+        HttpResponseMessage? response = null;
+        try
+        {
+            response = await httpClients.CreateClient(MoonrakerRest.WebcamClientName).GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                response.Dispose();
+                return PrinterErrors.SnapshotFailed(printer, $"the webcam stream answered HTTP {(int)response.StatusCode}.");
+            }
+
+            string contentType = response.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
+            return new WebcamFeed(contentType, await response.Content.ReadAsStreamAsync(cancellationToken), response);
+        }
+        catch (HttpRequestException exception)
+        {
+            response?.Dispose();
+            return PrinterErrors.SnapshotFailed(printer, exception.Message);
+        }
+    }
+
     private static Uri? Resolve(PrinterConfig config, string? url)
     {
         if (string.IsNullOrWhiteSpace(url) || !Uri.TryCreate(config.BaseUri(), url, out Uri? resolved))

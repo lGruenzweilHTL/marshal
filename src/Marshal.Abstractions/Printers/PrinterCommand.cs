@@ -11,6 +11,12 @@ public abstract record PrinterCommand
     {
     }
 
+    /// <summary>
+    /// Confirm tier: everything except pausing and the emergency stop, which must act at once. The model-facing tools
+    /// and the printer page use the same tiers.
+    /// </summary>
+    public virtual bool RequiresConfirmation => true;
+
     /// <summary>Short English description for audit entries and confirmation prompts.</summary>
     public abstract string Describe();
 
@@ -21,6 +27,8 @@ public abstract record PrinterCommand
 
     public sealed record Pause : PrinterCommand
     {
+        public override bool RequiresConfirmation => false;
+
         public override string Describe() => "pause the print";
     }
 
@@ -36,6 +44,8 @@ public abstract record PrinterCommand
 
     public sealed record EmergencyStop : PrinterCommand
     {
+        public override bool RequiresConfirmation => false;
+
         public override string Describe() => "emergency stop";
     }
 

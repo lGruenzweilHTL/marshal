@@ -61,13 +61,17 @@ public sealed class MoonrakerPrinterClient(IOptions<PrinterOptions> options, IHt
         return jobs;
     }
 
-    public async Task<Result> SendAsync(string printer, PrinterCommand command, CancellationToken cancellationToken)
+    public Result Validate(string printer, PrinterCommand command)
     {
         if (_rest.Find(printer) is not { } config)
             return PrinterErrors.NotFound(printer);
 
-        var info = new PrinterInfo(config.Name, [.. config.Macros.Select(macro => macro.ToUpperInvariant())]);
-        Result valid = PrinterCommandRules.Validate(command, info);
+        return PrinterCommandRules.Validate(command, new PrinterInfo(config.Name, [.. config.Macros.Select(macro => macro.ToUpperInvariant())]));
+    }
+
+    public async Task<Result> SendAsync(string printer, PrinterCommand command, CancellationToken cancellationToken)
+    {
+        Result valid = Validate(printer, command);
         if (valid.IsFailure)
             return valid;
 

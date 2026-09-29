@@ -11,6 +11,9 @@ public interface IPrinterStateCache
     /// </summary>
     Result<PrinterState> Get(string printer);
 
-    /// <summary>Calls <paramref name="changed"/> after every state change until the subscription is disposed.</summary>
-    IDisposable Subscribe(Action<PrinterState> changed);
+    /// <summary>
+    /// Calls <paramref name="changed"/> with the printer name and its new state after every change, and with a null
+    /// state when the printer goes offline, until the subscription is disposed.
+    /// </summary>
+    IDisposable Subscribe(Action<string, PrinterState?> changed);
 }

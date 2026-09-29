@@ -109,6 +109,33 @@ public sealed class MoonrakerPrinterClientTests : IAsyncLifetime
     }
 
     [Fact]
+    public void Validate_ChecksWithoutSending()
+    {
+        MoonrakerPrinterClient client = Client();
+
+        Assert.True(client.Validate("voron", new PrinterCommand.RunMacro("PARK")).IsSuccess);
+        Assert.Equal("printer.macro_not_allowed", client.Validate("voron", new PrinterCommand.RunMacro("SAVE_CONFIG")).Error.Code);
+        Assert.Equal("printer.not_found", client.Validate("prusa", new PrinterCommand.Pause()).Error.Code);
+        Assert.Empty(_fake.RestRequests);
+    }
+
+    [Fact]
+    public void RequiresConfirmation_OnlyPauseAndEmergencyStopAreImmediate()
+    {
+        PrinterCommand[] immediate = [new PrinterCommand.Pause(), new PrinterCommand.EmergencyStop()];
+        PrinterCommand[] confirmed =
+        [
+            new PrinterCommand.StartPrint("a.gcode"), new PrinterCommand.Resume(), new PrinterCommand.Cancel(),
+            new PrinterCommand.SetTemperature(PrinterHeater.Bed, 60), new PrinterCommand.Home([]), new PrinterCommand.Move(PrinterAxis.X, 1),
+            new PrinterCommand.RunMacro("PARK"), new PrinterCommand.QueueAdd(["a.gcode"]), new PrinterCommand.QueueRemove(["1"]),
+            new PrinterCommand.QueueClear(), new PrinterCommand.QueuePause(), new PrinterCommand.QueueStart(), new PrinterCommand.QueueJump("1"),
+        ];
+
+        Assert.All(immediate, command => Assert.False(command.RequiresConfirmation));
+        Assert.All(confirmed, command => Assert.True(command.RequiresConfirmation));
+    }
+
+    [Fact]
     public async Task InvalidArguments_RejectedBeforeSending()
     {
         PrinterCommand[] invalid =

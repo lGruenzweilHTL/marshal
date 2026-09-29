@@ -17,6 +17,9 @@ internal sealed class MoonrakerRest(IOptions<PrinterOptions> options, IHttpClien
     /// <summary>Name of the <see cref="HttpClient"/> (resilience pipeline configured by the host).</summary>
     public const string HttpClientName = "moonraker";
 
+    /// <summary>Name of the <see cref="HttpClient"/> for webcam images and streams (no timeout, no retries).</summary>
+    public const string WebcamClientName = "moonraker-webcam";
+
     public PrinterConfig? Find(string printer) =>
         options.Value.Printers.FirstOrDefault(config => config.Url is not null && string.Equals(config.Name, printer, StringComparison.OrdinalIgnoreCase));
 

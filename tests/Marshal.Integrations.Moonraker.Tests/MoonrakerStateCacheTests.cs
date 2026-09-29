@@ -124,21 +124,26 @@ public sealed class MoonrakerStateCacheTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Subscribe_NotifiedOfChanges()
+    public async Task Subscribe_NotifiedOfChangesAndOffline()
     {
-        await StartAsync();
-        var seen = new List<PrinterState>();
-        using IDisposable subscription = _cache!.Subscribe(state =>
+        await StartAsync(backoff: TimeSpan.FromSeconds(5));
+        var seen = new List<(string Printer, PrinterState? State)>();
+        using IDisposable subscription = _cache!.Subscribe((printer, state) =>
         {
             lock (seen)
-                seen.Add(state);
+                seen.Add((printer, state));
         });
 
         await _fake.SendAsync(Update(new JsonObject { ["heater_bed"] = new JsonObject { ["target"] = 60.0 } }));
         await WaitForAsync(candidate => candidate.Bed.Target == 60);
+        _fake.Drop();
+        await WaitForResultAsync(result => result.IsFailure);
 
         lock (seen)
-            Assert.Contains(seen, state => state.Printer == "voron" && state.Bed.Target == 60);
+        {
+            Assert.Contains(seen, change => change.Printer == "voron" && change.State?.Bed.Target == 60);
+            Assert.Equal(("voron", (PrinterState?)null), seen[^1]);
+        }
     }
 
     private MoonrakerStateCache Cache(TimeSpan? backoff = null) => new(

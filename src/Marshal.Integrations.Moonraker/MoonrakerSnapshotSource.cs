@@ -26,6 +26,8 @@ public sealed partial class MoonrakerSnapshotSource(
     /// <summary>Largest webcam image accepted.</summary>
     private const int MaxDownloadBytes = 20 * 1024 * 1024;
 
+    private static readonly TimeSpan _downloadTimeout = TimeSpan.FromSeconds(15);
+
     public async Task<Result<PrinterSnapshot>> CaptureAsync(string printer, CancellationToken cancellationToken)
     {
         if (Find(printer) is not { } config)
@@ -65,11 +67,14 @@ public sealed partial class MoonrakerSnapshotSource(
         return await File.ReadAllBytesAsync(file, cancellationToken);
     }
 
-    private async Task<Result<byte[]>> DownloadAsync(string printer, Uri url, CancellationToken cancellationToken)
+    private async Task<Result<byte[]>> DownloadAsync(string printer, Uri url, CancellationToken callerToken)
     {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(callerToken);
+        timeout.CancelAfter(_downloadTimeout);
+        CancellationToken cancellationToken = timeout.Token;
         try
         {
-            using HttpResponseMessage response = await httpClients.CreateClient(MoonrakerRest.HttpClientName).GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using HttpResponseMessage response = await httpClients.CreateClient(MoonrakerRest.WebcamClientName).GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             if (!response.IsSuccessStatusCode)
                 return PrinterErrors.SnapshotFailed(printer, $"the webcam answered HTTP {(int)response.StatusCode}.");
             if (response.Content.Headers.ContentLength > MaxDownloadBytes)
@@ -92,7 +97,7 @@ public sealed partial class MoonrakerSnapshotSource(
         {
             return PrinterErrors.SnapshotFailed(printer, exception.Message);
         }
-        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (!callerToken.IsCancellationRequested)
         {
             return PrinterErrors.SnapshotFailed(printer, "the webcam did not answer in time.");
         }

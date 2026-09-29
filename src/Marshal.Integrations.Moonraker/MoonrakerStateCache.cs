@@ -28,7 +28,7 @@ public sealed partial class MoonrakerStateCache(
     private static readonly string[] _objects = ["print_stats", "virtual_sdcard", "extruder", "heater_bed", "webhooks", "display_status"];
 
     private readonly ConcurrentDictionary<string, PrinterState> _states = new(StringComparer.OrdinalIgnoreCase);
-    private readonly List<Action<PrinterState>> _subscribers = [];
+    private readonly List<Action<string, PrinterState?>> _subscribers = [];
 
     public Result<PrinterState> Get(string printer)
     {
@@ -38,7 +38,7 @@ public sealed partial class MoonrakerStateCache(
         return _states.TryGetValue(printer, out PrinterState? state) ? state : PrinterErrors.Offline(printer);
     }
 
-    public IDisposable Subscribe(Action<PrinterState> changed)
+    public IDisposable Subscribe(Action<string, PrinterState?> changed)
     {
         lock (_subscribers)
             _subscribers.Add(changed);
@@ -68,7 +68,9 @@ public sealed partial class MoonrakerStateCache(
                 LogDisconnected(printer.Name, exception.Message);
             }
 
-            _states.TryRemove(printer.Name, out _);
+            if (_states.TryRemove(printer.Name, out _))
+                Notify(printer.Name, null);
+
             try
             {
                 await Task.Delay(timings.Backoff(attempt++), time, stoppingToken);
@@ -160,15 +162,20 @@ public sealed partial class MoonrakerStateCache(
     {
         PrinterState state = Map(printer, status, time.GetUtcNow());
         _states[printer] = state;
-        Action<PrinterState>[] subscribers;
+        Notify(printer, state);
+    }
+
+    private void Notify(string printer, PrinterState? state)
+    {
+        Action<string, PrinterState?>[] subscribers;
         lock (_subscribers)
             subscribers = [.. _subscribers];
 
-        foreach (Action<PrinterState> subscriber in subscribers)
+        foreach (Action<string, PrinterState?> subscriber in subscribers)
         {
             try
             {
-                subscriber(state);
+                subscriber(printer, state);
             }
             catch (Exception exception)
             {
@@ -216,7 +223,7 @@ public sealed partial class MoonrakerStateCache(
 
     private static int? Integer(JsonNode? node) => Number(node) is { } number ? (int)number : null;
 
-    private void Unsubscribe(Action<PrinterState> changed)
+    private void Unsubscribe(Action<string, PrinterState?> changed)
     {
         lock (_subscribers)
             _subscribers.Remove(changed);
@@ -231,7 +238,7 @@ public sealed partial class MoonrakerStateCache(
     [LoggerMessage(Level = LogLevel.Warning, Message = "A printer state subscriber failed")]
     private partial void LogSubscriberFailed(Exception exception);
 
-    private sealed class Subscription(MoonrakerStateCache cache, Action<PrinterState> changed) : IDisposable
+    private sealed class Subscription(MoonrakerStateCache cache, Action<string, PrinterState?> changed) : IDisposable
     {
         public void Dispose() => cache.Unsubscribe(changed);
     }

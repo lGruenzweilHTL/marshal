@@ -14,6 +14,9 @@ public interface IPrinterClient
     /// <summary>The newest <paramref name="limit"/> finished or running jobs, newest first.</summary>
     Task<Result<IReadOnlyList<PrintJob>>> GetHistoryAsync(string printer, int limit, CancellationToken cancellationToken);
 
+    /// <summary>Checks a command against the printer's limits and macro allowlist without sending anything.</summary>
+    Result Validate(string printer, PrinterCommand command);
+
     /// <summary>Validates and sends a command; <c>printer.invalid_command</c> or <c>printer.macro_not_allowed</c> before anything is sent.</summary>
     Task<Result> SendAsync(string printer, PrinterCommand command, CancellationToken cancellationToken);
 }
