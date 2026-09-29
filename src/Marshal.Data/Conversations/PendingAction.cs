@@ -1,3 +1,4 @@
+using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Sessions;
@@ -19,6 +20,12 @@ public sealed class PendingAction : IOwned
     public TaskId? TaskId { get; init; }
 
     public string? SatelliteId { get; init; }
+
+    /// <summary>The run that asked (no foreign key: runs are purged by retention).</summary>
+    public RunId? RunId { get; init; }
+
+    /// <summary>JSON list of the run's taint sources (kind, first step).</summary>
+    public string Taint { get; init; } = "[]";
 
     /// <summary>Internal tool id.</summary>
     public required string Tool { get; init; }

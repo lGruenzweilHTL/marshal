@@ -1,7 +1,9 @@
 using Marshal.Abstractions;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
+using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Sessions;
+using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
 using Marshal.Data.Conversations;
 using Marshal.Testing;
@@ -103,9 +105,45 @@ public sealed class EfPendingActionStoreTests
         Assert.Null(await storeB.GetPendingAsync(session, Ct));
     }
 
+    [Fact]
+    public async Task Freeze_BackgroundApproval_KeepsTaskRunAndTaint()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        database.Accessor.Current = Text(OwnerA);
+        var task = TaskId.New();
+        await using (MarshalDbContext context = database.CreateContext(OwnerA))
+        {
+            context.AgentTasks.Add(new Tasks.AgentTask
+            {
+                Id = task,
+                OwnerId = OwnerA,
+                CreatedBy = TaskCreator.User,
+                Kind = TaskKind.Agent,
+                Goal = "Print the part.",
+                TriggerKind = TaskTriggerKind.Now,
+                TriggerSpec = "",
+                CreatedAt = DateTimeOffset.UnixEpoch,
+                UpdatedAt = DateTimeOffset.UnixEpoch,
+            });
+            await context.SaveChangesAsync(Ct);
+        }
+
+        var store = new EfPendingActionStore(database.Factory, database.Accessor, _time);
+        var run = RunId.New();
+
+        PendingActionRecord frozen = await store.FreezeAsync(Request(null, "{}") with { TaskId = task, RunId = run, Taint = [new TaintSource("mail", 3)] }, Ct);
+
+        PendingActionRecord? loaded = await store.GetAsync(frozen.Id, Ct);
+        Assert.NotNull(loaded);
+        Assert.Equal((task, run, PendingActionStatus.Pending), (loaded.TaskId, loaded.RunId, loaded.Status));
+        Assert.Equal([new TaintSource("mail", 3)], loaded.Taint);
+        database.Accessor.Current = Text(OwnerB);
+        Assert.Null(await new EfPendingActionStore(database.Factory, database.Accessor, _time).GetAsync(frozen.Id, Ct));
+    }
+
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    private FreezeRequest Request(SessionId session, string arguments) => new(
+    private FreezeRequest Request(SessionId? session, string arguments) => new(
         session,
         "assist_satellite.kitchen",
         new ToolId("ha", "HassTurnOff"),

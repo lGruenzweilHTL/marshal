@@ -249,6 +249,8 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         {
             action.HasKey(entity => entity.Id);
             action.HasIndex(entity => new { entity.SessionId, entity.Status });
+            action.HasIndex(entity => new { entity.Status, entity.ExpiresAt }).HasFilter("task_id IS NOT NULL");
+            action.HasIndex(entity => entity.Nonce).IsUnique();
             action.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
             action.HasOne<Session>().WithMany().HasForeignKey(entity => entity.SessionId);
             action.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.TaskId);

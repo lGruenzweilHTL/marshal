@@ -9,6 +9,10 @@ public static class FixedReplies
         ? "Tut mir leid, das habe ich nicht fertig bekommen."
         : "Sorry, I couldn't finish that.";
 
+    public static string AwaitingApproval(string language) => German(language)
+        ? "Wartet auf deine Freigabe."
+        : "Waiting for your approval.";
+
     public static string BudgetExceeded(string language) => German(language)
         ? "Abgebrochen: Das Budget dieser Aufgabe ist aufgebraucht."
         : "Stopped: this task's budget is used up.";

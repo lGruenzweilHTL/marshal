@@ -1,5 +1,6 @@
 using Marshal.Abstractions;
 using Marshal.Abstractions.Execution;
+using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Models;
 using Marshal.Abstractions.Satellites;
@@ -40,6 +41,9 @@ internal sealed class TaskLoopHarness
 
     public InMemoryPendingActionStore PendingActions { get; private set; } = null!;
 
+    /// <summary>Background confirmations the loop queued.</summary>
+    public RecordingApprovals Approvals { get; private set; } = null!;
+
     public FakeTemplateCatalog Templates { get; } = new();
 
     public AsyncLocalExecutionContextAccessor Accessor { get; } = new();
@@ -58,6 +62,7 @@ internal sealed class TaskLoopHarness
     {
         var harness = new TaskLoopHarness();
         harness.PendingActions = new InMemoryPendingActionStore(harness.Time);
+        harness.Approvals = new RecordingApprovals(harness.PendingActions);
         var registry = new ToolRegistry([new FakeToolSource("test", true, tools)]);
         await registry.RefreshAsync(TestContext.Current.CancellationToken);
         var engine = new RuleBasedRiskEngine(new FixedMonitor<RiskRulesFile>(Rules("risk: []")), []);
@@ -77,7 +82,8 @@ internal sealed class TaskLoopHarness
             Options.Create(new AgentOptions()),
             Options.Create(new ConfirmationOptions()),
             harness.Time,
-            NullLogger<AgentRunner>.Instance);
+            NullLogger<AgentRunner>.Instance,
+            harness.Approvals);
         harness.Agent = agent;
         harness.Runner = new AgentTaskRunner(agent, new Profiles(), harness.ActiveRuns);
         return harness;
@@ -85,6 +91,24 @@ internal sealed class TaskLoopHarness
 
     private static RiskRulesFile Rules(string yaml) =>
         new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build().Deserialize<RiskRulesFile>(yaml);
+
+    /// <summary>Freezes queued approvals in the in-memory store and records them.</summary>
+    internal sealed class RecordingApprovals(InMemoryPendingActionStore store) : IApprovalQueue
+    {
+        public List<PendingActionRecord> Queued { get; } = [];
+
+        public async Task<PendingActionRecord> EnqueueAsync(FreezeRequest request, CancellationToken cancellationToken)
+        {
+            PendingActionRecord frozen = await store.FreezeAsync(request, cancellationToken);
+            Queued.Add(frozen);
+            return frozen;
+        }
+
+        public Task<IReadOnlyList<PendingActionRecord>> ListPendingAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public Task<Result<PendingActionRecord>> DecideAsync(PendingActionId id, bool approve, DecidedBy decidedBy, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+    }
 
     private sealed class FixedMonitor<T>(T value) : IOptionsMonitor<T>
     {

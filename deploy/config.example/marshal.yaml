@@ -126,6 +126,7 @@ sessions:
 
 tasks:
   workers: 2                # background task runs at the same time
+  approvalTtl: "00:10:00"   # background approvals expire (as rejected) after this
 
 notifications:
   quietHoursMode: hold      # hold (deliver when quiet hours end) or silentPush

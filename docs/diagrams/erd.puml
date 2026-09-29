@@ -198,11 +198,13 @@ package "Conversations & Runs" {
     session_id : SessionId <<FK>>
     task_id : TaskId <<FK>>
     satellite_id : string  <<frozen with the action>>
+    run_id : RunId  <<run that asked; no FK (retention)>>
+    * taint : json  <<[{kind, firstStep}] of that run>>
     * tool : string
     * args : json  <<frozen>>
     * summary : string
     * reasons : json  <<[{code: rule | unresolved_target | taint | quiet_hours_override, detail}]>>
-    * nonce : string
+    * nonce : string  <<unique>>
     * language : de | en  <<language of the reason sentences>>
     * created_at : DateTimeOffset
     * expires_at : DateTimeOffset  <<~60 s conversation, 10 min approval queue>>

@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
@@ -55,23 +54,7 @@ public sealed class ConfirmationFlow(
             return new ConfirmationOutcome(ConfirmationOutcomeKind.Dropped, action, GuardDecision.Denied);
 
         GuardDecision decision = keyword ? GuardDecision.ConfirmedByKeyword : GuardDecision.JudgePositive;
-        (RegisteredTool? tool, Result<ToolOutput> result) = await ExecuteFrozenAsync(action, context, cancellationToken);
+        (RegisteredTool? tool, Result<ToolOutput> result) = await FrozenActions.ExecuteAsync(registry, riskEngine, action, context, cancellationToken);
         return new ConfirmationOutcome(ConfirmationOutcomeKind.Executed, action, decision, tool, result);
-    }
-
-    private async Task<(RegisteredTool? Tool, Result<ToolOutput> Result)> ExecuteFrozenAsync(PendingActionRecord action, MarshalExecutionContext context, CancellationToken cancellationToken)
-    {
-        RegisteredTool? tool = registry.Current.FindById(action.Tool);
-        if (tool is null)
-            return (null, new Error("tool.unknown", $"The tool '{action.Tool}' is no longer available.", ErrorType.NotFound));
-
-        using var document = JsonDocument.Parse(action.ArgumentsJson);
-        JsonElement arguments = document.RootElement.Clone();
-        RiskAssessment assessment = await riskEngine.AssessAsync(tool, arguments, cancellationToken);
-        if (assessment.Tier == RiskTier.Forbidden)
-            return (tool, new Error("tool.forbidden", "This action is no longer allowed.", ErrorType.Forbidden));
-
-        Result<ToolOutput> result = await tool.Tool.InvokeAsync(new ToolInvocation(arguments, context), cancellationToken);
-        return (tool, result);
     }
 }

@@ -1,5 +1,8 @@
+using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Sessions;
+using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
 
 namespace Marshal.Abstractions.Guard;
@@ -16,6 +19,15 @@ public sealed record PendingActionRecord
     public SessionId? SessionId { get; init; }
 
     public string? SatelliteId { get; init; }
+
+    /// <summary>Background approvals: the waiting task.</summary>
+    public TaskId? TaskId { get; init; }
+
+    /// <summary>The run that asked.</summary>
+    public RunId? RunId { get; init; }
+
+    /// <summary>Untrusted sources of that run, with their first steps.</summary>
+    public IReadOnlyList<TaintSource> Taint { get; init; } = [];
 
     public required ToolId Tool { get; init; }
 

@@ -1,11 +1,14 @@
 using System.Text;
+using System.Text.Json;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Execution;
+using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Tasks;
 using Marshal.Core.Agent;
 using Marshal.Core.Context;
+using Marshal.Tasks.Approvals;
 
 namespace Marshal.Tasks.Running;
 
@@ -38,8 +41,9 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
             TaskId = task.Id,
             ProjectId = task.ProjectId,
         };
-        if (task.Trigger.Kind == TaskTriggerKind.Event && task.TriggerPayload is not null)
-            context.Taint.Mark(EventTaint, 0);
+        string? taint = PayloadTaint(task);
+        if (taint is not null)
+            context.Taint.Mark(taint, 0);
 
         using ActiveTaskRuns.Scope run = activeRuns.Begin(task.Id);
         AgentRunResult result = await agent.RunAsync(new AgentRunRequest { Context = context, Trigger = "task", UserText = Input(task), Limits = limits }, cancellationToken);
@@ -47,6 +51,8 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
         TaskRunOutcome outcome;
         if (result.Outcome != RunOutcome.Ok)
             outcome = TaskRunOutcome.Failed(result.OutcomeReason ?? result.Outcome.ToString().ToLowerInvariant());
+        else if (result.PendingAction is { } approval)
+            outcome = TaskRunOutcome.Wait(null, ApprovalNote(run.State.Notes ?? task.Notes, approval));
         else if (run.State.WaitRequested)
             outcome = TaskRunOutcome.Wait(run.State.WakeAt, run.State.Notes);
         else
@@ -54,25 +60,60 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
         return outcome with { Spend = new TaskSpend(context.Usage.Tokens, context.Usage.Cost, context.Usage.ModelCalls) };
     }
 
+    // A server-written note, so the resumed run knows what it waited for.
+    private static string ApprovalNote(string? notes, PendingActionRecord approval)
+    {
+        string note = $"approval requested: {approval.Tool}: {approval.Summary} ({approval.Id})";
+        return string.IsNullOrWhiteSpace(notes) ? note : $"{notes}\n{note}";
+    }
+
     private static string Input(TaskRecord task)
     {
         var input = new StringBuilder();
         input.Append("Task goal:\n").Append(task.Goal).Append("\n\nTask notes from earlier runs:\n")
             .Append(string.IsNullOrWhiteSpace(task.Notes) ? "(none)" : task.Notes)
-            .Append("\n\nThis run was started by: ").Append(Describe(task.Trigger));
+            .Append("\n\nThis run was started by: ").Append(Describe(task));
         if (task.TriggerPayload is not null)
         {
-            input.Append("\n\nTrigger payload:\n").Append(task.Trigger.Kind == TaskTriggerKind.Event
-                ? UntrustedContent.Wrap(EventTaint, task.TriggerPayload)
+            input.Append("\n\nTrigger payload:\n").Append(PayloadTaint(task) is { } taint
+                ? UntrustedContent.Wrap(taint, task.TriggerPayload)
                 : task.TriggerPayload);
         }
 
         return input.ToString();
     }
 
-    private static string Describe(TaskTrigger trigger) => trigger.Kind switch
+    // Approval decisions are written by the server; they are untrusted only when the approved action returned
+    // untrusted content. Other event payloads can carry third-party text.
+    private static string? PayloadTaint(TaskRecord task)
     {
-        TaskTriggerKind.Cron => $"its schedule ({trigger.Spec})",
+        if (task.TriggerPayload is null)
+            return null;
+        if (ApprovalPayload(task) is { } approval)
+            return approval.TryGetProperty(ApprovalQueue.TaintKey, out JsonElement taint) && taint.ValueKind == JsonValueKind.String ? taint.GetString() : null;
+        return task.Trigger.Kind == TaskTriggerKind.Event ? EventTaint : null;
+    }
+
+    private static JsonElement? ApprovalPayload(TaskRecord task)
+    {
+        if (task.TriggerPayload is null)
+            return null;
+        try
+        {
+            using var document = JsonDocument.Parse(task.TriggerPayload);
+            return document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty(ApprovalQueue.PayloadKey, out _)
+                ? document.RootElement.Clone()
+                : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static string Describe(TaskRecord task) => ApprovalPayload(task) is not null ? "an approval decision" : task.Trigger.Kind switch
+    {
+        TaskTriggerKind.Cron => $"its schedule ({task.Trigger.Spec})",
         TaskTriggerKind.At => "its scheduled time",
         TaskTriggerKind.Event => "a matching event",
         TaskTriggerKind.After => "the task it runs after",

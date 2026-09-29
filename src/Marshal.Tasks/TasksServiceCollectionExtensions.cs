@@ -1,10 +1,12 @@
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Events;
 using Marshal.Abstractions.FollowUps;
+using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.LiveEvents;
 using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
+using Marshal.Tasks.Approvals;
 using Marshal.Tasks.Deliveries;
 using Marshal.Tasks.Events;
 using Marshal.Tasks.FollowUps;
@@ -23,7 +25,7 @@ namespace Marshal.Tasks;
 
 /// <summary>
 /// Registers the task system (<c>tasks</c> in <c>marshal.yaml</c>): the store, the scheduler with its worker pool,
-/// the task runners and the event bus with its trigger matcher.
+/// the task runners, the event bus with its trigger matcher, notifications and the approval queue.
 /// </summary>
 public static class TasksServiceCollectionExtensions
 {
@@ -35,6 +37,7 @@ public static class TasksServiceCollectionExtensions
             .Validate(options => options.MaxActiveChildren >= 0, "tasks.maxActiveChildren cannot be negative.")
             .Validate(options => options.MinWakeupInterval >= TimeSpan.FromMinutes(1), "tasks.minWakeupInterval must be at least one minute.")
             .Validate(options => options.DailyCostCap >= 0, "tasks.dailyCostCap cannot be negative.")
+            .Validate(options => options.ApprovalTtl >= TimeSpan.FromMinutes(1), "tasks.approvalTtl must be at least one minute.")
             .ValidateOnStart();
 
         services.AddSingleton<EfTaskStore>();
@@ -67,6 +70,10 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<IToolSource, NotificationToolSource>();
         services.AddSingleton<IDeliveryDispatcher, DeliveryDispatcher>();
         services.AddSingleton<IHostedService, ConditionalDeliveryTracker>();
+
+        services.AddSingleton<ApprovalQueue>();
+        services.AddSingleton<IApprovalQueue>(provider => provider.GetRequiredService<ApprovalQueue>());
+        services.AddSingleton<IHostedService, ApprovalExpiryLoop>();
 
         services.AddSingleton<ITriggerMatcher, DeclarativeTriggerMatcher>();
         services.AddSingleton<ChannelEventBus>();

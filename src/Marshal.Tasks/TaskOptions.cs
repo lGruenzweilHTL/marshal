@@ -22,6 +22,9 @@ public sealed class TaskOptions
 
     /// <summary>Shortest wakeup delay and cron period; templates may set their own.</summary>
     public TimeSpan MinWakeupInterval { get; set; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>How long a background approval waits for a decision; afterwards it expires and counts as rejected.</summary>
+    public TimeSpan ApprovalTtl { get; set; } = TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

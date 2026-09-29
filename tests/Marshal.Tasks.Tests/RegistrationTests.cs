@@ -1,7 +1,9 @@
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Events;
+using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
+using Marshal.Tasks.Approvals;
 using Marshal.Tasks.Running;
 using Marshal.Tasks.Store;
 using Marshal.Tasks.Tools;
@@ -29,5 +31,7 @@ public sealed class RegistrationTests
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IEventSubscriber));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IToolSource) && descriptor.ImplementationType == typeof(TaskToolSource));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IKillSwitch));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IApprovalQueue));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IHostedService) && descriptor.ImplementationType == typeof(ApprovalExpiryLoop));
     }
 }

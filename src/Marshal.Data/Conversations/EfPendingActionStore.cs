@@ -43,6 +43,9 @@ public sealed class EfPendingActionStore(IDbContextFactory<MarshalDbContext> con
             OwnerId = context.OwnerId,
             SessionId = request.SessionId,
             SatelliteId = request.SatelliteId,
+            TaskId = request.TaskId,
+            RunId = request.RunId,
+            Taint = JsonSerializer.Serialize(request.Taint ?? [], _json),
             Tool = request.Tool.ToString(),
             Args = request.ArgumentsJson,
             Summary = request.Summary,
@@ -57,6 +60,13 @@ public sealed class EfPendingActionStore(IDbContextFactory<MarshalDbContext> con
         return ToRecord(row);
     }
 
+    public async Task<PendingActionRecord?> GetAsync(PendingActionId id, CancellationToken cancellationToken)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        PendingAction? row = await db.PendingActions.AsNoTracking().SingleOrDefaultAsync(action => action.Id == id, cancellationToken);
+        return row is null ? null : ToRecord(row);
+    }
+
     public async Task<PendingActionRecord?> GetPendingAsync(SessionId sessionId, CancellationToken cancellationToken)
     {
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
@@ -67,20 +77,34 @@ public sealed class EfPendingActionStore(IDbContextFactory<MarshalDbContext> con
         return row is null ? null : ToRecord(row);
     }
 
+    public async Task<IReadOnlyList<PendingActionRecord>> ListTaskApprovalsAsync(CancellationToken cancellationToken)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        List<PendingAction> rows = await db.PendingActions.AsNoTracking()
+            .Where(action => action.TaskId != null && action.Status == PendingActionStatus.Pending)
+            .OrderBy(action => action.CreatedAt)
+            .ToListAsync(cancellationToken);
+        return [.. rows.Select(ToRecord)];
+    }
+
+    // One conditional update, so two decisions arriving at once (web UI and push) cannot both succeed.
     public async Task<Result> DecideAsync(PendingActionId id, PendingActionStatus status, DecidedBy decidedBy, CancellationToken cancellationToken)
     {
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
-        PendingAction? row = await db.PendingActions.SingleOrDefaultAsync(action => action.Id == id, cancellationToken);
-        if (row is null)
-            return new Error("pending_action.not_found", "The pending action does not exist.", ErrorType.NotFound);
-        if (row.Status != PendingActionStatus.Pending)
-            return new Error("pending_action.not_pending", "The pending action was already decided.", ErrorType.Conflict);
+        DateTimeOffset now = timeProvider.GetUtcNow();
+        int decided = await db.PendingActions
+            .Where(action => action.Id == id && action.Status == PendingActionStatus.Pending)
+            .ExecuteUpdateAsync(
+                set => set.SetProperty(action => action.Status, status)
+                    .SetProperty(action => action.DecidedBy, decidedBy)
+                    .SetProperty(action => action.DecidedAt, now),
+                cancellationToken);
+        if (decided == 1)
+            return Result.Success();
 
-        row.Status = status;
-        row.DecidedBy = decidedBy;
-        row.DecidedAt = timeProvider.GetUtcNow();
-        await db.SaveChangesAsync(cancellationToken);
-        return Result.Success();
+        return await db.PendingActions.AnyAsync(action => action.Id == id, cancellationToken)
+            ? new Error("pending_action.not_pending", "The pending action was already decided.", ErrorType.Conflict)
+            : new Error("pending_action.not_found", "The pending action does not exist.", ErrorType.NotFound);
     }
 
     public async Task DropForSessionAsync(SessionId sessionId, CancellationToken cancellationToken)
@@ -103,6 +127,9 @@ public sealed class EfPendingActionStore(IDbContextFactory<MarshalDbContext> con
         OwnerId = row.OwnerId,
         SessionId = row.SessionId,
         SatelliteId = row.SatelliteId,
+        TaskId = row.TaskId,
+        RunId = row.RunId,
+        Taint = JsonSerializer.Deserialize<List<TaintSource>>(row.Taint, _json) ?? [],
         Tool = ToolId.Parse(row.Tool).Value,
         ArgumentsJson = row.Args,
         Summary = row.Summary,

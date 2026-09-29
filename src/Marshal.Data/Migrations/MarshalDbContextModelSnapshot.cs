@@ -151,6 +151,10 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("reasons");
 
+                    b.Property<Guid?>("RunId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("run_id");
+
                     b.Property<string>("SatelliteId")
                         .HasColumnType("TEXT")
                         .HasColumnName("satellite_id");
@@ -169,6 +173,11 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("summary");
 
+                    b.Property<string>("Taint")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("taint");
+
                     b.Property<Guid?>("TaskId")
                         .HasColumnType("TEXT")
                         .HasColumnName("task_id");
@@ -181,6 +190,10 @@ namespace Marshal.Data.Migrations
                     b.HasKey("Id")
                         .HasName("pk_pending_actions");
 
+                    b.HasIndex("Nonce")
+                        .IsUnique()
+                        .HasDatabaseName("ix_pending_actions_nonce");
+
                     b.HasIndex("OwnerId")
                         .HasDatabaseName("ix_pending_actions_owner_id");
 
@@ -189,6 +202,10 @@ namespace Marshal.Data.Migrations
 
                     b.HasIndex("SessionId", "Status")
                         .HasDatabaseName("ix_pending_actions_session_id_status");
+
+                    b.HasIndex("Status", "ExpiresAt")
+                        .HasDatabaseName("ix_pending_actions_status_expires_at")
+                        .HasFilter("task_id IS NOT NULL");
 
                     b.ToTable("pending_actions", (string)null);
                 });

@@ -28,6 +28,9 @@ public sealed class InMemoryPendingActionStore(TimeProvider timeProvider) : IPen
             OwnerId = TestExecutionContext.OwnerA,
             SessionId = request.SessionId,
             SatelliteId = request.SatelliteId,
+            TaskId = request.TaskId,
+            RunId = request.RunId,
+            Taint = request.Taint ?? [],
             Tool = request.Tool,
             ArgumentsJson = request.ArgumentsJson,
             Summary = request.Summary,
@@ -41,8 +44,16 @@ public sealed class InMemoryPendingActionStore(TimeProvider timeProvider) : IPen
         return Task.FromResult(record);
     }
 
+    public Task<PendingActionRecord?> GetAsync(PendingActionId id, CancellationToken cancellationToken) =>
+        Task.FromResult(_actions.FirstOrDefault(action => action.Id == id) is { } found
+            ? found with { Status = Decisions.TryGetValue(id, out (PendingActionStatus Status, DecidedBy By) decided) ? decided.Status : PendingActionStatus.Pending }
+            : null);
+
     public Task<PendingActionRecord?> GetPendingAsync(SessionId sessionId, CancellationToken cancellationToken) =>
         Task.FromResult(_actions.LastOrDefault(action => action.SessionId == sessionId && IsPending(action)));
+
+    public Task<IReadOnlyList<PendingActionRecord>> ListTaskApprovalsAsync(CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<PendingActionRecord>>([.. _actions.Where(action => action.TaskId is not null && IsPending(action))]);
 
     public Task<Result> DecideAsync(PendingActionId id, PendingActionStatus status, DecidedBy decidedBy, CancellationToken cancellationToken)
     {

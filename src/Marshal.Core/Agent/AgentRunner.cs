@@ -36,7 +36,8 @@ public sealed partial class AgentRunner(
     IOptions<AgentOptions> agentOptions,
     IOptions<ConfirmationOptions> confirmationOptions,
     TimeProvider timeProvider,
-    ILogger<AgentRunner> logger) : IAgentRunner
+    ILogger<AgentRunner> logger,
+    IApprovalQueue? approvals = null) : IAgentRunner
 {
     private static readonly JsonSerializerOptions _argumentJson = new(AIJsonUtilities.DefaultOptions) { WriteIndented = false };
 
@@ -152,8 +153,14 @@ public sealed partial class AgentRunner(
             }
 
             messages.Add(new ChatMessage(ChatRole.Tool, results));
+
+            // A background task run does not wait for its approval: it ends, and the decision resumes the task.
+            if (pending is not null && Suspends(context))
+                return new LoopResult(FixedReplies.AwaitingApproval(context.Language), pending, RunOutcome.Ok, "awaiting_approval");
         }
     }
+
+    private bool Suspends(MarshalExecutionContext context) => approvals is not null && context.TaskId is not null && !context.IsInteractive;
 
     // Tool calls need another model call; the budget must leave room for it.
     private static bool Exceeds(RunLimits limits, RunUsage usage) =>
@@ -226,7 +233,7 @@ public sealed partial class AgentRunner(
             case GuardOutcome.RequireConfirmation:
                 RegisteredTool confirmTool = verdict.Tool!;
                 string summary = confirmTool.Tool.Summarize(arguments, context.Language);
-                PendingActionRecord frozen = await pendingActions.FreezeAsync(new FreezeRequest(
+                var freeze = new FreezeRequest(
                     context.SessionId,
                     context.SatelliteId,
                     confirmTool.Id,
@@ -234,7 +241,13 @@ public sealed partial class AgentRunner(
                     summary,
                     verdict.Reasons,
                     context.Language,
-                    timeProvider.GetUtcNow() + confirmationOptions.Value.Ttl), ct);
+                    timeProvider.GetUtcNow() + confirmationOptions.Value.Ttl,
+                    context.TaskId,
+                    context.RunId,
+                    context.Taint.Sources);
+                PendingActionRecord frozen = Suspends(context)
+                    ? await approvals!.EnqueueAsync(freeze, ct)
+                    : await pendingActions.FreezeAsync(freeze, ct);
                 await RecordToolStepAsync(confirmTool, call.Name, arguments, verdict.Tier, verdict.Decision, verdict.Reasons, null, null, 0, ct);
                 return (PendingText(frozen), frozen);
 
