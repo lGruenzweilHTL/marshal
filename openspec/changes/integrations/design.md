@@ -218,3 +218,14 @@ They should be replaced with real captures when a printer is available.
   account the message came from; a reply drafted in another account is rejected. `mail.search` without `account`
   queries every account, merges by date and reports accounts that failed next to the results. The references
   recorded for sensitive tools are the comma-separated tool-facing ids. JSON output keeps non-ASCII characters.
+- Accounts (tasks 3.7–3.8): `/api/v1/mail/accounts` lists, adds (IMAP with password) and removes accounts; the
+  password or refresh token is stored as the owner secret `mail_<alias>_password` / `mail_<alias>_refresh` (`-` in
+  the alias becomes `_`) after the account row exists, so a taken alias never overwrites another account's secret.
+  Removing an account deletes its secret. The connect flow is `POST /api/v1/mail/oauth/{provider}/start`, which
+  returns the provider's authorization URL, and the page route `GET /oauth/callback/{provider}`, which redirects back
+  to `/mail/accounts?connected=<alias>` or `?error=<code>`. The `state` is random, single use, valid for ten minutes
+  and bound to the signed-in user and the provider; it maps to the PKCE verifier on the server. The redirect URI is
+  built from the request's scheme, host and path base, so behind a reverse proxy `http.trustForwardedHeaders` must
+  be on and the proxy's public URL registered with the provider. OAuth accounts use `imap.gmail.com` or
+  `outlook.office365.com` on port 993 with the address as login name (both from the providers' IMAP OAuth
+  documentation). Pending flows live in memory: a restart between start and callback means connecting again.

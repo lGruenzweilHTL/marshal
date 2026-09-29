@@ -7,6 +7,7 @@ using Marshal.Abstractions.Memory;
 using Marshal.Abstractions.Printers;
 using Marshal.Api.Auth;
 using Marshal.Api.Health;
+using Marshal.Api.Mail;
 using Marshal.Api.Models;
 using Marshal.Api.Printers;
 using Marshal.Api.Versioning;
@@ -34,6 +35,7 @@ public static class ApiServiceCollectionExtensions
 
         services.AddSingleton<ISnapshotLinks, ApiSnapshotLinks>();
         services.AddSingleton<PrinterControlConfirmations>();
+        services.AddSingleton<MailOAuthFlows>();
         services.AddSingleton(new LiveTopic(PrinterLiveEvents.Topic));
         services.AddHostedService<PrinterLiveEvents>();
 

@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Mail;
@@ -9,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Marshal.Integrations.Mail.Accounts;
 
 /// <summary>Mail accounts in the database, scoped to the current owner by the context's query filter.</summary>
-public sealed partial class EfMailAccountStore(IDbContextFactory<MarshalDbContext> contexts, IExecutionContextAccessor executionContext, TimeProvider time) : IMailAccountStore
+public sealed class EfMailAccountStore(IDbContextFactory<MarshalDbContext> contexts, IExecutionContextAccessor executionContext, TimeProvider time) : IMailAccountStore
 {
     public async Task<IReadOnlyList<MailAccount>> ListAsync(CancellationToken cancellationToken)
     {
@@ -35,9 +34,11 @@ public sealed partial class EfMailAccountStore(IDbContextFactory<MarshalDbContex
 
     public async Task<Result<MailAccount>> CreateAsync(NewMailAccount account, CancellationToken cancellationToken)
     {
-        string alias = account.Alias.Trim().ToLowerInvariant();
-        if (!AliasPattern().IsMatch(alias))
-            return new Error("mail.invalid_alias", "An alias is 1-32 lowercase letters, digits or '-', e.g. private or work.", ErrorType.Validation);
+        Result<string> normalized = MailAccountAlias.Normalize(account.Alias);
+        if (normalized.IsFailure)
+            return normalized.Error;
+
+        string alias = normalized.Value;
 
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         if (await db.MailAccounts.AnyAsync(row => row.Alias == alias, cancellationToken))
@@ -79,7 +80,4 @@ public sealed partial class EfMailAccountStore(IDbContextFactory<MarshalDbContex
         row.CredentialSecret,
         new MailAccountSettings(row.Host, row.Port, row.Security, row.UserName, row.DraftsFolder),
         row.CreatedAt);
-
-    [GeneratedRegex("^[a-z0-9-]{1,32}$", RegexOptions.CultureInvariant)]
-    private static partial Regex AliasPattern();
 }

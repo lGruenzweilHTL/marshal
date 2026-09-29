@@ -26,8 +26,8 @@
 - [x] 3.4 Implement `ImapMailProvider` with capability flags
 - [x] 3.5 Write mail tool tests: all-accounts search, alias resolution, taint source `mail`, redaction to message references, drafts not escalated in tainted runs, no send / delete / move tools exist
 - [x] 3.6 Implement mail tools
-- [ ] 3.7 Write account API tests: create IMAP account, OAuth connect flow with state check, ownership
-- [ ] 3.8 Implement accounts endpoints, OAuth callback and the accounts view
+- [x] 3.7 Write account API tests: create IMAP account, OAuth connect flow with state check, ownership
+- [x] 3.8 Implement accounts endpoints, OAuth callback and the accounts view
 - [ ] 3.9 Add an architecture test asserting no SMTP types are referenced anywhere in the solution
 
 ## 4. RSS

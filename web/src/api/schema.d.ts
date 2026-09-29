@@ -849,6 +849,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/mail/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The user's mail accounts without credentials. */
+        get: operations["ListMailAccounts"];
+        put?: never;
+        /** Adds an IMAP account; the password becomes a write-only owner secret. */
+        post: operations["CreateMailAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mail/accounts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Removes an account and its stored credential. */
+        delete: operations["DeleteMailAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mail/oauth/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** OAuth providers and whether this instance has a client for them. */
+        get: operations["ListMailOAuthProviders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mail/oauth/{provider}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Starts connecting an account: returns the provider's sign-in URL for the browser. */
+        post: operations["StartMailOAuth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1045,6 +1114,26 @@ export interface components {
             /** @description The plaintext; shown only in this response. */
             token: string;
         };
+        /** @description A new IMAP account with a password or app password. The password becomes a write-only owner secret. */
+        CreateMailAccountRequest: {
+            /** @description 1-32 lowercase letters, digits or '-'. */
+            alias: string;
+            /** @description IMAP host. */
+            host: string;
+            /**
+             * Format: int32
+             * @description IMAP port (993 for TLS, 143 for STARTTLS).
+             */
+            port: number;
+            /** @description Transport security. */
+            security: components["schemas"]["MailSecurity"];
+            /** @description Login name. */
+            userName: string;
+            /** @description Password or app password. */
+            password: string;
+            /** @description Drafts folder when the server marks none with `\Drafts`. */
+            draftsFolder?: null | string;
+        };
         DailyCost: {
             /** Format: date */
             date: string;
@@ -1109,6 +1198,42 @@ export interface components {
             /** @description Button label. */
             displayName: string;
         };
+        /** @description A mail account without its credentials. */
+        MailAccountItem: {
+            /** @description Account id. */
+            id: string;
+            /** @description Alias used as the tools' `account` argument. */
+            alias: string;
+            /** @description Protocol (`imap`). */
+            provider: string;
+            /** @description Credential strategy: `password`, `oauth_google` or `oauth_microsoft`. */
+            strategy: string;
+            /** @description IMAP host. */
+            host: string;
+            /**
+             * Format: int32
+             * @description IMAP port.
+             */
+            port: number;
+            /** @description Transport security. */
+            security: components["schemas"]["MailSecurity"];
+            /** @description Login name. */
+            userName: string;
+            /** @description Configured drafts folder, if any. */
+            draftsFolder: null | string;
+            /**
+             * Format: date-time
+             * @description Creation time.
+             */
+            createdAt: string;
+        };
+        /** @description An OAuth provider and whether this instance has a client for it. */
+        MailOAuthProvider: {
+            name: string;
+            configured: boolean;
+        };
+        /** @enum {unknown} */
+        MailSecurity: "tls" | "startTls" | "none";
         /** @enum {unknown} */
         McpServerState: "connecting" | "connected" | "down";
         /** @description A configured MCP server. */
@@ -1608,6 +1733,18 @@ export interface components {
             eventType?: null | string;
             eventId?: null | string;
             reconnectionInterval?: null | string;
+        };
+        /** @description Starts connecting an account through OAuth. */
+        StartMailOAuthRequest: {
+            /** @description Alias of the new account. */
+            alias: string;
+            /** @description The mailbox address (the IMAP login name). */
+            email: string;
+        };
+        /** @description Where the browser goes to sign in with the provider. */
+        StartMailOAuthResponse: {
+            /** Format: uri */
+            authorizationUrl: string;
         };
         /** @description Version information. */
         SystemInfo: {
@@ -3013,6 +3150,116 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ListMailAccounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailAccountItem"][];
+                };
+            };
+        };
+    };
+    CreateMailAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMailAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailAccountItem"];
+                };
+            };
+        };
+    };
+    DeleteMailAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ListMailOAuthProviders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailOAuthProvider"][];
+                };
+            };
+        };
+    };
+    StartMailOAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartMailOAuthRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StartMailOAuthResponse"];
+                };
             };
         };
     };

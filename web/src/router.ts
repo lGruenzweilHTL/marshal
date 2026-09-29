@@ -5,6 +5,7 @@ import SetupPage from './auth/SetupPage.vue'
 import AppShell from './layout/AppShell.vue'
 import ChatView from './chat/ChatView.vue'
 import ConfigView from './config/ConfigView.vue'
+import MailAccountsView from './mail/MailAccountsView.vue'
 import DashboardView from './dashboard/DashboardView.vue'
 import AuditView from './memory/AuditView.vue'
 import ChunkEditorView from './memory/ChunkEditorView.vue'
@@ -46,6 +47,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'runs', name: 'runs', component: RunsView, meta: { title: 'Runs' } },
       { path: 'runs/:id', name: 'run', component: RunDetailView, meta: { title: 'Run' } },
       { path: 'cost', name: 'cost', component: CostView, meta: { title: 'Cost' } },
+      { path: 'mail/accounts', name: 'mail-accounts', component: MailAccountsView, meta: { title: 'Mail accounts' } },
       { path: 'printers/:name?', name: 'printers', component: PrinterView, meta: { title: 'Printer' } },
       {
         path: 'memory',

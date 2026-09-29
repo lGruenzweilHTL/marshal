@@ -1839,6 +1839,150 @@
           }
         }
       }
+    },
+    "/api/v1/mail/accounts": {
+      "get": {
+        "tags": [
+          "Mail"
+        ],
+        "summary": "The user\u0027s mail accounts without credentials.",
+        "operationId": "ListMailAccounts",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MailAccountItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Mail"
+        ],
+        "summary": "Adds an IMAP account; the password becomes a write-only owner secret.",
+        "operationId": "CreateMailAccount",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMailAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MailAccountItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mail/accounts/{id}": {
+      "delete": {
+        "tags": [
+          "Mail"
+        ],
+        "summary": "Removes an account and its stored credential.",
+        "operationId": "DeleteMailAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/mail/oauth/providers": {
+      "get": {
+        "tags": [
+          "Mail"
+        ],
+        "summary": "OAuth providers and whether this instance has a client for them.",
+        "operationId": "ListMailOAuthProviders",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MailOAuthProvider"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mail/oauth/{provider}/start": {
+      "post": {
+        "tags": [
+          "Mail"
+        ],
+        "summary": "Starts connecting an account: returns the provider\u0027s sign-in URL for the browser.",
+        "operationId": "StartMailOAuth",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartMailOAuthRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartMailOAuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2419,6 +2563,52 @@
         },
         "description": "A created token."
       },
+      "CreateMailAccountRequest": {
+        "required": [
+          "alias",
+          "host",
+          "port",
+          "security",
+          "userName",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "alias": {
+            "type": "string",
+            "description": "1-32 lowercase letters, digits or \u0027-\u0027."
+          },
+          "host": {
+            "type": "string",
+            "description": "IMAP host."
+          },
+          "port": {
+            "type": "integer",
+            "description": "IMAP port (993 for TLS, 143 for STARTTLS).",
+            "format": "int32"
+          },
+          "security": {
+            "description": "Transport security.",
+            "$ref": "#/components/schemas/MailSecurity"
+          },
+          "userName": {
+            "type": "string",
+            "description": "Login name."
+          },
+          "password": {
+            "type": "string",
+            "description": "Password or app password."
+          },
+          "draftsFolder": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Drafts folder when the server marks none with \u0060\\Drafts\u0060."
+          }
+        },
+        "description": "A new IMAP account with a password or app password. The password becomes a write-only owner secret."
+      },
       "DailyCost": {
         "required": [
           "date",
@@ -2621,6 +2811,92 @@
           }
         },
         "description": "A login provider as shown on the login page."
+      },
+      "MailAccountItem": {
+        "required": [
+          "id",
+          "alias",
+          "provider",
+          "strategy",
+          "host",
+          "port",
+          "security",
+          "userName",
+          "draftsFolder",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Account id."
+          },
+          "alias": {
+            "type": "string",
+            "description": "Alias used as the tools\u0027 \u0060account\u0060 argument."
+          },
+          "provider": {
+            "type": "string",
+            "description": "Protocol (\u0060imap\u0060)."
+          },
+          "strategy": {
+            "type": "string",
+            "description": "Credential strategy: \u0060password\u0060, \u0060oauth_google\u0060 or \u0060oauth_microsoft\u0060."
+          },
+          "host": {
+            "type": "string",
+            "description": "IMAP host."
+          },
+          "port": {
+            "type": "integer",
+            "description": "IMAP port.",
+            "format": "int32"
+          },
+          "security": {
+            "description": "Transport security.",
+            "$ref": "#/components/schemas/MailSecurity"
+          },
+          "userName": {
+            "type": "string",
+            "description": "Login name."
+          },
+          "draftsFolder": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Configured drafts folder, if any."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation time.",
+            "format": "date-time"
+          }
+        },
+        "description": "A mail account without its credentials."
+      },
+      "MailOAuthProvider": {
+        "required": [
+          "name",
+          "configured"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "configured": {
+            "type": "boolean"
+          }
+        },
+        "description": "An OAuth provider and whether this instance has a client for it."
+      },
+      "MailSecurity": {
+        "enum": [
+          "tls",
+          "startTls",
+          "none"
+        ]
       },
       "McpServerState": {
         "enum": [
@@ -4365,6 +4641,37 @@
           }
         }
       },
+      "StartMailOAuthRequest": {
+        "required": [
+          "alias",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "alias": {
+            "type": "string",
+            "description": "Alias of the new account."
+          },
+          "email": {
+            "type": "string",
+            "description": "The mailbox address (the IMAP login name)."
+          }
+        },
+        "description": "Starts connecting an account through OAuth."
+      },
+      "StartMailOAuthResponse": {
+        "required": [
+          "authorizationUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "authorizationUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "description": "Where the browser goes to sign in with the provider."
+      },
       "SystemInfo": {
         "required": [
           "version",
@@ -4581,6 +4888,9 @@
     },
     {
       "name": "Printers"
+    },
+    {
+      "name": "Mail"
     }
   ]
 }

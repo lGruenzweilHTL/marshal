@@ -4,6 +4,7 @@ using Marshal.Api.Configuration;
 using Marshal.Api.Conversation;
 using Marshal.Api.Health;
 using Marshal.Api.LiveEvents;
+using Marshal.Api.Mail;
 using Marshal.Api.Memory;
 using Marshal.Api.Printers;
 using Marshal.Api.Runs;
@@ -13,6 +14,7 @@ using Marshal.Core;
 using Marshal.Core.Configuration;
 using Marshal.Data;
 using Marshal.Integrations.HomeAssistant;
+using Marshal.Integrations.Mail;
 using Marshal.Integrations.Moonraker;
 using Marshal.Memory;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -39,6 +41,7 @@ public static class MarshalApp
         builder.Services.AddMarshalHomeAssistant(builder.Configuration);
         builder.Services.AddMarshalMemory(builder.Configuration);
         builder.Services.AddMarshalPrinters(builder.Configuration, SnapshotDirectory);
+        builder.Services.AddMarshalMail(builder.Configuration);
         builder.Services.AddMarshalData(builder.Configuration, ConnectionString);
         builder.Services.AddMarshalApi(builder.Configuration);
 
@@ -82,7 +85,9 @@ public static class MarshalApp
         v1.MapConfigEndpoints();
         v1.MapMemoryEndpoints();
         v1.MapPrinterEndpoints();
+        v1.MapMailAccountEndpoints();
         v1.MapConversationEndpoints();
+        app.MapMailOAuthCallback();
         app.MapSpaFallback();
         return app;
     }
