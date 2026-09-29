@@ -3,6 +3,7 @@ using Marshal.Abstractions.Audit;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.Mail;
 using Marshal.Abstractions.Memory;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Sessions;
@@ -12,6 +13,7 @@ using Marshal.Data.Audit;
 using Marshal.Data.Auth;
 using Marshal.Data.Conversations;
 using Marshal.Data.Identity;
+using Marshal.Data.Mail;
 using Marshal.Data.Memory;
 using Marshal.Data.Persistence;
 using Marshal.Data.Secrets;
@@ -58,6 +60,8 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
 
     public DbSet<Project> Projects => Set<Project>();
 
+    public DbSet<StoredMailAccount> MailAccounts => Set<StoredMailAccount>();
+
     public DbSet<ProjectAlias> ProjectAliases => Set<ProjectAlias>();
 
     public DbSet<ProjectFeedback> ProjectFeedback => Set<ProjectFeedback>();
@@ -94,6 +98,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         configurationBuilder.Properties<PendingActionId>().HaveConversion<GuidIdConverter<PendingActionId>>();
         configurationBuilder.Properties<ApiTokenId>().HaveConversion<GuidIdConverter<ApiTokenId>>();
         configurationBuilder.Properties<ProjectId>().HaveConversion<GuidIdConverter<ProjectId>>();
+        configurationBuilder.Properties<MailAccountId>().HaveConversion<GuidIdConverter<MailAccountId>>();
         configurationBuilder.Properties<ChunkId>().HaveConversion<ChunkIdConverter>();
 
         configurationBuilder.Properties<SessionSource>().HaveConversion<SnakeCaseEnumConverter<SessionSource>>();
@@ -112,6 +117,9 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         configurationBuilder.Properties<ChunkAuthor>().HaveConversion<SnakeCaseEnumConverter<ChunkAuthor>>();
         configurationBuilder.Properties<ProjectAliasStatus>().HaveConversion<SnakeCaseEnumConverter<ProjectAliasStatus>>();
         configurationBuilder.Properties<ProjectFeedbackKind>().HaveConversion<SnakeCaseEnumConverter<ProjectFeedbackKind>>();
+        configurationBuilder.Properties<MailProviderKind>().HaveConversion<SnakeCaseEnumConverter<MailProviderKind>>();
+        configurationBuilder.Properties<MailCredentialStrategy>().HaveConversion<SnakeCaseEnumConverter<MailCredentialStrategy>>();
+        configurationBuilder.Properties<MailSecurity>().HaveConversion<SnakeCaseEnumConverter<MailSecurity>>();
 
         // SQLite cannot compare or order DateTimeOffset / decimal values natively; binary and REAL storage keeps
         // range queries and sums on the server.
@@ -239,6 +247,15 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             project.HasIndex(entity => new { entity.OwnerId, entity.Name });
             project.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
             OwnerFilter(project);
+        });
+
+        builder.Entity<StoredMailAccount>(account =>
+        {
+            account.ToTable("mail_accounts");
+            account.HasKey(entity => entity.Id);
+            account.HasIndex(entity => new { entity.OwnerId, entity.Alias }).IsUnique();
+            account.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            OwnerFilter(account);
         });
 
         builder.Entity<ProjectAlias>(alias =>

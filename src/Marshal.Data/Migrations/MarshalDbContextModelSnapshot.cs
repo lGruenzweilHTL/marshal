@@ -579,6 +579,73 @@ namespace Marshal.Data.Migrations
                     b.ToTable("user_preferences", (string)null);
                 });
 
+            modelBuilder.Entity("Marshal.Data.Mail.StoredMailAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Alias")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("alias");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CredentialSecret")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("credential_secret");
+
+                    b.Property<string>("DraftsFolder")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("drafts_folder");
+
+                    b.Property<string>("Host")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("host");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<int>("Port")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("port");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("provider");
+
+                    b.Property<string>("Security")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("security");
+
+                    b.Property<string>("Strategy")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("strategy");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("user_name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_mail_accounts");
+
+                    b.HasIndex("OwnerId", "Alias")
+                        .IsUnique()
+                        .HasDatabaseName("ix_mail_accounts_owner_id_alias");
+
+                    b.ToTable("mail_accounts", (string)null);
+                });
+
             modelBuilder.Entity("Marshal.Data.Memory.Chunk", b =>
                 {
                     b.Property<string>("Id")
@@ -1217,6 +1284,16 @@ namespace Marshal.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_user_preferences_users_user_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Mail.StoredMailAccount", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_mail_accounts_users_owner_id");
                 });
 
             modelBuilder.Entity("Marshal.Data.Memory.Chunk", b =>

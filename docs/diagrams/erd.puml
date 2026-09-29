@@ -6,7 +6,7 @@
 ' column or relationship, and re-render the SVG (see docs/diagrams/README.md).
 '
 ' Status: PARTLY BUILT — User (+ Identity tables), AuthTicket, UserPreferences, ApiToken, Session,
-' Run, RunStep, PendingAction, AuditEvent, Secret and the Memory package exist in Marshal.Data;
+' Run, RunStep, PendingAction, AuditEvent, Secret, MailAccount and the Memory package exist in Marshal.Data;
 ' the other entities are still planned (docs/brainstorm-notes.md).
 
 !pragma layout smetana
@@ -415,16 +415,21 @@ package "Integrations & Secrets" {
     <<unique (owner_id, name) where owner_id is not null>>
   }
 
-  entity MailAccount {
-    * id : Guid <<PK>>
+  entity MailAccount <<mail_accounts>> {
+    * id : MailAccountId <<PK>>
     --
     * owner_id : OwnerId <<FK>>
-    * alias : string
-    * provider : imap | graph | gmail
-    * credential_strategy : password | oauth_google | oauth_microsoft
-    * credential_secret : string  <<Secret.name>>
-    * settings : json
-    last_sync_state : string  <<historyId / delta link / UIDNEXT>>
+    * alias : string  <<lowercase, unique per owner>>
+    * provider : imap  <<graph | gmail later>>
+    * strategy : password | o_auth_google | o_auth_microsoft
+    * credential_secret : string  <<Secret.name, owner secret>>
+    * host : string
+    * port : int
+    * security : tls | start_tls | none
+    * user_name : string
+    drafts_folder : string  <<when no folder has special-use Drafts>>
+    * created_at : DateTimeOffset
+    <<unique (owner_id, alias)>>
   }
 
   entity NoteIndexEntry {
