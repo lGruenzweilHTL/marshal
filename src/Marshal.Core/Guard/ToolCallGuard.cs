@@ -52,9 +52,12 @@ public sealed class ToolCallGuard(IToolRegistry registry, IToolVisibilityFilter 
 
         foreach (ConfirmationReasonCode code in assessment.Reasons)
         {
-            reasons.Add(code == ConfirmationReasonCode.UnresolvedTarget
-                ? ConfirmationReasonText.UnresolvedTarget(language)
-                : ConfirmationReasonText.Rule(tool.Tool.Summarize(request.Arguments, language), language));
+            reasons.Add(code switch
+            {
+                ConfirmationReasonCode.UnresolvedTarget => ConfirmationReasonText.UnresolvedTarget(language),
+                ConfirmationReasonCode.QuietHoursOverride => ConfirmationReasonText.QuietHoursOverride(language),
+                _ => ConfirmationReasonText.Rule(tool.Tool.Summarize(request.Arguments, language), language),
+            });
         }
 
         if (tier == RiskTier.Safe)

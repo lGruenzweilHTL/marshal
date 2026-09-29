@@ -4,6 +4,7 @@ using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Tasks;
 using Marshal.Core.Execution;
 using Marshal.Core.Agent;
+using Marshal.Tasks.KillSwitch;
 using Marshal.Tasks.Limits;
 using Marshal.Tasks.Running;
 using Marshal.Tasks.Scheduling;
@@ -26,6 +27,7 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
     private readonly ListLogger _log = new();
     private readonly TaskOptions _options = new();
     private readonly FakeSpending _spending = new();
+    private readonly List<ITaskRunner> _extraRunners = [];
     private BackgroundTaskScheduler? _scheduler;
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -260,6 +262,40 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task CancelRun_StopsTheRunAndKeepsTheCancelledStatus()
+    {
+        _runner.Gate();
+        TaskRecord task = await CreateAsync(New(TaskTrigger.Now()));
+        await StartAsync();
+        await WaitForAsync(() => Task.FromResult(_runner.Runs.Count == 1));
+
+        using (_accessor.Use(Text(OwnerA)))
+            await Store().UpdateAsync((await Store().GetAsync(task.Id, Ct)).Value with { Status = AgentTaskStatus.Cancelled }, Ct);
+        _scheduler!.CancelRun(task.Id);
+
+        await WaitForAsync(() => Task.FromResult(_runner.Finished == 1));
+        await WaitIdleAsync();
+        Assert.Equal(AgentTaskStatus.Cancelled, (await GetAsync(task.Id)).Status);
+    }
+
+    [Fact]
+    public async Task KillSwitchActive_AgentTaskWaitsSystemTaskRuns()
+    {
+        var system = new FakeRunner(_time, _accessor, TaskKind.System);
+        _extraRunners.Add(system);
+        TaskRecord agent = await CreateAsync(New(TaskTrigger.Now()));
+        TaskRecord backup = await CreateAsync(New(TaskTrigger.Now()) with { Kind = TaskKind.System, Job = "backup" });
+        await PauseAsync();
+        await StartAsync();
+
+        await WaitForAsync(() => StatusAsync(backup.Id, AgentTaskStatus.Done));
+        await WaitForAsync(async () => (await GetAsync(agent.Id)).StatusReason == "paused");
+
+        Assert.Empty(_runner.Runs);
+        Assert.Null((await GetAsync(agent.Id)).NextRunAt);
+    }
+
+    [Fact]
     public async Task RunnerThrows_TaskFailed()
     {
         _runner.Outcome = _ => throw new InvalidOperationException("boom");
@@ -277,7 +313,7 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
     {
         _options.Workers = workers;
         var budgets = new TaskBudgets(Store(), _spending, new ViennaProfiles(), new FakeTemplateCatalog(), Options.Create(_options), _time);
-        _scheduler = new BackgroundTaskScheduler(Store(), [_runner], budgets, _accessor, new ViennaProfiles(), Options.Create(_options), _time, _log);
+        _scheduler = new BackgroundTaskScheduler(Store(), [_runner, .. _extraRunners], budgets, new TaskPauses(_database.Factory), _accessor, new ViennaProfiles(), Options.Create(_options), _time, _log);
         await _scheduler.StartAsync(Ct);
         await WaitIdleAsync();
     }
@@ -325,7 +361,14 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
 
     private static NewTask New(TaskTrigger trigger) => new() { Goal = "Do the thing.", Trigger = trigger };
 
-    private sealed class FakeRunner(TimeProvider time, IExecutionContextAccessor accessor) : ITaskRunner
+    private async Task PauseAsync()
+    {
+        await using Marshal.Data.MarshalDbContext db = _database.CreateContext();
+        db.UserPreferences.Add(new Marshal.Data.Identity.UserPreferences { UserId = OwnerA, Language = "de", TimeZone = "Europe/Vienna", TasksPausedAt = _time.GetUtcNow() });
+        await db.SaveChangesAsync(Ct);
+    }
+
+    private sealed class FakeRunner(TimeProvider time, IExecutionContextAccessor accessor, TaskKind kind = TaskKind.Agent) : ITaskRunner
     {
         private TaskCompletionSource? _gate;
         private int _finished;
@@ -342,7 +385,7 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
 
         public int Finished => Volatile.Read(ref _finished);
 
-        public TaskKind Kind => TaskKind.Agent;
+        public TaskKind Kind => kind;
 
         public void Gate() => _gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 

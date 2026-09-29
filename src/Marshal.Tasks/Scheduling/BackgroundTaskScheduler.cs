@@ -5,6 +5,7 @@ using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Tasks;
 using Marshal.Core.Agent;
+using Marshal.Tasks.KillSwitch;
 using Marshal.Tasks.Limits;
 using Marshal.Tasks.Running;
 using Microsoft.Extensions.Hosting;
@@ -23,6 +24,7 @@ public sealed partial class BackgroundTaskScheduler(
     ITaskStore store,
     IEnumerable<ITaskRunner> runners,
     TaskBudgets budgets,
+    TaskPauses pauses,
     IExecutionContextAccessor executionContext,
     IUserProfileProvider profiles,
     IOptions<TaskOptions> options,
@@ -39,6 +41,7 @@ public sealed partial class BackgroundTaskScheduler(
     private readonly Dictionary<TaskKind, ITaskRunner> _runners = runners.ToDictionary(runner => runner.Kind);
     private readonly Channel<OwnedTask> _queue = Channel.CreateBounded<OwnedTask>(new BoundedChannelOptions(DueBatch) { SingleReader = false, SingleWriter = true });
     private readonly ConcurrentDictionary<TaskId, byte> _queued = new();
+    private readonly ConcurrentDictionary<TaskId, CancellationTokenSource> _running = new();
     private readonly SemaphoreSlim _signal = new(0, 1);
     private volatile bool _sleeping;
     private int _busy;
@@ -59,6 +62,12 @@ public sealed partial class BackgroundTaskScheduler(
         {
             // Already signalled.
         }
+    }
+
+    public void CancelRun(TaskId task)
+    {
+        if (_running.TryGetValue(task, out CancellationTokenSource? run))
+            run.Cancel();
     }
 
     public override void Dispose()
@@ -188,7 +197,15 @@ public sealed partial class BackgroundTaskScheduler(
         if (task.Status is not (AgentTaskStatus.Pending or AgentTaskStatus.Waiting) || task.NextRunAt is null || task.NextRunAt > time.GetUtcNow())
             return;
 
-        Result<RunLimits> allowance = await budgets.AllowanceAsync(task, stoppingToken);
+        // Agent tasks that become due while the kill switch is active wait until it is released.
+        if (task.Kind == TaskKind.Agent && await pauses.IsPausedAsync(task.OwnerId, stoppingToken))
+        {
+            await store.UpdateAsync(task with { StatusReason = EfKillSwitch.PausedReason, NextRunAt = null }, stoppingToken);
+            return;
+        }
+
+        // System tasks run code without a model: no budget, no daily cap.
+        Result<RunLimits> allowance = task.Kind == TaskKind.System ? new RunLimits() : await budgets.AllowanceAsync(task, stoppingToken);
         if (allowance.IsFailure)
         {
             await RefuseAsync(task, allowance.Error, stoppingToken);
@@ -223,10 +240,16 @@ public sealed partial class BackgroundTaskScheduler(
         if (!_runners.TryGetValue(task.Kind, out ITaskRunner? runner))
             return TaskRunOutcome.Failed("no_runner");
 
+        using var run = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+        _running[task.Id] = run;
         Interlocked.Decrement(ref _busy);
         try
         {
-            return await runner.RunAsync(task, limits, stoppingToken);
+            return await runner.RunAsync(task, limits, run.Token);
+        }
+        catch (OperationCanceledException) when (run.IsCancellationRequested && !stoppingToken.IsCancellationRequested)
+        {
+            return TaskRunOutcome.Failed("cancelled");
         }
         catch (Exception exception) when (exception is not OperationCanceledException || !stoppingToken.IsCancellationRequested)
         {
@@ -235,6 +258,7 @@ public sealed partial class BackgroundTaskScheduler(
         }
         finally
         {
+            _running.TryRemove(new KeyValuePair<TaskId, CancellationTokenSource>(task.Id, run));
             Interlocked.Increment(ref _busy);
         }
     }

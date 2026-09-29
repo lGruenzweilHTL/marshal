@@ -574,6 +574,10 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("quiet_hours");
 
+                    b.Property<long?>("TasksPausedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("tasks_paused_at");
+
                     b.Property<string>("TimeZone")
                         .IsRequired()
                         .HasColumnType("TEXT")

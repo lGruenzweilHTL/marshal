@@ -11,3 +11,11 @@ internal sealed class ViennaProfiles : IUserProfileProvider
     public Task<Result<UserProfile>> GetAsync(OwnerId owner, CancellationToken cancellationToken) =>
         Task.FromResult<Result<UserProfile>>(new UserProfile(owner, "Alice", "de", "Europe/Vienna"));
 }
+
+/// <summary>
+/// The instance runs in Vienna.
+/// </summary>
+internal sealed class FixedInstanceTimeZone : IInstanceTimeZone
+{
+    public Task<string> GetAsync(CancellationToken cancellationToken) => Task.FromResult("Europe/Vienna");
+}

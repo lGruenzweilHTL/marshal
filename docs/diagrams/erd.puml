@@ -128,6 +128,7 @@ package "Identity & Access" {
     quiet_hours : json
     notification_targets : json
     dnd_until : DateTimeOffset
+    tasks_paused_at : DateTimeOffset  <<kill switch active>>
   }
 }
 

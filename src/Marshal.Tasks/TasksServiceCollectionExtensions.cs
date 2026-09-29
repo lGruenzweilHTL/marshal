@@ -1,5 +1,6 @@
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Tasks;
+using Marshal.Tasks.KillSwitch;
 using Marshal.Tasks.Limits;
 using Marshal.Tasks.Running;
 using Marshal.Tasks.Scheduling;
@@ -29,6 +30,8 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<ITaskStore, EfTaskStore>();
         services.AddSingleton<ITaskSpending, EfTaskSpending>();
         services.AddSingleton<TaskBudgets>();
+        services.AddSingleton<TaskPauses>();
+        services.AddSingleton<IKillSwitch, EfKillSwitch>();
         services.AddSingleton<ActiveTaskRuns>();
         services.AddSingleton<ITaskRunner, AgentTaskRunner>();
         services.AddSingleton<IContextContributor, TaskPromptContributor>();

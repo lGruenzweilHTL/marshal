@@ -7,4 +7,7 @@ namespace Marshal.Abstractions.Tasks;
 public interface ITaskScheduler
 {
     void Wake();
+
+    /// <summary>Stops the task's run in progress, if any (after its status was changed, e.g. to <c>cancelled</c>).</summary>
+    void CancelRun(TaskId task);
 }

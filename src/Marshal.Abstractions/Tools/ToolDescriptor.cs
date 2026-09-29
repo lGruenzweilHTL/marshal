@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Marshal.Abstractions.Guard;
 
 namespace Marshal.Abstractions.Tools;
 
@@ -30,4 +31,10 @@ public sealed record ToolDescriptor
 
     /// <summary>Results are recorded as references only, never as content.</summary>
     public bool Sensitive { get; init; }
+
+    /// <summary>
+    /// Arguments that make a call at least confirm tier when they are set (not missing and not null), with the
+    /// reason to show (e.g. <c>overrideQuietHoursUntil</c> → <see cref="ConfirmationReasonCode.QuietHoursOverride"/>).
+    /// </summary>
+    public IReadOnlyDictionary<string, ConfirmationReasonCode> ConfirmingArguments { get; init; } = new Dictionary<string, ConfirmationReasonCode>();
 }

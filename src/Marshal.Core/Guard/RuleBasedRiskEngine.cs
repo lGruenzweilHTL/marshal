@@ -18,7 +18,10 @@ public sealed class RuleBasedRiskEngine(IOptionsMonitor<RiskRulesFile> rules, IE
 
     private readonly Dictionary<string, IRiskTargetResolver> _resolvers = resolvers.ToDictionary(resolver => resolver.Namespace, StringComparer.Ordinal);
 
-    public async Task<RiskAssessment> AssessAsync(RegisteredTool tool, JsonElement arguments, CancellationToken cancellationToken)
+    public async Task<RiskAssessment> AssessAsync(RegisteredTool tool, JsonElement arguments, CancellationToken cancellationToken) =>
+        WithConfirmingArguments(await AssessRulesAsync(tool, arguments, cancellationToken), tool, arguments);
+
+    private async Task<RiskAssessment> AssessRulesAsync(RegisteredTool tool, JsonElement arguments, CancellationToken cancellationToken)
     {
         List<RiskRule> matching = MatchingRules(tool.Id);
         if (!matching.Exists(rule => rule.TargetConditions.Count > 0))
@@ -51,6 +54,9 @@ public sealed class RuleBasedRiskEngine(IOptionsMonitor<RiskRulesFile> rules, IE
             tiers.Add(DefaultTier(tool));
         if (matching.Exists(rule => rule.TargetConditions.Count > 0))
             tiers.Add(RiskTier.Confirm);
+        // A safe call becomes confirm when a confirming argument is set.
+        if (tool.Descriptor.ConfirmingArguments.Count > 0 && tiers.Contains(RiskTier.Safe))
+            tiers.Add(RiskTier.Confirm);
 
         return new RiskProfile(tiers);
     }
@@ -58,6 +64,23 @@ public sealed class RuleBasedRiskEngine(IOptionsMonitor<RiskRulesFile> rules, IE
     // Fail closed: external tools (MCP, skills) that no rule matches need confirmation.
     private static RiskTier DefaultTier(RegisteredTool tool) =>
         tool.IsBuiltIn || tool.Descriptor.DefaultTier > RiskTier.Confirm ? tool.Descriptor.DefaultTier : RiskTier.Confirm;
+
+    private static RiskAssessment WithConfirmingArguments(RiskAssessment assessment, RegisteredTool tool, JsonElement arguments)
+    {
+        if (assessment.Tier == RiskTier.Forbidden || arguments.ValueKind != JsonValueKind.Object)
+            return assessment;
+
+        List<ConfirmationReasonCode> added = [.. tool.Descriptor.ConfirmingArguments
+            .Where(pair => arguments.TryGetProperty(pair.Key, out JsonElement value) && value.ValueKind != JsonValueKind.Null)
+            .Select(pair => pair.Value)
+            .Distinct()];
+        if (added.Count == 0)
+            return assessment;
+
+        // A rule's own confirmation stays; the argument adds its reason.
+        List<ConfirmationReasonCode> reasons = [.. assessment.Reasons, .. added.Where(code => !assessment.Reasons.Contains(code))];
+        return new RiskAssessment(RiskTier.Confirm, reasons);
+    }
 
     private static RiskAssessment Assessment(RiskTier tier) =>
         new(tier, tier == RiskTier.Confirm ? [ConfirmationReasonCode.Rule] : []);

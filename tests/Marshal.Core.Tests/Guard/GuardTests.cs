@@ -159,6 +159,25 @@ public sealed class GuardTests
     }
 
     [Fact]
+    public async Task Evaluate_ConfirmingArgumentPresent_RequiresConfirmationWithItsReason()
+    {
+        FakeTool create = FakeTool.Safe("tasks.create").With(descriptor => descriptor with
+        {
+            ConfirmingArguments = new Dictionary<string, ConfirmationReasonCode> { ["overrideQuietHoursUntil"] = ConfirmationReasonCode.QuietHoursOverride },
+        });
+        ToolCallGuard guard = await GuardAsync("risk: []", create);
+
+        GuardVerdict plain = await guard.EvaluateAsync(Request("tasks_create", new { goal = "x", overrideQuietHoursUntil = (string?)null }), Ct);
+        GuardVerdict overriding = await guard.EvaluateAsync(Request("tasks_create", new { goal = "x", overrideQuietHoursUntil = "2026-09-30T08:00:00+02:00" }), Ct);
+
+        Assert.Equal(GuardOutcome.Allow, plain.Outcome);
+        Assert.Equal(GuardOutcome.RequireConfirmation, overriding.Outcome);
+        ConfirmationReason reason = Assert.Single(overriding.Reasons);
+        Assert.Equal(ConfirmationReasonCode.QuietHoursOverride, reason.Code);
+        Assert.Contains("quiet hours", reason.Sentence, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Evaluate_UnresolvedTarget_ReasonLocalized()
     {
         ToolCallGuard guard = await GuardAsync(LockRules, FakeTool.Safe("ha.HassTurnOff"));

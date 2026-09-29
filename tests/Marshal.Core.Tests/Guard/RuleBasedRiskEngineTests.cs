@@ -37,6 +37,24 @@ public sealed class RuleBasedRiskEngineTests
     }
 
     [Fact]
+    public async Task Assess_ConfirmingArgument_RaisesSafeToConfirmOnlyWhenSet()
+    {
+        RuleBasedRiskEngine engine = Engine("risk: []");
+        RegisteredTool tool = BuiltIn(FakeTool.Safe("tasks.watch").With(descriptor => descriptor with
+        {
+            ConfirmingArguments = new Dictionary<string, ConfirmationReasonCode> { ["overrideQuietHoursUntil"] = ConfirmationReasonCode.QuietHoursOverride },
+        }));
+
+        RiskAssessment without = await engine.AssessAsync(tool, JsonSerializer.SerializeToElement(new { goal = "x" }), Ct);
+        RiskAssessment with = await engine.AssessAsync(tool, JsonSerializer.SerializeToElement(new { goal = "x", overrideQuietHoursUntil = "08:00" }), Ct);
+
+        Assert.Equal((RiskTier.Safe, 0), (without.Tier, without.Reasons.Count));
+        Assert.Equal(RiskTier.Confirm, with.Tier);
+        Assert.Equal([ConfirmationReasonCode.QuietHoursOverride], with.Reasons);
+        Assert.Equal([RiskTier.Safe, RiskTier.Confirm], engine.GetProfile(tool).PossibleTiers.Order());
+    }
+
+    [Fact]
     public async Task Assess_ExternalToolWithoutRule_DefaultsToConfirm()
     {
         RuleBasedRiskEngine engine = Engine("risk: []");

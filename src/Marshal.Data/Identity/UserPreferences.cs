@@ -19,4 +19,7 @@ public sealed class UserPreferences
     public string? NotificationTargets { get; set; }
 
     public DateTimeOffset? DndUntil { get; set; }
+
+    /// <summary>Set while the background kill switch is active (new agent task starts are paused).</summary>
+    public DateTimeOffset? TasksPausedAt { get; set; }
 }
