@@ -62,7 +62,7 @@ internal sealed class FakeMoonraker : IAsyncDisposable
         JsonObject fixture = JsonNode.Parse(await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Fixtures", "moonraker-session.json")))!.AsObject();
         var fake = new FakeMoonraker(app, fixture);
         app.UseWebSockets();
-        app.Map("/websocket", fake.HandleSocketAsync);
+        ((IApplicationBuilder)app).Map("/websocket", branch => branch.Run(fake.HandleSocketAsync));
         app.Run(fake.HandleRestAsync);
         await app.StartAsync();
         return fake;

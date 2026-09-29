@@ -6,8 +6,8 @@
 
 ## 2. Printer
 
-- [ ] 2.1 Write state cache tests with a fake websocket server replaying fixtures: identify, subscribe, diff merge, resubscribe on `notify_klippy_ready`, reconnect with full re-read, offline result
-- [ ] 2.2 Implement `MoonrakerSocket` and `MoonrakerStateCache`
+- [x] 2.1 Write state cache tests with a fake websocket server replaying fixtures: identify, subscribe, diff merge, resubscribe on `notify_klippy_ready`, reconnect with full re-read, offline result
+- [x] 2.2 Implement `MoonrakerSocket` and `MoonrakerStateCache`
 - [ ] 2.3 Write command tests against a fake REST server: API key header, each safe and confirm command, macro allowlist validation
 - [ ] 2.4 Implement `MoonrakerPrinterClient` and printer tools with tiers and visibility conditions
 - [ ] 2.5 Write snapshot tests: webcam discovery, resize, storage and retention, same-origin URL
