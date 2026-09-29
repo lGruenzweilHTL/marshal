@@ -82,6 +82,17 @@ The conversation runner holds the run in memory; on cap or `agent.move_to_backgr
 
 `agent.ask_advisor` becomes visible in background runs (rule from `core-agent`).
 
+## Verification (task 1.3, 2026-09-29)
+
+Checked against the HA core source (`dev` branch: `assist_satellite/services.yaml`, `assist_satellite/entity.py`, `assist_pipeline`, `conversation/models.py`) and the companion app docs (notifications basic and actionable). No HA container was run.
+
+- **`assist_satellite.announce`**: target entities of domain `assist_satellite` with the `ANNOUNCE` feature; fields `message` (text, default empty), `media_id`, `preannounce` (default true), `preannounce_media_id`. The call blocks until playback is done. Marshal sends `message` only (TTS by the satellite's pipeline).
+- **`assist_satellite.start_conversation`**: target entities with the `START_CONVERSATION` feature; fields `start_message`, `start_media_id`, `extra_system_prompt`, `preannounce`, `preannounce_media_id`. It fails when the satellite's pipeline uses the built-in HA agent (not relevant: Marshal's pipelines use the Marshal agent) and raises `SatelliteBusyError` while the satellite is announcing. The satellite keeps `extra_system_prompt` (or `start_message` when none is given) and consumes it in the **first** pipeline run after the prompt; the pipeline passes it as `ConversationInput.extra_system_prompt`, which custom conversation entities receive. So the `marshal-followup:<nonce>` marker works (as already found in `ha-conversation-integration`); the reply-window fallback stays for satellites or HA versions where it does not arrive. The `start_message` is also added to HA's own chat log as assistant content, which Marshal ignores.
+- **`assist_satellite.ask_question`** exists (question, `answers` with sentence matching, returns a response). Not used: its answer matching runs in HA, and Marshal needs the reply as a normal turn.
+- **Actionable push**: `notify.mobile_app_<device>` with `data.actions: [{action, title, uri?, behavior?, authenticationRequired?}]`. Android shows at most 3 actions and needs `action: URI` to use `uri`; iOS allows about 10. A pressed action fires the `mobile_app_notification_action` event with `action` (the identifier), `reply_text` (only for `REPLY` / `behavior: textInput`), `action_data` (iOS) and, on Android, the notification's data fields such as `tag`. The event is fired by the companion app through its webhook, so it arrives on HA's event bus and Marshal receives it through its websocket subscription. Marshal encodes the decision and the nonce in the action identifier (`MARSHAL_APPROVE_<nonce>`, `MARSHAL_REJECT_<nonce>`), because `action` is the only field both platforms return, and verifies the nonce server-side; the event itself is not authenticated beyond HA's own access, so the nonce is the proof.
+- **Deep links**: tap target is `data.url` (iOS) and `data.clickAction` (Android); both accept relative paths, so Marshal sends both with the result URL. `data.tag` replaces a notification with the same tag; `message: clear_notification` with the tag clears it (used after an approval is decided elsewhere).
+- **Priority mapping**: silent push = iOS `push.interruption-level: passive`, Android `importance: low`; `critical` = iOS `push.interruption-level: critical`, Android `channel: alarm` with `priority: high` and `ttl: 0`.
+
 ## Risks / Trade-offs
 
 - [Runaway agent loops in the background] → budgets, depth, fan-out, minimum wakeup interval, global daily cap, kill switch; all server-side.
