@@ -147,10 +147,23 @@ public sealed class McpToolSourcesTests : IAsyncDisposable
     private static async Task EventuallyAsync(Func<Task<bool>> condition)
     {
         DateTime deadline = DateTime.UtcNow.AddSeconds(10);
-        while (!await condition())
+        while (!await HoldsAsync(condition))
         {
             Assert.True(DateTime.UtcNow < deadline, "Condition not met in time.");
             await Task.Delay(10, Ct);
+        }
+    }
+
+    // A replaced source may still be connecting when the status list already says connected.
+    private static async Task<bool> HoldsAsync(Func<Task<bool>> condition)
+    {
+        try
+        {
+            return await condition();
+        }
+        catch (McpServerUnavailableException)
+        {
+            return false;
         }
     }
 
