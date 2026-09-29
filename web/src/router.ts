@@ -6,6 +6,11 @@ import AppShell from './layout/AppShell.vue'
 import ChatView from './chat/ChatView.vue'
 import ConfigView from './config/ConfigView.vue'
 import DashboardView from './dashboard/DashboardView.vue'
+import AuditView from './memory/AuditView.vue'
+import ChunkEditorView from './memory/ChunkEditorView.vue'
+import ChunkListView from './memory/ChunkListView.vue'
+import MemoryLayout from './memory/MemoryLayout.vue'
+import ProjectsView from './memory/ProjectsView.vue'
 import NotFoundView from './layout/NotFoundView.vue'
 import PreferencesView from './preferences/PreferencesView.vue'
 import CostView from './runs/CostView.vue'
@@ -38,6 +43,17 @@ const routes: RouteRecordRaw[] = [
       { path: 'runs', name: 'runs', component: RunsView, meta: { title: 'Runs' } },
       { path: 'runs/:id', name: 'run', component: RunDetailView, meta: { title: 'Run' } },
       { path: 'cost', name: 'cost', component: CostView, meta: { title: 'Cost' } },
+      {
+        path: 'memory',
+        component: MemoryLayout,
+        children: [
+          { path: '', name: 'memory', component: ChunkListView, meta: { title: 'Memory' } },
+          { path: 'new', name: 'memory-new', component: ChunkEditorView, meta: { title: 'New memory' } },
+          { path: 'chunks/:id', name: 'memory-chunk', component: ChunkEditorView, meta: { title: 'Memory' } },
+          { path: 'projects', name: 'memory-projects', component: ProjectsView, meta: { title: 'Projects' } },
+          { path: 'audit', name: 'memory-audit', component: AuditView, meta: { title: 'Memory audit' } },
+        ],
+      },
       { path: 'security', name: 'security', component: SecurityView, meta: { title: 'Security' } },
       { path: 'secrets', name: 'secrets', component: SecretsView, meta: { title: 'Secrets' } },
       { path: 'preferences', name: 'preferences', component: PreferencesView, meta: { title: 'Preferences' } },

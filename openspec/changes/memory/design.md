@@ -235,3 +235,10 @@ EF migration adds memory tables; the FTS and vector virtual tables are created b
   and `IProjectStore`. Project names are unique among live projects (normalized); an active alias cannot belong to two
   live projects. Deleting a project soft-deletes it; its chunks remain as audit orphans.
 - Every change writes an audit event `memory.chunk.*`, `memory.project.*` or `memory.alias.*` with the user as actor.
+
+### Memory views (tasks 5.3, 5.4)
+
+- `web/src/memory/`: `/memory` (list with search, type, project and pinned filters; the default view, also on phones),
+  `/memory/new` and `/memory/chunks/:id` (editor: identity fields fixed after creation, pin / unpin, supersede with a
+  replacement, delete, history and links), `/memory/projects` (projects with description, aliases and candidates to
+  accept or reject, correction log on demand) and `/memory/audit`. A "Memory" link in the main navigation.
