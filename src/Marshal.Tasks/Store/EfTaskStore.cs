@@ -16,7 +16,7 @@ namespace Marshal.Tasks.Store;
 
 /// <summary>
 /// <see cref="ITaskStore"/> on the <c>agent_tasks</c> table. Owner-scoped through the context's query filter; only
-/// the scheduler's due queries read across owners.
+/// the scheduler's and the delivery tracker's queries read across owners.
 /// </summary>
 public sealed partial class EfTaskStore(
     IDbContextFactory<MarshalDbContext> contexts,
@@ -92,6 +92,7 @@ public sealed partial class EfTaskStore(
             Spent = TaskJson.Serialize(TaskSpend.Zero),
             Name = name.Value,
             Deliveries = TaskJson.Serialize(task.Deliveries),
+            DeliveriesPending = task.Deliveries.Any(delivery => delivery.PendingSince is not null),
             OverrideQuietHoursUntil = task.OverrideQuietHoursUntil,
             Depth = depth,
             CreatedAt = now,
@@ -182,6 +183,7 @@ public sealed partial class EfTaskStore(
         row.Spent = TaskJson.Serialize(task.Spent);
         row.Name = name.Value;
         row.Deliveries = deliveries;
+        row.DeliveriesPending = task.Deliveries.Any(delivery => delivery.PendingSince is not null);
         row.OverrideQuietHoursUntil = task.OverrideQuietHoursUntil;
         row.ResultSpeech = task.Result?.Speech;
         row.ResultBody = task.Result?.Body;
@@ -226,6 +228,15 @@ public sealed partial class EfTaskStore(
         return await db.AgentTasks.IgnoreQueryFilters().AsNoTracking()
             .Where(row => row.TriggerKind == TaskTriggerKind.Event && _schedulable.Contains(row.Status) && row.NextRunAt == null)
             .Select(row => new TaskWatch(row.Id, row.OwnerId, row.TriggerSpec))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<OwnedTask>> GetPendingDeliveriesAsync(CancellationToken cancellationToken)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        return await db.AgentTasks.IgnoreQueryFilters().AsNoTracking()
+            .Where(row => row.DeliveriesPending)
+            .Select(row => new OwnedTask(row.Id, row.OwnerId))
             .ToListAsync(cancellationToken);
     }
 

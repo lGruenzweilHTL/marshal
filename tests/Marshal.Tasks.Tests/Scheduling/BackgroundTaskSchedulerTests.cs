@@ -4,6 +4,7 @@ using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Tasks;
 using Marshal.Core.Execution;
 using Marshal.Core.Agent;
+using Marshal.Tasks.Deliveries;
 using Marshal.Tasks.KillSwitch;
 using Marshal.Tasks.Limits;
 using Marshal.Tasks.Running;
@@ -30,6 +31,9 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
     private readonly List<ITaskRunner> _extraRunners = [];
     private BackgroundTaskScheduler? _scheduler;
     private readonly TaskSignals _signals = new();
+    private readonly RecordingDispatcher _dispatcher;
+
+    public BackgroundTaskSchedulerTests() => _dispatcher = new RecordingDispatcher(_accessor);
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -68,6 +72,23 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
         TaskRecord done = await GetAsync(task.Id);
         Assert.Equal(("Done.", _time.GetUtcNow(), 1), (done.Result?.Speech, done.ResultAt, done.Spent.Runs));
         Assert.Null(done.NextRunAt);
+    }
+
+    [Fact]
+    public async Task Done_ResultDispatchedAsOwner_WaitNot()
+    {
+        DateTimeOffset wakeAt = _time.GetUtcNow().AddMinutes(30);
+        _runner.Outcome = task => task.Notes is null ? TaskRunOutcome.Wait(wakeAt, "checked once") : TaskRunOutcome.Done(new TaskResult("Done.", "Done."));
+        TaskRecord task = await CreateAsync(New(TaskTrigger.Now()));
+        await StartAsync();
+
+        await WaitForAsync(() => StatusAsync(task.Id, AgentTaskStatus.Waiting));
+        Assert.Empty(_dispatcher.Dispatched);
+        await AdvanceToAsync(wakeAt);
+        await WaitForAsync(() => StatusAsync(task.Id, AgentTaskStatus.Done));
+
+        await WaitForAsync(() => Task.FromResult(!_dispatcher.Dispatched.IsEmpty));
+        Assert.Equal((task.Id, (OwnerId?)OwnerA), Assert.Single(_dispatcher.Dispatched));
     }
 
     [Fact]
@@ -315,7 +336,7 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
     {
         _options.Workers = workers;
         var budgets = new TaskBudgets(Store(), _spending, new ViennaProfiles(), new FakeTemplateCatalog(), Options.Create(_options), _time);
-        _scheduler = new BackgroundTaskScheduler(Store(), _signals, [_runner, .. _extraRunners], budgets, new TaskPauses(_database.Factory), _accessor, new ViennaProfiles(), Options.Create(_options), _time, _log);
+        _scheduler = new BackgroundTaskScheduler(Store(), _signals, [_runner, .. _extraRunners], _dispatcher, budgets, new TaskPauses(_database.Factory), _accessor, new ViennaProfiles(), Options.Create(_options), _time, _log);
         await _scheduler.StartAsync(Ct);
         await WaitIdleAsync();
     }
@@ -368,6 +389,19 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
         await using Marshal.Data.MarshalDbContext db = _database.CreateContext();
         db.UserPreferences.Add(new Marshal.Data.Identity.UserPreferences { UserId = OwnerA, Language = "de", TimeZone = "Europe/Vienna", TasksPausedAt = _time.GetUtcNow() });
         await db.SaveChangesAsync(Ct);
+    }
+
+    private sealed class RecordingDispatcher(IExecutionContextAccessor accessor) : IDeliveryDispatcher
+    {
+        public ConcurrentQueue<(TaskId Id, OwnerId? Owner)> Dispatched { get; } = new();
+
+        public Task DispatchAsync(TaskId task, CancellationToken cancellationToken)
+        {
+            Dispatched.Enqueue((task, accessor.Current?.OwnerId));
+            return Task.CompletedTask;
+        }
+
+        public Task ReviewPendingAsync(string? changedEntity, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class FakeRunner(TimeProvider time, IExecutionContextAccessor accessor, TaskKind kind = TaskKind.Agent) : ITaskRunner

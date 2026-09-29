@@ -31,6 +31,9 @@ public interface ITaskStore
     /// <summary>Armed <c>event</c> tasks of every owner: pending or waiting, not already due.</summary>
     Task<IReadOnlyList<TaskWatch>> GetWatchesAsync(CancellationToken cancellationToken);
 
+    /// <summary>Tasks of every owner with a result waiting for its delivery conditions.</summary>
+    Task<IReadOnlyList<OwnedTask>> GetPendingDeliveriesAsync(CancellationToken cancellationToken);
+
     /// <summary>Tasks of every owner left <c>running</c> (by a crash when called at startup).</summary>
     Task<IReadOnlyList<OwnedTask>> GetRunningAsync(CancellationToken cancellationToken);
 }

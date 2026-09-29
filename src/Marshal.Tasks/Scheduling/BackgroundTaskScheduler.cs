@@ -5,6 +5,7 @@ using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Tasks;
 using Marshal.Core.Agent;
+using Marshal.Tasks.Deliveries;
 using Marshal.Tasks.KillSwitch;
 using Marshal.Tasks.Limits;
 using Marshal.Tasks.Running;
@@ -20,10 +21,11 @@ namespace Marshal.Tasks.Scheduling;
 /// <c>running</c> with its row version, so a task is never run twice, run it as its owner and apply the outcome.
 /// Tasks left <c>running</c> by a crash become <c>pending</c> again at startup.
 /// </summary>
-public sealed partial class BackgroundTaskScheduler(
+internal sealed partial class BackgroundTaskScheduler(
     ITaskStore store,
     TaskSignals signals,
     IEnumerable<ITaskRunner> runners,
+    IDeliveryDispatcher deliveries,
     TaskBudgets budgets,
     TaskPauses pauses,
     IExecutionContextAccessor executionContext,
@@ -195,8 +197,22 @@ public sealed partial class BackgroundTaskScheduler(
         TaskSpend spend = outcome.Spend with { WallTime = time.GetElapsedTime(started), Runs = 1 };
         TaskRecord? finished = await ApplyAsync(id, outcome, spend, stoppingToken);
         await budgets.DrawDownAsync(claimed.Value, spend, stoppingToken);
+        if (finished is not null && outcome.End == TaskRunEnd.Done)
+            await DispatchAsync(id, stoppingToken);
         if (finished is { Status: AgentTaskStatus.Done or AgentTaskStatus.Waiting } && outcome.End == TaskRunEnd.Done)
             await ReleaseDependentsAsync(id, stoppingToken);
+    }
+
+    private async Task DispatchAsync(TaskId id, CancellationToken stoppingToken)
+    {
+        try
+        {
+            await deliveries.DispatchAsync(id, stoppingToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException || !stoppingToken.IsCancellationRequested)
+        {
+            LogDispatchFailed(id, exception);
+        }
     }
 
     // Over budget: the task fails. Daily cap reached: the task waits for the owner's next day.
@@ -318,6 +334,9 @@ public sealed partial class BackgroundTaskScheduler(
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Processing task {TaskId} failed")]
     private partial void LogProcessFailed(TaskId taskId, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Delivering the result of task {TaskId} failed")]
+    private partial void LogDispatchFailed(TaskId taskId, Exception exception);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Run of task {TaskId} failed")]
     private partial void LogRunFailed(TaskId taskId, Exception exception);

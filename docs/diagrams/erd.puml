@@ -352,7 +352,8 @@ package "Background Work" {
     * budget : json
     * spent : json
     name : string  <<unique (owner_id, name) where name is not null>>
-    * deliveries : json  <<[{channel, target, priority, followUp, when, expires, fallback, state}]>>
+    * deliveries : json  <<[{channel, target, priority, followUp, when, expires, fallback, pendingSince, expiresAt}]>>
+    * deliveries_pending : bool  <<a delivery waits for its conditions>>
     override_quiet_hours_until : DateTimeOffset
     result_speech : string
     result_body : string  <<markdown>>
@@ -388,6 +389,8 @@ package "Background Work" {
     * outcome : pending | delivered | coalesced | held | inboxed | expired | fallback
     reason : string
     coalesced_into : Guid <<FK>>
+    * routing : json  <<requested channel, target, link, actions, ...>>
+    deliver_after : DateTimeOffset  <<held or coalescing until>>
     * created_at : DateTimeOffset
     delivered_at : DateTimeOffset
     consumed_at : DateTimeOffset  <<inbox item read by a task>>

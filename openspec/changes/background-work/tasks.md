@@ -31,10 +31,10 @@
 ## 4. Deliveries and notifications
 
 - [x] 4.1 Write delivery validation tests: low + voice rejected, followUp on non-voice rejected, `area.*` rejected, critical rejected
-- [ ] 4.2 Write conditional delivery tests: immediate, on state change, all conditions required, `$person`, `zone.home` numeric, expiry fallback in owner time zone
-- [ ] 4.3 Implement `DeliveryDispatcher` and `HaStateConditionEvaluator`
-- [ ] 4.4 Write router tests: priorities, critical only from system sources, presence-based channel choice, quiet hours hold / silent push, override, DND, coalescing, per-source and global voice caps, history reasons
-- [ ] 4.5 Implement `NotificationRouter`, `HaPresenceProvider` and channels (announce, conversation, push, inbox)
+- [x] 4.2 Write conditional delivery tests: immediate, on state change, all conditions required, `$person`, `zone.home` numeric, expiry fallback in owner time zone
+- [x] 4.3 Implement `DeliveryDispatcher` and `HaStateConditionEvaluator`
+- [x] 4.4 Write router tests: priorities, critical only from system sources, presence-based channel choice, quiet hours hold / silent push, override, DND, coalescing, per-source and global voice caps, history reasons
+- [x] 4.5 Implement `NotificationRouter`, `HaPresenceProvider` and channels (announce, conversation, push, inbox)
 - [ ] 4.6 Write inbox tool tests and implement `notifications.notify`, `inbox_list`, `inbox_consume`
 - [ ] 4.7 Publish `notifications` and `tasks` live-event topics
 

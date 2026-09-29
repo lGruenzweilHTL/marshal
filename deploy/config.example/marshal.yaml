@@ -127,6 +127,13 @@ sessions:
 tasks:
   workers: 2                # background task runs at the same time
 
+notifications:
+  quietHoursMode: hold      # hold (deliver when quiet hours end) or silentPush
+  coalesceWindow: "00:02:00"  # normal notifications within this window become one message
+  sourceVoiceInterval: "00:30:00"  # at most one voice notification per source in this interval
+  voicePerHour: 6           # beyond this, voice notifications are pushed
+  # publicUrl: https://marshal.example.com/   # push notifications link into the web UI
+
 recording:
   redactTools: []           # tool id globs stored as references only (tools flagged sensitive always are)
   keepContentTools: []

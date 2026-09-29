@@ -354,6 +354,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             task.HasIndex(entity => new { entity.OwnerId, entity.Name }).IsUnique().HasFilter("name IS NOT NULL");
             task.HasIndex(entity => new { entity.Status, entity.NextRunAt });
             task.HasIndex(entity => entity.ParentId);
+            task.HasIndex(entity => entity.DeliveriesPending).HasFilter("deliveries_pending");
             task.Property(entity => entity.RowVersion).IsConcurrencyToken();
             task.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
             task.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.ParentId);
@@ -376,6 +377,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             notification.HasKey(entity => entity.Id);
             notification.HasIndex(entity => new { entity.OwnerId, entity.CreatedAt });
             notification.HasIndex(entity => new { entity.OwnerId, entity.Outcome });
+            notification.HasIndex(entity => entity.DeliverAfter).HasFilter("deliver_after IS NOT NULL");
             notification.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
             notification.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.TaskId);
             notification.HasOne<Notification>().WithMany().HasForeignKey(entity => entity.CoalescedInto);

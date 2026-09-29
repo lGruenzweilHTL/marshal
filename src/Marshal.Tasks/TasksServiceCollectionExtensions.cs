@@ -1,10 +1,15 @@
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Events;
+using Marshal.Abstractions.FollowUps;
+using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
+using Marshal.Tasks.Deliveries;
 using Marshal.Tasks.Events;
+using Marshal.Tasks.FollowUps;
 using Marshal.Tasks.KillSwitch;
 using Marshal.Tasks.Limits;
+using Marshal.Tasks.Notifications;
 using Marshal.Tasks.Running;
 using Marshal.Tasks.Scheduling;
 using Marshal.Tasks.Store;
@@ -43,6 +48,19 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<TaskSignals>();
         services.AddSingleton<ITaskScheduler>(provider => provider.GetRequiredService<TaskSignals>());
         services.AddSingleton<IHostedService, BackgroundTaskScheduler>();
+
+        services.AddOptions<NotificationOptions>().Bind(configuration.GetSection("notifications"))
+            .Validate(options => options.CoalesceWindow >= TimeSpan.Zero && options.CoalesceWindow <= TimeSpan.FromMinutes(30), "notifications.coalesceWindow must be between 0 and 30 minutes.")
+            .Validate(options => options.FollowUpTtl > TimeSpan.Zero, "notifications.followUpTtl must be positive.")
+            .Validate(options => options.VoicePerHour >= 0, "notifications.voicePerHour cannot be negative.")
+            .Validate(options => options.PublicUrl is null || options.PublicUrl.IsAbsoluteUri && (options.PublicUrl.Scheme == Uri.UriSchemeHttps || options.PublicUrl.Scheme == Uri.UriSchemeHttp), "notifications.publicUrl must be an absolute http(s) URL.")
+            .ValidateOnStart();
+        services.AddSingleton<NotificationRouter>();
+        services.AddSingleton<INotificationSender>(provider => provider.GetRequiredService<NotificationRouter>());
+        services.AddSingleton<IHostedService, NotificationDueLoop>();
+        services.AddSingleton<IFollowUpStore, EfFollowUpStore>();
+        services.AddSingleton<IDeliveryDispatcher, DeliveryDispatcher>();
+        services.AddSingleton<IHostedService, ConditionalDeliveryTracker>();
 
         services.AddSingleton<ITriggerMatcher, DeclarativeTriggerMatcher>();
         services.AddSingleton<ChannelEventBus>();

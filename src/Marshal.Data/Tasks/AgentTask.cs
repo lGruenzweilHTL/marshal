@@ -62,6 +62,9 @@ public sealed class AgentTask : IOwned, IVersioned
     /// <summary>JSON array of deliveries, with the state of pending conditional ones.</summary>
     public string Deliveries { get; set; } = "[]";
 
+    /// <summary>Whether a delivery waits for its conditions (kept in step with <see cref="Deliveries"/>).</summary>
+    public bool DeliveriesPending { get; set; }
+
     public DateTimeOffset? OverrideQuietHoursUntil { get; set; }
 
     public string? ResultSpeech { get; set; }

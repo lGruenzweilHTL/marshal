@@ -12,6 +12,8 @@ namespace Marshal.Abstractions.Tasks;
 /// <param name="When">State conditions <c>state(&lt;entity_id&gt; &lt;op&gt; &lt;value&gt;)</c> that must all hold.</param>
 /// <param name="Expires">Deadline in the owner's time zone (<c>HH:mm</c> or a local ISO 8601 time).</param>
 /// <param name="Fallback">Channel used when <paramref name="Expires"/> passes first.</param>
+/// <param name="PendingSince">Set while a result waits for <paramref name="When"/> to hold (server state).</param>
+/// <param name="ExpiresAt">Deadline of the waiting result in UTC (server state).</param>
 public sealed record TaskDelivery(
     DeliveryChannel Channel,
     string? Target = null,
@@ -19,4 +21,6 @@ public sealed record TaskDelivery(
     bool FollowUp = false,
     IReadOnlyList<string>? When = null,
     string? Expires = null,
-    DeliveryChannel? Fallback = null);
+    DeliveryChannel? Fallback = null,
+    DateTimeOffset? PendingSince = null,
+    DateTimeOffset? ExpiresAt = null);

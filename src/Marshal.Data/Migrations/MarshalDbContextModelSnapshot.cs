@@ -1028,6 +1028,10 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("created_at");
 
+                    b.Property<long?>("DeliverAfter")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("deliver_after");
+
                     b.Property<long?>("DeliveredAt")
                         .HasColumnType("INTEGER")
                         .HasColumnName("delivered_at");
@@ -1050,6 +1054,11 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("reason");
 
+                    b.Property<string>("Routing")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("routing");
+
                     b.Property<string>("Source")
                         .IsRequired()
                         .HasColumnType("TEXT")
@@ -1064,6 +1073,10 @@ namespace Marshal.Data.Migrations
 
                     b.HasIndex("CoalescedInto")
                         .HasDatabaseName("ix_notifications_coalesced_into");
+
+                    b.HasIndex("DeliverAfter")
+                        .HasDatabaseName("ix_notifications_deliver_after")
+                        .HasFilter("deliver_after IS NOT NULL");
 
                     b.HasIndex("TaskId")
                         .HasDatabaseName("ix_notifications_task_id");
@@ -1146,6 +1159,10 @@ namespace Marshal.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("deliveries");
+
+                    b.Property<bool>("DeliveriesPending")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("deliveries_pending");
 
                     b.Property<int>("Depth")
                         .HasColumnType("INTEGER")
@@ -1252,6 +1269,10 @@ namespace Marshal.Data.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_agent_tasks");
+
+                    b.HasIndex("DeliveriesPending")
+                        .HasDatabaseName("ix_agent_tasks_deliveries_pending")
+                        .HasFilter("deliveries_pending");
 
                     b.HasIndex("ParentId")
                         .HasDatabaseName("ix_agent_tasks_parent_id");

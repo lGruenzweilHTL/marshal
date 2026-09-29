@@ -3,9 +3,11 @@ using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Events;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Satellites;
 using Marshal.Abstractions.Tools;
 using Marshal.Integrations.HomeAssistant.Calendar;
+using Marshal.Integrations.HomeAssistant.Notifications;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -41,6 +43,11 @@ public static class HomeAssistantServiceCollectionExtensions
         services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<HomeAssistantCache>());
         services.AddSingleton<IHomeAssistantCommands>(provider => provider.GetRequiredService<HomeAssistantCache>());
 
+        services.AddSingleton<IConditionEvaluator, HaStateConditionEvaluator>();
+        services.AddSingleton<IPresenceProvider, HaPresenceProvider>();
+        services.AddSingleton<INotificationChannel, HaVoiceAnnounceChannel>();
+        services.AddSingleton<INotificationChannel, HaVoiceConversationChannel>();
+        services.AddSingleton<INotificationChannel, HaPushChannel>();
         services.AddSingleton<IRiskTargetResolver, HaTargetResolver>();
         services.AddSingleton<IContextContributor, HaAreaContextContributor>();
         services.Replace(ServiceDescriptor.Singleton<IAreaDirectory, HaAreaDirectory>());

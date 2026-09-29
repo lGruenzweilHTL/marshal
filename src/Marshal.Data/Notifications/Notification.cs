@@ -32,6 +32,12 @@ public sealed class Notification : IOwned
 
     public Guid? CoalescedInto { get; set; }
 
+    /// <summary>JSON of what was requested (channel, target, link, actions, ...), for delivering later.</summary>
+    public string Routing { get; set; } = "{}";
+
+    /// <summary>When a pending or held notification is due (end of the coalescing window or of quiet hours).</summary>
+    public DateTimeOffset? DeliverAfter { get; set; }
+
     public required DateTimeOffset CreatedAt { get; init; }
 
     public DateTimeOffset? DeliveredAt { get; set; }
