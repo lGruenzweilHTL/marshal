@@ -274,3 +274,15 @@ They should be replaced with real captures when a printer is available.
   `calendar_list_events`. Visibility uses the cached overview (number of calendar entities and the union of their
   capabilities), so no request is made before model calls: all tools hide without calendars, `create_event`
   without a calendar that can create, `update_event` without one that can update.
+
+### Notes (tasks 6.1–6.6)
+
+- `GitNotesSource` reads Markdown files from `/data/notes`. Notes are on when a remote is configured or that directory
+  exists. A remote is cloned (`--depth 1`, optional branch) on the first sync and then mirrored with
+  `fetch --depth 1 origin <branch|HEAD>` + `reset --hard FETCH_HEAD`, so the clone is read-only from Marshal's side.
+  An existing directory that is not a clone of the configured remote is never touched (`notes.sync_failed`).
+  Credentials never appear in arguments or URLs: https tokens go through a temporary `GIT_ASKPASS` script reading an
+  environment variable, SSH deploy keys through a temporary key file in `GIT_SSH_COMMAND`; `GIT_TERMINAL_PROMPT=0`
+  and a two-minute limit keep git from hanging. The runtime image installs `git` and `openssh-client`.
+- Path confinement: relative paths only, no `.`/`..`/empty segments, no hidden entries (so `.git` is out of reach) and
+  no symbolic link anywhere on the way (checked segment by segment); listings skip links and hidden entries too.

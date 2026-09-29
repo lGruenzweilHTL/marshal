@@ -19,6 +19,10 @@ COPY --from=build /openapi/v1.json openapi/v1.json
 RUN npm run build
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+# git (and ssh for deploy keys) mirrors a remote notes repository into /data/notes.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git openssh-client \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /app .
 COPY --from=web /web/dist ./wwwroot
