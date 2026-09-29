@@ -918,6 +918,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Undecided approvals of the user's background tasks, oldest first, with reasons and taint sources. */
+        get: operations["ListApprovals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/approvals/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Executes the frozen action and resumes the task with its result. */
+        post: operations["ApproveApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/approvals/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resumes the task with the rejection; nothing is executed. */
+        post: operations["RejectApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -967,6 +1018,42 @@ export interface components {
             revokedAt: null | string;
             /** @description True for tokens users cannot manage (executor callback tokens). */
             readOnly: boolean;
+        };
+        /** @description The outcome of a decision. */
+        ApprovalDecision: {
+            /** @description Pending action id. */
+            id: string;
+            /** @description New status: `approved` or `rejected`. */
+            status: components["schemas"]["PendingActionStatus"];
+        };
+        /** @description A background approval in the review queue. */
+        ApprovalItem: {
+            /** @description Pending action id. */
+            id: string;
+            /** @description The task that waits for the decision. */
+            taskId: null | string;
+            /** @description The run that asked; with a taint source's first step it links to the tool result that tainted the run. */
+            runId: null | string;
+            /** @description Frozen tool id. */
+            tool: string;
+            /** @description Frozen arguments; approving executes exactly these. */
+            arguments: components["schemas"]["JsonElement"];
+            /** @description What the action does. */
+            summary: string;
+            /** @description Why it needs approval, verbatim, the main one first. */
+            reasons: components["schemas"]["ConfirmationReason"][];
+            /** @description Untrusted sources the run had read, with the step that brought each in. */
+            taint: components["schemas"]["TaintSource"][];
+            /**
+             * Format: date-time
+             * @description When it was queued.
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description When it expires (counts as rejected).
+             */
+            expiresAt: string;
         };
         /** @enum {unknown} */
         ChunkAuthor: "user" | "agent" | "consolidation" | "import";
@@ -1163,6 +1250,7 @@ export interface components {
             state: string;
             jobs: components["schemas"]["QueuedJob"][];
         };
+        JsonElement: unknown;
         /** @description One live update. */
         LiveEventMessage: {
             /** @description Topic, e.g. `runs`. */
@@ -1413,6 +1501,8 @@ export interface components {
             credentialJson: string;
             name: null | string;
         };
+        /** @enum {unknown} */
+        PendingActionStatus: "pending" | "approved" | "rejected" | "dropped" | "expired" | "superseded";
         /** @description Confirms a frozen control. */
         PrinterControlConfirmation: {
             token: string;
@@ -3259,6 +3349,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StartMailOAuthResponse"];
+                };
+            };
+        };
+    };
+    ListApprovals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalItem"][];
+                };
+            };
+        };
+    };
+    ApproveApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalDecision"];
+                };
+            };
+        };
+    };
+    RejectApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalDecision"];
                 };
             };
         };

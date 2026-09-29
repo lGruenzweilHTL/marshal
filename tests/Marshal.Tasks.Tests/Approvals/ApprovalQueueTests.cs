@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Marshal.Abstractions;
+using Marshal.Abstractions.Events;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Notifications;
@@ -248,6 +249,27 @@ public sealed class ApprovalQueueTests : IAsyncLifetime, IDisposable
     }
 
     [Fact]
+    public async Task PushActionEvent_FromHomeAssistant_Decided()
+    {
+        TaskRecord task = await WaitingTaskAsync();
+        PendingActionRecord queued = await EnqueueAsync(task);
+        _database.Accessor.Current = null;
+        var events = new CapturingSubscriber();
+        using var push = new ApprovalPushActions(Queue(), events);
+        await push.StartAsync(Ct);
+
+        await events.PublishAsync(new MarshalEvent("printer", "mobile_app_notification_action", null, Data($"MARSHAL_APPROVE_{queued.Nonce}"), null, _time.GetUtcNow()));
+        await events.PublishAsync(new MarshalEvent("ha", "state_changed", "sensor.x", Data($"MARSHAL_APPROVE_{queued.Nonce}"), null, _time.GetUtcNow()));
+        await events.PublishAsync(new MarshalEvent("ha", "mobile_app_notification_action", null, JsonSerializer.SerializeToElement(new { tag = "x" }), null, _time.GetUtcNow()));
+        Assert.Empty(_start.Invocations);
+
+        await events.PublishAsync(new MarshalEvent("ha", "mobile_app_notification_action", null, Data($"MARSHAL_APPROVE_{queued.Nonce}"), null, _time.GetUtcNow()));
+
+        Assert.Single(_start.Invocations);
+        await push.StopAsync(Ct);
+    }
+
+    [Fact]
     public async Task Decide_OtherOwnersApproval_NotFound()
     {
         TaskRecord task = await WaitingTaskAsync();
@@ -364,6 +386,30 @@ public sealed class ApprovalQueueTests : IAsyncLifetime, IDisposable
         Options.Create(new TaskOptions()),
         _time,
         NullLogger<ApprovalQueue>.Instance);
+
+    private static JsonElement Data(string action) => JsonSerializer.SerializeToElement(new { action, tag = "approval-x" });
+
+    private sealed class CapturingSubscriber : IEventSubscriber
+    {
+        private readonly List<Func<MarshalEvent, CancellationToken, ValueTask>> _handlers = [];
+
+        public IDisposable Subscribe(Func<MarshalEvent, CancellationToken, ValueTask> handler)
+        {
+            _handlers.Add(handler);
+            return new Unsubscribe(() => _handlers.Remove(handler));
+        }
+
+        public async Task PublishAsync(MarshalEvent @event)
+        {
+            foreach (Func<MarshalEvent, CancellationToken, ValueTask> handler in _handlers.ToList())
+                await handler(@event, CancellationToken.None);
+        }
+
+        private sealed class Unsubscribe(Action action) : IDisposable
+        {
+            public void Dispose() => action();
+        }
+    }
 
     private sealed class DefaultTierRiskEngine : IRiskEngine
     {

@@ -42,7 +42,7 @@
 
 - [x] 5.1 Write approval tests: background confirm freezes with 10-minute TTL, run suspends and frees worker, automatic note, server executes frozen action on approve, resume payloads for approve / reject / expire, push nonce verification, reasons shown verbatim
 - [x] 5.2 Implement `ApprovalQueue`, background guard path and expiry handling
-- [ ] 5.3 Implement review-queue approval endpoints and push action handling
+- [x] 5.3 Implement review-queue approval endpoints and push action handling
 
 ## 6. Conversation path
 

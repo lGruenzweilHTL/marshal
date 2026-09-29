@@ -1983,6 +1983,94 @@
           }
         }
       }
+    },
+    "/api/v1/approvals": {
+      "get": {
+        "tags": [
+          "Approvals"
+        ],
+        "summary": "Undecided approvals of the user\u0027s background tasks, oldest first, with reasons and taint sources.",
+        "operationId": "ListApprovals",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApprovalItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals/{id}/approve": {
+      "post": {
+        "tags": [
+          "Approvals"
+        ],
+        "summary": "Executes the frozen action and resumes the task with its result.",
+        "operationId": "ApproveApproval",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalDecision"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals/{id}/reject": {
+      "post": {
+        "tags": [
+          "Approvals"
+        ],
+        "summary": "Resumes the task with the rejection; nothing is executed.",
+        "operationId": "RejectApproval",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalDecision"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2094,6 +2182,96 @@
           }
         },
         "description": "A machine token without its secret."
+      },
+      "ApprovalDecision": {
+        "required": [
+          "id",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Pending action id."
+          },
+          "status": {
+            "description": "New status: \u0060approved\u0060 or \u0060rejected\u0060.",
+            "$ref": "#/components/schemas/PendingActionStatus"
+          }
+        },
+        "description": "The outcome of a decision."
+      },
+      "ApprovalItem": {
+        "required": [
+          "id",
+          "taskId",
+          "runId",
+          "tool",
+          "arguments",
+          "summary",
+          "reasons",
+          "taint",
+          "createdAt",
+          "expiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Pending action id."
+          },
+          "taskId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The task that waits for the decision."
+          },
+          "runId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The run that asked; with a taint source\u0027s first step it links to the tool result that tainted the run."
+          },
+          "tool": {
+            "type": "string",
+            "description": "Frozen tool id."
+          },
+          "arguments": {
+            "description": "Frozen arguments; approving executes exactly these.",
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "summary": {
+            "type": "string",
+            "description": "What the action does."
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConfirmationReason"
+            },
+            "description": "Why it needs approval, verbatim, the main one first."
+          },
+          "taint": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaintSource"
+            },
+            "description": "Untrusted sources the run had read, with the step that brought each in."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When it was queued.",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "When it expires (counts as rejected).",
+            "format": "date-time"
+          }
+        },
+        "description": "A background approval in the review queue."
       },
       "ChunkAuthor": {
         "enum": [
@@ -2711,6 +2889,7 @@
           }
         }
       },
+      "JsonElement": {},
       "LiveEventMessage": {
         "required": [
           "topic",
@@ -3514,6 +3693,16 @@
           }
         },
         "description": "A new passkey for the signed-in user."
+      },
+      "PendingActionStatus": {
+        "enum": [
+          "pending",
+          "approved",
+          "rejected",
+          "dropped",
+          "expired",
+          "superseded"
+        ]
       },
       "PrinterControlConfirmation": {
         "required": [
@@ -4891,6 +5080,9 @@
     },
     {
       "name": "Mail"
+    },
+    {
+      "name": "Approvals"
     }
   ]
 }

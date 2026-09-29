@@ -74,6 +74,7 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<ApprovalQueue>();
         services.AddSingleton<IApprovalQueue>(provider => provider.GetRequiredService<ApprovalQueue>());
         services.AddSingleton<IHostedService, ApprovalExpiryLoop>();
+        services.AddSingleton<IHostedService, ApprovalPushActions>();
 
         services.AddSingleton<ITriggerMatcher, DeclarativeTriggerMatcher>();
         services.AddSingleton<ChannelEventBus>();

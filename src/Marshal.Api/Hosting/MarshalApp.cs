@@ -1,4 +1,5 @@
 using System.Collections;
+using Marshal.Api.Approvals;
 using Marshal.Api.Auth;
 using Marshal.Api.Configuration;
 using Marshal.Api.Conversation;
@@ -93,6 +94,7 @@ public static class MarshalApp
         v1.MapPrinterEndpoints();
         v1.MapMailAccountEndpoints();
         v1.MapConversationEndpoints();
+        v1.MapApprovalEndpoints();
         app.MapMailOAuthCallback();
         app.MapSpaFallback();
         return app;
