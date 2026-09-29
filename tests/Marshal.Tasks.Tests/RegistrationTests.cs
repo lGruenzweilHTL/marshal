@@ -20,7 +20,7 @@ public sealed class RegistrationTests
 
         services.AddMarshalTasks(new ConfigurationBuilder().Build());
 
-        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(ITaskStore) && descriptor.ImplementationType == typeof(EfTaskStore));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(ITaskStore) && descriptor.ImplementationType == typeof(LiveTaskStore));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(ITaskRunner) && descriptor.ImplementationType == typeof(AgentTaskRunner));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IContextContributor) && descriptor.ImplementationType == typeof(TaskPromptContributor));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(ITaskScheduler));

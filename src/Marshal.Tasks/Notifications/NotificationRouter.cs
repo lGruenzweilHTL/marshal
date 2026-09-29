@@ -2,6 +2,7 @@ using Marshal.Abstractions;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.LiveEvents;
 using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Tasks;
 using Marshal.Data;
@@ -28,6 +29,7 @@ internal sealed class NotificationRouter(
     IUserPreferencesStore preferences,
     IPresenceProvider presence,
     IEnumerable<INotificationChannel> channels,
+    ILiveEventPublisher live,
     IOptions<NotificationOptions> options,
     TimeProvider time) : INotificationSender, IDisposable
 {
@@ -114,6 +116,7 @@ internal sealed class NotificationRouter(
 
         db.Notifications.Add(row);
         await db.SaveChangesAsync(cancellationToken);
+        Publish("notification.created", row);
         if (row.DeliverAfter is not null)
             Signal();
         return row.Id;
@@ -155,6 +158,7 @@ internal sealed class NotificationRouter(
             row.DeliverAfter = null;
             await DeliverAsync(db, row, routing, await preferences.GetAsync(owner, cancellationToken), text, now, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
+            Publish("notification.updated", row);
         }
     }
 
@@ -183,6 +187,10 @@ internal sealed class NotificationRouter(
             // Timed out.
         }
     }
+
+    private void Publish(string type, Notification row) =>
+        live.Publish(new LiveEvent(TaskLiveEvents.Notifications, type, Guid.CreateVersion7().ToString(), row.OwnerId,
+            new NotificationPayload(row.Id, row.Source, row.Priority, row.Content, row.Outcome, row.Channel, row.Reason, row.TaskId, row.CreatedAt)));
 
     private void Signal()
     {

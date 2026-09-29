@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.LiveEvents;
 using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Tasks;
 using Marshal.Data;
@@ -22,6 +23,7 @@ public sealed class NotificationRouterTests : IAsyncLifetime
     private readonly FakeTimeProvider _time = new(new DateTimeOffset(2026, 9, 29, 10, 0, 0, TimeSpan.Zero));
     private readonly FakeUserPreferencesStore _preferences = new();
     private readonly FakePresence _presence = new();
+    private readonly FakeLiveEventPublisher _live = new();
     private readonly RecordingChannel _voice = new(NotificationChannelKind.VoiceAnnounce);
     private readonly RecordingChannel _push = new(NotificationChannelKind.Push);
     private readonly RecordingChannel _conversation = new(NotificationChannelKind.VoiceConversation);
@@ -47,6 +49,30 @@ public sealed class NotificationRouterTests : IAsyncLifetime
         Assert.Empty(_voice.Messages);
         Assert.Empty(_push.Messages);
         Assert.Equal((NotificationOutcome.Inboxed, (string?)null, "low"), await HistoryAsync(id));
+    }
+
+    [Fact]
+    public async Task EveryNotification_PublishedToOpenBrowsers()
+    {
+        Guid held = await SendAsync(Request("Held later.") with { Channel = DeliveryChannel.Inbox });
+
+        LiveEvent live = Assert.Single(_live.Events);
+        Assert.Equal(("notifications", "notification.created", OwnerA), (live.Topic, live.Type, live.Owner));
+        NotificationPayload payload = Assert.IsType<NotificationPayload>(live.Payload);
+        Assert.Equal((held, "Held later.", NotificationOutcome.Inboxed, NotificationPriority.Normal), (payload.Id, payload.Text, payload.Outcome, payload.Priority));
+    }
+
+    [Fact]
+    public async Task DeliveredLater_PublishedAgainAsUpdated()
+    {
+        AtLocal(23, 0);
+        await SendAsync(Request("The backup finished."));
+        _time.SetUtcNow(new DateTimeOffset(2026, 9, 30, 5, 0, 0, TimeSpan.Zero));
+
+        await Router().DeliverDueAsync(Ct);
+
+        Assert.Equal(["notification.created", "notification.updated"], _live.Events.Select(live => live.Type));
+        Assert.Equal(NotificationOutcome.Delivered, Assert.IsType<NotificationPayload>(_live.Events.Last().Payload).Outcome);
     }
 
     [Fact]
@@ -272,6 +298,7 @@ public sealed class NotificationRouterTests : IAsyncLifetime
         _preferences,
         _presence,
         [_voice, _push, _conversation],
+        _live,
         Options.Create(_options),
         _time);
 

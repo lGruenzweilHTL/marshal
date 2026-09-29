@@ -35,8 +35,8 @@
 - [x] 4.3 Implement `DeliveryDispatcher` and `HaStateConditionEvaluator`
 - [x] 4.4 Write router tests: priorities, critical only from system sources, presence-based channel choice, quiet hours hold / silent push, override, DND, coalescing, per-source and global voice caps, history reasons
 - [x] 4.5 Implement `NotificationRouter`, `HaPresenceProvider` and channels (announce, conversation, push, inbox)
-- [ ] 4.6 Write inbox tool tests and implement `notifications.notify`, `inbox_list`, `inbox_consume`
-- [ ] 4.7 Publish `notifications` and `tasks` live-event topics
+- [x] 4.6 Write inbox tool tests and implement `notifications.notify`, `inbox_list`, `inbox_consume`
+- [x] 4.7 Publish `notifications` and `tasks` live-event topics
 
 ## 5. Approval queue
 

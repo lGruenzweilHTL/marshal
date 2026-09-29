@@ -1,6 +1,7 @@
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Events;
 using Marshal.Abstractions.FollowUps;
+using Marshal.Abstractions.LiveEvents;
 using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
@@ -36,7 +37,10 @@ public static class TasksServiceCollectionExtensions
             .Validate(options => options.DailyCostCap >= 0, "tasks.dailyCostCap cannot be negative.")
             .ValidateOnStart();
 
-        services.AddSingleton<ITaskStore, EfTaskStore>();
+        services.AddSingleton<EfTaskStore>();
+        services.AddSingleton<ITaskStore, LiveTaskStore>();
+        services.AddSingleton(new LiveTopic(TaskLiveEvents.Tasks));
+        services.AddSingleton(new LiveTopic(TaskLiveEvents.Notifications));
         services.AddSingleton<ITaskSpending, EfTaskSpending>();
         services.AddSingleton<TaskBudgets>();
         services.AddSingleton<TaskPauses>();
@@ -59,6 +63,8 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<INotificationSender>(provider => provider.GetRequiredService<NotificationRouter>());
         services.AddSingleton<IHostedService, NotificationDueLoop>();
         services.AddSingleton<IFollowUpStore, EfFollowUpStore>();
+        services.AddSingleton<INotificationInbox, EfNotificationInbox>();
+        services.AddSingleton<IToolSource, NotificationToolSource>();
         services.AddSingleton<IDeliveryDispatcher, DeliveryDispatcher>();
         services.AddSingleton<IHostedService, ConditionalDeliveryTracker>();
 
