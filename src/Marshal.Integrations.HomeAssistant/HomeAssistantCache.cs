@@ -12,14 +12,16 @@ namespace Marshal.Integrations.HomeAssistant;
 /// Keeps <see cref="IHomeAssistantCache"/> fresh: connects, subscribes to state and registry events, loads
 /// registries, exposure and states, then applies state changes and reloads the registries on registry events and
 /// periodically (exposure changes have no event). After a disconnect the cache is empty until the reconnect has
-/// reloaded everything, so callers never act on stale data.
+/// reloaded everything, so callers never act on stale data. Events for the event bus go to
+/// <see cref="HomeAssistantEventSource"/> on the same connection.
 /// </summary>
 public sealed partial class HomeAssistantCache(
     IOptions<HomeAssistantOptions> options,
     IHomeAssistantSocketFactory sockets,
     HomeAssistantCacheTimings timings,
     TimeProvider time,
-    ILogger<HomeAssistantCache> logger) : BackgroundService, IHomeAssistantCache, IHomeAssistantCommands
+    ILogger<HomeAssistantCache> logger,
+    HomeAssistantEventSource? events = null) : BackgroundService, IHomeAssistantCache, IHomeAssistantCommands
 {
     private const string StateChanged = "state_changed";
 
@@ -85,6 +87,7 @@ public sealed partial class HomeAssistantCache(
             }
 
             _current = null;
+            events?.SetConnected(false);
             try
             {
                 await Task.Delay(timings.Backoff(attempt++), time, stoppingToken);
@@ -96,18 +99,23 @@ public sealed partial class HomeAssistantCache(
         }
 
         _current = null;
+        events?.SetConnected(false);
     }
 
     private async Task RunAsync(HaConnection connection, Action connected, CancellationToken stoppingToken)
     {
         // Subscribe first: events that arrive during the load are queued and applied afterwards.
-        foreach (string eventType in _registryEvents.Prepend(StateChanged))
+        IEnumerable<string> eventTypes = _registryEvents.Prepend(StateChanged);
+        if (events is not null)
+            eventTypes = eventTypes.Union(HomeAssistantEventSource.EventTypes);
+        foreach (string eventType in eventTypes)
             await connection.CommandAsync("subscribe_events", new JsonObject { ["event_type"] = eventType }, stoppingToken);
 
         HaSnapshotBuilder.Registries registries = await LoadRegistriesAsync(connection, stoppingToken);
         ImmutableDictionary<string, HaState> states = HaSnapshotBuilder.States(await connection.CommandAsync("get_states", null, stoppingToken));
         _current = HaSnapshotBuilder.Build(registries, states);
         _lastError = null;
+        events?.SetConnected(true);
         connected();
         LogLoaded(_current.Entities.Count, _current.States.Count);
 
@@ -130,6 +138,7 @@ public sealed partial class HomeAssistantCache(
 
             while (connection.Events.TryRead(out JsonElement @event))
             {
+                events?.Handle(@event);
                 string? type = @event.TryGetProperty("event_type", out JsonElement found) ? found.GetString() : null;
                 if (type == StateChanged && @event.TryGetProperty("data", out JsonElement data) && _current is { } current)
                     _current = HaSnapshotBuilder.ApplyStateChanged(current, data);

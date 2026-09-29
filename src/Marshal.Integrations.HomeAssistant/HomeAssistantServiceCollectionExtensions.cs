@@ -1,5 +1,6 @@
 using Marshal.Abstractions.Calendar;
 using Marshal.Abstractions.Context;
+using Marshal.Abstractions.Events;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Satellites;
@@ -33,6 +34,8 @@ public static class HomeAssistantServiceCollectionExtensions
         services.AddSingleton<IHomeAssistantClient, HomeAssistantClient>();
         services.AddSingleton<IHomeAssistantSocketFactory, ClientWebSocketFactory>();
         services.AddSingleton(new HomeAssistantCacheTimings());
+        services.AddSingleton<HomeAssistantEventSource>();
+        services.AddSingleton<IEventSource>(provider => provider.GetRequiredService<HomeAssistantEventSource>());
         services.AddSingleton<HomeAssistantCache>();
         services.AddSingleton<IHomeAssistantCache>(provider => provider.GetRequiredService<HomeAssistantCache>());
         services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<HomeAssistantCache>());
