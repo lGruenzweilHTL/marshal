@@ -15,6 +15,7 @@ using Marshal.Data.Conversations;
 using Marshal.Data.Identity;
 using Marshal.Data.Mail;
 using Marshal.Data.Memory;
+using Marshal.Data.Notes;
 using Marshal.Data.Persistence;
 using Marshal.Data.Secrets;
 using Marshal.Data.Tokens;
@@ -61,6 +62,8 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
     public DbSet<Project> Projects => Set<Project>();
 
     public DbSet<StoredMailAccount> MailAccounts => Set<StoredMailAccount>();
+
+    public DbSet<NoteIndexEntry> NoteIndexEntries => Set<NoteIndexEntry>();
 
     public DbSet<ProjectAlias> ProjectAliases => Set<ProjectAlias>();
 
@@ -256,6 +259,15 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             account.HasIndex(entity => new { entity.OwnerId, entity.Alias }).IsUnique();
             account.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
             OwnerFilter(account);
+        });
+
+        builder.Entity<NoteIndexEntry>(entry =>
+        {
+            entry.ToTable("note_index_entries");
+            entry.HasKey(entity => entity.Id);
+            entry.HasIndex(entity => new { entity.OwnerId, entity.Path });
+            entry.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            OwnerFilter(entry);
         });
 
         builder.Entity<ProjectAlias>(alias =>

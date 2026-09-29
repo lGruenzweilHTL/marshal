@@ -2,6 +2,7 @@ using Marshal.Abstractions.Identity;
 using Marshal.Data;
 using Marshal.Data.Identity;
 using Marshal.Data.Memory;
+using Marshal.Data.Notes;
 using Marshal.Data.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -30,7 +31,7 @@ public sealed class TestDatabase : IAsyncDisposable
         await database._connection.OpenAsync();
         await using MarshalDbContext context = database.CreateContext();
         await context.Database.EnsureCreatedAsync();
-        foreach (string statement in MemorySchema.Create)
+        foreach (string statement in MemorySchema.Create.Concat(NotesSchema.Create))
             await context.Database.ExecuteSqlRawAsync(statement);
         foreach (OwnerId owner in new[] { TestExecutionContext.OwnerA, TestExecutionContext.OwnerB })
         {

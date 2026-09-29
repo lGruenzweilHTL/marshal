@@ -942,6 +942,54 @@ namespace Marshal.Data.Migrations
                     b.ToTable("project_feedback", (string)null);
                 });
 
+            modelBuilder.Entity("Marshal.Data.Notes.NoteIndexEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("FileHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("file_hash");
+
+                    b.Property<string>("Heading")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("heading");
+
+                    b.Property<long>("IndexedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("indexed_at");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("path");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("position");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("text");
+
+                    b.HasKey("Id")
+                        .HasName("pk_note_index_entries");
+
+                    b.HasIndex("OwnerId", "Path")
+                        .HasDatabaseName("ix_note_index_entries_owner_id_path");
+
+                    b.ToTable("note_index_entries", (string)null);
+                });
+
             modelBuilder.Entity("Marshal.Data.Secrets.Secret", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1371,6 +1419,16 @@ namespace Marshal.Data.Migrations
                         .WithMany()
                         .HasForeignKey("RunId")
                         .HasConstraintName("fk_project_feedback_runs_run_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Notes.NoteIndexEntry", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_note_index_entries_users_owner_id");
                 });
 
             modelBuilder.Entity("Marshal.Data.Secrets.Secret", b =>

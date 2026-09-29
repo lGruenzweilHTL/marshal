@@ -6,7 +6,7 @@
 ' column or relationship, and re-render the SVG (see docs/diagrams/README.md).
 '
 ' Status: PARTLY BUILT — User (+ Identity tables), AuthTicket, UserPreferences, ApiToken, Session,
-' Run, RunStep, PendingAction, AuditEvent, Secret, MailAccount and the Memory package exist in Marshal.Data;
+' Run, RunStep, PendingAction, AuditEvent, Secret, MailAccount, NoteIndexEntry and the Memory package exist in Marshal.Data;
 ' the other entities are still planned (docs/brainstorm-notes.md).
 
 !pragma layout smetana
@@ -432,16 +432,19 @@ package "Integrations & Secrets" {
     <<unique (owner_id, alias)>>
   }
 
-  entity NoteIndexEntry {
+  entity NoteIndexEntry <<note_index_entries>> {
     * id : Guid <<PK>>
     --
     * owner_id : OwnerId <<FK>>
-    * path : string
+    * path : string  <<relative to the notes repository>>
     * heading : string
+    * position : int  <<section order in the file>>
     * text : string
-    embedding : vector  <<sqlite-vec>>
+    * file_hash : string  <<SHA-256 of the file when indexed>>
     * indexed_at : DateTimeOffset
+    <<index (owner_id, path)>>
     <<derived, rebuilt per file on change>>
+    <<keyword: notes_fts (FTS5), vector: note_vectors (sqlite-vec)>>
   }
 }
 

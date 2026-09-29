@@ -49,7 +49,7 @@
 
 - [x] 6.1 Write source tests with a local test repository: list, read, path confinement, clone and pull of a remote (file-based remote in tests)
 - [x] 6.2 Implement `GitNotesSource`
-- [ ] 6.3 Write index tests: heading chunking, per-file rebuild on change, hybrid search with fake embeddings, ownership
-- [ ] 6.4 Implement `SqliteNotesIndex`, `NoteIndexEntry` migration; align `erd.puml`
+- [x] 6.3 Write index tests: heading chunking, per-file rebuild on change, hybrid search with fake embeddings, ownership
+- [x] 6.4 Implement `SqliteNotesIndex`, `NoteIndexEntry` migration; align `erd.puml`
 - [ ] 6.5 Write tool tests: taint source `notes`, redaction, no automatic context injection
 - [ ] 6.6 Implement notes tools

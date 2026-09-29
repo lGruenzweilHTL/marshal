@@ -69,6 +69,22 @@ public sealed class SqliteVectorExtensionTests : IDisposable
             await db.Database.ExecuteSqlRawAsync(statement, Ct);
     }
 
+    [Fact]
+    public async Task Migrate_CreatesTheNotesIndexTablesOfNotesSchema()
+    {
+        DbContextOptions<MarshalDbContext> options = new DbContextOptionsBuilder<MarshalDbContext>()
+            .UseMarshalSqlite($"Data Source={Path.Combine(_directory, "notes.db")}")
+            .Options;
+        await using var db = new MarshalDbContext(options, new FakeExecutionContextAccessor());
+
+        await db.Database.MigrateAsync(Ct);
+
+        List<string> tables = await db.Database.SqlQueryRaw<string>("SELECT name AS \"Value\" FROM sqlite_master WHERE name IN ('notes_fts', 'notes_vector_index', 'note_index_entries')").ToListAsync(Ct);
+        Assert.Equal(["note_index_entries", "notes_fts", "notes_vector_index"], tables.Order(StringComparer.Ordinal));
+        foreach (string statement in Marshal.Data.Notes.NotesSchema.Create)
+            await db.Database.ExecuteSqlRawAsync(statement, Ct);
+    }
+
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();

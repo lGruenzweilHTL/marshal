@@ -286,3 +286,10 @@ They should be replaced with real captures when a printer is available.
   and a two-minute limit keep git from hanging. The runtime image installs `git` and `openssh-client`.
 - Path confinement: relative paths only, no `.`/`..`/empty segments, no hidden entries (so `.git` is out of reach) and
   no symbolic link anywhere on the way (checked segment by segment); listings skip links and hidden entries too.
+- Index: `NoteIndexEntry` rows (owner, path, heading, position, text, file hash) with an FTS5 table (`notes_fts`) and
+  a sqlite-vec table (`note_vectors`, created at runtime with the model's dimension), all separate from memory.
+  Markdown is split at ATX headings outside code fences; text before the first heading is filed under the file name,
+  and sections over 1500 characters are cut at paragraph boundaries. An update compares each file's SHA-256 with the
+  stored hash and rebuilds only changed files; entries of files that disappeared are dropped. A different embedding
+  model empties the whole index (every owner's vectors are unusable), and the same update rebuilds it. Search merges
+  vector KNN and bm25 hits like memory retrieval, without edges or scoring.
