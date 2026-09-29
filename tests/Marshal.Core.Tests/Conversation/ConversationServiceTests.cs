@@ -22,6 +22,7 @@ public sealed class ConversationServiceTests
     private readonly ApiTokenId _token = ApiTokenId.New();
     private readonly FakeTool _unlock = FakeTool.Confirm("test.unlock").Returns("unlocked");
     private readonly FakeJudge _judge = new();
+    private readonly ScriptedFollowUps _followUps = new();
 
     [Fact]
     public async Task Turn_EchoesClientConversationId()
@@ -200,6 +201,34 @@ public sealed class ConversationServiceTests
         Assert.Equal("streamed", string.Concat(events.OfType<DeltaEvent>().Select(delta => delta.Text)));
     }
 
+    [Fact]
+    public async Task FollowUp_DecidedReply_AnsweredWithoutModelCall()
+    {
+        (ConversationService service, LoopHarness harness) = await ServiceAsync();
+        _followUps.Reply = new FollowUpReply("Approved.", []);
+
+        TurnOutcome outcome = (await service.HandleAsync(Turn("confirm") with { FollowupRef = "nonce-1" }, null, Ct)).Value;
+
+        Assert.Equal("Approved.", outcome.Speech);
+        Assert.Empty(harness.Model.Requests);
+        Assert.Equal("followup", harness.Recorder.OnlyRun.Start.Trigger);
+        Assert.Equal("nonce-1", _followUps.Seen?.FollowupRef);
+    }
+
+    [Fact]
+    public async Task FollowUp_SeededSession_ModelSeesTheResultBeforeTheQuestion()
+    {
+        (ConversationService service, LoopHarness harness) = await ServiceAsync();
+        _followUps.Reply = new FollowUpReply(null, [new ChatMessage(ChatRole.System, "Result body."), new ChatMessage(ChatRole.Assistant, "Three articles today.")]);
+        harness.Model.ThenText("The second one is about Klipper.");
+
+        TurnOutcome outcome = (await service.HandleAsync(Turn("tell me more about the second"), null, Ct)).Value;
+
+        Assert.Equal("The second one is about Klipper.", outcome.Speech);
+        IReadOnlyList<ChatMessage> messages = harness.Model.Requests[0].Messages;
+        Assert.Equal(["Result body.", "Three articles today.", "tell me more about the second"], messages.Skip(1).Select(message => message.Text));
+    }
+
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     private ConversationTurn Turn(string text, string conversationId = "01JABC") => new()
@@ -219,8 +248,21 @@ public sealed class ConversationServiceTests
         var sessions = new InMemorySessionStore(harness.Accessor, harness.Time);
         var resolver = new SessionResolver(sessions, new FixedIdentity(), harness.Store, [], harness.Accessor, Options.Create(new SessionOptions()), harness.Time);
         var flow = new ConfirmationFlow(harness.Store, new ConfiguredConfirmationKeywords(Options.Create(new ConfirmationOptions())), _judge, harness.Registry, Tests.GuardTestKit.Engine("risk: []"), harness.Time);
-        var service = new ConversationService(resolver, flow, harness.RunnerSpy, harness.History, new FixedProfiles(), harness.Accessor, Options.Create(harness.Options));
+        var service = new ConversationService(resolver, flow, harness.RunnerSpy, harness.History, new FixedProfiles(), harness.Accessor, Options.Create(harness.Options), _followUps);
         return (service, harness);
+    }
+
+    private sealed class ScriptedFollowUps : IFollowUpReplies
+    {
+        public FollowUpReply? Reply { get; set; }
+
+        public ConversationTurn? Seen { get; private set; }
+
+        public Task<FollowUpReply?> HandleAsync(ConversationTurn turn, MarshalExecutionContext context, CancellationToken cancellationToken)
+        {
+            Seen = turn;
+            return Task.FromResult(Reply);
+        }
     }
 
     private sealed class FixedIdentity : IIdentityResolver

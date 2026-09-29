@@ -222,6 +222,7 @@ package "Conversations & Runs" {
     pending_action_id : PendingActionId <<FK>>
     task_id : TaskId <<FK>>
     linked_session_id : SessionId <<FK>>
+    * created_at : DateTimeOffset  <<reply window starts here>>
     * expires_at : DateTimeOffset
     consumed_at : DateTimeOffset
   }

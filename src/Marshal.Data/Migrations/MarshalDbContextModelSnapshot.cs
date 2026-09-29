@@ -1377,6 +1377,10 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("consumed_at");
 
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
                     b.Property<long>("ExpiresAt")
                         .HasColumnType("INTEGER")
                         .HasColumnName("expires_at");

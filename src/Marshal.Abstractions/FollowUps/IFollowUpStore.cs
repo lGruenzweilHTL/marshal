@@ -1,4 +1,5 @@
 using Marshal.Abstractions.Guard;
+using Marshal.Abstractions.Sessions;
 using Marshal.Abstractions.Tasks;
 
 namespace Marshal.Abstractions.FollowUps;
@@ -10,6 +11,18 @@ public interface IFollowUpStore
 {
     /// <summary>Stores a follow-up with a fresh nonce; the nonce goes out as <c>marshal-followup:&lt;nonce&gt;</c>.</summary>
     Task<FollowUpRecord> CreateAsync(NewFollowUp followUp, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Consumes the follow-up with <paramref name="nonce"/> when it is unexpired, unconsumed and was asked on
+    /// <paramref name="satelliteId"/>, and links it to <paramref name="session"/>; otherwise null.
+    /// </summary>
+    Task<FollowUpRecord?> ConsumeAsync(string nonce, string satelliteId, SessionId session, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Consumes the newest unexpired, unconsumed follow-up asked on <paramref name="satelliteId"/> within
+    /// <paramref name="window"/> (the reply-window fallback); otherwise null.
+    /// </summary>
+    Task<FollowUpRecord?> ConsumeRecentAsync(string satelliteId, TimeSpan window, SessionId session, CancellationToken cancellationToken);
 }
 
 /// <summary>A follow-up to create.</summary>

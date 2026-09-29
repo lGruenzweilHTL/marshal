@@ -106,6 +106,7 @@ public sealed class BackgroundWorkEntitiesTests : IAsyncLifetime
                 Nonce = $"nonce-{owner}",
                 SatelliteId = "kitchen",
                 TaskId = task.Id,
+                CreatedAt = _now,
                 ExpiresAt = _now.AddMinutes(1),
             });
             await AddAsync(owner, new ExecutorSession

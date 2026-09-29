@@ -9,6 +9,7 @@ using Marshal.Abstractions.Tasks;
 using Marshal.Core.Agent;
 using Marshal.Core.Context;
 using Marshal.Tasks.Approvals;
+using Marshal.Tasks.FollowUps;
 
 namespace Marshal.Tasks.Running;
 
@@ -93,24 +94,27 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
     }
 
     // Approval decisions are written by the server; they are untrusted only when the approved action returned
-    // untrusted content. Other event payloads can carry third-party text.
+    // untrusted content. A spoken reply is the user's own. Other event payloads can carry third-party text.
     private static string? PayloadTaint(TaskRecord task)
     {
         if (task.TriggerPayload is null)
             return null;
-        if (ApprovalPayload(task) is { } approval)
+        if (Payload(task, ApprovalQueue.PayloadKey) is { } approval)
             return approval.TryGetProperty(ApprovalQueue.TaintKey, out JsonElement taint) && taint.ValueKind == JsonValueKind.String ? taint.GetString() : null;
+        if (Payload(task, FollowUpReplies.PayloadKey) is not null)
+            return null;
         return task.Trigger.Kind == TaskTriggerKind.Event ? EventTaint : null;
     }
 
-    private static JsonElement? ApprovalPayload(TaskRecord task)
+    // The payload object when it has the top-level key (approval decision, spoken reply), else null.
+    private static JsonElement? Payload(TaskRecord task, string key)
     {
         if (task.TriggerPayload is null)
             return null;
         try
         {
             using var document = JsonDocument.Parse(task.TriggerPayload);
-            return document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty(ApprovalQueue.PayloadKey, out _)
+            return document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty(key, out _)
                 ? document.RootElement.Clone()
                 : null;
         }
@@ -120,7 +124,10 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
         }
     }
 
-    private static string Describe(TaskRecord task) => ApprovalPayload(task) is not null ? "an approval decision" : task.Trigger.Kind switch
+    private static string Describe(TaskRecord task) =>
+        Payload(task, ApprovalQueue.PayloadKey) is not null ? "an approval decision"
+        : Payload(task, FollowUpReplies.PayloadKey) is not null ? "the user's spoken reply to your question"
+        : task.Trigger.Kind switch
     {
         TaskTriggerKind.Cron => $"its schedule ({task.Trigger.Spec})",
         TaskTriggerKind.At => "its scheduled time",

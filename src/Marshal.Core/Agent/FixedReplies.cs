@@ -25,6 +25,18 @@ public static class FixedReplies
         ? "Das dauert zu lange, ich breche ab."
         : "This is taking too long, stopping.";
 
+    public static string ApprovalGiven(string language) => German(language)
+        ? "Freigegeben."
+        : "Approved.";
+
+    public static string ApprovalClosed(string language) => German(language)
+        ? "Diese Freigabe ist nicht mehr offen."
+        : "That approval is no longer open.";
+
+    public static string ReplyTaken(string language) => German(language)
+        ? "Okay, ich kümmere mich darum."
+        : "Got it, I'll take it from here.";
+
     public static string Backgrounded(string language) => German(language)
         ? "Ich arbeite daran und sage dir Bescheid, wenn ich fertig bin."
         : "I'm working on it and will let you know when it's done.";

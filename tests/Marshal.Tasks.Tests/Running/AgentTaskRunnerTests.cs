@@ -133,6 +133,21 @@ public sealed class AgentTaskRunnerTests
     }
 
     [Fact]
+    public async Task ReplyPayload_DescribedAsTheUsersReplyAndNotTainted()
+    {
+        TaskLoopHarness harness = await TaskLoopHarness.CreateAsync();
+        harness.Model.ThenText("Done.");
+        TaskRecord task = Task() with { TriggerPayload = """{"reply":{"text":"die blaue","satellite":"assist_satellite.office"}}""" };
+
+        await harness.Runner.RunAsync(task, new RunLimits(), Ct);
+
+        string input = harness.Model.Requests[0].Messages[1].Text;
+        Assert.Contains("started by: the user's spoken reply", input, StringComparison.Ordinal);
+        Assert.Contains("die blaue", input, StringComparison.Ordinal);
+        Assert.False(harness.LastContext.Taint.IsTainted);
+    }
+
+    [Fact]
     public async Task ApprovalPayload_WithUntrustedResult_WrappedAndTaintsTheRun()
     {
         TaskLoopHarness harness = await TaskLoopHarness.CreateAsync();

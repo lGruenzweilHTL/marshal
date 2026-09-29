@@ -20,6 +20,12 @@ public sealed class NotificationOptions
     /// <summary>How long a spoken question waits for its reply.</summary>
     public TimeSpan FollowUpTtl { get; set; } = TimeSpan.FromMinutes(2);
 
+    /// <summary>
+    /// A voice turn without a follow-up reference from the satellite that asked, within this time after the question,
+    /// is taken as the reply (for satellites or HA versions where the reference does not arrive). Zero: off.
+    /// </summary>
+    public TimeSpan FollowUpReplyWindow { get; set; } = TimeSpan.FromSeconds(20);
+
     /// <summary>Marshal's public URL, for push links into the web UI; without it pushes carry no link.</summary>
     public Uri? PublicUrl { get; set; }
 }

@@ -13,8 +13,8 @@ using Microsoft.Extensions.Options;
 namespace Marshal.Core.Conversation;
 
 /// <summary>
-/// Handles one interactive turn: session and owner, reply language, the session's pending action (keyword /
-/// judge), then the agent loop under the latency cap.
+/// Handles one interactive turn: session and owner, reply language, a voice follow-up it answers, the session's
+/// pending action (keyword / judge), then the agent loop under the latency cap.
 /// </summary>
 public sealed class ConversationService(
     SessionResolver sessions,
@@ -23,7 +23,8 @@ public sealed class ConversationService(
     IConversationHistory history,
     IUserProfileProvider profiles,
     IExecutionContextAccessor executionContext,
-    IOptions<AgentOptions> options)
+    IOptions<AgentOptions> options,
+    IFollowUpReplies? followUps = null)
 {
     private const int HistoryTurns = 10;
     private static readonly string[] _supportedLanguages = ["de", "en"];
@@ -63,16 +64,24 @@ public sealed class ConversationService(
         (ConversationTurn turn, SessionRecord session, MarshalExecutionContext context) = prepared;
         using IDisposable scope = executionContext.Use(context);
         IReadOnlyList<ChatMessage> earlier = await history.LoadAsync(session.Id, HistoryTurns, cancellationToken);
-        ConfirmationOutcome decided = await confirmation.HandleUserTurnAsync(session.Id, turn.Text, context, cancellationToken);
+        FollowUpReply? followUp = followUps is null ? null : await followUps.HandleAsync(turn, context, cancellationToken);
         AgentRunRequest request = new()
         {
             Context = context,
-            History = earlier,
+            History = [.. earlier, .. followUp?.Seed ?? []],
             UserText = turn.Text,
             Events = events,
             LatencyCap = turn.InputMode == InputMode.Voice ? options.Value.VoiceLatencyCap : options.Value.TextLatencyCap,
         };
 
+        // A reply that decided an approval or resumed a waiting task is answered without a model call.
+        if (followUp?.FixedReply is { } fixedReply)
+        {
+            AgentRunResult answered = await runner.RunAsync(request with { Trigger = "followup", FixedReply = fixedReply }, cancellationToken);
+            return new TurnOutcome(answered.Reply, answered.ContinueConversation, ConversationId(turn, session));
+        }
+
+        ConfirmationOutcome decided = await confirmation.HandleUserTurnAsync(session.Id, turn.Text, context, cancellationToken);
         request = decided.Kind switch
         {
             ConfirmationOutcomeKind.Executed => request with { Trigger = "confirmation", Confirmation = Step(decided) },
@@ -83,9 +92,11 @@ public sealed class ConversationService(
         };
 
         AgentRunResult result = await runner.RunAsync(request, cancellationToken);
-        string conversationId = turn.ApiTokenId is null ? session.Id.ToString() : turn.ConversationId!;
-        return new TurnOutcome(result.Reply, result.ContinueConversation, conversationId);
+        return new TurnOutcome(result.Reply, result.ContinueConversation, ConversationId(turn, session));
     }
+
+    private static string ConversationId(ConversationTurn turn, SessionRecord session) =>
+        turn.ApiTokenId is null ? session.Id.ToString() : turn.ConversationId!;
 
     private async Task<Result<SessionRecord>> ResolveSessionAsync(ConversationTurn turn, CancellationToken cancellationToken)
     {

@@ -26,6 +26,9 @@ public sealed class FollowUp : IOwned
     /// <summary>Session the reply was linked to.</summary>
     public SessionId? LinkedSessionId { get; set; }
 
+    /// <summary>When the question was asked (the reply window starts here).</summary>
+    public required DateTimeOffset CreatedAt { get; init; }
+
     public required DateTimeOffset ExpiresAt { get; init; }
 
     public DateTimeOffset? ConsumedAt { get; set; }

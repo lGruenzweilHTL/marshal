@@ -48,8 +48,8 @@
 
 - [x] 6.1 Write tests: auto-background at the cap creates a task with origin satellite and continues the transcript once, outcome `backgrounded`, result delivered; `agent.move_to_background` visible only in interactive turns; satellite policy kept
 - [x] 6.2 Implement auto-background and `agent.move_to_background`
-- [ ] 6.3 Write follow-up tests: record creation with `extra_system_prompt`, valid / expired / consumed / wrong-satellite refs, pending action via keyword, waiting task resume, seeded session for delivered result, silence expiry, reply-window fallback
-- [ ] 6.4 Implement `EfFollowUpStore` and `followupRef` handling
+- [x] 6.3 Write follow-up tests: record creation with `extra_system_prompt`, valid / expired / consumed / wrong-satellite refs, pending action via keyword, waiting task resume, seeded session for delivered result, silence expiry, reply-window fallback
+- [x] 6.4 Implement `EfFollowUpStore` and `followupRef` handling
 
 ## 7. Executors
 

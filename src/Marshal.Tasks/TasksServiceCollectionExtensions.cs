@@ -7,6 +7,7 @@ using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
 using Marshal.Core.Agent;
+using Marshal.Core.Conversation;
 using Marshal.Tasks.Approvals;
 using Marshal.Tasks.Deliveries;
 using Marshal.Tasks.Events;
@@ -63,6 +64,7 @@ public static class TasksServiceCollectionExtensions
         services.AddOptions<NotificationOptions>().Bind(configuration.GetSection("notifications"))
             .Validate(options => options.CoalesceWindow >= TimeSpan.Zero && options.CoalesceWindow <= TimeSpan.FromMinutes(30), "notifications.coalesceWindow must be between 0 and 30 minutes.")
             .Validate(options => options.FollowUpTtl > TimeSpan.Zero, "notifications.followUpTtl must be positive.")
+            .Validate(options => options.FollowUpReplyWindow >= TimeSpan.Zero && options.FollowUpReplyWindow <= options.FollowUpTtl, "notifications.followUpReplyWindow must be between 0 and followUpTtl.")
             .Validate(options => options.VoicePerHour >= 0, "notifications.voicePerHour cannot be negative.")
             .Validate(options => options.PublicUrl is null || options.PublicUrl.IsAbsoluteUri && (options.PublicUrl.Scheme == Uri.UriSchemeHttps || options.PublicUrl.Scheme == Uri.UriSchemeHttp), "notifications.publicUrl must be an absolute http(s) URL.")
             .ValidateOnStart();
@@ -70,6 +72,7 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<INotificationSender>(provider => provider.GetRequiredService<NotificationRouter>());
         services.AddSingleton<IHostedService, NotificationDueLoop>();
         services.AddSingleton<IFollowUpStore, EfFollowUpStore>();
+        services.AddSingleton<IFollowUpReplies, FollowUpReplies>();
         services.AddSingleton<INotificationInbox, EfNotificationInbox>();
         services.AddSingleton<IToolSource, NotificationToolSource>();
         services.AddSingleton<IDeliveryDispatcher, DeliveryDispatcher>();

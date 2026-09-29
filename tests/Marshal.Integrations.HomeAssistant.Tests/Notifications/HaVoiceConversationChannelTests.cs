@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Marshal.Abstractions;
 using Marshal.Abstractions.FollowUps;
+using Marshal.Abstractions.Sessions;
 using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Tasks;
 using Marshal.Integrations.HomeAssistant.Notifications;
@@ -57,5 +58,11 @@ public sealed class HaVoiceConversationChannelTests : IAsyncLifetime
             Created.Add(followUp);
             return Task.FromResult(new FollowUpRecord(Guid.NewGuid(), $"nonce-{Created.Count}", followUp.SatelliteId, followUp.TaskId, followUp.PendingActionId, DateTimeOffset.UnixEpoch, null));
         }
+
+        public Task<FollowUpRecord?> ConsumeAsync(string nonce, string satelliteId, SessionId session, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<FollowUpRecord?> ConsumeRecentAsync(string satelliteId, TimeSpan window, SessionId session, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
     }
 }

@@ -133,6 +133,7 @@ notifications:
   coalesceWindow: "00:02:00"  # normal notifications within this window become one message
   sourceVoiceInterval: "00:30:00"  # at most one voice notification per source in this interval
   voicePerHour: 6           # beyond this, voice notifications are pushed
+  followUpReplyWindow: "00:00:20"  # a voice turn this soon after a spoken question from the same satellite answers it
   # publicUrl: https://marshal.example.com/   # push notifications link into the web UI
 
 recording:
