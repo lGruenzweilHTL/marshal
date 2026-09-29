@@ -16,8 +16,8 @@
 - [x] 2.2 Implement `ChunkScorer`
 - [x] 2.3 Write retriever tests with deterministic fake embeddings: vector + FTS seeds, edge expansion, superseded replaced, soft-deleted excluded, pinned always included
 - [x] 2.4 Implement `HybridMemoryRetriever`, `PinnedMemoryContributor`, `RetrievedMemoryContributor` (single turn embedding shared with activation)
-- [ ] 2.5 Write `memory.recall` tests (type / project filters, larger budget)
-- [ ] 2.6 Implement `memory.recall`
+- [x] 2.5 Write `memory.recall` tests (type / project filters, larger budget)
+- [x] 2.6 Implement `memory.recall`
 
 ## 3. Project activation
 
