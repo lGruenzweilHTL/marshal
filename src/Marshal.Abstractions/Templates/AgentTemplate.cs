@@ -24,6 +24,9 @@ public sealed record AgentTemplate(
     int? MaxAdvisorCalls,
     string Prompt)
 {
+    /// <summary>Shortest time between a task run and its wakeup; null = <c>tasks.minWakeupInterval</c>.</summary>
+    public TimeSpan? MinWakeupInterval { get; init; }
+
     /// <summary>Name of the template used for conversation turns.</summary>
     public const string DefaultName = "default";
 

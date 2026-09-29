@@ -1,8 +1,8 @@
 using Marshal.Abstractions;
-using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Tasks;
 using Marshal.Tasks.Store;
 using Marshal.Testing;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using static Marshal.Testing.TestExecutionContext;
 
@@ -12,6 +12,7 @@ public sealed class EfTaskStoreTests : IAsyncLifetime
 {
     // 2026-09-29 10:00 UTC = 12:00 in Vienna (summer time).
     private readonly FakeTimeProvider _time = new(new DateTimeOffset(2026, 9, 29, 10, 0, 0, TimeSpan.Zero));
+    private readonly TaskOptions _options = new() { MaxDepth = 2, MaxActiveChildren = 2 };
     private TestDatabase _database = null!;
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -135,6 +136,44 @@ public sealed class EfTaskStoreTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Create_BeyondMaxDepth_ValidationError()
+    {
+        TaskRecord root = (await Store().CreateAsync(New(null), Ct)).Value;
+        TaskRecord child = (await Store().CreateAsync(New(null) with { ParentId = root.Id }, Ct)).Value;
+        TaskRecord grandchild = (await Store().CreateAsync(New(null) with { ParentId = child.Id }, Ct)).Value;
+
+        Result<TaskRecord> tooDeep = await Store().CreateAsync(New(null) with { ParentId = grandchild.Id }, Ct);
+
+        Assert.Equal(2, grandchild.Depth);
+        Assert.Equal(("tasks.invalid", ErrorType.Validation), (tooDeep.Error.Code, tooDeep.Error.Type));
+    }
+
+    [Fact]
+    public async Task Create_TooManyActiveChildren_ValidationErrorUntilOneEnds()
+    {
+        TaskRecord parent = (await Store().CreateAsync(New(null), Ct)).Value;
+        TaskRecord first = (await Store().CreateAsync(New(null) with { ParentId = parent.Id }, Ct)).Value;
+        await Store().CreateAsync(New(null) with { ParentId = parent.Id }, Ct);
+
+        Result<TaskRecord> third = await Store().CreateAsync(New(null) with { ParentId = parent.Id }, Ct);
+        await Store().UpdateAsync(first with { Status = AgentTaskStatus.Done }, Ct);
+        Result<TaskRecord> afterOneEnded = await Store().CreateAsync(New(null) with { ParentId = parent.Id }, Ct);
+
+        Assert.Equal("tasks.invalid", third.Error.Code);
+        Assert.True(afterOneEnded.IsSuccess);
+    }
+
+    [Fact]
+    public async Task Create_CronMoreOftenThanTheMinimumWakeupInterval_ValidationError()
+    {
+        Result<TaskRecord> everyMinute = await Store().CreateAsync(New(null, TaskTrigger.Cron("* * * * *")), Ct);
+        Result<TaskRecord> everyFive = await Store().CreateAsync(New(null, TaskTrigger.Cron("*/5 * * * *")), Ct);
+
+        Assert.Equal("tasks.invalid", everyMinute.Error.Code);
+        Assert.True(everyFive.IsSuccess);
+    }
+
+    [Fact]
     public async Task Create_ParentOfAnotherOwner_NotFound()
     {
         _database.Accessor.Current = Text(OwnerB);
@@ -243,7 +282,7 @@ public sealed class EfTaskStoreTests : IAsyncLifetime
         Assert.Equal([new OwnedTask(running.Id, OwnerA)], await Store().GetRunningAsync(Ct));
     }
 
-    private EfTaskStore Store() => new(_database.Factory, _database.Accessor, new ViennaProfiles(), _time);
+    private EfTaskStore Store() => new(_database.Factory, _database.Accessor, new ViennaProfiles(), Options.Create(_options), _time);
 
     private static NewTask New(string? name, TaskTrigger? trigger = null) => new()
     {
@@ -251,10 +290,4 @@ public sealed class EfTaskStoreTests : IAsyncLifetime
         Trigger = trigger ?? TaskTrigger.Cron("0 6 * * *"),
         Name = name,
     };
-
-    private sealed class ViennaProfiles : IUserProfileProvider
-    {
-        public Task<Result<UserProfile>> GetAsync(OwnerId owner, CancellationToken cancellationToken) =>
-            Task.FromResult<Result<UserProfile>>(new UserProfile(owner, "Alice", "de", "Europe/Vienna"));
-    }
 }

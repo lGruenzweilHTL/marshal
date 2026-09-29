@@ -45,6 +45,19 @@ public sealed class FileTemplateCatalogTests : IDisposable
     }
 
     [Fact]
+    public void MinWakeupInterval_ParsedAndValidated()
+    {
+        Write("watcher.md", "---\nname: watcher\ndescription: Watches prints.\nminWakeupInterval: \"00:01:00\"\n---\n");
+        Write("bad.md", "---\nname: bad\ndescription: Bad.\nminWakeupInterval: \"00:00:10\"\n---\n");
+
+        using FileTemplateCatalog catalog = Load();
+
+        Assert.Equal(TimeSpan.FromMinutes(1), catalog.Find("watcher")!.MinWakeupInterval);
+        Assert.Null(catalog.Find("bad"));
+        Assert.Contains(catalog.Errors, error => error.Message.Contains("minWakeupInterval", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Allowlist_GlobsOnToolIds()
     {
         Write("printer.md", "---\nname: printer\ndescription: Printer jobs.\ntools: [printer.*, agent.load_skill]\n---\n");

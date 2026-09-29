@@ -20,6 +20,7 @@ public sealed partial class FileTemplateCatalog : ITemplateCatalog, IDisposable
 {
     private const int MaxSteps = 50;
     private const int MaxAdvisorCalls = 10;
+    private static readonly TimeSpan _minWakeupInterval = TimeSpan.FromMinutes(1);
 
     private static readonly IDeserializer _deserializer = new DeserializerBuilder()
         .WithNamingConvention(CamelCaseNamingConvention.Instance)
@@ -134,6 +135,8 @@ public sealed partial class FileTemplateCatalog : ITemplateCatalog, IDisposable
             return Invalid(file, $"maxSteps must be between 1 and {MaxSteps}.");
         if (frontmatter.MaxAdvisorCalls is < 0 or > MaxAdvisorCalls)
             return Invalid(file, $"maxAdvisorCalls must be between 0 and {MaxAdvisorCalls}.");
+        if (frontmatter.MinWakeupInterval < _minWakeupInterval)
+            return Invalid(file, $"minWakeupInterval must be at least {_minWakeupInterval}.");
 
         return new AgentTemplate(
             frontmatter.Name,
@@ -143,7 +146,10 @@ public sealed partial class FileTemplateCatalog : ITemplateCatalog, IDisposable
             frontmatter.Skills,
             frontmatter.MaxSteps,
             frontmatter.MaxAdvisorCalls,
-            body.Trim());
+            body.Trim())
+        {
+            MinWakeupInterval = frontmatter.MinWakeupInterval,
+        };
     }
 
     private const string LiteralSecretCode = "template.literal_secret";

@@ -62,11 +62,16 @@ public sealed partial class AgentRunner(
         LogRunStarted(logger, runId.Value, request.Trigger);
 
         using CancellationTokenSource latencyCap = request.LatencyCap is { } cap ? new CancellationTokenSource(cap, timeProvider) : new CancellationTokenSource();
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, latencyCap.Token);
+        using CancellationTokenSource wallTime = request.Limits?.MaxDuration is { } duration ? new CancellationTokenSource(duration, timeProvider) : new CancellationTokenSource();
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, latencyCap.Token, wallTime.Token);
         LoopResult result;
         try
         {
             result = await LoopAsync(request, context, linked.Token);
+        }
+        catch (OperationCanceledException) when (wallTime.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            result = BudgetExceeded(context);
         }
         catch (OperationCanceledException) when (latencyCap.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
         {
@@ -123,12 +128,15 @@ public sealed partial class AgentRunner(
         while (true)
         {
             IReadOnlyList<RegisteredTool> visible = pending is null ? await visibility.GetVisibleToolsAsync(context, ct) : [];
-            ChatResponse response = await CallModelAsync(model, messages, visible, request.Events, ct);
+            ChatResponse response = await CallModelAsync(model, messages, visible, request.Events, context.Usage, ct);
             messages.AddRange(response.Messages);
 
             List<FunctionCallContent> calls = [.. response.Messages.SelectMany(message => message.Contents).OfType<FunctionCallContent>()];
             if (calls.Count == 0)
                 return new LoopResult(response.Text, pending, RunOutcome.Ok, null);
+
+            if (request.Limits is { } limits && Exceeds(limits, context.Usage))
+                return BudgetExceeded(context);
 
             if (rounds == maxSteps)
                 return new LoopResult(FixedReplies.StepLimit(context.Language), pending, RunOutcome.Error, "step_limit");
@@ -147,7 +155,15 @@ public sealed partial class AgentRunner(
         }
     }
 
-    private async Task<ChatResponse> CallModelAsync(RoutedModel model, List<ChatMessage> messages, IReadOnlyList<RegisteredTool> tools, System.Threading.Channels.ChannelWriter<TurnEvent>? events, CancellationToken ct)
+    // Tool calls need another model call; the budget must leave room for it.
+    private static bool Exceeds(RunLimits limits, RunUsage usage) =>
+        usage.Cost > limits.MaxCost || usage.Tokens > limits.MaxTokens || usage.ModelCalls >= limits.MaxSteps;
+
+    private static LoopResult BudgetExceeded(MarshalExecutionContext context) =>
+        new(FixedReplies.BudgetExceeded(context.Language), null, RunOutcome.Error, "budget_exceeded");
+
+    private async Task<ChatResponse> CallModelAsync(
+        RoutedModel model, List<ChatMessage> messages, IReadOnlyList<RegisteredTool> tools, System.Threading.Channels.ChannelWriter<TurnEvent>? events, RunUsage usage, CancellationToken ct)
     {
         var options = new ChatOptions
         {
@@ -170,6 +186,8 @@ public sealed partial class AgentRunner(
         }
 
         var response = updates.ToChatResponse();
+        decimal cost = costs.Calculate(model.Key, response.Usage);
+        usage.AddModelCall(cost, (response.Usage?.InputTokenCount ?? 0) + (response.Usage?.OutputTokenCount ?? 0));
         await RecordAsync(new RunStepRecord
         {
             Kind = RunStepKind.ModelCall,
@@ -180,7 +198,7 @@ public sealed partial class AgentRunner(
             TokensCached = response.Usage?.CachedInputTokenCount,
             FirstTokenMs = firstToken,
             DurationMs = (int)timeProvider.GetElapsedTime(started).TotalMilliseconds,
-            Cost = costs.Calculate(model.Key, response.Usage),
+            Cost = cost,
             Content = response.Text,
         }, ct);
         return response;

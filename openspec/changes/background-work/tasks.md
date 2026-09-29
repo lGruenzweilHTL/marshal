@@ -12,8 +12,8 @@
 - [x] 2.4 Implement `TaskScheduler` and worker pool
 - [x] 2.5 Write runner tests: headless run as owner, template / project / origin satellite policy applied (incl. child tasks), background visibility rules, resume with goal + notes + payload only
 - [x] 2.6 Implement `AgentTaskRunner`
-- [ ] 2.7 Write limit tests: budgets incl. parent draw-down, daily cap, depth, fan-out, minimum wakeup interval
-- [ ] 2.8 Implement budget and limit enforcement
+- [x] 2.7 Write limit tests: budgets incl. parent draw-down, daily cap, depth, fan-out, minimum wakeup interval
+- [x] 2.8 Implement budget and limit enforcement
 - [ ] 2.9 Write task tool tests: each tool's tier, `persists` escalation with taint reason, `overrideQuietHoursUntil` → confirm, `tasks.update` restrictions, `run_now`, status / cancel by name, `stop_all` audited
 - [ ] 2.10 Implement task tools and kill switch
 

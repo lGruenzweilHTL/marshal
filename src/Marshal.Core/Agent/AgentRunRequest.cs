@@ -30,4 +30,7 @@ public sealed record AgentRunRequest
 
     /// <summary>Hard latency cap; null = none.</summary>
     public TimeSpan? LatencyCap { get; init; }
+
+    /// <summary>Budget limits; a run that reaches one ends with reason <c>budget_exceeded</c>.</summary>
+    public RunLimits? Limits { get; init; }
 }

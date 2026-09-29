@@ -9,5 +9,9 @@ public static class TaskErrors
 
     public static Error NotFound(string reference) => new("tasks.not_found", $"There is no task '{reference}'.", ErrorType.NotFound);
 
+    public static Error BudgetExceeded() => new("tasks.budget_exceeded", "The task's budget (or its parent's) is used up.", ErrorType.Conflict);
+
+    public static Error DailyCap() => new("tasks.daily_cap", "Today's cost cap for background tasks is reached.", ErrorType.Conflict);
+
     public static Error Conflict() => new("tasks.conflict", "The task was changed by someone else; reload it and try again.", ErrorType.Conflict);
 }

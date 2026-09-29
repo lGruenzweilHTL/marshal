@@ -1,9 +1,10 @@
 using System.Collections.Concurrent;
-using Marshal.Abstractions;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Tasks;
 using Marshal.Core.Execution;
+using Marshal.Core.Agent;
+using Marshal.Tasks.Limits;
 using Marshal.Tasks.Running;
 using Marshal.Tasks.Scheduling;
 using Marshal.Tasks.Store;
@@ -23,6 +24,8 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
     private TestDatabase _database = null!;
     private FakeRunner _runner = null!;
     private readonly ListLogger _log = new();
+    private readonly TaskOptions _options = new();
+    private readonly FakeSpending _spending = new();
     private BackgroundTaskScheduler? _scheduler;
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -77,7 +80,7 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
         Assert.Single(_runner.Runs);
         await AdvanceToAsync(new DateTimeOffset(2026, 10, 25, 5, 0, 0, TimeSpan.Zero)); // 06:00 CET
         await WaitForAsync(() => Task.FromResult(_runner.Runs.Count == 2));
-        await WaitForAsync(async () => (await GetAsync(task.Id)).Spent.Runs == 2);
+        await WaitForAsync(async () => (await GetAsync(task.Id)).ResultAt == new DateTimeOffset(2026, 10, 25, 5, 0, 0, TimeSpan.Zero));
 
         Assert.Equal([new DateTimeOffset(2026, 10, 24, 4, 0, 0, TimeSpan.Zero), new DateTimeOffset(2026, 10, 25, 5, 0, 0, TimeSpan.Zero)], _runner.Runs.Select(run => run.At));
         TaskRecord waiting = await GetAsync(task.Id);
@@ -202,6 +205,61 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task BudgetUsedUp_FailsWithoutRunning()
+    {
+        TaskRecord task = await CreateAsync(New(TaskTrigger.Now()) with { Budget = new TaskBudget(Runs: 0) });
+        await StartAsync();
+
+        await WaitForAsync(() => StatusAsync(task.Id, AgentTaskStatus.Failed));
+
+        Assert.Equal("budget_exceeded", (await GetAsync(task.Id)).StatusReason);
+        Assert.Empty(_runner.Runs);
+    }
+
+    [Fact]
+    public async Task DailyCapReached_PostponedToTheNextLocalDay()
+    {
+        _spending.Cost = _options.DailyCostCap;
+        TaskRecord task = await CreateAsync(New(TaskTrigger.Now()));
+        await StartAsync();
+
+        await WaitForAsync(async () => (await GetAsync(task.Id)).StatusReason == "daily_cap");
+
+        TaskRecord postponed = await GetAsync(task.Id);
+        Assert.Equal((AgentTaskStatus.Pending, new DateTimeOffset(2026, 9, 29, 22, 0, 0, TimeSpan.Zero)), (postponed.Status, postponed.NextRunAt));
+        Assert.Empty(_runner.Runs);
+    }
+
+    [Fact]
+    public async Task RunLimits_PassedToTheRunnerAndSpendDrawnFromParent()
+    {
+        TaskRecord parent = await CreateAsync(New(TaskTrigger.At(_time.GetUtcNow().AddDays(1))) with { Budget = new TaskBudget(Cost: 0.3m) });
+        TaskRecord child = await CreateAsync(New(TaskTrigger.Now()) with { ParentId = parent.Id, Budget = new TaskBudget(Cost: 1m) });
+        _runner.Outcome = _ => TaskRunOutcome.Done(new TaskResult("Done.", "Done.")) with { Spend = new TaskSpend(Tokens: 500, Cost: 0.1m, Steps: 3) };
+        await StartAsync();
+
+        await WaitForAsync(() => StatusAsync(child.Id, AgentTaskStatus.Done));
+
+        Assert.Equal(0.3m, _runner.Limits.Single().MaxCost);
+        Assert.Equal(new TaskSpend(500, 0.1m, 3, TimeSpan.Zero, 1), (await GetAsync(child.Id)).Spent);
+        Assert.Equal(new TaskSpend(500, 0.1m, 3, TimeSpan.Zero, 1), (await GetAsync(parent.Id)).Spent);
+    }
+
+    [Fact]
+    public async Task Cron_DoneRunStartsTheNextActivationWithAFreshBudget()
+    {
+        TaskRecord task = await CreateAsync(New(TaskTrigger.Cron("0 6 * * *")));
+        _runner.Outcome = _ => TaskRunOutcome.Done(new TaskResult("Done.", "Done.")) with { Spend = new TaskSpend(Cost: 0.1m) };
+        await StartAsync();
+
+        await AdvanceToAsync(task.NextRunAt!.Value);
+        await WaitForAsync(() => Task.FromResult(_runner.Finished == 1));
+        await WaitForAsync(async () => (await GetAsync(task.Id)).ResultAt is not null);
+
+        Assert.Equal(TaskSpend.Zero, (await GetAsync(task.Id)).Spent);
+    }
+
+    [Fact]
     public async Task RunnerThrows_TaskFailed()
     {
         _runner.Outcome = _ => throw new InvalidOperationException("boom");
@@ -213,11 +271,13 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
         Assert.Equal("error", (await GetAsync(task.Id)).StatusReason);
     }
 
-    private EfTaskStore Store() => new(_database.Factory, _accessor, new ViennaProfiles(), _time);
+    private EfTaskStore Store() => new(_database.Factory, _accessor, new ViennaProfiles(), Options.Create(_options), _time);
 
     private async Task StartAsync(int workers = 2)
     {
-        _scheduler = new BackgroundTaskScheduler(Store(), [_runner], _accessor, new ViennaProfiles(), Options.Create(new TaskOptions { Workers = workers }), _time, _log);
+        _options.Workers = workers;
+        var budgets = new TaskBudgets(Store(), _spending, new ViennaProfiles(), new FakeTemplateCatalog(), Options.Create(_options), _time);
+        _scheduler = new BackgroundTaskScheduler(Store(), [_runner], budgets, _accessor, new ViennaProfiles(), Options.Create(_options), _time, _log);
         await _scheduler.StartAsync(Ct);
         await WaitIdleAsync();
     }
@@ -278,6 +338,8 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
 
         public Func<TaskRecord, Task>? During { get; set; }
 
+        public ConcurrentQueue<RunLimits> Limits { get; } = new();
+
         public int Finished => Volatile.Read(ref _finished);
 
         public TaskKind Kind => TaskKind.Agent;
@@ -286,8 +348,9 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
 
         public void ReleaseAll() => _gate?.TrySetResult();
 
-        public async Task<TaskRunOutcome> RunAsync(TaskRecord task, CancellationToken cancellationToken)
+        public async Task<TaskRunOutcome> RunAsync(TaskRecord task, RunLimits limits, CancellationToken cancellationToken)
         {
+            Limits.Enqueue(limits);
             Runs.Enqueue((task.Id, time.GetUtcNow(), accessor.Current?.OwnerId));
             Seen.Enqueue(task);
             try
@@ -305,6 +368,13 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
         }
     }
 
+    private sealed class FakeSpending : ITaskSpending
+    {
+        public decimal Cost { get; set; }
+
+        public Task<decimal> GetCostSinceAsync(DateTimeOffset since, CancellationToken cancellationToken) => Task.FromResult(Cost);
+    }
+
     private sealed class ListLogger : ILogger<BackgroundTaskScheduler>
     {
         public ConcurrentQueue<string> Entries { get; } = new();
@@ -315,11 +385,5 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
             Entries.Enqueue($"{logLevel}: {formatter(state, exception)} {exception?.GetBaseException().Message}");
-    }
-
-    private sealed class ViennaProfiles : IUserProfileProvider
-    {
-        public Task<Result<UserProfile>> GetAsync(OwnerId owner, CancellationToken cancellationToken) =>
-            Task.FromResult<Result<UserProfile>>(new UserProfile(owner, "Alice", "de", "Europe/Vienna"));
     }
 }

@@ -35,6 +35,25 @@ internal static class TaskTriggers
         _ => null,
     };
 
+    /// <summary>Shortest gap between the next <paramref name="samples"/> occurrences of a valid cron trigger (in UTC, so DST gaps count as they happen).</summary>
+    public static TimeSpan ShortestPeriod(TaskTrigger trigger, DateTimeOffset from, int samples)
+    {
+        if (!TryParseCron(trigger.Spec, out CronExpression? cron))
+            return TimeSpan.MaxValue;
+
+        TimeSpan shortest = TimeSpan.MaxValue;
+        DateTimeOffset? previous = cron.GetNextOccurrence(from, TimeZoneInfo.Utc);
+        for (int i = 0; i < samples && previous is { } last; i++)
+        {
+            DateTimeOffset? next = cron.GetNextOccurrence(last, TimeZoneInfo.Utc);
+            if (next is { } occurrence && occurrence - last < shortest)
+                shortest = occurrence - last;
+            previous = next;
+        }
+
+        return shortest;
+    }
+
     private static bool TryParseTime(string spec, out DateTimeOffset time)
     {
         bool ok = DateTimeOffset.TryParse(spec, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out time);

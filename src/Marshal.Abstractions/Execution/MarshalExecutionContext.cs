@@ -55,6 +55,9 @@ public sealed record MarshalExecutionContext
     /// <summary>Per-run counters (e.g. advisor calls). Shared by all copies within one run.</summary>
     public RunCounters Counters { get; init; } = new();
 
+    /// <summary>Model usage of the run. Shared by all copies within one run.</summary>
+    public RunUsage Usage { get; init; } = new();
+
     /// <summary>Agent template of the run.</summary>
     public string Template { get; init; } = "default";
 

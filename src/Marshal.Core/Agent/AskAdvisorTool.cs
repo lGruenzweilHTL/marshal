@@ -74,6 +74,8 @@ public sealed class AskAdvisorTool(
             new ChatOptions(),
             cancellationToken);
 
+        decimal cost = costs.Calculate(model.Value.Key, response.Usage);
+        invocation.Context.Usage.AddModelCall(cost, (response.Usage?.InputTokenCount ?? 0) + (response.Usage?.OutputTokenCount ?? 0));
         if (invocation.Context.RunId is { } runId)
         {
             await recorder.RecordStepAsync(runId, new RunStepRecord
@@ -86,7 +88,7 @@ public sealed class AskAdvisorTool(
                 TokensOut = response.Usage?.OutputTokenCount,
                 TokensCached = response.Usage?.CachedInputTokenCount,
                 DurationMs = (int)timeProvider.GetElapsedTime(started).TotalMilliseconds,
-                Cost = costs.Calculate(model.Value.Key, response.Usage),
+                Cost = cost,
                 Content = response.Text,
             }, cancellationToken);
         }

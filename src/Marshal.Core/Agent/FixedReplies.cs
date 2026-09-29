@@ -9,6 +9,10 @@ public static class FixedReplies
         ? "Tut mir leid, das habe ich nicht fertig bekommen."
         : "Sorry, I couldn't finish that.";
 
+    public static string BudgetExceeded(string language) => German(language)
+        ? "Abgebrochen: Das Budget dieser Aufgabe ist aufgebraucht."
+        : "Stopped: this task's budget is used up.";
+
     public static string LatencyCap(string language) => German(language)
         ? "Tut mir leid, das dauert zu lange."
         : "Sorry, this is taking too long.";

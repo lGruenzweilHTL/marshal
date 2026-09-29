@@ -18,4 +18,6 @@ internal sealed class TemplateFrontmatter
     public int? MaxSteps { get; set; }
 
     public int? MaxAdvisorCalls { get; set; }
+
+    public TimeSpan? MinWakeupInterval { get; set; }
 }

@@ -8,6 +8,7 @@ using Marshal.Data;
 using Marshal.Data.Tasks;
 using Marshal.Tasks.Scheduling;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Marshal.Tasks.Store;
 
@@ -19,11 +20,15 @@ public sealed partial class EfTaskStore(
     IDbContextFactory<MarshalDbContext> contexts,
     IExecutionContextAccessor executionContext,
     IUserProfileProvider profiles,
+    IOptions<TaskOptions> options,
     TimeProvider timeProvider) : ITaskStore
 {
     private const int MaxGoalLength = 8000;
 
+    private const int CronPeriodSamples = 24;
+
     private static readonly AgentTaskStatus[] _schedulable = [AgentTaskStatus.Pending, AgentTaskStatus.Waiting];
+    private static readonly AgentTaskStatus[] _unfinished = [AgentTaskStatus.Pending, AgentTaskStatus.Running, AgentTaskStatus.Waiting];
 
     public async Task<Result<TaskRecord>> CreateAsync(NewTask task, CancellationToken cancellationToken)
     {
@@ -48,6 +53,10 @@ public sealed partial class EfTaskStore(
             if (parent is null)
                 return TaskErrors.NotFound(parentId.ToString());
             depth = parent.Depth + 1;
+            if (depth > options.Value.MaxDepth)
+                return TaskErrors.Invalid($"Tasks can be nested at most {options.Value.MaxDepth} levels deep.");
+            if (await db.AgentTasks.CountAsync(row => row.ParentId == parentId && _unfinished.Contains(row.Status), cancellationToken) >= options.Value.MaxActiveChildren)
+                return TaskErrors.Invalid($"A task can have at most {options.Value.MaxActiveChildren} unfinished child tasks.");
             // The origin satellite's policy binds the whole task tree; a child cannot pick another satellite.
             originSatellite = parent.OriginSatelliteId ?? originSatellite;
         }
@@ -130,15 +139,18 @@ public sealed partial class EfTaskStore(
         Result<string?> name = NormalizeName(task.Name);
         if (name.IsFailure)
             return name.Error;
-        Result valid = Validate(task.Goal, task.Trigger, budget: null);
-        if (valid.IsFailure)
-            return valid.Error;
 
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         AgentTask? row = await db.AgentTasks.SingleOrDefaultAsync(candidate => candidate.Id == task.Id, cancellationToken);
         if (row is null)
             return TaskErrors.NotFound(task.Id.ToString());
-        Result afterValid = await ValidateAfterAsync(db, task.Trigger, cancellationToken);
+
+        // An unchanged trigger is not re-validated, so a stricter configuration never blocks status updates.
+        bool triggerChanged = task.Trigger != new TaskTrigger(row.TriggerKind, row.TriggerSpec);
+        Result valid = triggerChanged ? Validate(task.Goal, task.Trigger, budget: null) : ValidateGoal(task.Goal);
+        if (valid.IsFailure)
+            return valid.Error;
+        Result afterValid = triggerChanged ? await ValidateAfterAsync(db, task.Trigger, cancellationToken) : Result.Success();
         if (afterValid.IsFailure)
             return afterValid.Error;
         if (name.Value is string taken && taken != row.Name && await db.AgentTasks.AnyAsync(other => other.Name == taken, cancellationToken))
@@ -213,15 +225,28 @@ public sealed partial class EfTaskStore(
     private OwnerId CurrentOwner() =>
         executionContext.Current?.OwnerId ?? throw new InvalidOperationException("Tasks accessed without an execution context.");
 
-    private static Result Validate(string goal, TaskTrigger trigger, TaskBudget? budget)
+    private static Result ValidateGoal(string goal)
     {
         if (string.IsNullOrWhiteSpace(goal))
             return TaskErrors.Invalid("A task needs a goal.");
-        if (goal.Length > MaxGoalLength)
-            return TaskErrors.Invalid($"A goal has at most {MaxGoalLength} characters.");
+        return goal.Length > MaxGoalLength ? TaskErrors.Invalid($"A goal has at most {MaxGoalLength} characters.") : Result.Success();
+    }
+
+    private Result Validate(string goal, TaskTrigger trigger, TaskBudget? budget)
+    {
+        Result validGoal = ValidateGoal(goal);
+        if (validGoal.IsFailure)
+            return validGoal;
         if (budget is { } limits && (limits.Tokens < 0 || limits.Cost < 0 || limits.Steps < 0 || limits.WallTime < TimeSpan.Zero || limits.Runs < 0))
             return TaskErrors.Invalid("Budget limits cannot be negative.");
-        return TaskTriggers.Validate(trigger);
+        Result valid = TaskTriggers.Validate(trigger);
+        if (valid.IsFailure || trigger.Kind != TaskTriggerKind.Cron)
+            return valid;
+
+        TimeSpan period = TaskTriggers.ShortestPeriod(trigger, timeProvider.GetUtcNow(), CronPeriodSamples);
+        return period < options.Value.MinWakeupInterval
+            ? TaskErrors.Invalid($"A schedule may run at most every {options.Value.MinWakeupInterval.TotalMinutes:0} minutes.")
+            : Result.Success();
     }
 
     // An `after` trigger must name one of the owner's own tasks; the query filter hides the others.

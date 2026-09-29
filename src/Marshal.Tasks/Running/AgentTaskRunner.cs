@@ -24,7 +24,7 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
 
     public TaskKind Kind => TaskKind.Agent;
 
-    public async Task<TaskRunOutcome> RunAsync(TaskRecord task, CancellationToken cancellationToken)
+    public async Task<TaskRunOutcome> RunAsync(TaskRecord task, RunLimits limits, CancellationToken cancellationToken)
     {
         var context = new MarshalExecutionContext
         {
@@ -42,13 +42,16 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
             context.Taint.Mark(EventTaint, 0);
 
         using ActiveTaskRuns.Scope run = activeRuns.Begin(task.Id);
-        AgentRunResult result = await agent.RunAsync(new AgentRunRequest { Context = context, Trigger = "task", UserText = Input(task) }, cancellationToken);
+        AgentRunResult result = await agent.RunAsync(new AgentRunRequest { Context = context, Trigger = "task", UserText = Input(task), Limits = limits }, cancellationToken);
 
+        TaskRunOutcome outcome;
         if (result.Outcome != RunOutcome.Ok)
-            return TaskRunOutcome.Failed(result.OutcomeReason ?? result.Outcome.ToString().ToLowerInvariant());
-        if (run.State.WaitRequested)
-            return TaskRunOutcome.Wait(run.State.WakeAt, run.State.Notes);
-        return TaskRunOutcome.Done(ToResult(result.Reply), run.State.Notes);
+            outcome = TaskRunOutcome.Failed(result.OutcomeReason ?? result.Outcome.ToString().ToLowerInvariant());
+        else if (run.State.WaitRequested)
+            outcome = TaskRunOutcome.Wait(run.State.WakeAt, run.State.Notes);
+        else
+            outcome = TaskRunOutcome.Done(ToResult(result.Reply), run.State.Notes);
+        return outcome with { Spend = new TaskSpend(context.Usage.Tokens, context.Usage.Cost, context.Usage.ModelCalls) };
     }
 
     private static string Input(TaskRecord task)

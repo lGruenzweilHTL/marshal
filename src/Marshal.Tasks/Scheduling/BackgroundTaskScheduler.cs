@@ -4,6 +4,8 @@ using Marshal.Abstractions;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Tasks;
+using Marshal.Core.Agent;
+using Marshal.Tasks.Limits;
 using Marshal.Tasks.Running;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -20,6 +22,7 @@ namespace Marshal.Tasks.Scheduling;
 public sealed partial class BackgroundTaskScheduler(
     ITaskStore store,
     IEnumerable<ITaskRunner> runners,
+    TaskBudgets budgets,
     IExecutionContextAccessor executionContext,
     IUserProfileProvider profiles,
     IOptions<TaskOptions> options,
@@ -185,17 +188,37 @@ public sealed partial class BackgroundTaskScheduler(
         if (task.Status is not (AgentTaskStatus.Pending or AgentTaskStatus.Waiting) || task.NextRunAt is null || task.NextRunAt > time.GetUtcNow())
             return;
 
+        Result<RunLimits> allowance = await budgets.AllowanceAsync(task, stoppingToken);
+        if (allowance.IsFailure)
+        {
+            await RefuseAsync(task, allowance.Error, stoppingToken);
+            return;
+        }
+
         Result<TaskRecord> claimed = await store.UpdateAsync(task with { Status = AgentTaskStatus.Running, StatusReason = null, NextRunAt = null }, stoppingToken);
         if (claimed.IsFailure)
             return; // Someone else claimed or changed it first.
 
-        TaskRunOutcome outcome = await RunAsync(claimed.Value, stoppingToken);
-        TaskRecord? finished = await ApplyAsync(id, outcome, stoppingToken);
+        long started = time.GetTimestamp();
+        TaskRunOutcome outcome = await RunAsync(claimed.Value, allowance.Value, stoppingToken);
+        TaskSpend spend = outcome.Spend with { WallTime = time.GetElapsedTime(started), Runs = 1 };
+        TaskRecord? finished = await ApplyAsync(id, outcome, spend, stoppingToken);
+        await budgets.DrawDownAsync(claimed.Value, spend, stoppingToken);
         if (finished is { Status: AgentTaskStatus.Done or AgentTaskStatus.Waiting } && outcome.End == TaskRunEnd.Done)
             await ReleaseDependentsAsync(id, stoppingToken);
     }
 
-    private async Task<TaskRunOutcome> RunAsync(TaskRecord task, CancellationToken stoppingToken)
+    // Over budget: the task fails. Daily cap reached: the task waits for the owner's next day.
+    private async Task RefuseAsync(TaskRecord task, Error refusal, CancellationToken stoppingToken)
+    {
+        TaskRecord refused = refusal == TaskErrors.DailyCap()
+            ? task with { StatusReason = "daily_cap", NextRunAt = await budgets.NextDayAsync(task.OwnerId, stoppingToken) }
+            : task with { Status = AgentTaskStatus.Failed, StatusReason = "budget_exceeded", NextRunAt = null };
+        await store.UpdateAsync(refused, stoppingToken);
+        LogRefused(task.Id, refused.StatusReason!);
+    }
+
+    private async Task<TaskRunOutcome> RunAsync(TaskRecord task, RunLimits limits, CancellationToken stoppingToken)
     {
         if (!_runners.TryGetValue(task.Kind, out ITaskRunner? runner))
             return TaskRunOutcome.Failed("no_runner");
@@ -203,7 +226,7 @@ public sealed partial class BackgroundTaskScheduler(
         Interlocked.Decrement(ref _busy);
         try
         {
-            return await runner.RunAsync(task, stoppingToken);
+            return await runner.RunAsync(task, limits, stoppingToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException || !stoppingToken.IsCancellationRequested)
         {
@@ -217,7 +240,7 @@ public sealed partial class BackgroundTaskScheduler(
     }
 
     // Tools may have changed the task during the run (notes, its own cancel), so the outcome is applied to a fresh copy.
-    private async Task<TaskRecord?> ApplyAsync(TaskId id, TaskRunOutcome outcome, CancellationToken stoppingToken)
+    private async Task<TaskRecord?> ApplyAsync(TaskId id, TaskRunOutcome outcome, TaskSpend spend, CancellationToken stoppingToken)
     {
         for (int attempt = 0; attempt < ApplyAttempts; attempt++)
         {
@@ -231,7 +254,7 @@ public sealed partial class BackgroundTaskScheduler(
             {
                 TriggerPayload = null,
                 Notes = outcome.Notes ?? task.Notes,
-                Spent = task.Spent.Add(outcome.Spend with { Runs = outcome.Spend.Runs + 1 }),
+                Spent = task.Spent.Add(spend),
             };
             updated = outcome.End switch
             {
@@ -249,15 +272,17 @@ public sealed partial class BackgroundTaskScheduler(
         return null;
     }
 
-    // Recurring triggers (cron, event) wait for their next occurrence; one-shot triggers are done.
+    // Recurring triggers (cron, event) wait for their next occurrence, which starts a new activation with a fresh
+    // budget; one-shot triggers are done.
     private async Task<TaskRecord> RearmAsync(TaskRecord task, DateTimeOffset now, CancellationToken cancellationToken) => task.Trigger.Kind switch
     {
         TaskTriggerKind.Cron => task with
         {
             Status = AgentTaskStatus.Waiting,
             NextRunAt = TaskTriggers.NextRun(task.Trigger, now, await profiles.TimeZoneAsync(task.OwnerId, cancellationToken)),
+            Spent = TaskSpend.Zero,
         },
-        TaskTriggerKind.Event => task with { Status = AgentTaskStatus.Waiting, NextRunAt = null },
+        TaskTriggerKind.Event => task with { Status = AgentTaskStatus.Waiting, NextRunAt = null, Spent = TaskSpend.Zero },
         _ => task with { Status = AgentTaskStatus.Done, NextRunAt = null },
     };
 
@@ -300,6 +325,9 @@ public sealed partial class BackgroundTaskScheduler(
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Outcome of task {TaskId} could not be saved after repeated conflicts")]
     private partial void LogApplyGaveUp(TaskId taskId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Task {TaskId} not started: {Reason}")]
+    private partial void LogRefused(TaskId taskId, string reason);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Task {TaskId} was running at startup; it is pending again")]
     private partial void LogRecovered(TaskId taskId);

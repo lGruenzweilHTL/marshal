@@ -38,6 +38,9 @@ internal sealed class LoopHarness
 
     public AgentOptions Options { get; } = new();
 
+    /// <summary>Model table for the cost calculator (keys are tier names, e.g. <c>standard</c>).</summary>
+    public ModelRoutingOptions Routing { get; } = new();
+
     public SingleModelRouter Router { get; private set; } = null!;
 
     public ToolRegistry Registry { get; private set; } = null!;
@@ -83,7 +86,7 @@ internal sealed class LoopHarness
             guard,
             harness.Store,
             harness.Recorder,
-            new PriceTableCostCalculator(Microsoft.Extensions.Options.Options.Create(new ModelRoutingOptions())),
+            new PriceTableCostCalculator(Microsoft.Extensions.Options.Options.Create(harness.Routing)),
             harness.Accessor,
             Microsoft.Extensions.Options.Options.Create(harness.Options),
             Microsoft.Extensions.Options.Options.Create(new ConfirmationOptions()),
