@@ -6,9 +6,12 @@ namespace Marshal.Testing;
 
 /// <summary>
 /// Deterministic <see cref="IEmbeddingGenerator{TInput,TEmbedding}"/>: the same text always gives the same
-/// unit vector. Specific vectors can be pinned per text for similarity tests.
+/// unit vector. Specific vectors can be pinned per text for similarity tests. With a <paramref name="modelId"/> it
+/// reports <see cref="EmbeddingGeneratorMetadata"/> for that model.
 /// </summary>
-public sealed class FakeEmbeddingGenerator(int dimensions = 16) : IEmbeddingGenerator<string, Embedding<float>>
+/// <param name="dimensions">Length of generated vectors.</param>
+/// <param name="modelId">Model id reported in the metadata; none when null.</param>
+public sealed class FakeEmbeddingGenerator(int dimensions = 16, string? modelId = null) : IEmbeddingGenerator<string, Embedding<float>>
 {
     private readonly Dictionary<string, float[]> _pinned = new(StringComparer.Ordinal);
 
@@ -38,7 +41,10 @@ public sealed class FakeEmbeddingGenerator(int dimensions = 16) : IEmbeddingGene
 
     /// <inheritdoc />
     public object? GetService(Type serviceType, object? serviceKey = null) =>
-        serviceKey is null && serviceType.IsInstanceOfType(this) ? this : null;
+        serviceKey is not null ? null
+        : serviceType == typeof(EmbeddingGeneratorMetadata) && modelId is not null ? new EmbeddingGeneratorMetadata("fake", null, modelId, dimensions)
+        : serviceType.IsInstanceOfType(this) ? this
+        : null;
 
     /// <inheritdoc />
     public void Dispose()

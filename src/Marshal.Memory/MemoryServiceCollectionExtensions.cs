@@ -29,6 +29,8 @@ public static class MemoryServiceCollectionExtensions
         services.AddSingleton<IChunkScorer, ChunkScorer>();
         services.AddSingleton<IMemoryRetriever, HybridMemoryRetriever>();
         services.AddSingleton<IMemoryAudit, MemoryAudit>();
+        services.AddSingleton<MemoryIndexRebuilder>();
+        services.AddSingleton<IHostedService, MemoryIndexStartup>();
 
         services.AddSingleton<IMemoryProjects, MemoryProjects>();
         services.AddSingleton<ProjectSessions>();

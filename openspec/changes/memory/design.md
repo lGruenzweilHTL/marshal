@@ -218,3 +218,8 @@ EF migration adds memory tables; the FTS and vector virtual tables are created b
 - `RetrievedMemoryContributor` catches embedding and retrieval failures: the turn continues without retrieved memory
   (logged, and noted as `memory / unavailable` on the context step), so device control never depends on the
   embedding server. Pinned memory needs no embedding and stays.
+- Embedding model change: `MemoryIndexStartup` (hosted service, after the database is migrated) runs
+  `MemoryIndexRebuilder` when `memory_vector_index.model` differs from the configured generator's model id. It marks
+  the index `rebuild-pending`, recreates the vector table with the new dimension, re-embeds every owner's live chunks
+  (per owner, in owner scope, batches of 32) and feedback phrases, clears project centroids, then records the new
+  model. An interrupted rebuild (embedding server down) is logged and runs again on the next start.

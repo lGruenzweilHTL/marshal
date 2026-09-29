@@ -60,7 +60,7 @@ public sealed class ProjectFeedback : IOwned
     public required string Phrase { get; init; }
 
     /// <summary>Embedding of the phrase (float32 little-endian).</summary>
-    public byte[]? Embedding { get; init; }
+    public byte[]? Embedding { get; set; }
 
     public required DateTimeOffset CreatedAt { get; init; }
 }
