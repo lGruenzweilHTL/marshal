@@ -3,10 +3,12 @@ using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Memory;
 using Marshal.Data;
 using Marshal.Data.Memory;
+using Marshal.Memory.Retrieval;
 using Marshal.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Marshal.Memory.Tests;
@@ -18,6 +20,12 @@ internal static class MemoryTestKit
 {
     public static SqliteMemoryStore Store(TestDatabase database, IEmbeddingGenerator<string, Embedding<float>> embeddings, FakeTimeProvider time) =>
         new(database.Factory, embeddings, database.Accessor, time);
+
+    public static HybridMemoryRetriever Retriever(TestDatabase database, IEmbeddingGenerator<string, Embedding<float>> embeddings, FakeTimeProvider time, MemoryOptions? options = null)
+    {
+        IOptions<MemoryOptions> memoryOptions = Microsoft.Extensions.Options.Options.Create(options ?? new MemoryOptions());
+        return new(database.Factory, embeddings, database.Accessor, new ChunkScorer(memoryOptions), memoryOptions, time);
+    }
 
     public static async Task<ProjectId> AddProjectAsync(TestDatabase database, string name, string description = "")
     {
