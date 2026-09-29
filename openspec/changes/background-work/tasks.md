@@ -25,12 +25,12 @@
 - [x] 3.4 Implement `HomeAssistantEventSource`
 - [x] 3.5 Write Moonraker semantic event tests with recorded fixtures: transitions, milestones, first layer, no temperature events, missed transition after reconnect
 - [x] 3.6 Implement `MoonrakerEventSource`
-- [ ] 3.7 Write IMAP new-mail tests against the container: IDLE, polling fallback
-- [ ] 3.8 Implement `ImapNewMailSource`
+- [x] 3.7 Write IMAP new-mail tests against the container: IDLE, polling fallback
+- [x] 3.8 Implement `ImapNewMailSource`
 
 ## 4. Deliveries and notifications
 
-- [ ] 4.1 Write delivery validation tests: low + voice rejected, followUp on non-voice rejected, `area.*` rejected, critical rejected
+- [x] 4.1 Write delivery validation tests: low + voice rejected, followUp on non-voice rejected, `area.*` rejected, critical rejected
 - [ ] 4.2 Write conditional delivery tests: immediate, on state change, all conditions required, `$person`, `zone.home` numeric, expiry fallback in owner time zone
 - [ ] 4.3 Implement `DeliveryDispatcher` and `HaStateConditionEvaluator`
 - [ ] 4.4 Write router tests: priorities, critical only from system sources, presence-based channel choice, quiet hours hold / silent push, override, DND, coalescing, per-source and global voice caps, history reasons

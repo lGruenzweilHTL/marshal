@@ -6,6 +6,7 @@ using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Tasks;
 using Marshal.Data;
 using Marshal.Data.Tasks;
+using Marshal.Tasks.Deliveries;
 using Marshal.Tasks.Scheduling;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +41,9 @@ public sealed partial class EfTaskStore(
         Result valid = Validate(task.Goal, task.Trigger, task.Budget);
         if (valid.IsFailure)
             return valid.Error;
+        Result deliveries = DeliveryRules.Validate(task.Deliveries);
+        if (deliveries.IsFailure)
+            return deliveries.Error;
 
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         Result afterValid = await ValidateAfterAsync(db, task.Trigger, cancellationToken);
@@ -158,6 +162,10 @@ public sealed partial class EfTaskStore(
             return afterValid.Error;
         if (name.Value is string taken && taken != row.Name && await db.AgentTasks.AnyAsync(other => other.Name == taken, cancellationToken))
             return TaskErrors.NameTaken(taken);
+        string deliveries = TaskJson.Serialize(task.Deliveries);
+        Result deliveriesValid = deliveries != row.Deliveries ? DeliveryRules.Validate(task.Deliveries) : Result.Success();
+        if (deliveriesValid.IsFailure)
+            return deliveriesValid.Error;
 
         // The caller's version is what the database must still hold; the context increments it on save.
         db.Entry(row).Property(entity => entity.RowVersion).OriginalValue = task.RowVersion;
@@ -173,7 +181,7 @@ public sealed partial class EfTaskStore(
         row.Notes = task.Notes;
         row.Spent = TaskJson.Serialize(task.Spent);
         row.Name = name.Value;
-        row.Deliveries = TaskJson.Serialize(task.Deliveries);
+        row.Deliveries = deliveries;
         row.OverrideQuietHoursUntil = task.OverrideQuietHoursUntil;
         row.ResultSpeech = task.Result?.Speech;
         row.ResultBody = task.Result?.Body;

@@ -298,6 +298,27 @@ public sealed class EfTaskStoreTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Create_LowPriorityVoiceDelivery_RejectedAndNotStored()
+    {
+        NewTask task = New(null) with { Deliveries = [new TaskDelivery(DeliveryChannel.Voice, Priority: Marshal.Abstractions.Notifications.NotificationPriority.Low)] };
+
+        Result<TaskRecord> created = await Store().CreateAsync(task, Ct);
+
+        Assert.Equal("tasks.invalid", created.Error.Code);
+        Assert.Empty(await Store().ListAsync(new TaskFilter(), Ct));
+    }
+
+    [Fact]
+    public async Task Update_AreaCondition_Rejected()
+    {
+        TaskRecord task = (await Store().CreateAsync(New(null), Ct)).Value;
+
+        Result<TaskRecord> updated = await Store().UpdateAsync(task with { Deliveries = [new TaskDelivery(DeliveryChannel.Voice, When: ["state(area.kitchen = on)"])] }, Ct);
+
+        Assert.Equal("tasks.invalid", updated.Error.Code);
+    }
+
+    [Fact]
     public async Task GetWatches_ArmedEventTasksOfEveryOwner()
     {
         const string Home = """{"source":"ha","entity":"person.alice","to":"home"}""";
