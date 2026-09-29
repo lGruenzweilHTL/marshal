@@ -31,9 +31,9 @@ internal sealed class MoonrakerConnection : IAsyncDisposable
 
     public ChannelReader<(string Method, JsonElement Params)> Notifications => _notifications.Reader;
 
-    public static async Task<MoonrakerConnection> ConnectAsync(IMoonrakerSocketFactory sockets, Uri baseUrl, string? apiKey, TimeSpan timeout, CancellationToken cancellationToken)
+    public static async Task<MoonrakerConnection> ConnectAsync(IMoonrakerSocketFactory sockets, Uri baseUri, string? apiKey, TimeSpan timeout, CancellationToken cancellationToken)
     {
-        var builder = new UriBuilder(new Uri(baseUrl, "websocket")) { Scheme = baseUrl.Scheme == Uri.UriSchemeHttps ? "wss" : "ws" };
+        var builder = new UriBuilder(new Uri(baseUri, "websocket")) { Scheme = baseUri.Scheme == Uri.UriSchemeHttps ? "wss" : "ws" };
         WebSocket socket = await sockets.ConnectAsync(builder.Uri, apiKey, cancellationToken);
         return new MoonrakerConnection(socket, timeout);
     }

@@ -13,6 +13,7 @@ public sealed class FakeTool : ITool
     private readonly List<ToolInvocation> _invocations = [];
     private Func<ToolInvocation, Result<ToolOutput>> _handler = _ => new ToolOutput("ok");
     private Func<MarshalExecutionContext, bool> _available = _ => true;
+    private Func<JsonElement, Result> _validate = _ => Result.Success();
 
     /// <summary>Creates a fake tool with id <paramref name="id"/> (<c>namespace.name</c>).</summary>
     public FakeTool(string id, RiskTier defaultTier = RiskTier.Safe)
@@ -79,6 +80,16 @@ public sealed class FakeTool : ITool
         _available = available;
         return this;
     }
+
+    /// <summary>Sets the argument validation the guard runs before tiers.</summary>
+    public FakeTool ValidatesWith(Func<JsonElement, Result> validate)
+    {
+        _validate = validate;
+        return this;
+    }
+
+    /// <inheritdoc />
+    public Result Validate(JsonElement arguments) => _validate(arguments);
 
     /// <inheritdoc />
     public ValueTask<bool> IsAvailableAsync(MarshalExecutionContext context, CancellationToken cancellationToken) =>

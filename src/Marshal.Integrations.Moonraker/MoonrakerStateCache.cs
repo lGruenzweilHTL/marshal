@@ -56,7 +56,7 @@ public sealed partial class MoonrakerStateCache(
         {
             try
             {
-                await using MoonrakerConnection connection = await MoonrakerConnection.ConnectAsync(sockets, printer.Url!, printer.ApiKey, timings.RequestTimeout, stoppingToken);
+                await using MoonrakerConnection connection = await MoonrakerConnection.ConnectAsync(sockets, printer.BaseUri(), printer.ApiKey, timings.RequestTimeout, stoppingToken);
                 await RunAsync(printer, connection, () => attempt = 0, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

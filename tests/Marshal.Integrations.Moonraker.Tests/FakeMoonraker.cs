@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Net;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -43,6 +44,9 @@ internal sealed class FakeMoonraker : IAsyncDisposable
 
     /// <summary>"METHOD /path" → REST result (wrapped in <c>{"result": ...}</c>); unknown routes answer <c>"ok"</c>.</summary>
     public ConcurrentDictionary<string, JsonNode?> Rest { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>"METHOD /path" → error status and Moonraker error message.</summary>
+    public ConcurrentDictionary<string, (HttpStatusCode Status, string Message)> RestErrors { get; } = new(StringComparer.Ordinal);
 
     /// <summary>Raw REST responses (content type and bytes) by path, e.g. webcam snapshots.</summary>
     public ConcurrentDictionary<string, (string ContentType, byte[] Body)> Raw { get; } = new(StringComparer.Ordinal);
@@ -156,6 +160,14 @@ internal sealed class FakeMoonraker : IAsyncDisposable
         if (context.Request.Headers["X-Api-Key"] != ApiKey)
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
+        }
+
+        if (RestErrors.TryGetValue($"{context.Request.Method} {path}", out (HttpStatusCode Status, string Message) error))
+        {
+            context.Response.StatusCode = (int)error.Status;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(new JsonObject { ["error"] = new JsonObject { ["code"] = (int)error.Status, ["message"] = error.Message } }.ToJsonString());
             return;
         }
 

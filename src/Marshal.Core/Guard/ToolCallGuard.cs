@@ -6,8 +6,8 @@ using Marshal.Abstractions.Tools;
 namespace Marshal.Core.Guard;
 
 /// <summary>
-/// Second line behind the visibility filter. Pipeline: known and offered → still visible → risk rules →
-/// taint escalation → subagent and satellite policy → decision. Every stage may only raise the tier.
+/// Second line behind the visibility filter. Pipeline: known and offered → still visible → valid arguments →
+/// risk rules → taint escalation → subagent and satellite policy → decision. Every stage may only raise the tier.
 /// </summary>
 public sealed class ToolCallGuard(IToolRegistry registry, IToolVisibilityFilter visibility, IRiskEngine riskEngine, ISatelliteContextProvider satellites) : IGuard
 {
@@ -30,6 +30,10 @@ public sealed class ToolCallGuard(IToolRegistry registry, IToolVisibilityFilter 
         VisibilityVerdict visible = await visibility.CheckAsync(tool, request.Context, cancellationToken);
         if (!visible.IsVisible)
             return Deny(tool, null, HiddenError(visible.Reason));
+
+        Result valid = tool.Tool.Validate(request.Arguments);
+        if (valid.IsFailure)
+            return Deny(tool, null, valid.Error);
 
         RiskAssessment assessment = await riskEngine.AssessAsync(tool, request.Arguments, cancellationToken);
         RiskTier tier = assessment.Tier;

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Marshal.Abstractions;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Satellites;
@@ -253,6 +254,22 @@ public sealed class GuardTests
         GuardVerdict verdict = await guard.EvaluateAsync(Request("test_confirm", context: TestExecutionContext.Voice(satelliteId: Kitchen)), Ct);
 
         Assert.Equal("tool.not_allowed_from_device", verdict.Denial?.Code);
+    }
+
+    [Fact]
+    public async Task Evaluate_InvalidArgumentsOfConfirmTool_DeniedBeforeConfirmation()
+    {
+        FakeTool tool = FakeTool.Confirm().ValidatesWith(arguments => arguments.TryGetProperty("name", out JsonElement name) && name.GetString() == "PARK"
+            ? Result.Success()
+            : new Error("printer.macro_not_allowed", "Not allowlisted.", ErrorType.Validation));
+        ToolCallGuard guard = await GuardAsync("risk: []", tool);
+
+        GuardVerdict invalid = await guard.EvaluateAsync(Request("test_confirm", new { name = "FIRMWARE_RESTART" }), Ct);
+        GuardVerdict valid = await guard.EvaluateAsync(Request("test_confirm", new { name = "PARK" }), Ct);
+
+        Assert.Equal((GuardOutcome.Deny, "printer.macro_not_allowed"), (invalid.Outcome, invalid.Denial?.Code));
+        Assert.Empty(invalid.Reasons);
+        Assert.Equal(GuardOutcome.RequireConfirmation, valid.Outcome);
     }
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;

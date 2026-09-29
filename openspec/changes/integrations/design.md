@@ -159,3 +159,18 @@ There is no printer in the development environment, so the websocket fixtures in
 (identify result, subscribe result with the initial state, `notify_status_update` diffs for print start, pause,
 complete and error, `notify_klippy_shutdown`, `notify_klippy_ready`) rather than captured from a live Moonraker.
 They should be replaced with real captures when a printer is available.
+
+### Printer (tasks 2.1–2.4)
+
+- `MoonrakerStateCache` subscribes only when `server.info` reports `klippy_state: ready`; otherwise it publishes the
+  Klippy state alone and waits for `notify_klippy_ready`. `notify_klippy_shutdown` / `notify_klippy_disconnected` set
+  the Klippy state in the cached status. ETA is `print_duration / progress − print_duration` while printing (progress
+  from `display_status`, falling back to `virtual_sdcard`).
+- Commands are a closed set of typed records (`PrinterCommand`); `IPrinterClient.SendAsync` validates them and builds
+  the only G-code Marshal ever sends. Limits: hotend target 0–350 °C, bed 0–150 °C (Klipper's `max_temp` still
+  applies), moves non-zero and at most 300 mm, axes X/Y/Z only (no extrusion), file paths relative without `..`,
+  macro names `[A-Za-z0-9_]+` and in the printer's allowlist (case-insensitive, sent upper case, no arguments).
+- "Fails validation before any confirmation is asked" needed a hook the guard did not have: `ITool.Validate(arguments)`
+  (default: success) runs in `ToolCallGuard` after the visibility check and before risk rules; a failure denies the
+  call with the tool's error. Printer tools resolve the printer and parse their arguments into a `PrinterCommand`
+  there, so an unknown macro, a bad heater or an ambiguous printer is rejected without a pending action.

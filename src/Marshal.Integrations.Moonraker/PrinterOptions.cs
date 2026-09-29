@@ -29,6 +29,10 @@ public sealed class PrinterConfig
     [Secret(nameof(ApiKeySecret))]
     public string? ApiKey { get; set; }
 
+    /// <summary><see cref="Url"/> with a trailing slash, so relative paths keep a path prefix.</summary>
+    internal Uri BaseUri() =>
+        Url!.AbsolutePath.EndsWith('/') ? Url : new UriBuilder(Url) { Path = Url.AbsolutePath + "/" }.Uri;
+
     /// <summary>Klipper macros <c>printer.run_macro</c> may run (upper-case names, no arguments).</summary>
     public List<string> Macros { get; set; } = [];
 }

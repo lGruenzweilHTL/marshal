@@ -18,6 +18,12 @@ public interface ITool
     ValueTask<bool> IsAvailableAsync(MarshalExecutionContext context, CancellationToken cancellationToken) =>
         ValueTask.FromResult(true);
 
+    /// <summary>
+    /// Argument checks that must hold before any tier applies (e.g. an allowlist). The guard denies a failing call
+    /// without asking for confirmation.
+    /// </summary>
+    Result Validate(JsonElement arguments) => Result.Success();
+
     /// <summary>Short, human-readable summary of a call, used in confirmation prompts.</summary>
     string Summarize(JsonElement arguments, string language) =>
         $"{Descriptor.Id} {arguments.GetRawText()}";
