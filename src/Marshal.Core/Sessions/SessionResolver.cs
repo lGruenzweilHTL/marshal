@@ -10,8 +10,8 @@ namespace Marshal.Core.Sessions;
 
 /// <summary>
 /// Finds or creates the session of a turn. Token clients are looked up by (token, client conversation id), never by
-/// the client id alone; the owner is resolved once on the first turn and pinned. Idle sessions are closed and
-/// their pending action dropped before a new session starts.
+/// the client id alone; the owner is resolved once on the first turn and pinned. Idle sessions are closed,
+/// their pending action dropped and the close listeners notified before a new session starts.
 /// </summary>
 /// <remarks>
 /// The token lookup runs as the token's owner. In v1 the resolved owner is always the instance owner, which also
@@ -21,6 +21,7 @@ public sealed class SessionResolver(
     ISessionStore sessions,
     IIdentityResolver identity,
     IPendingActionStore pendingActions,
+    IEnumerable<ISessionCloseListener> closeListeners,
     IExecutionContextAccessor executionContext,
     IOptions<SessionOptions> options,
     TimeProvider timeProvider)
@@ -40,7 +41,7 @@ public sealed class SessionResolver(
             }
 
             if (existing is not null)
-                await CloseAsync(existing.Id, cancellationToken);
+                await CloseAsync(existing, cancellationToken);
         }
 
         IdentityResolution resolution = await identity.ResolveAsync(evidence, cancellationToken);
@@ -57,7 +58,7 @@ public sealed class SessionResolver(
         SessionRecord? existing = await sessions.FindOpenAsync(sessionId.Value, cancellationToken);
         if (existing is not null && IsIdle(existing))
         {
-            await CloseAsync(existing.Id, cancellationToken);
+            await CloseAsync(existing, cancellationToken);
             existing = null;
         }
 
@@ -70,10 +71,12 @@ public sealed class SessionResolver(
 
     private bool IsIdle(SessionRecord session) => timeProvider.GetUtcNow() - session.LastTurnAt >= options.Value.IdleTtl;
 
-    private async Task CloseAsync(SessionId id, CancellationToken cancellationToken)
+    private async Task CloseAsync(SessionRecord session, CancellationToken cancellationToken)
     {
-        await pendingActions.DropForSessionAsync(id, cancellationToken);
-        await sessions.CloseAsync(id, cancellationToken);
+        await pendingActions.DropForSessionAsync(session.Id, cancellationToken);
+        await sessions.CloseAsync(session.Id, cancellationToken);
+        foreach (ISessionCloseListener listener in closeListeners)
+            await listener.SessionClosedAsync(session.OwnerId, session.Id, cancellationToken);
     }
 
     private static MarshalExecutionContext SystemContext(OwnerId owner, SessionSource source) =>

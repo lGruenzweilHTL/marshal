@@ -32,8 +32,8 @@
 
 - [x] 4.1 Write `memory.remember` tests: clean run writes, tainted run pending with `taint` reason naming mail, cannot pin, upsert by id
 - [x] 4.2 Implement `memory.remember`
-- [ ] 4.3 Write summarizer tests with a fake client: input has only user turns and replies, candidates upserted, contradictions create edges, never pinned
-- [ ] 4.4 Implement `LlmMemorySummarizer` on session close
+- [x] 4.3 Write summarizer tests with a fake client: input has only user turns and replies, candidates upserted, contradictions create edges, never pinned
+- [x] 4.4 Implement `LlmMemorySummarizer` on session close
 - [ ] 4.5 Write audit tests: stale, contradictions, orphans
 - [ ] 4.6 Implement `MemoryAudit`
 

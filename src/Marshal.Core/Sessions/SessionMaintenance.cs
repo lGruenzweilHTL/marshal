@@ -7,11 +7,12 @@ using Microsoft.Extensions.Options;
 namespace Marshal.Core.Sessions;
 
 /// <summary>
-/// Closes idle sessions of one owner and drops their pending actions.
+/// Closes idle sessions of one owner, drops their pending actions and notifies the close listeners.
 /// </summary>
 public sealed class SessionMaintenance(
     ISessionStore sessions,
     IPendingActionStore pendingActions,
+    IEnumerable<ISessionCloseListener> closeListeners,
     IExecutionContextAccessor executionContext,
     IOptions<SessionOptions> options,
     TimeProvider timeProvider)
@@ -24,6 +25,8 @@ public sealed class SessionMaintenance(
         {
             await pendingActions.DropForSessionAsync(session, cancellationToken);
             await sessions.CloseAsync(session, cancellationToken);
+            foreach (ISessionCloseListener listener in closeListeners)
+                await listener.SessionClosedAsync(owner, session, cancellationToken);
         }
 
         return idle.Count;

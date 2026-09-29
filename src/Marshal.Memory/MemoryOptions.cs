@@ -10,6 +10,21 @@ public sealed class MemoryOptions
     public RetrievalOptions Retrieval { get; set; } = new();
 
     public ProjectActivationOptions Projects { get; set; } = new();
+
+    public SummarizerOptions Summarizer { get; set; } = new();
+}
+
+/// <summary>Session-close summarization.</summary>
+public sealed class SummarizerOptions
+{
+    /// <summary>Summarize sessions when they close.</summary>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>Most recent turns of a session the summarizer reads.</summary>
+    public int MaxTurns { get; set; } = 50;
+
+    /// <summary>Token budget of the existing memory shown to the summarizer (to reuse titles and spot contradictions).</summary>
+    public int MemoryTokenBudget { get; set; } = 1500;
 }
 
 /// <summary>Project activation.</summary>

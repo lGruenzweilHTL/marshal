@@ -171,3 +171,26 @@ EF migration adds memory tables; the FTS and vector virtual tables are created b
   source, rounded score).
 - `AgentRunner` copies the notes onto the context step's `RunStepRecord.Notes`; `DbRunRecorder` stores them in the
   step payload JSON (no schema change), and `RunStepDetail.Notes` exposes them to the web run detail.
+
+### Writes and summarization (tasks 4.1–4.4)
+
+- `memory.remember` is safe and flagged `Persists`; the guard's existing taint escalation turns it into a pending action
+  with a `taint` reason naming the source. Its schema has no pin argument, and `IMemoryStore.WriteAsync` never pins.
+- Session close: `ISessionCloseListener` (Abstractions) is notified by `SessionResolver` and `SessionMaintenance` after
+  a session is closed. `SessionSummaryInbox` forgets the session's project activation state and queues it in an
+  in-process channel; `SessionSummaryWorker` (hosted service) summarizes one session at a time as its owner. A crash is
+  logged and skipped.
+- `LlmMemorySummarizer`:
+  - Input: `IConversationHistory` (context-step inputs and reply-step contents at depth 0 only, so tool results and
+    subagent output never reach it) plus existing memory retrieved for the user turns with `MarkRetrieved: false`, so
+    summarization does not keep chunks fresh for the audit. Existing chunks are listed with their ids so the model can
+    reuse titles (same id means update in place) and name contradictions.
+  - Model: the `memory-summarizer` template from `/config/templates` if present, else the built-in one (fast tier,
+    JSON answer `{"candidates":[...]}`). The call is recorded as a run of the session (trigger `memory_summarizer`,
+    context and model-call steps, no reply step so it never shows up in the conversation history).
+  - Contradictions: a candidate is a contradiction instead of an update when the model names the contradicted chunk
+    id, or when the stored chunk with the same id is pinned or was changed after the session began (the stored value
+    is newer than the conversation). The candidate is then stored under `<title> (conflicting)` with a `contradicts`
+    edge to the stored chunk, which stays unchanged; the audit lists the pair until the user resolves it.
+  - Candidates for soft-deleted chunks are skipped (a deleted chunk is never revived by consolidation); an unknown
+    project falls back to general scope. Candidates are written with `CreatedBy = consolidation`.

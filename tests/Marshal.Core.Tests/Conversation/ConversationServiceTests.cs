@@ -217,7 +217,7 @@ public sealed class ConversationServiceTests
     {
         LoopHarness harness = await LoopHarness.CreateAsync(tools: [_unlock, .. extra]);
         var sessions = new InMemorySessionStore(harness.Accessor, harness.Time);
-        var resolver = new SessionResolver(sessions, new FixedIdentity(), harness.Store, harness.Accessor, Options.Create(new SessionOptions()), harness.Time);
+        var resolver = new SessionResolver(sessions, new FixedIdentity(), harness.Store, [], harness.Accessor, Options.Create(new SessionOptions()), harness.Time);
         var flow = new ConfirmationFlow(harness.Store, new ConfiguredConfirmationKeywords(Options.Create(new ConfirmationOptions())), _judge, harness.Registry, Tests.GuardTestKit.Engine("risk: []"), harness.Time);
         var service = new ConversationService(resolver, flow, harness.RunnerSpy, harness.History, new FixedProfiles(), harness.Accessor, Options.Create(harness.Options));
         return (service, harness);

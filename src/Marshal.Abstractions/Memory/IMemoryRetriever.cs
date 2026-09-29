@@ -21,6 +21,7 @@ public interface IMemoryRetriever
 /// <param name="Type">Only chunks of this type.</param>
 /// <param name="Project">Only chunks of this project.</param>
 /// <param name="IncludePinned">Also return pinned chunks (they are injected separately in automatic retrieval).</param>
+/// <param name="MarkRetrieved">Set the chunks' last-retrieved time; off for maintenance reads that must not keep chunks fresh.</param>
 public sealed record MemoryQuery(
     string Text,
     ReadOnlyMemory<float>? Embedding,
@@ -28,7 +29,8 @@ public sealed record MemoryQuery(
     int TokenBudget,
     ChunkType? Type = null,
     ProjectId? Project = null,
-    bool IncludePinned = false);
+    bool IncludePinned = false,
+    bool MarkRetrieved = true);
 
 /// <summary>How a chunk was found.</summary>
 public enum RetrievalSource

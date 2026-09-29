@@ -24,6 +24,7 @@ public sealed class SessionResolverTests
     private readonly InMemoryPendingActionStore _pending;
     private readonly CountingResolver _identity = new();
     private readonly ApiTokenId _token = ApiTokenId.New();
+    private readonly RecordingCloseListener _listener = new();
 
     public SessionResolverTests()
     {
@@ -82,6 +83,7 @@ public sealed class SessionResolverTests
         Assert.Contains(first.Id, _sessions.Closed);
         Assert.Equal(PendingActionStatus.Dropped, _pending.Decisions[pending.Id].Status);
         Assert.Equal(2, _identity.Calls);
+        Assert.Equal([(OwnerA, first.Id)], _listener.Closed);
     }
 
     [Fact]
@@ -128,6 +130,7 @@ public sealed class SessionResolverTests
 
         Assert.Equal("session.not_found", result.Error.Code);
         Assert.Contains(first.Id, _sessions.Closed);
+        Assert.Equal([(OwnerA, first.Id)], _listener.Closed);
     }
 
     [Fact]
@@ -150,12 +153,13 @@ public sealed class SessionResolverTests
         SessionRecord active = (await resolver.ResolveOwnSessionAsync(null, OwnerA, SessionSource.Web, Ct)).Value;
         _time.Advance(TimeSpan.FromMinutes(2));
 
-        int closed = await new SessionMaintenance(_sessions, _pending, _accessor, Options.Create(new SessionOptions()), _time).CloseIdleAsync(OwnerA, Ct);
+        int closed = await new SessionMaintenance(_sessions, _pending, [_listener], _accessor, Options.Create(new SessionOptions()), _time).CloseIdleAsync(OwnerA, Ct);
 
         Assert.Equal(1, closed);
         Assert.Equal([idle.Id], _sessions.Closed);
         Assert.Equal(PendingActionStatus.Dropped, _pending.Decisions[pending.Id].Status);
         Assert.NotEqual(idle.Id, active.Id);
+        Assert.Equal([(OwnerA, idle.Id)], _listener.Closed);
     }
 
     [Fact]
@@ -182,7 +186,18 @@ public sealed class SessionResolverTests
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    private SessionResolver Resolver() => new(_sessions, _identity, _pending, _accessor, Options.Create(new SessionOptions()), _time);
+    private SessionResolver Resolver() => new(_sessions, _identity, _pending, [_listener], _accessor, Options.Create(new SessionOptions()), _time);
+
+    private sealed class RecordingCloseListener : ISessionCloseListener
+    {
+        public List<(OwnerId Owner, SessionId Session)> Closed { get; } = [];
+
+        public Task SessionClosedAsync(OwnerId owner, SessionId session, CancellationToken cancellationToken)
+        {
+            Closed.Add((owner, session));
+            return Task.CompletedTask;
+        }
+    }
 
     private sealed class CountingResolver : IIdentityResolver
     {

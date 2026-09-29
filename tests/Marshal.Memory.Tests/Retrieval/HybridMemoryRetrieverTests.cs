@@ -107,6 +107,18 @@ public sealed class HybridMemoryRetrieverTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Retrieve_MarkRetrievedOff_LastRetrievedUnchanged()
+    {
+        ChunkId oat = await WriteAsync("Coffee", "Likes oat milk.", Vec(0, 1));
+        _embeddings.Pin("coffee", Vec(0, 1));
+
+        IReadOnlyList<RetrievedChunk> found = await _retriever.RetrieveAsync(new MemoryQuery("coffee", null, new HashSet<ProjectId>(), 600, MarkRetrieved: false), Ct);
+
+        Assert.Equal(oat, Assert.Single(found).Chunk.Id);
+        Assert.Null((await _store.GetAsync(oat, Ct))!.LastRetrievedAt);
+    }
+
+    [Fact]
     public async Task Retrieve_MarksLastRetrieved()
     {
         ChunkId oat = await WriteAsync("Coffee", "Likes oat milk.", Vec(0, 1));

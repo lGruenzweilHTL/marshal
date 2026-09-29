@@ -73,13 +73,13 @@ public sealed partial class HybridMemoryRetriever(
         DateTimeOffset now = timeProvider.GetUtcNow();
         IReadOnlyList<ScoredChunk> selected = scorer.Select(candidates, new ScoringContext(query.ActiveProjects, now, query.TokenBudget));
         List<ChunkId> selectedIds = [.. selected.Select(chunk => chunk.Chunk.Id)];
-        if (selectedIds.Count > 0)
+        if (query.MarkRetrieved && selectedIds.Count > 0)
         {
             await db.Chunks.Where(chunk => selectedIds.Contains(chunk.Id))
                 .ExecuteUpdateAsync(update => update.SetProperty(chunk => chunk.LastRetrievedAt, now), cancellationToken);
         }
 
-        return [.. selected.Select(chunk => new RetrievedChunk(chunk.Chunk with { LastRetrievedAt = now }, chunk.Similarity, chunk.Score, replaced[chunk.Chunk.Id].Source))];
+        return [.. selected.Select(chunk => new RetrievedChunk(query.MarkRetrieved ? chunk.Chunk with { LastRetrievedAt = now } : chunk.Chunk, chunk.Similarity, chunk.Score, replaced[chunk.Chunk.Id].Source))];
     }
 
     public async Task<IReadOnlyList<MemoryChunk>> GetPinnedAsync(CancellationToken cancellationToken)
