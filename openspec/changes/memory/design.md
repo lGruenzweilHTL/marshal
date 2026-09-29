@@ -148,3 +148,17 @@ EF migration adds memory tables; the FTS and vector virtual tables are created b
 - **Centroid.** Normalized mean of the embedding of "name + description" and the vectors of the 10 most important
   live project chunks; stored in `projects.centroid`, cleared by every write or delete of a project chunk (and by
   description edits), recomputed on the next activation.
+
+### Corrections and alias learning (tasks 3.3, 3.4)
+
+- **Target turn.** A correction arrives in the turn after the inference, so the session keeps the last two turns;
+  `memory.correct_project` refers to the previous turn (the current one when there is none) and to the projects
+  inferred or sticky in either turn. The phrase is the normalized turn text (max 120 characters), stored with the
+  turn embedding.
+- **Kinds.** `rejected`: unloads (sticky removed, not inferred again in the session; explicit mentions still
+  activate), `Rejected` row per project (negative example). `switched` (project required): the previous projects
+  as for `rejected`, a `Switched` row for the new one, which becomes sticky from the next turn and gets an alias
+  confirmation. `confirmed`: `Confirmed` row and an alias confirmation.
+- **Uncorrected inferences.** When a turn leaves the two-turn window (the following turn could have corrected it)
+  and no correction or confirmation handled it, each inferred project counts one confirmation of the phrase. An
+  alias candidate becomes active at `aliasPromotion` (3) confirmations; rejected aliases stay rejected.

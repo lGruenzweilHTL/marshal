@@ -73,7 +73,9 @@ public sealed class ProjectActivator(
             {
                 foreach (ProjectActivation activation in result.Where(activation => activation.Sticky && activation.Reason != ActivationReason.Sticky))
                     state.Sticky[activation.ProjectId] = 1;
-                state.LastTurn = new ProjectTurn(phrase, input.Embedding, result);
+                state.Turns.Add(new ProjectTurn(phrase, input.Embedding, result));
+                if (state.Turns.Count > 2)
+                    state.Turns.RemoveAt(0);
                 return true;
             });
         }
@@ -81,15 +83,17 @@ public sealed class ProjectActivator(
         return result;
     }
 
-    // The previous turn's inferences were not corrected before this turn: each counts as a confirmation.
+    // The turn before the previous one leaves the window now; the previous turn was its chance to be corrected, so
+    // its unhandled inferences count as confirmations.
     private async Task ConfirmPreviousInferencesAsync(ProjectSessionState? state, CancellationToken cancellationToken)
     {
-        ProjectTurn? last = state is null ? null : Locked(state, () => state.LastTurn);
-        if (last is null || last.Corrected)
+        ProjectTurn? leaving = state is null ? null : Locked(state, () => state.Turns.Count == 2 ? state.Turns[0] : null);
+        if (leaving is null || leaving.Handled)
             return;
 
-        foreach (ProjectActivation activation in last.Activations.Where(activation => activation.IsInferred))
-            await learning.ConfirmAliasAsync(activation.ProjectId, last.Phrase, cancellationToken);
+        leaving.Handled = true;
+        foreach (ProjectActivation activation in leaving.Activations.Where(activation => activation.IsInferred))
+            await learning.ConfirmAliasAsync(activation.ProjectId, leaving.Phrase, cancellationToken);
     }
 
     // Topic shift drops every sticky activation; otherwise each decays and the weak ones are dropped.

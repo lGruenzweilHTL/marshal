@@ -5,8 +5,8 @@ using Marshal.Abstractions.Sessions;
 namespace Marshal.Memory.Projects;
 
 /// <summary>
-/// In-memory project activation state per session: sticky weights, the previous turn (for topic shifts and
-/// corrections) and projects rejected in this session. Lost on restart, which only costs some stickiness.
+/// In-memory project activation state per session: sticky weights, the last two turns (for topic shifts, corrections
+/// and alias learning) and projects rejected in this session. Lost on restart, which only costs some stickiness.
 /// </summary>
 public sealed class ProjectSessions
 {
@@ -28,16 +28,25 @@ public sealed class ProjectSessionState
     /// <summary>Projects the user rejected in this session; not inferred again (explicit mentions still activate).</summary>
     public HashSet<ProjectId> Rejected { get; } = [];
 
-    /// <summary>The previous turn, or null before the first one.</summary>
-    public ProjectTurn? LastTurn { get; set; }
+    /// <summary>The current turn (last) and the one before; a correction in a turn usually refers to the one before.</summary>
+    public List<ProjectTurn> Turns { get; } = [];
+
+    /// <summary>The most recent turn, or null before the first one.</summary>
+    public ProjectTurn? LastTurn => Turns.Count == 0 ? null : Turns[^1];
+
+    /// <summary>The turn before the most recent one, or null.</summary>
+    public ProjectTurn? PreviousTurn => Turns.Count < 2 ? null : Turns[^2];
 }
 
-/// <summary>A turn's text, embedding and activations, kept for the next turn and for corrections.</summary>
+/// <summary>A turn's text, embedding and activations, kept for the next turns and for corrections.</summary>
 /// <param name="Phrase">Normalized turn text (the triggering phrase of inferred activations).</param>
 /// <param name="Embedding">Turn embedding.</param>
 /// <param name="Activations">What was active.</param>
 public sealed record ProjectTurn(string Phrase, float[] Embedding, IReadOnlyList<ProjectActivation> Activations)
 {
-    /// <summary>Set when a correction referred to this turn; its inferences then do not count as confirmations.</summary>
-    public bool Corrected { get; set; }
+    /// <summary>
+    /// Set when a correction or confirmation handled this turn's inferences; otherwise they count as confirmations
+    /// once the following turn had its chance to correct them.
+    /// </summary>
+    public bool Handled { get; set; }
 }
