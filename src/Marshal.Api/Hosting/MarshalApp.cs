@@ -11,6 +11,7 @@ using Marshal.Core;
 using Marshal.Core.Configuration;
 using Marshal.Data;
 using Marshal.Integrations.HomeAssistant;
+using Marshal.Memory;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
 
@@ -33,6 +34,7 @@ public static class MarshalApp
 
         builder.Services.AddMarshalCore(builder.Configuration, environment);
         builder.Services.AddMarshalHomeAssistant(builder.Configuration);
+        builder.Services.AddMarshalMemory(builder.Configuration);
         builder.Services.AddMarshalData(builder.Configuration, ConnectionString);
         builder.Services.AddMarshalApi(builder.Configuration);
 

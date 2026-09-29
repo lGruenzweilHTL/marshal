@@ -211,3 +211,7 @@ EF migration adds memory tables; the FTS and vector virtual tables are created b
   `model`, `endpoint`, optional `apiKeySecret`) and bound as `ModelRoutingOptions.Embedding`, so the existing secret
   binding covers its key. It is required: memory runs on every turn. `IEmbeddingGeneratorFactory` (Core) is implemented
   by the host (`ProviderEmbeddingGeneratorFactory`, OllamaSharp / OpenAI SDK); Anthropic offers no embeddings.
+- `AddMarshalMemory` (Marshal.Memory) registers the store, retrieval, project activation, the two memory context
+  contributors, the three memory tools, the summarizer with its inbox (as `ISessionCloseListener`) and worker, and
+  the audit; `Marshal.Api` references `Marshal.Memory` and calls it after the Home Assistant integration. Options bind
+  from `memory` in `marshal.yaml`.

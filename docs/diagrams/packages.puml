@@ -10,7 +10,7 @@
 ' Status: PARTLY BUILT — Marshal.Abstractions, Marshal.Core, Marshal.Data,
 ' Marshal.Api, Marshal.Testing and their test projects exist (core-agent),
 ' web/ exists (auth-web-shell), ha/ exists (ha-conversation-integration),
-' Marshal.Integrations.HomeAssistant exists (extensibility);
+' Marshal.Integrations.HomeAssistant exists (extensibility), Marshal.Memory exists (memory);
 ' the other projects are still planned
 ' (docs/brainstorm-notes.md).
 ' External packages are drawn inside the project that references them
