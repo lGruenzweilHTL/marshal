@@ -174,3 +174,8 @@ They should be replaced with real captures when a printer is available.
   (default: success) runs in `ToolCallGuard` after the visibility check and before risk rules; a failure denies the
   call with the tool's error. Printer tools resolve the printer and parse their arguments into a `PrinterCommand`
   there, so an unknown macro, a bad heater or an ambiguous printer is rejected without a pending action.
+- Snapshots (tasks 2.5–2.6): the first enabled webcam wins. The webcam image is fetched without the Moonraker API key
+  (webcams are usually served by the web server next to Moonraker, possibly on another host) and capped at 20 MB.
+  Stored files are `<paths.data>/snapshots/<printer>/<yyyyMMddTHHmmssfff>-<random>.jpg`; ids are checked against that
+  pattern before any file access. Webcam rotation and flip settings are not applied yet. The same-origin link comes
+  from `ISnapshotLinks`, implemented by the host (it knows the path base and API version).

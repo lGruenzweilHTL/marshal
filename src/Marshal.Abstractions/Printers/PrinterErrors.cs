@@ -19,5 +19,12 @@ public static class PrinterErrors
     public static Error CommandFailed(string printer, string message) =>
         new("printer.command_failed", $"The printer '{printer}' refused: {message}", ErrorType.Failure);
 
+    public static Error NoWebcam(string printer) => new("printer.no_webcam", $"The printer '{printer}' has no webcam.", ErrorType.NotFound);
+
+    public static Error SnapshotFailed(string printer, string reason) =>
+        new("printer.snapshot_failed", $"Could not get a snapshot from the printer '{printer}': {reason}", ErrorType.Unavailable);
+
+    public static Error SnapshotNotFound(string id) => new("printer.snapshot_not_found", $"There is no snapshot '{id}'.", ErrorType.NotFound);
+
     public static Error Offline(string printer) => new("printer.offline", $"The printer '{printer}' is offline.", ErrorType.Unavailable);
 }

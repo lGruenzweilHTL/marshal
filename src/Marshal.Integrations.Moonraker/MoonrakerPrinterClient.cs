@@ -1,5 +1,3 @@
-using System.Net;
-using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Marshal.Abstractions;
@@ -15,8 +13,7 @@ namespace Marshal.Integrations.Moonraker;
 /// </summary>
 public sealed class MoonrakerPrinterClient(IOptions<PrinterOptions> options, IHttpClientFactory httpClients) : IPrinterClient
 {
-    /// <summary>Name of the <see cref="HttpClient"/> (resilience pipeline configured by the host).</summary>
-    public const string HttpClientName = "moonraker";
+    private readonly MoonrakerRest _rest = new(options, httpClients);
 
     public async Task<Result<IReadOnlyList<PrinterFile>>> ListFilesAsync(string printer, CancellationToken cancellationToken)
     {
@@ -66,7 +63,7 @@ public sealed class MoonrakerPrinterClient(IOptions<PrinterOptions> options, IHt
 
     public async Task<Result> SendAsync(string printer, PrinterCommand command, CancellationToken cancellationToken)
     {
-        if (Find(printer) is not { } config)
+        if (_rest.Find(printer) is not { } config)
             return PrinterErrors.NotFound(printer);
 
         var info = new PrinterInfo(config.Name, [.. config.Macros.Select(macro => macro.ToUpperInvariant())]);
@@ -97,52 +94,10 @@ public sealed class MoonrakerPrinterClient(IOptions<PrinterOptions> options, IHt
         _ => throw new ArgumentOutOfRangeException(nameof(command), command, "Unknown printer command."),
     };
 
-    private async Task<Result<JsonElement>> RequestAsync(string printer, HttpMethod method, string path, JsonObject? body, CancellationToken cancellationToken)
-    {
-        if (Find(printer) is not { } config)
-            return PrinterErrors.NotFound(printer);
+    private Task<Result<JsonElement>> RequestAsync(string printer, HttpMethod method, string path, JsonObject? body, CancellationToken cancellationToken) =>
+        _rest.RequestAsync(printer, method, path, body, cancellationToken);
 
-        using var request = new HttpRequestMessage(method, new Uri(config.BaseUri(), path));
-        if (config.ApiKey is not null)
-            request.Headers.Add("X-Api-Key", config.ApiKey);
-        if (body is not null)
-            request.Content = JsonContent.Create(body);
-
-        try
-        {
-            using HttpResponseMessage response = await httpClients.CreateClient(HttpClientName).SendAsync(request, cancellationToken);
-            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-                return PrinterErrors.Unauthorized(config.Name);
-
-            using JsonDocument document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(cancellationToken), cancellationToken: cancellationToken);
-            JsonElement root = document.RootElement;
-            if (!response.IsSuccessStatusCode || !root.TryGetProperty("result", out JsonElement result))
-            {
-                string message = root.TryGetProperty("error", out JsonElement error) && Text(error, "message") is { } text ? text : $"HTTP {(int)response.StatusCode}";
-                return PrinterErrors.CommandFailed(config.Name, message);
-            }
-
-            return result.Clone();
-        }
-        catch (HttpRequestException)
-        {
-            return PrinterErrors.Offline(config.Name);
-        }
-        catch (JsonException)
-        {
-            return PrinterErrors.CommandFailed(config.Name, "Moonraker sent an unreadable answer.");
-        }
-        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            return PrinterErrors.Offline(config.Name);
-        }
-    }
-
-    private PrinterConfig? Find(string printer) =>
-        options.Value.Printers.FirstOrDefault(config => config.Url is not null && string.Equals(config.Name, printer, StringComparison.OrdinalIgnoreCase));
-
-    private static string? Text(JsonElement element, string property) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(property, out JsonElement value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+    private static string? Text(JsonElement element, string property) => MoonrakerRest.Text(element, property);
 
     private static double Number(JsonElement element, string property) =>
         element.TryGetProperty(property, out JsonElement value) && value.ValueKind == JsonValueKind.Number ? value.GetDouble() : 0;

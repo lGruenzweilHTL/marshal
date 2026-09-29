@@ -10,8 +10,8 @@
 - [x] 2.2 Implement `MoonrakerSocket` and `MoonrakerStateCache`
 - [x] 2.3 Write command tests against a fake REST server: API key header, each safe and confirm command, macro allowlist validation
 - [x] 2.4 Implement `MoonrakerPrinterClient` and printer tools with tiers and visibility conditions
-- [ ] 2.5 Write snapshot tests: webcam discovery, resize, storage and retention, same-origin URL
-- [ ] 2.6 Implement `MoonrakerSnapshotSource` and `SkiaImageResizer`
+- [x] 2.5 Write snapshot tests: webcam discovery, resize, storage and retention, same-origin URL
+- [x] 2.6 Implement `MoonrakerSnapshotSource` and `SkiaImageResizer`
 - [ ] 2.7 Write `printer.inspect` tests with a fake vision client: vision model selection by tier, fallback, hidden without vision model
 - [ ] 2.8 Implement `printer.inspect`
 - [ ] 2.9 Write API tests for printer UI endpoints: status, controls with tiers, confirm-tier controls require a confirmation token from the dialog, audit events, webcam proxy auth
