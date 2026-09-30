@@ -57,6 +57,12 @@ describe('RunDetailView', () => {
     expect(wrapper.get('[data-test="taint"]').text()).toContain('step 2')
   })
 
+  it('gives every step an anchor, so the review queue can link to the step that tainted a run', async () => {
+    const wrapper = await mountDetail()
+
+    expect(wrapper.get('[data-step="2"]').attributes('id')).toBe('step-2')
+  })
+
   it('shows the reference of a redacted result, not content', async () => {
     const wrapper = await mountDetail()
 

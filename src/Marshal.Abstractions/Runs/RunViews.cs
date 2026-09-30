@@ -1,6 +1,7 @@
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Sessions;
+using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
 
 namespace Marshal.Abstractions.Runs;
@@ -13,7 +14,8 @@ namespace Marshal.Abstractions.Runs;
 /// <param name="MinCost">Only runs costing at least this much.</param>
 /// <param name="Before">Only runs started before this time (paging).</param>
 /// <param name="Limit">Maximum number of runs (1-200).</param>
-public sealed record RunFilter(SessionSource? Source = null, RunOutcome? Outcome = null, decimal? MinCost = null, DateTimeOffset? Before = null, int Limit = 50);
+/// <param name="TaskId">Only runs of this task.</param>
+public sealed record RunFilter(SessionSource? Source = null, RunOutcome? Outcome = null, decimal? MinCost = null, DateTimeOffset? Before = null, int Limit = 50, TaskId? TaskId = null);
 
 /// <summary>
 /// A run in the runs list.

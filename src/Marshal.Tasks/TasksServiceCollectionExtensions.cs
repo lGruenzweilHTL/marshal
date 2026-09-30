@@ -11,6 +11,7 @@ using Marshal.Abstractions.Tools;
 using Marshal.Core.Agent;
 using Marshal.Core.Conversation;
 using Marshal.Tasks.Approvals;
+using Marshal.Tasks.Control;
 using Marshal.Tasks.Deliveries;
 using Marshal.Tasks.Events;
 using Marshal.Tasks.Executors;
@@ -54,6 +55,7 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<TaskBudgets>();
         services.AddSingleton<TaskPauses>();
         services.AddSingleton<IKillSwitch, EfKillSwitch>();
+        services.AddSingleton<ITaskControl, TaskControl>();
         services.AddSingleton<ActiveTaskRuns>();
         services.AddSingleton<ITaskRunner, AgentTaskRunner>();
         services.AddSingleton<TaskContinuations>();
@@ -78,6 +80,7 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<IFollowUpStore, EfFollowUpStore>();
         services.AddSingleton<IFollowUpReplies, FollowUpReplies>();
         services.AddSingleton<INotificationInbox, EfNotificationInbox>();
+        services.AddSingleton<INotificationHistory, EfNotificationHistory>();
         services.AddSingleton<IToolSource, NotificationToolSource>();
         services.AddSingleton<IDeliveryDispatcher, DeliveryDispatcher>();
         services.AddSingleton<IHostedService, ConditionalDeliveryTracker>();
@@ -99,6 +102,8 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<ExecutorService>();
         services.AddSingleton<IExecutorCallbacks>(provider => provider.GetRequiredService<ExecutorService>());
         services.AddSingleton<ITool, RunExecutorTool>();
+        services.AddSingleton<IExecutorSessions, EfExecutorSessions>();
+        services.AddSingleton<IProposalReview, ProposalReview>();
 
         services.AddOptions<MaintenanceOptions>().Bind(configuration.GetSection("maintenance"))
             .Validate(options => new[] { options.BackupSchedule, options.ConsolidationSchedule, options.RetentionSchedule }.All(schedule => TaskTriggers.Validate(TaskTrigger.Cron(schedule ?? "")).IsSuccess),

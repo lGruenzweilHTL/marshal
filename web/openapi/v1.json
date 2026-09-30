@@ -524,6 +524,58 @@
         }
       }
     },
+    "/api/v1/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "The user\u0027s notifications, newest first, with channel, outcome and reason; filter by outcome, page with before.",
+        "operationId": "ListNotifications",
+        "parameters": [
+          {
+            "name": "outcome",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationEntry"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/tokens": {
       "get": {
         "tags": [
@@ -2113,10 +2165,356 @@
           }
         }
       }
+    },
+    "/api/v1/tasks": {
+      "get": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "The user\u0027s tasks and watches, oldest first; status filters by one status or active (pending, running, waiting).",
+        "operationId": "ListTasks",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/kill-switch": {
+      "get": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Whether background work is stopped.",
+        "operationId": "GetKillSwitch",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KillSwitchState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/kill-switch/activate": {
+      "post": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Stops every unfinished agent task and pauses new ones until released.",
+        "operationId": "ActivateKillSwitch",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KillSwitchState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/kill-switch/release": {
+      "post": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Lets background tasks run again; tasks paused while it was active become due.",
+        "operationId": "ReleaseKillSwitch",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KillSwitchState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{id}": {
+      "get": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "One task with notes, the latest result, deliveries, recent runs, notifications and executor sessions.",
+        "operationId": "GetTask",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{id}/goal": {
+      "put": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Replaces the task\u0027s goal; the next run uses it.",
+        "operationId": "SetTaskGoal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskGoalUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Cancels the task and its unfinished child tasks.",
+        "operationId": "CancelTask",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCancellation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/proposals": {
+      "get": {
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "The user\u0027s proposals, newest first, without diffs (default: open ones; status=all for every one).",
+        "operationId": "ListProposals",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProposalRecord"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/proposals/{id}": {
+      "get": {
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "One proposal with its diff.",
+        "operationId": "GetProposal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalRecord"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/proposals/{id}/merge": {
+      "post": {
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "Merges the change into the branch it started from on the executor host; a conflict leaves it open.",
+        "operationId": "MergeProposal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalRecord"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/proposals/{id}/reject": {
+      "post": {
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "Rejects the change and drops its branch on the executor host.",
+        "operationId": "RejectProposal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalRecord"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AgentTaskStatus": {
+        "enum": [
+          "pending",
+          "running",
+          "waiting",
+          "done",
+          "failed",
+          "cancelled"
+        ]
+      },
       "AliasRequest": {
         "required": [
           "phrase"
@@ -2923,6 +3321,67 @@
           "saturday"
         ]
       },
+      "DeliveryChannel": {
+        "enum": [
+          "voice",
+          "push",
+          "inbox",
+          "silent"
+        ]
+      },
+      "ExecutorSessionRecord": {
+        "required": [
+          "id",
+          "taskId",
+          "executor",
+          "target",
+          "status",
+          "startedAt",
+          "finishedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taskId": {
+            "$ref": "#/components/schemas/TaskId"
+          },
+          "executor": {
+            "type": "string"
+          },
+          "target": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/ExecutorSessionStatus"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ExecutorSessionStatus": {
+        "enum": [
+          "starting",
+          "running",
+          "done",
+          "failed",
+          "cancelled"
+        ]
+      },
       "GuardDecision": {
         "enum": [
           "safe",
@@ -2985,6 +3444,27 @@
         }
       },
       "JsonElement": {},
+      "KillSwitchState": {
+        "required": [
+          "active"
+        ],
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "boolean",
+            "description": "Whether background work is stopped."
+          },
+          "cancelled": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "On activation: how many tasks were cancelled.",
+            "format": "int32"
+          }
+        },
+        "description": "The kill switch."
+      },
       "LiveEventMessage": {
         "required": [
           "topic",
@@ -3718,6 +4198,98 @@
           null
         ]
       },
+      "NotificationEntry": {
+        "required": [
+          "id",
+          "taskId",
+          "source",
+          "priority",
+          "content",
+          "channel",
+          "outcome",
+          "reason",
+          "coalescedInto",
+          "createdAt",
+          "deliveredAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taskId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TaskId"
+              }
+            ]
+          },
+          "source": {
+            "type": "string"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/NotificationPriority"
+          },
+          "content": {
+            "type": "string"
+          },
+          "channel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/NotificationOutcome"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "coalescedInto": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deliveredAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "NotificationOutcome": {
+        "enum": [
+          "pending",
+          "delivered",
+          "coalesced",
+          "held",
+          "inboxed",
+          "expired",
+          "fallback"
+        ]
+      },
+      "NotificationPriority": {
+        "enum": [
+          "critical",
+          "normal",
+          "low"
+        ]
+      },
       "NotificationTargets": {
         "required": [
           "person",
@@ -4339,6 +4911,90 @@
             }
           }
         }
+      },
+      "ProposalKind": {
+        "enum": [
+          "notes",
+          "code"
+        ]
+      },
+      "ProposalRecord": {
+        "required": [
+          "id",
+          "taskId",
+          "executorSessionId",
+          "kind",
+          "target",
+          "branch",
+          "title",
+          "diff",
+          "status",
+          "createdAt",
+          "decidedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taskId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TaskId"
+              }
+            ]
+          },
+          "executorSessionId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ProposalKind"
+          },
+          "target": {
+            "type": "string"
+          },
+          "branch": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "diff": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProposalStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decidedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ProposalStatus": {
+        "enum": [
+          "open",
+          "merged",
+          "rejected"
+        ]
       },
       "QueuedJob": {
         "required": [
@@ -5012,6 +5668,427 @@
           }
         }
       },
+      "TaskBudgetView": {
+        "required": [
+          "tokens",
+          "cost",
+          "steps",
+          "wallTimeSeconds",
+          "runs"
+        ],
+        "type": "object",
+        "properties": {
+          "tokens": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Model tokens.",
+            "format": "int64"
+          },
+          "cost": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "Cost in the configured currency.",
+            "format": "double"
+          },
+          "steps": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Model calls.",
+            "format": "int32"
+          },
+          "wallTimeSeconds": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "Run time.",
+            "format": "double"
+          },
+          "runs": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Runs.",
+            "format": "int32"
+          }
+        },
+        "description": "Limits of a task over one activation; null limits are not enforced at the task level."
+      },
+      "TaskCancellation": {
+        "required": [
+          "cancelled"
+        ],
+        "type": "object",
+        "properties": {
+          "cancelled": {
+            "type": "integer",
+            "description": "How many tasks were cancelled (the task and its unfinished descendants).",
+            "format": "int32"
+          }
+        },
+        "description": "The outcome of a cancellation."
+      },
+      "TaskCreator": {
+        "enum": [
+          "user",
+          "task",
+          "system"
+        ]
+      },
+      "TaskDelivery": {
+        "required": [
+          "channel"
+        ],
+        "type": "object",
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/DeliveryChannel"
+          },
+          "target": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "priority": {
+            "$ref": "#/components/schemas/NotificationPriority"
+          },
+          "followUp": {
+            "type": "boolean",
+            "default": false
+          },
+          "when": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "expires": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "fallback": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DeliveryChannel"
+              }
+            ]
+          },
+          "pendingSince": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "TaskDetail": {
+        "required": [
+          "task",
+          "notes",
+          "result",
+          "deliveries",
+          "overrideQuietHoursUntil",
+          "runs",
+          "notifications",
+          "executorSessions"
+        ],
+        "type": "object",
+        "properties": {
+          "task": {
+            "description": "The task as listed.",
+            "$ref": "#/components/schemas/TaskItem"
+          },
+          "notes": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Notes the task keeps between runs."
+          },
+          "result": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TaskResult"
+              }
+            ],
+            "description": "The latest result: speech and markdown body."
+          },
+          "deliveries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskDelivery"
+            },
+            "description": "Where results go."
+          },
+          "overrideQuietHoursUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Until when it may notify during quiet hours.",
+            "format": "date-time"
+          },
+          "runs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunSummary"
+            },
+            "description": "Its runs, newest first."
+          },
+          "notifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationEntry"
+            },
+            "description": "What it sent and what the router did, newest first."
+          },
+          "executorSessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExecutorSessionRecord"
+            },
+            "description": "External work it started, newest first."
+          }
+        },
+        "description": "One task with everything the detail view shows."
+      },
+      "TaskGoalUpdate": {
+        "required": [
+          "goal"
+        ],
+        "type": "object",
+        "properties": {
+          "goal": {
+            "type": "string",
+            "description": "The goal the next run works on."
+          }
+        },
+        "description": "A new goal for a task."
+      },
+      "TaskId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "TaskItem": {
+        "required": [
+          "id",
+          "name",
+          "goal",
+          "kind",
+          "status",
+          "statusReason",
+          "trigger",
+          "nextRunAt",
+          "budget",
+          "spent",
+          "resultSpeech",
+          "resultAt",
+          "parentId",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Task id."
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Unique name, if any."
+          },
+          "goal": {
+            "type": "string",
+            "description": "What the task works on."
+          },
+          "kind": {
+            "description": "\u0060agent\u0060 or \u0060system\u0060.",
+            "$ref": "#/components/schemas/TaskKind"
+          },
+          "status": {
+            "description": "Lifecycle state.",
+            "$ref": "#/components/schemas/AgentTaskStatus"
+          },
+          "statusReason": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Why it is in that state (e.g. \u0060budget_exceeded\u0060, \u0060paused\u0060)."
+          },
+          "trigger": {
+            "description": "What makes it due; watches have kind \u0060event\u0060.",
+            "$ref": "#/components/schemas/TaskTrigger"
+          },
+          "nextRunAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When it runs next.",
+            "format": "date-time"
+          },
+          "budget": {
+            "description": "Limits over one activation.",
+            "$ref": "#/components/schemas/TaskBudgetView"
+          },
+          "spent": {
+            "description": "What the current activation has used.",
+            "$ref": "#/components/schemas/TaskSpendView"
+          },
+          "resultSpeech": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The spoken part of the latest result."
+          },
+          "resultAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the latest result was ready.",
+            "format": "date-time"
+          },
+          "parentId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The task that created it."
+          },
+          "createdBy": {
+            "description": "Who created it.",
+            "$ref": "#/components/schemas/TaskCreator"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When it was created.",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "When it last changed.",
+            "format": "date-time"
+          }
+        },
+        "description": "A task or watch in the tasks list."
+      },
+      "TaskKind": {
+        "enum": [
+          "agent",
+          "system"
+        ]
+      },
+      "TaskResult": {
+        "required": [
+          "speech",
+          "body"
+        ],
+        "type": "object",
+        "properties": {
+          "speech": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        }
+      },
+      "TaskSpendView": {
+        "required": [
+          "tokens",
+          "cost",
+          "steps",
+          "wallTimeSeconds",
+          "runs"
+        ],
+        "type": "object",
+        "properties": {
+          "tokens": {
+            "type": "integer",
+            "description": "Model tokens.",
+            "format": "int64"
+          },
+          "cost": {
+            "type": "number",
+            "description": "Cost in the configured currency.",
+            "format": "double"
+          },
+          "steps": {
+            "type": "integer",
+            "description": "Model calls.",
+            "format": "int32"
+          },
+          "wallTimeSeconds": {
+            "type": "number",
+            "description": "Run time.",
+            "format": "double"
+          },
+          "runs": {
+            "type": "integer",
+            "description": "Runs.",
+            "format": "int32"
+          }
+        },
+        "description": "What a task\u0027s current activation has used, in the shape of ."
+      },
+      "TaskTrigger": {
+        "required": [
+          "kind",
+          "spec"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/TaskTriggerKind"
+          },
+          "spec": {
+            "type": "string"
+          }
+        }
+      },
+      "TaskTriggerKind": {
+        "enum": [
+          "now",
+          "at",
+          "cron",
+          "event",
+          "after"
+        ]
+      },
       "TemplateSummary": {
         "required": [
           "name",
@@ -5170,6 +6247,9 @@
       "name": "Marshal"
     },
     {
+      "name": "Notifications"
+    },
+    {
       "name": "Tokens"
     },
     {
@@ -5189,6 +6269,12 @@
     },
     {
       "name": "Approvals"
+    },
+    {
+      "name": "Tasks"
+    },
+    {
+      "name": "Proposals"
     }
   ]
 }

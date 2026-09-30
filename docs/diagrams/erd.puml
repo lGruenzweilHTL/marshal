@@ -406,6 +406,7 @@ package "Background Work" {
     --
     * owner_id : OwnerId <<FK>>
     task_id : TaskId <<FK>>
+    executor_session_id : Guid <<FK>>  <<merge / discard go through its executor>>
     * kind : notes | code
     * target : string  <<repo / sink>>
     * branch : string
@@ -517,6 +518,7 @@ AgentTask ||--o{ ExecutorSession
 AgentTask |o--o{ Notification
 Notification |o--o{ Notification : coalesced into
 AgentTask |o--o{ Proposal
+ExecutorSession |o--o{ Proposal
 ApiToken |o--o| ExecutorSession : callback
 Run |o--o{ AuditEvent
 

@@ -14,7 +14,7 @@ describe('AppShell', () => {
 
     expect(wrapper.get('[data-test="user"]').text()).toBe('Lukas')
     const links = wrapper.findAll('nav a').map((link) => link.text())
-    expect(links).toEqual(['Dashboard', 'Chat', 'Memory', 'Printer', 'Mail', 'Runs', 'Cost', 'Security', 'Secrets', 'Preferences', 'System'])
+    expect(links).toEqual(['Dashboard', 'Chat', 'Tasks', 'Review', 'Notifications', 'Memory', 'Printer', 'Mail', 'Runs', 'Cost', 'Security', 'Secrets', 'Preferences', 'System'])
   })
 
   it('shows the config link to admins only', async () => {

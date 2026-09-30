@@ -38,3 +38,14 @@ A finished coding session SHALL produce a `Proposal` (kind `code`) with branch a
 #### Scenario: Voice notice
 - **WHEN** a coding task completes
 - **THEN** the voice delivery says the change is ready for review and offers no merge action
+
+### Requirement: Merge and discard on the executor host
+Merging a proposal SHALL ask the executor host to merge the session's branch into the branch it started from, in the host's repository, without pushing; the branch SHALL be deleted after the merge. A merge that conflicts or finds the base branch moved in a conflicting way SHALL change nothing and leave the proposal open. Rejecting a proposal SHALL ask the host to delete the branch (best effort; the rejection stands when the host is unreachable). Marshal SHALL still never access the repositories itself.
+
+#### Scenario: Merge
+- **WHEN** the user merges an open code proposal
+- **THEN** the host merges `marshal/<id>` into its base branch, deletes the branch, and the proposal is `merged`
+
+#### Scenario: Conflict
+- **WHEN** the base branch changed so that the session's branch no longer merges cleanly
+- **THEN** the merge is refused with a conflict, no ref changes, and the proposal stays open

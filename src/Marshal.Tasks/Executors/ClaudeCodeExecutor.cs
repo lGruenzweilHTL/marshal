@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -88,6 +89,35 @@ public sealed class ClaudeCodeExecutor(IHttpClientFactory clients, ISecretStore 
         return response.IsSuccessStatusCode
             ? Result.Success()
             : new Error("executor.cancel_failed", $"The executor host could not cancel the session ({(int)response.StatusCode}).", ErrorType.Failure);
+    }
+
+    public async Task<Result> MergeAsync(string handle, string target, CancellationToken cancellationToken)
+    {
+        Result<HttpResponseMessage> sent = await SendAsync(HttpMethod.Post, $"sessions/{Uri.EscapeDataString(handle)}/merge", JsonContent.Create(new { repository = target }), cancellationToken);
+        if (sent.IsFailure)
+            return new Error("executor.merge_failed", sent.Error.Message, sent.Error.Type);
+
+        using HttpResponseMessage response = sent.Value;
+        return response.StatusCode switch
+        {
+            _ when response.IsSuccessStatusCode => Result.Success(),
+            HttpStatusCode.Conflict => new Error("executor.merge_conflict",
+                $"The branch no longer merges cleanly into its base branch in {target}, or the session is still running. Nothing was changed.", ErrorType.Conflict),
+            HttpStatusCode.NotFound => new Error("executor.merge_failed", "The session's branch no longer exists on the executor host.", ErrorType.NotFound),
+            _ => new Error("executor.merge_failed", $"The executor host could not merge the branch ({(int)response.StatusCode}).", ErrorType.Failure),
+        };
+    }
+
+    public async Task<Result> DiscardAsync(string handle, string target, CancellationToken cancellationToken)
+    {
+        Result<HttpResponseMessage> sent = await SendAsync(HttpMethod.Post, $"sessions/{Uri.EscapeDataString(handle)}/discard", JsonContent.Create(new { repository = target }), cancellationToken);
+        if (sent.IsFailure)
+            return new Error("executor.discard_failed", sent.Error.Message, sent.Error.Type);
+
+        using HttpResponseMessage response = sent.Value;
+        return response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NotFound
+            ? Result.Success()
+            : new Error("executor.discard_failed", $"The executor host could not delete the branch ({(int)response.StatusCode}).", ErrorType.Failure);
     }
 
     private async Task<Result<HttpResponseMessage>> SendAsync(HttpMethod method, string path, HttpContent? content, CancellationToken cancellationToken)

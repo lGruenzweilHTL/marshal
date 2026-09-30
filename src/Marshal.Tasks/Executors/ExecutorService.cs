@@ -155,6 +155,7 @@ public sealed partial class ExecutorService(
             Id = Guid.NewGuid(),
             OwnerId = session.OwnerId,
             TaskId = session.TaskId,
+            ExecutorSessionId = session.Id,
             Kind = ProposalKind.Code,
             Target = session.Target ?? session.Executor,
             Branch = report.Branch!,

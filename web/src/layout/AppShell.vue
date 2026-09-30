@@ -7,6 +7,9 @@ import { useUserSession } from '../session'
 const links = [
   { to: '/', label: 'Dashboard' },
   { to: '/chat', label: 'Chat' },
+  { to: '/tasks', label: 'Tasks' },
+  { to: '/review', label: 'Review' },
+  { to: '/notifications', label: 'Notifications' },
   { to: '/memory', label: 'Memory' },
   { to: '/printers', label: 'Printer' },
   { to: '/mail/accounts', label: 'Mail' },

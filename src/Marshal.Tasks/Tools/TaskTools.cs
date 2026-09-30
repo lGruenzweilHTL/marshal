@@ -302,24 +302,8 @@ internal static class TaskTools
         if (found.IsFailure)
             return found.Error;
 
-        int cancelled = 0;
-        var pending = new Queue<TaskRecord>([found.Value]);
-        while (pending.TryDequeue(out TaskRecord? task))
-        {
-            if (task.Status is AgentTaskStatus.Pending or AgentTaskStatus.Running or AgentTaskStatus.Waiting)
-            {
-                Result<TaskRecord> saved = await context.Store.UpdateAsync(task with { Status = AgentTaskStatus.Cancelled, StatusReason = "cancelled", NextRunAt = null }, ct);
-                if (saved.IsFailure)
-                    return saved.Error;
-                context.Scheduler.CancelRun(task.Id);
-                cancelled++;
-            }
-
-            foreach (TaskRecord child in await context.Store.ListAsync(new TaskFilter(_unfinished, task.Id), ct))
-                pending.Enqueue(child);
-        }
-
-        return Output(new { cancelled }, found.Value.Id.ToString());
+        Result<int> cancelled = await context.Control.CancelAsync(found.Value.Id, ct);
+        return cancelled.IsSuccess ? Output(new { cancelled = cancelled.Value }, found.Value.Id.ToString()) : cancelled.Error;
     }
 
     private static async Task<Result<ToolOutput>> StopAllAsync(TaskToolContext context, ToolInvocation invocation, CancellationToken ct)

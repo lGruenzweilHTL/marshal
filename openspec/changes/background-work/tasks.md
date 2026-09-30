@@ -77,11 +77,13 @@
 
 ## 11. Web UI
 
-- [ ] 11.1 Write component tests for tasks list / detail, goal edit, cancel, kill switch
-- [ ] 11.2 Implement tasks views
-- [ ] 11.3 Write component tests for review queue (approvals with reasons and taint link, coding proposals with diff and merge)
-- [ ] 11.4 Implement review queue
-- [ ] 11.5 Implement notification history view and dashboard widgets (running tasks, next runs, pending approvals, recent notifications, kill switch)
+- [x] 11.0a Write API tests and implement the endpoints the views need: tasks (list, detail with runs, notifications and executor sessions, goal edit, cancel), kill switch, notification history, proposals (list, diff, reject, merge); audit goal edits, cancellations and proposal decisions
+- [x] 11.0b Write executor host tests and implement merge and discard of a session branch (`POST /sessions/{id}/merge`, `POST /sessions/{id}/discard`), with `IExecutor` merge / discard in `ClaudeCodeExecutor`
+- [x] 11.1 Write component tests for tasks list / detail, goal edit, cancel, kill switch
+- [x] 11.2 Implement tasks views
+- [x] 11.3 Write component tests for review queue (approvals with reasons and taint link, coding proposals with diff and merge)
+- [x] 11.4 Implement review queue
+- [x] 11.5 Implement notification history view and dashboard widgets (running tasks, next runs, pending approvals, recent notifications, kill switch)
 
 ## 12. Finish
 

@@ -25,6 +25,8 @@ public sealed class EfRunQueries(IDbContextFactory<MarshalDbContext> contexts) :
             runs = runs.Where(run => run.Cost >= minCost);
         if (filter.Before is { } before)
             runs = runs.Where(run => run.StartedAt < before);
+        if (filter.TaskId is { } task)
+            runs = runs.Where(run => run.TaskId == task);
 
         List<Run> rows = await runs.OrderByDescending(run => run.StartedAt).Take(Math.Clamp(filter.Limit, 1, MaxLimit)).ToListAsync(cancellationToken);
         return [.. rows.Select(Summary)];

@@ -22,6 +22,15 @@ public interface IExecutor
 
     /// <summary>Stops a running session.</summary>
     Task<Result> CancelAsync(string handle, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Applies a finished session's result to what it started from (a code proposal the user merged). Fails with
+    /// <c>executor.merge_conflict</c> when it no longer applies cleanly (nothing changed) or <c>executor.merge_failed</c>.
+    /// </summary>
+    Task<Result> MergeAsync(string handle, string target, CancellationToken cancellationToken);
+
+    /// <summary>Drops a finished session's result (its proposal was rejected); a result that is already gone is fine.</summary>
+    Task<Result> DiscardAsync(string handle, string target, CancellationToken cancellationToken);
 }
 
 /// <summary>A session to start.</summary>

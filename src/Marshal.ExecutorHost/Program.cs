@@ -25,5 +25,18 @@ sessions.MapPost("/", async (SessionRequest request, SessionManager manager, Can
     return started is null ? Results.BadRequest(new { error }) : Results.Accepted($"/sessions/{started.Id}", started);
 });
 sessions.MapDelete("/{id}", (string id, SessionManager manager) => manager.Cancel(id) ? Results.Accepted() : Results.NotFound());
+sessions.MapPost("/{id}/merge", async (string id, BranchRequest request, SessionManager manager, CancellationToken ct) =>
+    BranchResponse(await manager.MergeAsync(id, request.Repository, ct), Results.Ok(new { merged = true })));
+sessions.MapPost("/{id}/discard", async (string id, BranchRequest request, SessionManager manager, CancellationToken ct) =>
+    BranchResponse(await manager.DiscardAsync(id, request.Repository, ct), Results.NoContent()));
 
 app.Run();
+
+static IResult BranchResponse(BranchResult result, IResult done) => result switch
+{
+    BranchResult.Done => done,
+    BranchResult.NotFound => Results.NotFound(),
+    BranchResult.InvalidRepository => Results.BadRequest(new { error = "Unknown repository." }),
+    BranchResult.Running => Results.Conflict(new { error = "running" }),
+    _ => Results.Conflict(new { error = "conflict" }),
+};

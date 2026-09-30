@@ -81,3 +81,92 @@ export function printerState(overrides: Partial<Schemas['PrinterState']> = {}): 
 export function printerSummary(overrides: Partial<Schemas['PrinterSummary']> = {}): Schemas['PrinterSummary'] {
   return { name: 'voron', online: true, state: printerState(), macros: ['PARK'], webUrl: 'http://voron.local/', babysitter: null, ...overrides }
 }
+
+export function taskItem(overrides: Partial<Schemas['TaskItem']> = {}): Schemas['TaskItem'] {
+  return {
+    id: 't-1',
+    name: 'briefing',
+    goal: 'Morning briefing.',
+    kind: 'agent',
+    status: 'waiting',
+    statusReason: null,
+    trigger: { kind: 'cron', spec: '0 6 * * *' },
+    nextRunAt: '2026-10-01T04:00:00Z',
+    budget: { tokens: null, cost: 0.5, steps: null, wallTimeSeconds: null, runs: null },
+    spent: { tokens: 1200, cost: 0.12, steps: 3, wallTimeSeconds: 20, runs: 1 },
+    resultSpeech: 'Two new mails.',
+    resultAt: '2026-09-30T04:01:00Z',
+    parentId: null,
+    createdBy: 'user',
+    createdAt: '2026-09-28T08:00:00Z',
+    updatedAt: '2026-09-30T04:01:00Z',
+    ...overrides,
+  }
+}
+
+export function taskDetail(overrides: Partial<Schemas['TaskDetail']> = {}): Schemas['TaskDetail'] {
+  return {
+    task: taskItem(),
+    notes: 'Mention the parcel.',
+    result: { speech: 'Two new mails.', body: '## Mail\n\n**Two** new mails.' },
+    deliveries: [{ channel: 'voice', followUp: true, when: ['state(binary_sensor.kitchen_occupancy = on)'], expires: '11:00', fallback: 'push' }],
+    overrideQuietHoursUntil: null,
+    runs: [runSummary({ id: 'r-9', source: 'task', trigger: 'task' })],
+    notifications: [notificationEntry()],
+    executorSessions: [],
+    ...overrides,
+  }
+}
+
+export function notificationEntry(overrides: Partial<Schemas['NotificationEntry']> = {}): Schemas['NotificationEntry'] {
+  return {
+    id: 'n-1',
+    taskId: 't-1',
+    source: 'task:t-1',
+    priority: 'normal',
+    content: 'Two new mails.',
+    channel: 'voice',
+    outcome: 'delivered',
+    reason: null,
+    coalescedInto: null,
+    createdAt: '2026-09-30T04:01:00Z',
+    deliveredAt: '2026-09-30T04:01:02Z',
+    ...overrides,
+  }
+}
+
+export function approvalItem(overrides: Partial<Schemas['ApprovalItem']> = {}): Schemas['ApprovalItem'] {
+  return {
+    id: 'a-1',
+    taskId: 't-1',
+    runId: 'r-1',
+    tool: 'lock.unlock',
+    arguments: { door: 'front' },
+    summary: 'Unlock the front door',
+    reasons: [
+      { code: 'rule', sentence: 'Unlocking needs your approval.' },
+      { code: 'taint', sentence: 'This run read an email, which could contain injected instructions.' },
+    ],
+    taint: [{ kind: 'mail', firstStep: 2 }],
+    createdAt: '2026-09-30T08:00:00Z',
+    expiresAt: '2026-09-30T08:10:00Z',
+    ...overrides,
+  }
+}
+
+export function proposal(overrides: Partial<Schemas['ProposalRecord']> = {}): Schemas['ProposalRecord'] {
+  return {
+    id: 'p-1',
+    taskId: 't-2',
+    executorSessionId: 's-1',
+    kind: 'code',
+    target: 'demo',
+    branch: 'marshal/abc',
+    title: 'Add a feature file',
+    diff: null,
+    status: 'open',
+    createdAt: '2026-09-30T08:00:00Z',
+    decidedAt: null,
+    ...overrides,
+  }
+}

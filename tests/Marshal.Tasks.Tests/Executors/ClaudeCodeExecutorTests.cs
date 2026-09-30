@@ -95,6 +95,45 @@ public sealed class ClaudeCodeExecutorTests
         Assert.Equal((HttpMethod.Delete, new Uri("http://executor.test:8080/sessions/s-1")), (_handler.Requests[0].Method, _handler.Requests[0].Url));
     }
 
+    [Fact]
+    public async Task Merge_PostsTheRepositoryToTheSessionsMerge()
+    {
+        _handler.Respond(HttpStatusCode.OK, """{"merged":true}""");
+
+        Result merged = await Executor().MergeAsync("s-1", "demo", Ct);
+
+        Assert.True(merged.IsSuccess);
+        (HttpMethod method, Uri url, string? authorization, string? body) = Assert.Single(_handler.Requests);
+        Assert.Equal((HttpMethod.Post, new Uri("http://executor.test:8080/sessions/s-1/merge"), "Bearer host-token"), (method, url, authorization));
+        Assert.Equal("demo", JsonDocument.Parse(body!).RootElement.GetProperty("repository").GetString());
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Conflict, "executor.merge_conflict", ErrorType.Conflict)]
+    [InlineData(HttpStatusCode.NotFound, "executor.merge_failed", ErrorType.NotFound)]
+    [InlineData(HttpStatusCode.InternalServerError, "executor.merge_failed", ErrorType.Failure)]
+    public async Task Merge_HostRefuses_Failure(HttpStatusCode status, string code, ErrorType type)
+    {
+        _handler.Respond(status, """{"error":"conflict"}""");
+
+        Result merged = await Executor().MergeAsync("s-1", "demo", Ct);
+
+        Assert.Equal((code, type), (merged.Error.Code, merged.Error.Type));
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.NoContent)]
+    [InlineData(HttpStatusCode.NotFound)]
+    public async Task Discard_PostsDiscard_GoneBranchIsFine(HttpStatusCode status)
+    {
+        _handler.Respond(status, "");
+
+        Result discarded = await Executor().DiscardAsync("s-1", "demo", Ct);
+
+        Assert.True(discarded.IsSuccess);
+        Assert.Equal((HttpMethod.Post, new Uri("http://executor.test:8080/sessions/s-1/discard")), (_handler.Requests[0].Method, _handler.Requests[0].Url));
+    }
+
     private ClaudeCodeExecutor Executor() => new(new SingleClientFactory(_handler), _secrets, Options.Create(new ExecutorOptions
     {
         ClaudeCode = new ClaudeCodeOptions

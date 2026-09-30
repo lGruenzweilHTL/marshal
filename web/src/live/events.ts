@@ -35,11 +35,37 @@ export interface PrinterStatePayload {
   state: Schemas['PrinterState'] | null
 }
 
+/** `task.changed` on topic `tasks` (`TaskChangedPayload`). */
+export interface TaskChangedPayload {
+  taskId: string
+  name: string | null
+  status: Schemas['AgentTaskStatus']
+  statusReason: string | null
+  nextRunAt: string | null
+  resultAt: string | null
+}
+
+/** `notification.created` and `notification.updated` on topic `notifications` (`NotificationPayload`). */
+export interface NotificationPayload {
+  id: string
+  source: string
+  priority: Schemas['NotificationPriority']
+  text: string
+  outcome: Schemas['NotificationOutcome']
+  channel: string | null
+  reason: string | null
+  taskId: string | null
+  createdAt: string
+}
+
 /** Event type → payload. Later changes add their topics' events here. */
 export interface LiveEventMap {
   'run.started': RunStartedPayload
   'run.completed': RunCompletedPayload
   'printer.state': PrinterStatePayload
+  'task.changed': TaskChangedPayload
+  'notification.created': NotificationPayload
+  'notification.updated': NotificationPayload
 }
 
 export type LiveEventType = keyof LiveEventMap

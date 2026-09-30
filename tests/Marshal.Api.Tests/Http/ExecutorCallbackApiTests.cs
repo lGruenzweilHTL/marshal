@@ -130,5 +130,9 @@ public sealed class ExecutorCallbackApiTests : IAsyncLifetime
         }
 
         public Task<Result> CancelAsync(string handle, CancellationToken cancellationToken) => Task.FromResult(Result.Success());
+
+        public Task<Result> MergeAsync(string handle, string target, CancellationToken cancellationToken) => Task.FromResult(Result.Success());
+
+        public Task<Result> DiscardAsync(string handle, string target, CancellationToken cancellationToken) => Task.FromResult(Result.Success());
     }
 }

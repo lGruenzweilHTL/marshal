@@ -15,14 +15,18 @@ import MemoryLayout from './memory/MemoryLayout.vue'
 import ProjectsView from './memory/ProjectsView.vue'
 import ScatterView from './memory/ScatterView.vue'
 import NotFoundView from './layout/NotFoundView.vue'
+import NotificationsView from './notifications/NotificationsView.vue'
 import PreferencesView from './preferences/PreferencesView.vue'
 import PrinterView from './printers/PrinterView.vue'
+import ReviewQueueView from './review/ReviewQueueView.vue'
 import CostView from './runs/CostView.vue'
 import RunDetailView from './runs/RunDetailView.vue'
 import RunsView from './runs/RunsView.vue'
 import SecretsView from './secrets/SecretsView.vue'
 import SecurityView from './security/SecurityView.vue'
 import SystemView from './system/SystemView.vue'
+import TaskDetailView from './tasks/TaskDetailView.vue'
+import TasksView from './tasks/TasksView.vue'
 import type { UserSession } from './session'
 
 declare module 'vue-router' {
@@ -44,6 +48,10 @@ const routes: RouteRecordRaw[] = [
     children: [
       { path: '', name: 'dashboard', component: DashboardView, meta: { title: 'Dashboard' } },
       { path: 'chat', name: 'chat', component: ChatView, meta: { title: 'Chat' } },
+      { path: 'tasks', name: 'tasks', component: TasksView, meta: { title: 'Tasks' } },
+      { path: 'tasks/:id', name: 'task', component: TaskDetailView, meta: { title: 'Task' } },
+      { path: 'review/:id?', name: 'review', component: ReviewQueueView, meta: { title: 'Review' } },
+      { path: 'notifications', name: 'notifications', component: NotificationsView, meta: { title: 'Notifications' } },
       { path: 'runs', name: 'runs', component: RunsView, meta: { title: 'Runs' } },
       { path: 'runs/:id', name: 'run', component: RunDetailView, meta: { title: 'Run' } },
       { path: 'cost', name: 'cost', component: CostView, meta: { title: 'Cost' } },

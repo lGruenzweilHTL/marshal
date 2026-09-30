@@ -392,6 +392,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             proposal.HasIndex(entity => new { entity.OwnerId, entity.Status });
             proposal.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
             proposal.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.TaskId);
+            proposal.HasOne<ExecutorSession>().WithMany().HasForeignKey(entity => entity.ExecutorSessionId);
             OwnerFilter(proposal);
         });
 

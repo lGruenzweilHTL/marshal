@@ -311,6 +311,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The user's notifications, newest first, with channel, outcome and reason; filter by outcome, page with before. */
+        get: operations["ListNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/tokens": {
         parameters: {
             query?: never;
@@ -986,10 +1003,199 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The user's tasks and watches, oldest first; status filters by one status or active (pending, running, waiting). */
+        get: operations["ListTasks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/kill-switch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether background work is stopped. */
+        get: operations["GetKillSwitch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/kill-switch/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stops every unfinished agent task and pauses new ones until released. */
+        post: operations["ActivateKillSwitch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/kill-switch/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Lets background tasks run again; tasks paused while it was active become due. */
+        post: operations["ReleaseKillSwitch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One task with notes, the latest result, deliveries, recent runs, notifications and executor sessions. */
+        get: operations["GetTask"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/{id}/goal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replaces the task's goal; the next run uses it. */
+        put: operations["SetTaskGoal"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancels the task and its unfinished child tasks. */
+        post: operations["CancelTask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The user's proposals, newest first, without diffs (default: open ones; status=all for every one). */
+        get: operations["ListProposals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One proposal with its diff. */
+        get: operations["GetProposal"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals/{id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Merges the change into the branch it started from on the executor host; a conflict leaves it open. */
+        post: operations["MergeProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rejects the change and drops its branch on the executor host. */
+        post: operations["RejectProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @enum {unknown} */
+        AgentTaskStatus: "pending" | "running" | "waiting" | "done" | "failed" | "cancelled";
         /** @description An alias phrase. */
         AliasRequest: {
             /** @description The phrase; normalized when stored. */
@@ -1265,6 +1471,22 @@ export interface components {
         /** @enum {unknown} */
         DayOfWeek: "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
         /** @enum {unknown} */
+        DeliveryChannel: "voice" | "push" | "inbox" | "silent";
+        ExecutorSessionRecord: {
+            /** Format: uuid */
+            id: string;
+            taskId: components["schemas"]["TaskId"];
+            executor: string;
+            target: null | string;
+            status: components["schemas"]["ExecutorSessionStatus"];
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            finishedAt: null | string;
+        };
+        /** @enum {unknown} */
+        ExecutorSessionStatus: "starting" | "running" | "done" | "failed" | "cancelled";
+        /** @enum {unknown} */
         GuardDecision: "safe" | "pending" | "confirmedByKeyword" | "judgePositive" | "judgeNeutral" | "judgeNegative" | "escalatedByTaint" | "denied" | "expired" | null;
         HeaterState: {
             /** Format: double */
@@ -1281,6 +1503,16 @@ export interface components {
             jobs: components["schemas"]["QueuedJob"][];
         };
         JsonElement: unknown;
+        /** @description The kill switch. */
+        KillSwitchState: {
+            /** @description Whether background work is stopped. */
+            active: boolean;
+            /**
+             * Format: int32
+             * @description On activation: how many tasks were cancelled.
+             */
+            cancelled?: null | number;
+        };
         /** @description One live update. */
         LiveEventMessage: {
             /** @description Topic, e.g. `runs`. */
@@ -1512,6 +1744,27 @@ export interface components {
         };
         /** @enum {unknown} */
         ModelTier: "fast" | "standard" | "advisor" | null;
+        NotificationEntry: {
+            /** Format: uuid */
+            id: string;
+            taskId: null | components["schemas"]["TaskId"];
+            source: string;
+            priority: components["schemas"]["NotificationPriority"];
+            content: string;
+            channel: null | string;
+            outcome: components["schemas"]["NotificationOutcome"];
+            reason: null | string;
+            /** Format: uuid */
+            coalescedInto: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            deliveredAt: null | string;
+        };
+        /** @enum {unknown} */
+        NotificationOutcome: "pending" | "delivered" | "coalesced" | "held" | "inboxed" | "expired" | "fallback";
+        /** @enum {unknown} */
+        NotificationPriority: "critical" | "normal" | "low";
         NotificationTargets: {
             person: null | string;
             push: string[];
@@ -1699,6 +1952,27 @@ export interface components {
             chunkCount: number;
             aliases: components["schemas"]["ProjectAliasView"][];
         };
+        /** @enum {unknown} */
+        ProposalKind: "notes" | "code";
+        ProposalRecord: {
+            /** Format: uuid */
+            id: string;
+            taskId: null | components["schemas"]["TaskId"];
+            /** Format: uuid */
+            executorSessionId: null | string;
+            kind: components["schemas"]["ProposalKind"];
+            target: string;
+            branch: string;
+            title: string;
+            diff: null | string;
+            status: components["schemas"]["ProposalStatus"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            decidedAt: null | string;
+        };
+        /** @enum {unknown} */
+        ProposalStatus: "open" | "merged" | "rejected";
         QueuedJob: {
             jobId: string;
             filename: string;
@@ -1881,6 +2155,174 @@ export interface components {
             /** Format: int32 */
             firstStep: number;
         };
+        /** @description Limits of a task over one activation; null limits are not enforced at the task level. */
+        TaskBudgetView: {
+            /**
+             * Format: int64
+             * @description Model tokens.
+             */
+            tokens: null | number;
+            /**
+             * Format: double
+             * @description Cost in the configured currency.
+             */
+            cost: null | number;
+            /**
+             * Format: int32
+             * @description Model calls.
+             */
+            steps: null | number;
+            /**
+             * Format: double
+             * @description Run time.
+             */
+            wallTimeSeconds: null | number;
+            /**
+             * Format: int32
+             * @description Runs.
+             */
+            runs: null | number;
+        };
+        /** @description The outcome of a cancellation. */
+        TaskCancellation: {
+            /**
+             * Format: int32
+             * @description How many tasks were cancelled (the task and its unfinished descendants).
+             */
+            cancelled: number;
+        };
+        /** @enum {unknown} */
+        TaskCreator: "user" | "task" | "system";
+        TaskDelivery: {
+            channel: components["schemas"]["DeliveryChannel"];
+            target?: null | string;
+            priority?: components["schemas"]["NotificationPriority"];
+            /** @default false */
+            followUp: boolean;
+            when?: null | string[];
+            expires?: null | string;
+            fallback?: null | components["schemas"]["DeliveryChannel"];
+            /** Format: date-time */
+            pendingSince?: null | string;
+            /** Format: date-time */
+            expiresAt?: null | string;
+        };
+        /** @description One task with everything the detail view shows. */
+        TaskDetail: {
+            /** @description The task as listed. */
+            task: components["schemas"]["TaskItem"];
+            /** @description Notes the task keeps between runs. */
+            notes: null | string;
+            /** @description The latest result: speech and markdown body. */
+            result: null | components["schemas"]["TaskResult"];
+            /** @description Where results go. */
+            deliveries: components["schemas"]["TaskDelivery"][];
+            /**
+             * Format: date-time
+             * @description Until when it may notify during quiet hours.
+             */
+            overrideQuietHoursUntil: null | string;
+            /** @description Its runs, newest first. */
+            runs: components["schemas"]["RunSummary"][];
+            /** @description What it sent and what the router did, newest first. */
+            notifications: components["schemas"]["NotificationEntry"][];
+            /** @description External work it started, newest first. */
+            executorSessions: components["schemas"]["ExecutorSessionRecord"][];
+        };
+        /** @description A new goal for a task. */
+        TaskGoalUpdate: {
+            /** @description The goal the next run works on. */
+            goal: string;
+        };
+        /** Format: uuid */
+        TaskId: string;
+        /** @description A task or watch in the tasks list. */
+        TaskItem: {
+            /** @description Task id. */
+            id: string;
+            /** @description Unique name, if any. */
+            name: null | string;
+            /** @description What the task works on. */
+            goal: string;
+            /** @description `agent` or `system`. */
+            kind: components["schemas"]["TaskKind"];
+            /** @description Lifecycle state. */
+            status: components["schemas"]["AgentTaskStatus"];
+            /** @description Why it is in that state (e.g. `budget_exceeded`, `paused`). */
+            statusReason: null | string;
+            /** @description What makes it due; watches have kind `event`. */
+            trigger: components["schemas"]["TaskTrigger"];
+            /**
+             * Format: date-time
+             * @description When it runs next.
+             */
+            nextRunAt: null | string;
+            /** @description Limits over one activation. */
+            budget: components["schemas"]["TaskBudgetView"];
+            /** @description What the current activation has used. */
+            spent: components["schemas"]["TaskSpendView"];
+            /** @description The spoken part of the latest result. */
+            resultSpeech: null | string;
+            /**
+             * Format: date-time
+             * @description When the latest result was ready.
+             */
+            resultAt: null | string;
+            /** @description The task that created it. */
+            parentId: null | string;
+            /** @description Who created it. */
+            createdBy: components["schemas"]["TaskCreator"];
+            /**
+             * Format: date-time
+             * @description When it was created.
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description When it last changed.
+             */
+            updatedAt: string;
+        };
+        /** @enum {unknown} */
+        TaskKind: "agent" | "system";
+        TaskResult: {
+            speech: string;
+            body: string;
+        };
+        /** @description What a task's current activation has used, in the shape of . */
+        TaskSpendView: {
+            /**
+             * Format: int64
+             * @description Model tokens.
+             */
+            tokens: number;
+            /**
+             * Format: double
+             * @description Cost in the configured currency.
+             */
+            cost: number;
+            /**
+             * Format: int32
+             * @description Model calls.
+             */
+            steps: number;
+            /**
+             * Format: double
+             * @description Run time.
+             */
+            wallTimeSeconds: number;
+            /**
+             * Format: int32
+             * @description Runs.
+             */
+            runs: number;
+        };
+        TaskTrigger: {
+            kind: components["schemas"]["TaskTriggerKind"];
+            spec: string;
+        };
+        /** @enum {unknown} */
+        TaskTriggerKind: "now" | "at" | "cron" | "event" | "after";
         /** @description A loaded agent template. */
         TemplateSummary: {
             /** @description Template name. */
@@ -2339,6 +2781,30 @@ export interface operations {
                 };
                 content: {
                     "text/event-stream": components["schemas"]["SseItemOfObject"];
+                };
+            };
+        };
+    };
+    ListNotifications: {
+        parameters: {
+            query?: {
+                outcome?: string;
+                before?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationEntry"][];
                 };
             };
         };
@@ -3467,6 +3933,246 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApprovalDecision"];
+                };
+            };
+        };
+    };
+    ListTasks: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskItem"][];
+                };
+            };
+        };
+    };
+    GetKillSwitch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KillSwitchState"];
+                };
+            };
+        };
+    };
+    ActivateKillSwitch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KillSwitchState"];
+                };
+            };
+        };
+    };
+    ReleaseKillSwitch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KillSwitchState"];
+                };
+            };
+        };
+    };
+    GetTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDetail"];
+                };
+            };
+        };
+    };
+    SetTaskGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskGoalUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskItem"];
+                };
+            };
+        };
+    };
+    CancelTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskCancellation"];
+                };
+            };
+        };
+    };
+    ListProposals: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalRecord"][];
+                };
+            };
+        };
+    };
+    GetProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalRecord"];
+                };
+            };
+        };
+    };
+    MergeProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalRecord"];
+                };
+            };
+        };
+    };
+    RejectProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalRecord"];
                 };
             };
         };

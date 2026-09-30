@@ -1465,6 +1465,10 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("diff");
 
+                    b.Property<Guid?>("ExecutorSessionId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("executor_session_id");
+
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasColumnType("TEXT")
@@ -1495,6 +1499,9 @@ namespace Marshal.Data.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_proposals");
+
+                    b.HasIndex("ExecutorSessionId")
+                        .HasDatabaseName("ix_proposals_executor_session_id");
 
                     b.HasIndex("TaskId")
                         .HasDatabaseName("ix_proposals_task_id");
@@ -2011,6 +2018,11 @@ namespace Marshal.Data.Migrations
 
             modelBuilder.Entity("Marshal.Data.Tasks.Proposal", b =>
                 {
+                    b.HasOne("Marshal.Data.Tasks.ExecutorSession", null)
+                        .WithMany()
+                        .HasForeignKey("ExecutorSessionId")
+                        .HasConstraintName("fk_proposals_executor_sessions_executor_session_id");
+
                     b.HasOne("Marshal.Data.Identity.User", null)
                         .WithMany()
                         .HasForeignKey("OwnerId")

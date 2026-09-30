@@ -15,6 +15,9 @@ public sealed class Proposal : IOwned
 
     public TaskId? TaskId { get; init; }
 
+    /// <summary>The executor session that produced the change; merging and discarding go through its executor.</summary>
+    public Guid? ExecutorSessionId { get; init; }
+
     public required ProposalKind Kind { get; init; }
 
     /// <summary>Repository or sink the change applies to.</summary>

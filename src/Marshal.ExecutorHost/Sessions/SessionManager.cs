@@ -32,12 +32,9 @@ public sealed partial class SessionManager(
     {
         if (string.IsNullOrWhiteSpace(request.Prompt) || string.IsNullOrWhiteSpace(request.CallbackToken))
             return (null, "prompt and callbackToken are required.");
-        if (!RepositoryName().IsMatch(request.Repository ?? "") || request.Repository!.Contains("..", StringComparison.Ordinal))
+        if (Repository(request.Repository) is not { } repository)
             return (null, "Unknown repository.");
-        string repository = Path.Combine(options.Value.RepositoriesRoot, request.Repository);
         string gitDirectory = Path.Combine(repository, ".git");
-        if (!Directory.Exists(gitDirectory))
-            return (null, "Unknown repository.");
         if (request.BaseBranch is { } baseBranch && (!BranchName().IsMatch(baseBranch) || baseBranch.Contains("..", StringComparison.Ordinal)))
             return (null, "Invalid base branch.");
         if (!Uri.TryCreate(request.CallbackUrl, UriKind.Absolute, out Uri? callback) || !IsBelowMarshal(callback))
@@ -54,7 +51,7 @@ public sealed partial class SessionManager(
         var run = Task.Run(() => RunAsync(session, new SandboxRun($"marshal-exec-{id}", path, gitDirectory, request.Prompt!), cancel), CancellationToken.None);
         _runs[id] = run;
         _ = run.ContinueWith(_ => _runs.TryRemove(id, out Task? _), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-        LogStarted(id, request.Repository);
+        LogStarted(id, request.Repository!);
         return (new StartedSession(id, branch), null);
     }
 
@@ -66,6 +63,42 @@ public sealed partial class SessionManager(
 
         cancel.Cancel();
         return true;
+    }
+
+    /// <summary>
+    /// Merges a completed session's branch into the branch it started from and deletes it (see
+    /// <see cref="IWorktrees.MergeAsync"/>). Refused while the session runs.
+    /// </summary>
+    public async Task<BranchResult> MergeAsync(string id, string? repositoryName, CancellationToken cancellationToken)
+    {
+        if (!SessionId().IsMatch(id))
+            return BranchResult.NotFound;
+        if (Repository(repositoryName) is not { } repository)
+            return BranchResult.InvalidRepository;
+        if (_running.ContainsKey(id))
+            return BranchResult.Running;
+
+        MergeOutcome outcome = await worktrees.MergeAsync(repository, $"marshal/{id}", $"Merge Marshal session {id}", cancellationToken);
+        LogMerged(id, outcome);
+        return outcome switch
+        {
+            MergeOutcome.Merged => BranchResult.Done,
+            MergeOutcome.NotFound => BranchResult.NotFound,
+            _ => BranchResult.Conflict,
+        };
+    }
+
+    /// <summary>Deletes a completed session's branch (its proposal was rejected). Refused while the session runs.</summary>
+    public async Task<BranchResult> DiscardAsync(string id, string? repositoryName, CancellationToken cancellationToken)
+    {
+        if (!SessionId().IsMatch(id))
+            return BranchResult.NotFound;
+        if (Repository(repositoryName) is not { } repository)
+            return BranchResult.InvalidRepository;
+        if (_running.ContainsKey(id))
+            return BranchResult.Running;
+
+        return await worktrees.DeleteBranchAsync(repository, $"marshal/{id}", cancellationToken) ? BranchResult.Done : BranchResult.NotFound;
     }
 
     /// <summary>Cancels running sessions and waits for their cleanup (worktree removal, the cancelled callback).</summary>
@@ -166,6 +199,8 @@ public sealed partial class SessionManager(
             LogCleanupFailed(session.Id, exception);
         }
 
+        // Finished before Marshal hears of it, so a merge right after the callback is not refused as running.
+        _running.TryRemove(session.Id, out _);
         await PostAsync(session, callback, CancellationToken.None);
         LogFinished(session.Id, callback.Type);
     }
@@ -182,6 +217,15 @@ public sealed partial class SessionManager(
         }
     }
 
+    // A directory below the repositories root with a .git directory; null for anything else.
+    private string? Repository(string? name)
+    {
+        if (name is null || !RepositoryName().IsMatch(name) || name.Contains("..", StringComparison.Ordinal))
+            return null;
+        string repository = Path.Combine(options.Value.RepositoriesRoot, name);
+        return Directory.Exists(Path.Combine(repository, ".git")) ? repository : null;
+    }
+
     private bool IsBelowMarshal(Uri callback) =>
         options.Value.MarshalUrl is { } marshal
         && Uri.Compare(callback, marshal, UriComponents.SchemeAndServer, UriFormat.Unescaped, StringComparison.OrdinalIgnoreCase) == 0
@@ -192,6 +236,12 @@ public sealed partial class SessionManager(
 
     [GeneratedRegex("^[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$")]
     private static partial Regex BranchName();
+
+    [GeneratedRegex("^[0-9a-f]{32}$")]
+    private static partial Regex SessionId();
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Merging the branch of session {SessionId}: {Outcome}")]
+    private partial void LogMerged(string sessionId, MergeOutcome outcome);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Session {SessionId} started on {Repository}")]
     private partial void LogStarted(string sessionId, string repository);
@@ -227,6 +277,19 @@ public sealed partial class SessionManager(
 /// <param name="CallbackUrl">Where to post progress and completion (below Marshal's URL).</param>
 /// <param name="CallbackToken">The session's callback token.</param>
 public sealed record SessionRequest(string? Repository, string? Prompt, string? BaseBranch, string? CallbackUrl, string? CallbackToken);
+
+/// <summary>What a merge or discard request did.</summary>
+public enum BranchResult
+{
+    Done,
+    NotFound,
+    InvalidRepository,
+    Running,
+    Conflict,
+}
+
+/// <summary>A merge or discard request: the repository the session worked on.</summary>
+public sealed record BranchRequest(string? Repository);
 
 /// <summary>A started session.</summary>
 /// <param name="Id">Session id (the handle Marshal stores).</param>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import type { Schemas } from '../api/client'
 import { useApi } from '../api/inject'
@@ -38,6 +38,11 @@ watch(
     const { data, response } = await session.api.GET('/api/v1/runs/{id}', { params: { path: { id } } })
     if (data) detail.value = data
     error.value = data ? null : response.status === 404 ? 'Run not found.' : 'The run could not be loaded.'
+    // A link to one step (`#step-3`, from the review queue) scrolls to it once the steps are shown.
+    if (data && route.hash) {
+      await nextTick()
+      document.getElementById(route.hash.slice(1))?.scrollIntoView?.()
+    }
   },
   { immediate: true },
 )
@@ -74,6 +79,7 @@ watch(
       <ol class="steps">
         <li
           v-for="step in detail.steps"
+          :id="`step-${step.sequence}`"
           :key="step.sequence"
           :data-step="step.sequence"
           :class="['step', { subagent: step.depth > 0 }]"
