@@ -1,7 +1,7 @@
 # human-auth Specification
 
 ## Purpose
-TBD - created by archiving change auth-web-shell. Update Purpose after archive.
+How people log in: configured providers (OIDC or local with passkeys), the BFF cookie session, antiforgery, users and roles.
 ## Requirements
 ### Requirement: Configured login providers
 The system SHALL support login providers configured as a list: `oidc` (authority, client id, `clientCredentialSecret`, scopes, claim mappings for subject, name and groups) and `local`. Several providers MAY be active at the same time. `GET /api/v1/auth/providers` SHALL list the active providers without authentication.

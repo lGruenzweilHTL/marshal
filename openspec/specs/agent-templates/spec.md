@@ -1,7 +1,7 @@
 # agent-templates Specification
 
 ## Purpose
-TBD - created by archiving change extensibility. Update Purpose after archive.
+Agent templates and subagents: their format, and the rule that subagents never run confirm-tier actions.
 ## Requirements
 ### Requirement: Template format
 Agent templates SHALL be Markdown files in `/config/templates/` with frontmatter `name`, `description`, `modelTier`, `tools` (allowlist of tool id globs), optional `skills`, optional `maxSteps` and `maxAdvisorCalls`, and a prompt body. Templates SHALL be hot-reloaded. A built-in `default` template SHALL be used for conversation turns unless configured otherwise.

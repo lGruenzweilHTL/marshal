@@ -1,7 +1,7 @@
 # task-delivery Specification
 
 ## Purpose
-TBD - created by archiving change background-work. Update Purpose after archive.
+How task results reach the user: speech and body, several deliveries per task, validation and delivery conditions with expiry.
 ## Requirements
 ### Requirement: Task results
 A task run SHALL produce a result with `speech` (short, speakable) and `body` (markdown). Voice channels SHALL use `speech`; push SHALL use `speech` plus a deep link to the result; the web UI SHALL show `body`.

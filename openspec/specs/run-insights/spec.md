@@ -1,7 +1,7 @@
 # run-insights Specification
 
 ## Purpose
-TBD - created by archiving change auth-web-shell. Update Purpose after archive.
+Views that explain what Marshal did and what it cost: runs list and detail, cost, the dashboard shell and the system view.
 ## Requirements
 ### Requirement: Runs list and detail
 The runs view SHALL list the owner's runs (voice, web, task, api) with filters by source, outcome and cost. The run detail SHALL show the context build, model calls (tokens, latency, time to first token, cost), tool calls (args, truncated or redacted result, risk tier, guard decision, confirmation reasons, taint sources) and the reply.

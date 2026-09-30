@@ -1,7 +1,7 @@
 # tool-registry Specification
 
 ## Purpose
-TBD - created by archiving change core-agent. Update Purpose after archive.
+How tools are registered and shown to the model: ids and names, namespaces, descriptors, the visibility filter and external tool sources.
 ## Requirements
 ### Requirement: Internal ids and model-facing names
 Every tool SHALL have an internal id `<namespace>.<name>` used in risk rules, satellite policies, template allowlists, run records and the audit log, and a model-facing name `<namespace>_<name>`. The registry SHALL map both directions. Namespaces SHALL match `[a-z][a-z0-9]*`. Built-in tool names SHALL be `snake_case`.

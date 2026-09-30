@@ -1,7 +1,7 @@
 # notes Specification
 
 ## Purpose
-TBD - created by archiving change integrations. Update Purpose after archive.
+The user's Markdown notes from a git repository: the source, its own search index and tools, kept separate from memory.
 ## Requirements
 ### Requirement: Notes source
 Notes SHALL be read through `INotesSource`. The v1 implementation SHALL read a git repository of Markdown files, either local under `/data/notes` or a remote repository cloned there and pulled on an interval. Only `.md` files SHALL be indexed.

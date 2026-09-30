@@ -1,7 +1,7 @@
 # sessions-identity Specification
 
 ## Purpose
-TBD - created by archiving change core-agent. Update Purpose after archive.
+Conversation sessions and who they belong to: session lookup, the owner pinned on the first turn, the execution context and idle close.
 ## Requirements
 ### Requirement: Session lookup
 Sessions from token clients SHALL be looked up by `(api_token_id, external_id)`, never by the client-supplied conversation id alone. Sessions created without a client id SHALL be looked up by Marshal's own session id plus owner. Each session SHALL record `source` (`voice` | `web` | `task` | `api`), the creating token, identity evidence and how the owner was resolved.

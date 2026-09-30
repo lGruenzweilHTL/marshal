@@ -1,7 +1,7 @@
 # model-routing Specification
 
 ## Purpose
-TBD - created by archiving change core-agent. Update Purpose after archive.
+Provider-neutral access to chat and embedding models, with tiers, capability flags and cost from a price table.
 ## Requirements
 ### Requirement: Provider-neutral model access
 The system SHALL access all language models through `IChatClient` and all embedding models through `IEmbeddingGenerator` from `Microsoft.Extensions.AI`. The system SHALL support three provider kinds: `ollama`, `openai-compatible` (llama.cpp `llama-server`, vLLM, LM Studio) and `anthropic`. Provider SDK packages SHALL be referenced only by `Marshal.Api`.

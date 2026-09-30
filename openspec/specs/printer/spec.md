@@ -1,7 +1,7 @@
 # printer Specification
 
 ## Purpose
-TBD - created by archiving change integrations. Update Purpose after archive.
+3D printers through Moonraker: configuration, the live state cache, tools with risk tiers, snapshots with inspection, and the printer page.
 ## Requirements
 ### Requirement: Printer configuration
 Printers SHALL be configured as `printers: [{ name, url, apiKeySecret }]`. Printer tools SHALL take an optional `printer` argument that defaults to the only configured printer; with several printers and no argument, the tool SHALL return an error listing the names.

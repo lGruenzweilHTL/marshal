@@ -1,7 +1,7 @@
 # calendar Specification
 
 ## Purpose
-TBD - created by archiving change integrations. Update Purpose after archive.
+Read access to the user's calendars behind a provider interface, with tools, risk tiers and event content treated as untrusted.
 ## Requirements
 ### Requirement: Calendar provider
 Calendar access SHALL go through `ICalendarProvider`. The v1 implementation SHALL use Home Assistant `calendar.*` entities through HA REST / websocket (not HA MCP).

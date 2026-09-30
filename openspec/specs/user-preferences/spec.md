@@ -1,7 +1,7 @@
 # user-preferences Specification
 
 ## Purpose
-TBD - created by archiving change auth-web-shell. Update Purpose after archive.
+Per-user preferences such as language and time zone; softer preferences live in memory instead.
 ## Requirements
 ### Requirement: Per-user preferences
 Each user SHALL have preferences: language (`de` | `en`), time zone (IANA id), quiet hours (weekly schedule), notification targets (HA `person.*` entity and push targets) and DND end time. They SHALL be readable and writable through `/api/v1/me/preferences` and the preferences view.

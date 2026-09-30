@@ -1,7 +1,7 @@
 # daily-briefing Specification
 
 ## Purpose
-TBD - created by archiving change background-work. Update Purpose after archive.
+The morning briefing, built only from configuration (template, skill and task) on top of the task system, with no briefing-specific code.
 ## Requirements
 ### Requirement: Briefing is only a task
 The daily briefing SHALL be implemented only through generic mechanisms: an agent template `briefing.md`, a skill with format guidelines (voice ~60–90 s, most important first; long version with links, RSS summaries, draft previews), the `rss-digest` skill, and a named task `briefing`. There SHALL be no briefing-specific code, endpoints or settings.

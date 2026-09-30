@@ -1,7 +1,7 @@
 # memory-consolidation Specification
 
 ## Purpose
-TBD - created by archiving change memory. Update Purpose after archive.
+How memory is written: explicit remembering, summarization when a session closes, and the audit of every change.
 ## Requirements
 ### Requirement: Explicit remember
 The system SHALL provide `memory.remember(type, title, content, importance?, scope?, project?, sourceRef?)` (safe, `persists`). It SHALL write through the deterministic id (update in place when the id exists). It SHALL NOT be able to pin. In tainted runs it SHALL require confirmation (reason `taint`).

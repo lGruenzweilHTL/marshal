@@ -1,7 +1,7 @@
 # conversation-api Specification
 
 ## Purpose
-TBD - created by archiving change core-agent. Update Purpose after archive.
+The public conversation API: versioning, the turn endpoint with streaming, the latency cap, moving turns to the background and follow-up replies.
 ## Requirements
 ### Requirement: Versioned public API
 The public API SHALL be versioned by URL segment (`/api/v{version}`) with `Asp.Versioning.Http`. Versions SHALL be declared once in code (`ApiVersions.V1`) and never read from configuration. Endpoint files SHALL contain no version literals. Each version SHALL have its own OpenAPI document (`/openapi/v1.json`). JSON SHALL be camelCase.

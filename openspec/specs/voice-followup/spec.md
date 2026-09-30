@@ -1,7 +1,7 @@
 # voice-followup Specification
 
 ## Purpose
-TBD - created by archiving change background-work. Update Purpose after archive.
+Voice follow-ups: Marshal asks a question on a satellite and links the spoken reply to the approval, task or result it belongs to.
 ## Requirements
 ### Requirement: Follow-up records
 When a voice delivery or question expects a reply, the system SHALL call `assist_satellite.start_conversation` and store a follow-up record (owner, nonce, satellite, target: pending action or task, expiry) and pass `marshal-followup:<nonce>` as `extra_system_prompt`.

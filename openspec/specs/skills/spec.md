@@ -1,7 +1,7 @@
 # skills Specification
 
 ## Purpose
-TBD - created by archiving change extensibility. Update Purpose after archive.
+Skills as trusted configuration: their format and progressive disclosure to the model.
 ## Requirements
 ### Requirement: Skill format
 Skills SHALL be directories under `/config/skills/<name>/` containing `SKILL.md` with Anthropic Agent Skills frontmatter (`name`, `description`) and optional additional files. Skills SHALL be hot-reloaded. Invalid skills SHALL be rejected individually with an error.

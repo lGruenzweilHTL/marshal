@@ -1,7 +1,7 @@
 # risk-guard Specification
 
 ## Purpose
-TBD - created by archiving change core-agent. Update Purpose after archive.
+The guard that decides what the model may do: risk tiers and rules, frozen pending actions, confirmation, taint escalation and recorded decisions.
 ## Requirements
 ### Requirement: Risk tiers
 Every tool call SHALL have exactly one tier: `safe` (execute), `confirm` (execute only after a user action confirms it) or `forbidden` (never execute). Capabilities that must never happen (sending mail, raw G-code) SHALL NOT exist as tools at all.

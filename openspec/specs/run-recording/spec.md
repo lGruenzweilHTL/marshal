@@ -1,7 +1,7 @@
 # run-recording Specification
 
 ## Purpose
-TBD - created by archiving change core-agent. Update Purpose after archive.
+Recording what every run did: runs and steps behind IRunRecorder, redaction and the audit log.
 ## Requirements
 ### Requirement: Runs and steps
 Every turn and every headless loop execution SHALL be recorded as a run (source, owner, session, trigger, input mode, satellite, area, language, start / end, outcome `ok` | `error` | `backgrounded` | `cancelled`, taint flag and sources, cost) with ordered steps: context build, model calls (model, tier, input / output / cached tokens, latency, time to first token, cost), tool calls (tool id, args, truncated result, risk tier, guard decision, duration, error) and the reply (text, `continueConversation`).

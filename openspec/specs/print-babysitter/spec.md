@@ -1,7 +1,7 @@
 # print-babysitter Specification
 
 ## Purpose
-TBD - created by archiving change background-work. Update Purpose after archive.
+Watching running prints for failures with a vision model, pausing after two strikes and sending a critical alert.
 ## Requirements
 ### Requirement: Babysitter as system component
 The print babysitter SHALL be a hosted service in the Moonraker integration, enabled per printer in config, started by `printer.started` and stopped by `printer.complete`, `printer.cancelled` or `printer.error` events. It SHALL NOT be an agent task, and the agent SHALL NOT be able to start, stop or reconfigure it.

@@ -1,7 +1,7 @@
 # web-chat Specification
 
 ## Purpose
-TBD - created by archiving change auth-web-shell. Update Purpose after archive.
+Text chat in the web UI with rich output and confirmations.
 ## Requirements
 ### Requirement: Text chat
 The chat view SHALL send turns to `POST /api/v1/conversation/turns` with the cookie principal and `inputMode = text`, render `delta` events as they arrive, show `status` events, and continue the session with the returned session id.

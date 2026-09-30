@@ -1,7 +1,7 @@
 # memory-view Specification
 
 ## Purpose
-TBD - created by archiving change memory. Update Purpose after archive.
+The memory API and web views to browse, edit, pin and audit memory.
 ## Requirements
 ### Requirement: Memory API
 The API SHALL provide owner-scoped endpoints to list, search, create, edit, pin, unpin, supersede and soft-delete chunks, read versions and edges, read the audit, export NDJSON, and manage projects (description, aliases, alias candidates, correction log). Pinning SHALL only be possible through this API.

@@ -1,7 +1,7 @@
 # event-bus Specification
 
 ## Purpose
-TBD - created by archiving change background-work. Update Purpose after archive.
+The event bus for background work: normalized events from Home Assistant, printers, mail and executors, and deterministic trigger matching.
 ## Requirements
 ### Requirement: Normalized events
 Event sources SHALL publish events normalized to `{ source, type, entity, payload, ownerId?, time }` on an in-process `Channel<T>`-based EventBus.

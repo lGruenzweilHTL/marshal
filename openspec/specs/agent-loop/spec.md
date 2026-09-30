@@ -1,7 +1,7 @@
 # agent-loop Specification
 
 ## Purpose
-TBD - created by archiving change core-agent. Update Purpose after archive.
+The agent loop that runs a turn or a task: model calls, tool calls, errors as results, the advisor, and headless execution for background work.
 ## Requirements
 ### Requirement: Agent loop
 The system SHALL run each turn as a loop: build context, call the model with the visible tools, pass every requested tool call through the guard, execute allowed calls, append results, and repeat until the model returns a final reply or the step limit is reached.

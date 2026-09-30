@@ -1,7 +1,7 @@
 # executors Specification
 
 ## Purpose
-TBD - created by archiving change background-work. Update Purpose after archive.
+Long external work such as coding sessions: the executor interface, the separate executor host, callback tokens, and code changes reviewed and merged only in the web UI.
 ## Requirements
 ### Requirement: Executor interface
 Long external work SHALL run through `IExecutor` (`StartAsync(spec)` → handle; completion arrives later as an event). Executor sessions SHALL be recorded with task, executor, handle, callback token and status.

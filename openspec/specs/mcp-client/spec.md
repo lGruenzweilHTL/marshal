@@ -1,7 +1,7 @@
 # mcp-client Specification
 
 ## Purpose
-TBD - created by archiving change extensibility. Update Purpose after archive.
+Tools from Model Context Protocol servers: configuration, namespaces, failure isolation, hot reload, and taint from untrusted servers.
 ## Requirements
 ### Requirement: MCP server configuration
 MCP servers SHALL be configured in `/config/mcp/*.yaml` with `id`, transport (`stdio` with command and args, or `http` with URL for streamable HTTP), optional `toolPrefix`, optional auth header secret reference (`authTokenSecret`) and `untrusted` (default false). The server id and `toolPrefix` SHALL match `[a-z][a-z0-9]*`.

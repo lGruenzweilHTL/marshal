@@ -1,7 +1,7 @@
 # web-shell Specification
 
 ## Purpose
-TBD - created by archiving change auth-web-shell. Update Purpose after archive.
+The web app shell: SPA hosting, the generated API client, responsive layout, content security policy and the live-update stream.
 ## Requirements
 ### Requirement: SPA hosting
 The web UI SHALL be a Vue + Vite + TypeScript SPA in `web/`, compiled into `wwwroot` by the Docker build and served same-origin by `Marshal.Api` under the configured base path. Unknown non-API paths SHALL return the SPA entry page.

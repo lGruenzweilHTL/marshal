@@ -1,7 +1,7 @@
 # home-assistant Specification
 
 ## Purpose
-TBD - created by archiving change extensibility. Update Purpose after archive.
+The Home Assistant integration: connection, registry and state cache, target resolution, area context, timers and the instance time zone.
 ## Requirements
 ### Requirement: HA connection
 The system SHALL connect to Home Assistant with `ha.url` and a long-lived token referenced by `ha.tokenSecret` (required secret). It SHALL use HA's REST and websocket APIs for system calls and HA's MCP server (configured as MCP server id `ha`) for model-driven home control.

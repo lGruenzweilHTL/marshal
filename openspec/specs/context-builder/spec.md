@@ -1,7 +1,7 @@
 # context-builder Specification
 
 ## Purpose
-TBD - created by archiving change core-agent. Update Purpose after archive.
+How the prompt context of a run is assembled: output mode, reply language, and untrusted content wrapped as data.
 ## Requirements
 ### Requirement: Context assembly
 The system SHALL build the model context from ordered contributors: base system prompt, user profile, time and locale, satellite context, output-mode rules, and contributions registered by later capabilities (memory, skills, templates). Each contributor SHALL implement `IContextContributor`. No user name or personal data SHALL be hardcoded in prompts.

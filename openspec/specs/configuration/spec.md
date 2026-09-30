@@ -1,7 +1,7 @@
 # configuration Specification
 
 ## Purpose
-TBD - created by archiving change core-agent. Update Purpose after archive.
+How Marshal is configured: sources and layering, key naming, base path, hot reload, and no literal secrets.
 ## Requirements
 ### Requirement: Configuration sources and layering
 Configuration SHALL be layered, low to high: built-in defaults → `/config/marshal.yaml` → environment variables with the exact prefix `MARSHAL__` (e.g. `MARSHAL__Models__Fast__Provider`). Variables starting with `MARSHAL_SECRET_` SHALL NOT enter `IConfiguration`.

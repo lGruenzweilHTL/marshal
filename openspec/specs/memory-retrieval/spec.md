@@ -1,7 +1,7 @@
 # memory-retrieval Specification
 
 ## Purpose
-TBD - created by archiving change memory. Update Purpose after archive.
+How memory reaches a run: automatic retrieval, the pinned layer, hybrid search with scoring and quotas, and deliberate recall.
 ## Requirements
 ### Requirement: Automatic retrieval
 The context builder SHALL retrieve memory for every turn server-side, without a model tool call: embed the turn text (with area name), search, score, and add the result to the system prompt. The turn embedding SHALL be computed once and reused for project activation.

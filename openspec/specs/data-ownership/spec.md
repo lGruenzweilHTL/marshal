@@ -1,7 +1,7 @@
 # data-ownership Specification
 
 ## Purpose
-TBD - created by archiving change core-agent. Update Purpose after archive.
+How user-owned data is kept apart: an owner on every row, owner-scoped queries, typed ids, migrations and expected failures as results.
 ## Requirements
 ### Requirement: Owner on every user-owned row
 Every user-owned table, child tables included, SHALL have a non-null `owner_id` of type `OwnerId`. Exceptions: ASP.NET Identity tables, `UserPreferences` (keyed by user id) and `Secret` (null = instance-scoped). A null owner SHALL mean instance-scoped only on `Secret`; shared household data later SHALL use an explicit scope column.

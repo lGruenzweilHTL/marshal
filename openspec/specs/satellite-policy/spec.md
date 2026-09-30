@@ -1,7 +1,7 @@
 # satellite-policy Specification
 
 ## Purpose
-TBD - created by archiving change core-agent. Update Purpose after archive.
+Per-satellite behavior: profiles, the satellite's context and which tools it may use.
 ## Requirements
 ### Requirement: Satellite profiles
 The system SHALL read optional satellite profiles from `/config/satellites.yaml`, keyed by satellite entity id, with `verbosity`, `notes`, `denyTools` and `denyConfirm`. Unconfigured satellites and turns without `satelliteId` SHALL use defaults. The file SHALL be hot-reloaded.

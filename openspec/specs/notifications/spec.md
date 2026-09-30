@@ -1,7 +1,7 @@
 # notifications Specification
 
 ## Purpose
-TBD - created by archiving change background-work. Update Purpose after archive.
+How proactive messages reach the user: priorities, channels chosen by presence, quiet hours, noise control, the inbox, history and actionable push.
 ## Requirements
 ### Requirement: Priorities
 Notifications SHALL have priority `critical`, `normal` or `low`. Only system-defined sources (e.g. the print babysitter, e-stop, printer error) SHALL send `critical`; the agent's `notifications.notify` SHALL accept only `normal` and `low`. `critical` SHALL always be delivered by voice and push, ignoring quiet hours, DND and caps. `low` SHALL never use voice and SHALL go to the inbox (or a push digest).

@@ -1,7 +1,7 @@
 # rss Specification
 
 ## Purpose
-TBD - created by archiving change integrations. Update Purpose after archive.
+News from FreshRSS: the client, RSS tools, full text by article id only, and the digest as a skill and template.
 ## Requirements
 ### Requirement: FreshRSS client
 The system SHALL access FreshRSS through its Google Reader-compatible API (`/api/greader.php`) with username and API password (`apiPasswordSecret`), using `continuation` for pagination.

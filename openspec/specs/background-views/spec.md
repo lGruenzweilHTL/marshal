@@ -1,7 +1,7 @@
 # background-views Specification
 
 ## Purpose
-TBD - created by archiving change background-work. Update Purpose after archive.
+The web UI for background work: tasks and watches, the review queue for approvals and code changes, the notification history and the dashboard widgets.
 ## Requirements
 ### Requirement: Tasks view
 The web UI SHALL list tasks and watches with status, trigger, next run, budget use and latest result; the detail SHALL show goal, notes, runs, deliveries and the result `body` rendered as markdown. Users SHALL be able to edit the goal, cancel tasks and use the kill switch. Executor sessions SHALL be shown with status. The views SHALL use owner-scoped REST endpoints registered on the versioned route group; goal edits and cancellations SHALL be audited user actions.

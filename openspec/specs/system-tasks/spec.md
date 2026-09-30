@@ -1,7 +1,7 @@
 # system-tasks Specification
 
 ## Purpose
-TBD - created by archiving change background-work. Update Purpose after archive.
+Code-only maintenance jobs run by the task system: nightly backup, memory export, memory consolidation and the retention purge.
 ## Requirements
 ### Requirement: Nightly backup
 A system cron task SHALL create an SQLite online backup with `VACUUM INTO` in `/data/backups`, include a copy of `/data/keys`, and keep N copies (configurable).

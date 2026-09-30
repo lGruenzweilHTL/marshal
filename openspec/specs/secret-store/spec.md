@@ -1,7 +1,7 @@
 # secret-store Specification
 
 ## Purpose
-TBD - created by archiving change core-agent. Update Purpose after archive.
+How secrets are stored and found by name (environment, files or the encrypted database), never in configuration.
 ## Requirements
 ### Requirement: Secrets by name
 All secret values SHALL be obtained through `ISecretStore.GetAsync(SecretName, ct)`, returning `Result<string>`. Configuration and data rows SHALL hold only secret names. A secret name SHALL match `^[a-z][a-z0-9_]{0,63}$`.

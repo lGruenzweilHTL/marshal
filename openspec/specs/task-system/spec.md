@@ -1,7 +1,7 @@
 # task-system Specification
 
 ## Purpose
-TBD - created by archiving change background-work. Update Purpose after archive.
+Durable background tasks: triggers, the scheduler and worker pool, wakeups, budgets and limits, the kill switch and the task tools.
 ## Requirements
 ### Requirement: Durable tasks
 Tasks SHALL be stored in SQLite with owner, parent, `created_by` (`user` | `task` | `system`), kind (`agent` | `system`), goal, template, optional project id, optional origin satellite, trigger, status (`pending`, `running`, `waiting`, `done`, `failed`, `cancelled`), next run time, notes, budget and spend, deliveries, optional quiet-hours override, optional name (unique per owner), result (`speech`, `body`) and depth. Tasks SHALL survive restarts.

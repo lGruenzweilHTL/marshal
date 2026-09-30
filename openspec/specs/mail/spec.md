@@ -1,7 +1,7 @@
 # mail Specification
 
 ## Purpose
-TBD - created by archiving change integrations. Update Purpose after archive.
+Mail access behind providers and credential sources: accounts, read tools and drafts, and never a send path.
 ## Requirements
 ### Requirement: Providers and credentials on two axes
 Mail access SHALL go through `IMailProvider` (protocol) combined freely with `ICredentialSource` (password / app password, OAuth2 Google, OAuth2 Microsoft). This change SHALL provide the IMAP provider (MailKit) with all three credential strategies (XOAUTH2 for OAuth). Providers SHALL declare capability flags `NativeThreads`, `Labels`, `ServerSearchSyntax`, `PushEvents`, `ScopeEnforcedNoSend`; tools SHALL adapt to them.

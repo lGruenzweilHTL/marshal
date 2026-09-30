@@ -1,7 +1,7 @@
 # ha-custom-component Specification
 
 ## Purpose
-TBD - created by archiving change ha-conversation-integration. Update Purpose after archive.
+The Home Assistant custom integration that makes Marshal a conversation agent for Assist: setup, field mapping, streaming and follow-ups.
 ## Requirements
 ### Requirement: Config flow with version check
 The integration SHALL be set up through a config flow asking for the Marshal base URL and an API token. The flow SHALL call `GET /api/versions` and SHALL fail with a clear, translated error when the API version the component targets (v1) is not supported, when Marshal is unreachable, or when the token is rejected.

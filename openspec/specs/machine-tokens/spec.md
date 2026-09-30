@@ -1,7 +1,7 @@
 # machine-tokens Specification
 
 ## Purpose
-TBD - created by archiving change core-agent. Update Purpose after archive.
+Scoped, revocable API tokens for machine clients such as the Home Assistant integration, and the separate executor callback tokens.
 ## Requirements
 ### Requirement: Scoped API tokens
 Machine clients SHALL authenticate with API tokens (`Authorization: Bearer`). Each token SHALL have an owner, a name, a set of scopes (e.g. `conversation:write`, `tasks:read`, `admin`), a kind (`standard` | `executor_callback`), optional expiry and a revocation time. Only a hash of the token SHALL be stored; the plaintext SHALL be shown once at creation.

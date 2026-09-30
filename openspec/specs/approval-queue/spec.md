@@ -1,7 +1,7 @@
 # approval-queue Specification
 
 ## Purpose
-TBD - created by archiving change background-work. Update Purpose after archive.
+How confirm-tier actions of background runs wait for the user: frozen server-side, decided in the web UI, by push or by voice, and executed by the server, never by the model.
 ## Requirements
 ### Requirement: Background confirmations go to the approval queue
 In background runs, a confirm-tier call SHALL create a frozen pending action (tool, args, task, owner, nonce, reasons) with a 10-minute TTL (configurable) and SHALL notify the owner with priority `normal` through push (actionable) and the web UI review queue.

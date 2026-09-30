@@ -1,7 +1,7 @@
 # project-activation Specification
 
 ## Purpose
-TBD - created by archiving change memory. Update Purpose after archive.
+Which project a conversation is about: explicit and inferred activation, stickiness with decay, corrections and transparency.
 ## Requirements
 ### Requirement: Explicit activation
 A project SHALL be activated deterministically, without a model call, when the turn text contains its name or an active alias.

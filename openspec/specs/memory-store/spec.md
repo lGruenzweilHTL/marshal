@@ -1,7 +1,7 @@
 # memory-store Specification
 
 ## Purpose
-TBD - created by archiving change memory. Update Purpose after archive.
+Long-term memory storage: typed chunks with deterministic ids, versions, edges, soft delete, indexes and NDJSON export.
 ## Requirements
 ### Requirement: Typed chunks
 A memory chunk SHALL have owner, scope (`general` | `project`), project id (set if and only if scope is `project`), type (`fact`, `preference`, `event`, `procedure`, `person`, `device`), title, content, importance (1–5), pinned flag, optional `source_ref`, embedding, timestamps and optional soft-delete time. Chunk titles and content SHALL be written in English.
