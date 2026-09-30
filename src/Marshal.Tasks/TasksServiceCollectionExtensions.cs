@@ -17,6 +17,7 @@ using Marshal.Tasks.Executors;
 using Marshal.Tasks.FollowUps;
 using Marshal.Tasks.KillSwitch;
 using Marshal.Tasks.Limits;
+using Marshal.Tasks.Maintenance;
 using Marshal.Tasks.Notifications;
 using Marshal.Tasks.Running;
 using Marshal.Tasks.Scheduling;
@@ -98,6 +99,19 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<ExecutorService>();
         services.AddSingleton<IExecutorCallbacks>(provider => provider.GetRequiredService<ExecutorService>());
         services.AddSingleton<ITool, RunExecutorTool>();
+
+        services.AddOptions<MaintenanceOptions>().Bind(configuration.GetSection("maintenance"))
+            .Validate(options => new[] { options.BackupSchedule, options.ConsolidationSchedule, options.RetentionSchedule }.All(schedule => TaskTriggers.Validate(TaskTrigger.Cron(schedule ?? "")).IsSuccess),
+                "maintenance schedules must be five-field cron expressions.")
+            .Validate(options => options.BackupCopies >= 1, "maintenance.backupCopies must be at least 1.")
+            .Validate(options => options.PayloadRetention >= TimeSpan.FromDays(1) && options.MetadataRetention >= options.PayloadRetention,
+                "maintenance.payloadRetention must be at least a day and metadataRetention at least as long.")
+            .ValidateOnStart();
+        services.AddSingleton<MemoryExportJob>();
+        services.AddSingleton<ISystemJob, BackupJob>();
+        services.AddSingleton<ISystemJob, RetentionPurgeJob>();
+        services.AddSingleton<ITaskRunner, SystemTaskRunner>();
+        services.AddSingleton<IHostedService, SystemTaskSeeder>();
 
         services.AddSingleton<ITriggerMatcher, DeclarativeTriggerMatcher>();
         services.AddSingleton<ChannelEventBus>();

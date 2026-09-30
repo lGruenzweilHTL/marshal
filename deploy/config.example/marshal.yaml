@@ -129,6 +129,14 @@ tasks:
   workers: 2                # background task runs at the same time
   approvalTtl: "00:10:00"   # background approvals expire (as rejected) after this
 
+maintenance:                # system tasks, seeded for the instance owner (cron in the owner's time zone)
+  backupSchedule: "0 3 * * *"         # database copy + /data/keys + memory exports into /data/backups/<stamp>
+  backupCopies: 7
+  consolidationSchedule: "30 2 * * *" # memory summaries of the day's closed sessions the close path missed
+  retentionSchedule: "30 3 * * *"
+  payloadRetention: "30.00:00:00"     # full run step payloads
+  metadataRetention: "365.00:00:00"   # runs and their step metadata
+
 notifications:
   quietHoursMode: hold      # hold (deliver when quiet hours end) or silentPush
   coalesceWindow: "00:02:00"  # normal notifications within this window become one message

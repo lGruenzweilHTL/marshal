@@ -66,8 +66,8 @@
 
 ## 9. System tasks
 
-- [ ] 9.1 Write tests: backup with `VACUUM INTO` + keys + N copies, NDJSON export per owner, consolidation input without tool results, retention purge boundaries
-- [ ] 9.2 Implement `BackupJob`, `MemoryExportJob`, `ConsolidationJob`, `RetentionPurgeJob` and seed their system tasks
+- [x] 9.1 Write tests: backup with `VACUUM INTO` + keys + N copies, NDJSON export per owner, consolidation input without tool results, retention purge boundaries
+- [x] 9.2 Implement `BackupJob`, `MemoryExportJob`, `ConsolidationJob`, `RetentionPurgeJob` and seed their system tasks
 
 ## 10. Briefing (files only)
 

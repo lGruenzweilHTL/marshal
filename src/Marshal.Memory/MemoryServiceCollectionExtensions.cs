@@ -1,6 +1,7 @@
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Memory;
 using Marshal.Abstractions.Sessions;
+using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
 using Marshal.Memory.Browsing;
 using Marshal.Memory.Consolidation;
@@ -52,6 +53,7 @@ public static class MemoryServiceCollectionExtensions
         services.AddSingleton<SessionSummaryInbox>();
         services.AddSingleton<ISessionCloseListener>(provider => provider.GetRequiredService<SessionSummaryInbox>());
         services.AddSingleton<IHostedService, SessionSummaryWorker>();
+        services.AddSingleton<ISystemJob, ConsolidationJob>();
         return services;
     }
 }
