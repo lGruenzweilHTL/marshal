@@ -4,7 +4,7 @@
 
 Marshal is a self-hosted AI agent for Home Assistant. Talk to it through any Assist voice satellite, the Home Assistant app, or its own web interface. It runs your 3D printer, reads your mail, prepares your morning, remembers what matters to you, and keeps working in the background while you get on with your day.
 
-> **Status:** Marshal is in early development. The design is being finalized; nothing is ready to install yet. Star or watch the repository to follow along.
+> **Status:** Marshal is in early development. All planned features are implemented and tested, but there is no release yet: you build the image yourself, and things may still change without notice.
 
 <!-- Screenshot: hero image — voice satellite + web dashboard -->
 ![Marshal dashboard](docs/images/placeholder-dashboard.png)
@@ -92,7 +92,15 @@ Marshal understands and answers in both **English** and **German**.
 
 ## Getting started
 
-Installation instructions will follow once the first release is available.
+There is no published image yet; Marshal is built from this repository with Docker.
+
+1. **Configure.** Copy `deploy/config.example/` to `deploy/config/` and adjust `marshal.yaml` (models, Home Assistant URL, printers, mail, notifications). The config holds only secret *names*; Marshal refuses to start when it finds a literal secret there.
+2. **Provide secrets.** Give each named secret as a Docker secret file under `/run/secrets` or as a `MARSHAL_SECRET_<NAME>` environment variable (for example the Home Assistant token and a cloud model key). Secrets you enter in the web UI are stored encrypted in `/data`.
+3. **Start.** `docker compose -f deploy/docker-compose.yml up -d --build` builds Marshal and starts it next to Ollama. The web UI listens on port 8080; the first visit creates your account (password or passkey), unless you configured an OpenID Connect provider.
+4. **Connect Home Assistant.** Copy `ha/custom_components/marshal` into Home Assistant's `custom_components/` (see [ha/README.md](ha/README.md)), create an API token with the `conversation:write` scope on Marshal's Security page, and add the integration with Marshal's URL and that token. Then pick Marshal as the conversation agent of your Assist pipelines.
+5. **Optional: coding sessions.** The executor host (`src/Marshal.ExecutorHost`, own Dockerfile) runs Claude Code in sandbox containers on a separate machine or rootless Docker. Marshal itself never gets a Docker socket.
+
+Everything Marshal stores lives in `/data` (SQLite database, encryption keys, nightly backups, notes repository); `/config` can live in git.
 
 ---
 

@@ -5,9 +5,8 @@
 ' Update it in the same change that adds, removes or renames an entity,
 ' column or relationship, and re-render the SVG (see docs/diagrams/README.md).
 '
-' Status: PARTLY BUILT — User (+ Identity tables), AuthTicket, UserPreferences, ApiToken, Session,
-' Run, RunStep, PendingAction, FollowUp, AuditEvent, Secret, MailAccount, NoteIndexEntry, the Memory package and the
-' Background Work package exist in Marshal.Data; the other entities are still planned (docs/brainstorm-notes.md).
+' Status: BUILT — every entity exists in Marshal.Data (MailAccount is the StoredMailAccount class; the Identity
+' tables come from the Identity base context).
 
 !pragma layout smetana
 hide circle
@@ -20,7 +19,7 @@ skinparam class {
   HeaderBackgroundColor #E8EEF7
 }
 
-title Marshal — ERD (planned)
+title Marshal — ERD
 
 ' ------------------------------------------------------------------
 package "Identity & Access" {

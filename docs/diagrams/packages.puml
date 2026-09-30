@@ -12,8 +12,7 @@
 ' web/ exists (auth-web-shell), ha/ exists (ha-conversation-integration),
 ' Marshal.Integrations.HomeAssistant exists (extensibility), Marshal.Memory exists (memory),
 ' Marshal.Integrations.{Moonraker,Mail,FreshRss,Notes} exist (integrations),
-' Marshal.Tasks and Marshal.ExecutorHost exist (background-work, in progress);
-' the companion push path is still planned (docs/brainstorm-notes.md).
+' Marshal.Tasks and Marshal.ExecutorHost exist (background-work), including the companion push path.
 ' External packages are drawn inside the project that references them
 ' (grey boxes, <<nuget>> / <<npm>> / <<pip>>).
 
@@ -42,7 +41,7 @@ skinparam component<<pip>> {
 }
 hide stereotype
 
-title Marshal — Packages (planned)
+title Marshal — Packages
 
 ' ------------------------------------------------------------------
 package "Clients" {

@@ -87,5 +87,5 @@
 
 ## 12. Finish
 
-- [ ] 12.1 Remove "(planned)" from `erd.puml` and `packages.puml` titles once all diagrammed structure exists; re-render
-- [ ] 12.2 Update `README.md` status and getting-started section
+- [x] 12.1 Remove "(planned)" from `erd.puml` and `packages.puml` titles once all diagrammed structure exists; re-render
+- [x] 12.2 Update `README.md` status and getting-started section
