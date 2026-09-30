@@ -128,13 +128,13 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
         Payload(task, ApprovalQueue.PayloadKey) is not null ? "an approval decision"
         : Payload(task, FollowUpReplies.PayloadKey) is not null ? "the user's spoken reply to your question"
         : task.Trigger.Kind switch
-    {
-        TaskTriggerKind.Cron => $"its schedule ({task.Trigger.Spec})",
-        TaskTriggerKind.At => "its scheduled time",
-        TaskTriggerKind.Event => "a matching event",
-        TaskTriggerKind.After => "the task it runs after",
-        _ => "a request to run now",
-    };
+        {
+            TaskTriggerKind.Cron => $"its schedule ({task.Trigger.Spec})",
+            TaskTriggerKind.At => "its scheduled time",
+            TaskTriggerKind.Event => "a matching event",
+            TaskTriggerKind.After => "the task it runs after",
+            _ => "a request to run now",
+        };
 
     private static TaskResult ToResult(string reply)
     {

@@ -1,14 +1,15 @@
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Marshal.ExecutorHost.Tests;
 
-public sealed class HealthTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public sealed class HealthTests
 {
     [Fact]
     public async Task Health_Ok()
     {
-        HttpResponseMessage response = await factory.CreateClient().GetAsync("/health", TestContext.Current.CancellationToken);
+        using var host = new HostFactory();
+
+        HttpResponseMessage response = await host.CreateClient().GetAsync("/health", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
