@@ -686,7 +686,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Configured printers with their live state (null while offline) and allowlisted macros. */
+        /** Configured printers with their live state (null while offline), allowlisted macros and babysitter state (null when not enabled). */
         get: operations["ListPrinters"];
         put?: never;
         post?: never;
@@ -824,6 +824,23 @@ export interface paths {
         };
         /** A stored snapshot as JPEG. */
         get: operations["GetPrinterSnapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/printers/{printer}/snapshots/{id}/shared": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A stored snapshot as JPEG without signing in, with the signature of a shared link (push notification images; expires after a day). */
+        get: operations["GetSharedPrinterSnapshot"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1054,6 +1071,19 @@ export interface components {
              * @description When it expires (counts as rejected).
              */
             expiresAt: string;
+        };
+        BabysitterCheck: {
+            /** Format: date-time */
+            at: string;
+            outcome: string;
+            reason: string;
+            snapshotUrl: null | string;
+        };
+        BabysitterStatus: {
+            active: boolean;
+            verdicts: components["schemas"]["BabysitterCheck"][];
+            /** Format: date-time */
+            pausedAt: null | string;
         };
         /** @enum {unknown} */
         ChunkAuthor: "user" | "agent" | "consolidation" | "import";
@@ -1607,6 +1637,7 @@ export interface components {
             macros: string[];
             /** Format: uri */
             webUrl: null | string;
+            babysitter: null | components["schemas"]["BabysitterStatus"];
         };
         PrintJob: {
             jobId: string;
@@ -3205,6 +3236,29 @@ export interface operations {
     GetPrinterSnapshot: {
         parameters: {
             query?: never;
+            header?: never;
+            path: {
+                printer: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetSharedPrinterSnapshot: {
+        parameters: {
+            query?: {
+                signature?: string;
+            };
             header?: never;
             path: {
                 printer: string;

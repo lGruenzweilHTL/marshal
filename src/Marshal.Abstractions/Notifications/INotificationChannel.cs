@@ -39,6 +39,7 @@ public enum NotificationChannelKind
 /// <param name="Actions">Push: action buttons.</param>
 /// <param name="TaskId">Task the notification is about (a follow-up reply links to it).</param>
 /// <param name="PendingActionId">Pending action a spoken question asks to confirm.</param>
+/// <param name="Image">Push: absolute URL of an image to attach.</param>
 public sealed record ChannelMessage(
     Guid NotificationId,
     OwnerId Owner,
@@ -50,4 +51,5 @@ public sealed record ChannelMessage(
     string? Tag = null,
     IReadOnlyList<NotificationAction>? Actions = null,
     TaskId? TaskId = null,
-    PendingActionId? PendingActionId = null);
+    PendingActionId? PendingActionId = null,
+    string? Image = null);

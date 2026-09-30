@@ -35,6 +35,7 @@ public sealed class PrinterApiTests : IAsyncLifetime
         settings["printers:0:url"] = "http://voron.invalid:7125";
         settings["printers:0:macros:0"] = "PARK";
         settings["printers:0:webUrl"] = "http://voron.invalid/";
+        settings["printers:0:babysitter:enabled"] = "true";
         _factory = new MarshalApiFactory(settings)
         {
             TestServices = services =>
@@ -73,6 +74,8 @@ public sealed class PrinterApiTests : IAsyncLifetime
             voron.GetProperty("online").GetBoolean(),
             voron.GetProperty("macros")[0].GetString(),
             voron.GetProperty("webUrl").GetString()));
+        JsonElement babysitter = voron.GetProperty("babysitter");
+        Assert.Equal((JsonValueKind.False, 0), (babysitter.GetProperty("active").ValueKind, babysitter.GetProperty("verdicts").GetArrayLength()));
         Assert.Equal(("printing", 0.25, 200.0, 30), (
             status.GetProperty("printState").GetString(),
             status.GetProperty("progress").GetDouble(),
@@ -197,6 +200,22 @@ public sealed class PrinterApiTests : IAsyncLifetime
         Assert.Equal("image/jpeg", image.Content.Headers.ContentType?.MediaType);
         Assert.Equal(_snapshots.Jpeg, await image.Content.ReadAsByteArrayAsync(Ct));
         Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+    }
+
+    [Fact]
+    public async Task SharedSnapshotLink_ReadableWithoutSignInOnlyForItsSnapshot()
+    {
+        await _browser.PostAsync($"{Voron}/snapshots", null, Ct);
+        string shared = _factory.Services.GetRequiredService<ISnapshotLinks>().Shared("voron", "snap1");
+        string signature = shared[(shared.IndexOf("signature=", StringComparison.Ordinal) + "signature=".Length)..];
+
+        HttpResponseMessage image = await Browser.Create(_factory).GetAsync(shared, Ct);
+        HttpResponseMessage tampered = await Browser.Create(_factory).GetAsync($"{Voron}/snapshots/snap1/shared?signature=x{signature}", Ct);
+        HttpResponseMessage otherSnapshot = await Browser.Create(_factory).GetAsync($"{Voron}/snapshots/snap2/shared?signature={signature}", Ct);
+
+        Assert.StartsWith($"{Voron}/snapshots/snap1/shared?signature=", shared, StringComparison.Ordinal);
+        Assert.Equal(_snapshots.Jpeg, await image.Content.ReadAsByteArrayAsync(Ct));
+        Assert.Equal((HttpStatusCode.NotFound, HttpStatusCode.NotFound), (tampered.StatusCode, otherSnapshot.StatusCode));
     }
 
     [Fact]

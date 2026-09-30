@@ -33,7 +33,8 @@ public static class ApiServiceCollectionExtensions
         services.AddOptions<HttpOptions>().Bind(configuration.GetSection("http"));
         services.AddOptions<OwnerOptions>().Bind(configuration.GetSection("owner")).ValidateDataAnnotations().ValidateOnStart();
 
-        services.AddSingleton<ISnapshotLinks, ApiSnapshotLinks>();
+        services.AddSingleton<ApiSnapshotLinks>();
+        services.AddSingleton<ISnapshotLinks>(provider => provider.GetRequiredService<ApiSnapshotLinks>());
         services.AddSingleton<PrinterControlConfirmations>();
         services.AddSingleton<MailOAuthFlows>();
         services.AddSingleton(new LiveTopic(PrinterLiveEvents.Topic));

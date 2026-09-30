@@ -38,6 +38,18 @@ public sealed class PrinterConfig
 
     /// <summary>Klipper macros <c>printer.run_macro</c> may run (upper-case names, no arguments).</summary>
     public List<string> Macros { get; set; } = [];
+
+    /// <summary>The print babysitter for this printer (needs a webcam and a vision model).</summary>
+    public BabysitterOptions Babysitter { get; set; } = new();
+}
+
+/// <summary>Print babysitter settings of one printer. Only configuration changes them, never the agent.</summary>
+public sealed class BabysitterOptions
+{
+    public bool Enabled { get; set; }
+
+    /// <summary>Time between snapshot checks while a print runs.</summary>
+    public TimeSpan Interval { get; set; } = TimeSpan.FromMinutes(1);
 }
 
 /// <summary>Webcam snapshots.</summary>

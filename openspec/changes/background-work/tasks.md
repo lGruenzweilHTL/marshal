@@ -61,8 +61,8 @@
 
 ## 8. Print babysitter
 
-- [ ] 8.1 Write babysitter tests: starts / stops on events, two-strike rule, direct pause, critical notification with snapshot, status exposed
-- [ ] 8.2 Implement `PrintBabysitter` and `VlmPrintFailureDetector`; add babysitter status to `printer.status` and the printer page
+- [x] 8.1 Write babysitter tests: starts / stops on events, two-strike rule, direct pause, critical notification with snapshot, status exposed
+- [x] 8.2 Implement `PrintBabysitter` and `VlmPrintFailureDetector`; add babysitter status to `printer.status` and the printer page
 
 ## 9. System tasks
 

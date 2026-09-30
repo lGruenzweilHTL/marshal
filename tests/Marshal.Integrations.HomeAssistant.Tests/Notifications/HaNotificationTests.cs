@@ -85,7 +85,8 @@ public sealed class HaNotificationTests : IAsyncLifetime
     public async Task Push_EveryTargetWithLinkTagAndActions()
     {
         var message = new ChannelMessage(Guid.NewGuid(), OwnerA, "Approve the reminder?", NotificationPriority.Normal,
-            Link: "https://marshal.example.com/approvals", Tag: "approval-1", Actions: [new NotificationAction("MARSHAL_APPROVE_n1", "Approve"), new NotificationAction("MARSHAL_REJECT_n1", "Reject")]);
+            Link: "https://marshal.example.com/approvals", Tag: "approval-1", Actions: [new NotificationAction("MARSHAL_APPROVE_n1", "Approve"), new NotificationAction("MARSHAL_REJECT_n1", "Reject")],
+            Image: "https://marshal.example.com/snapshot.jpg");
 
         Result result = await Push().DeliverAsync(message, Ct);
 
@@ -96,6 +97,7 @@ public sealed class HaNotificationTests : IAsyncLifetime
         JsonNode data = body["data"]!;
         Assert.Equal(("https://marshal.example.com/approvals", "https://marshal.example.com/approvals", "approval-1"), ((string?)data["url"], (string?)data["clickAction"], (string?)data["tag"]));
         Assert.Equal(["MARSHAL_APPROVE_n1", "MARSHAL_REJECT_n1"], data["actions"]!.AsArray().Select(action => (string?)action!["action"]));
+        Assert.Equal("https://marshal.example.com/snapshot.jpg", (string?)data["image"]);
     }
 
     [Fact]

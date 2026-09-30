@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { Schemas } from '../api/client'
 import { useApi } from '../api/inject'
@@ -12,6 +12,7 @@ import { formatEta, formatPercent, formatTemperature } from './printerFormat'
 type ControlRequest = Schemas['PrinterControlRequest']
 
 const maxSamples = 120
+const babysitterRefresh = 60_000
 
 const session = useApi()
 const route = useRoute()
@@ -105,6 +106,12 @@ watch(
   () => void loadDetails(),
 )
 
+// The babysitter checks on its own interval; its verdicts come with the printer list.
+const refresh = setInterval(() => {
+  if (printers.value?.some((printer) => printer.babysitter?.active)) void loadPrinters()
+}, babysitterRefresh)
+onUnmounted(() => clearInterval(refresh))
+
 void loadPrinters()
 </script>
 
@@ -146,6 +153,19 @@ void loadPrinters()
             <p>Hotend {{ formatTemperature(state.extruder) }} · Bed {{ formatTemperature(state.bed) }}</p>
           </template>
           <TemperatureChart :samples="samples" />
+        </article>
+
+        <article v-if="selected.babysitter" class="card" data-test="babysitter">
+          <h2>Babysitter</h2>
+          <p>{{ selected.babysitter.active ? 'Watching this print.' : 'Not watching.' }}</p>
+          <p v-if="selected.babysitter.pausedAt" class="muted">Paused a failed print at {{ formatDateTime(selected.babysitter.pausedAt) }}.</p>
+          <ul class="plain">
+            <li v-for="check in [...selected.babysitter.verdicts].reverse()" :key="check.at">
+              {{ formatDateTime(check.at) }} · {{ check.outcome }} · {{ check.reason }}
+              <a v-if="check.snapshotUrl" :href="check.snapshotUrl" target="_blank" rel="noopener">Snapshot</a>
+            </li>
+          </ul>
+          <p class="muted">Configured in marshal.yaml; pauses the print after two failed checks in a row.</p>
         </article>
 
         <article class="card">

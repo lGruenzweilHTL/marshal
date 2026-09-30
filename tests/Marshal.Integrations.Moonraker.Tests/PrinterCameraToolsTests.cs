@@ -119,7 +119,7 @@ public sealed class PrinterCameraToolsTests
             Printers = [new PrinterConfig { Name = "voron", Url = new Uri("http://voron") }],
         }));
         var camera = new PrinterCameraTools(directory, _webcams, _snapshots, _router, _templates, _recorder, new ZeroCost(), TimeProvider.System);
-        IReadOnlyList<ITool> tools = await new PrinterToolSource(directory, new FakePrinterClient(), new FakePrinterStateCache(), camera).GetToolsAsync(Ct);
+        IReadOnlyList<ITool> tools = await new PrinterToolSource(directory, new FakePrinterClient(), new FakePrinterStateCache(), new FakeBabysitterStatus(), camera).GetToolsAsync(Ct);
         return tools.Single(tool => tool.Descriptor.Id.Name == name);
     }
 

@@ -19,6 +19,7 @@ instance:
 #     webUrl: http://voron.local           # Mainsail / Fluidd, linked for actions Marshal does not offer
 #     apiKeySecret: moonraker_voron
 #     macros: [PARK, LOAD_FILAMENT, UNLOAD_FILAMENT]
+#     babysitter: { enabled: true, interval: "00:01:00" }   # snapshot checks during prints; pauses after two failed ones
 # printerSnapshots: { maxSize: 1024, quality: 85, retention: 20 }
 
 # FreshRSS (optional). The API password is set in FreshRSS under Profile → API management.

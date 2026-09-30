@@ -42,6 +42,12 @@ public sealed record NotificationRequest
     /// <summary>Push tag (a newer push with the same tag replaces it).</summary>
     public string? Tag { get; init; }
 
+    /// <summary>
+    /// Relative path of an image shown with a push (e.g. a shared snapshot link, readable without signing in); sent
+    /// only when <c>notifications.publicUrl</c> is set, like the link.
+    /// </summary>
+    public string? Image { get; init; }
+
     /// <summary>Push actions (approvals); such notifications are never coalesced.</summary>
     public IReadOnlyList<NotificationAction> Actions { get; init; } = [];
 

@@ -303,9 +303,14 @@ internal sealed class NotificationRouter(
         text,
         row.Priority,
         Silent: silent,
-        Link: routing.Link is { } link && options.Value.PublicUrl is { } baseUrl ? new Uri(baseUrl, link).ToString() : null,
+        Link: Absolute(routing.Link),
         Tag: routing.Tag,
-        Actions: routing.Actions);
+        Actions: routing.Actions,
+        Image: Absolute(routing.Image));
+
+    // Push links and images open on the phone, outside Marshal's origin: only with the public URL.
+    private string? Absolute(string? path) =>
+        path is not null && options.Value.PublicUrl is { } baseUrl ? new Uri(baseUrl, path).ToString() : null;
 
     private Task<Result> DeliverOnAsync(NotificationChannelKind kind, ChannelMessage message, CancellationToken cancellationToken) =>
         Channel(kind) is { } channel
@@ -368,7 +373,8 @@ internal sealed record NotificationRouting(
     IReadOnlyList<NotificationAction> Actions,
     DateTimeOffset? OverrideQuietHoursUntil,
     bool IsFallback,
-    PendingActionId? PendingActionId = null)
+    PendingActionId? PendingActionId = null,
+    string? Image = null)
 {
     /// <summary>Actions and follow-ups need their own message.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
@@ -383,5 +389,6 @@ internal sealed record NotificationRouting(
         request.Actions,
         request.OverrideQuietHoursUntil,
         request.IsFallback,
-        request.PendingActionId);
+        request.PendingActionId,
+        request.Image);
 }

@@ -8,7 +8,7 @@ namespace Marshal.Integrations.HomeAssistant.Notifications;
 
 /// <summary>
 /// Pushes to every companion app notify service of the owner (<c>notify.mobile_app_*</c>): the link opens on tap
-/// (<c>url</c> on iOS, <c>clickAction</c> on Android), actions become buttons, a silent push is passive / low
+/// (<c>url</c> on iOS, <c>clickAction</c> on Android), an image is attached (<c>image</c>), actions become buttons, a silent push is passive / low
 /// importance and a critical one breaks through (iOS <c>critical</c>, Android alarm stream, high priority, no TTL).
 /// Succeeds when at least one device got it.
 /// </summary>
@@ -46,6 +46,8 @@ public sealed class HaPushChannel(IHomeAssistantClient client, IUserPreferencesS
 
         if (message.Tag is { } tag)
             data["tag"] = tag;
+        if (message.Image is { } image)
+            data["image"] = image;
         if (message.Actions is { Count: > 0 } actions)
             data["actions"] = new JsonArray([.. actions.Select(action => (JsonNode)new JsonObject { ["action"] = action.Id, ["title"] = action.Title })]);
 

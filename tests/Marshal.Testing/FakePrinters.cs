@@ -124,3 +124,11 @@ public sealed class FakeSnapshotSource : ISnapshotSource
     public Task<Result<byte[]>> OpenAsync(string printer, string id, CancellationToken cancellationToken) =>
         Task.FromResult(id == "snap1" && Captures > 0 ? Result.Success(Jpeg) : Result.Failure<byte[]>(PrinterErrors.SnapshotNotFound(id)));
 }
+
+/// <summary>Babysitter states by printer name; printers without an entry have no babysitter.</summary>
+public sealed class FakeBabysitterStatus : IPrintBabysitterStatus
+{
+    public Dictionary<string, BabysitterStatus> Statuses { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public BabysitterStatus? Get(string printer) => Statuses.GetValueOrDefault(printer);
+}

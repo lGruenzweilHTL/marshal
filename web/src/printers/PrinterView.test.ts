@@ -54,6 +54,30 @@ describe('PrinterView', () => {
     expect(wrapper.get('[data-test="status"]').text()).toContain('offline')
   })
 
+  it('shows the babysitter with its last checks and their snapshots', async () => {
+    const babysitter = {
+      active: true,
+      verdicts: [
+        { at: '2026-09-30T10:00:00Z', outcome: 'ok', reason: 'looks fine', snapshotUrl: `${base}/snapshots/s1` },
+        { at: '2026-09-30T10:01:00Z', outcome: 'failure', reason: 'spaghetti', snapshotUrl: null },
+      ],
+      pausedAt: null,
+    }
+    const { wrapper } = await mountPrinter(server(printerSummary({ babysitter })))
+
+    const card = wrapper.get('[data-test="babysitter"]').text()
+    expect(card).toContain('Watching this print')
+    expect(card).toContain('ok · looks fine')
+    expect(card).toContain('failure · spaghetti')
+    expect(wrapper.get('[data-test="babysitter"] a').attributes('href')).toBe(`${base}/snapshots/s1`)
+  })
+
+  it('hides the babysitter when it is not enabled', async () => {
+    const { wrapper } = await mountPrinter(server())
+
+    expect(wrapper.find('[data-test="babysitter"]').exists()).toBe(false)
+  })
+
   it('loads the webcam stream from Marshal, not from the printer', async () => {
     const { wrapper } = await mountPrinter(server())
 

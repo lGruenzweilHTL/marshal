@@ -164,5 +164,7 @@ public sealed class MoonrakerSnapshotSourceTests : IAsyncLifetime
     private sealed class PrefixLinks : ISnapshotLinks
     {
         public string For(string printer, string id) => $"/app/api/snapshots/{printer}/{id}";
+
+        public string Shared(string printer, string id) => $"/app/api/snapshots/{printer}/{id}?signature=x";
     }
 }

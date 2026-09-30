@@ -18,13 +18,13 @@ internal static class PrinterTools
 {
     private const string NoArguments = "{}";
 
-    public static IReadOnlyList<ITool> Create(IPrinterDirectory directory, IPrinterClient client, IPrinterStateCache states)
+    public static IReadOnlyList<ITool> Create(IPrinterDirectory directory, IPrinterClient client, IPrinterStateCache states, IPrintBabysitterStatus babysitter)
     {
         string[] macros = [.. directory.Printers.SelectMany(printer => printer.Macros).Distinct().Order(StringComparer.Ordinal)];
         return
         [
             Read(directory, "status", "Current state of the 3D printer: job, progress, layer, time left and temperatures.", NoArguments,
-                (printer, _, _) => Task.FromResult(states.Get(printer.Name).Map(state => new ToolOutput(Status(state))))),
+                (printer, _, _) => Task.FromResult(states.Get(printer.Name).Map(state => new ToolOutput(Status(state) + Babysitter(babysitter.Get(printer.Name)))))),
             Read(directory, "list_files", "Lists the printable files on the 3D printer, newest first.", NoArguments,
                 async (printer, _, ct) => (await client.ListFilesAsync(printer.Name, ct)).Map(files => Json(files.Take(50).Select(file => new { file.Path, file.Size, modified = file.Modified })))),
             Read(directory, "job_queue", "Shows the 3D printer's job queue.", NoArguments,
@@ -82,6 +82,20 @@ internal static class PrinterTools
             text.Append(CultureInfo.InvariantCulture, $" ({message})");
 
         text.Append(CultureInfo.InvariantCulture, $". Temperatures: hotend {state.Extruder.Temperature:0}/{state.Extruder.Target:0} °C, bed {state.Bed.Temperature:0}/{state.Bed.Target:0} °C.");
+        return text.ToString();
+    }
+
+    // The babysitter's state as a sentence; empty when it is not enabled for the printer.
+    internal static string Babysitter(BabysitterStatus? status)
+    {
+        if (status is null)
+            return "";
+
+        var text = new StringBuilder(status.Active ? " Babysitter: watching this print." : " Babysitter: enabled, not watching.");
+        if (status.Verdicts.Count > 0)
+            text.Append(" Last checks: ").AppendJoin(", ", status.Verdicts.Select(check => $"{check.Outcome} ({check.Reason})")).Append('.');
+        if (status.PausedAt is { } paused)
+            text.Append(CultureInfo.InvariantCulture, $" It paused a failed print at {paused:yyyy-MM-dd HH:mm} UTC.");
         return text.ToString();
     }
 

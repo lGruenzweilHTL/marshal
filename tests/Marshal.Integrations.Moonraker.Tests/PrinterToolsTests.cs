@@ -10,6 +10,7 @@ public sealed class PrinterToolsTests
 {
     private readonly FakePrinterClient _client = new();
     private readonly FakePrinterStateCache _states = new();
+    private readonly FakeBabysitterStatus _babysitter = new();
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -45,6 +46,28 @@ public sealed class PrinterToolsTests
         Assert.Contains("layer 30/120", output.Content, StringComparison.Ordinal);
         Assert.Contains("hotend 200/245 °C", output.Content, StringComparison.Ordinal);
         Assert.Contains("30 min left", output.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Status_WatchedPrint_IncludesTheBabysitterAndItsLastVerdicts()
+    {
+        _states.States["voron"] = Printing();
+        _babysitter.Statuses["voron"] = new BabysitterStatus(true,
+            [new BabysitterCheck(DateTimeOffset.UnixEpoch, "ok", "looks fine", null), new BabysitterCheck(DateTimeOffset.UnixEpoch, "failure", "spaghetti", null)], null);
+
+        ToolOutput output = (await InvokeAsync(Voron(), "status", new { })).Value;
+
+        Assert.EndsWith("Babysitter: watching this print. Last checks: ok (looks fine), failure (spaghetti).", output.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Status_NoBabysitter_NotMentioned()
+    {
+        _states.States["voron"] = Printing();
+
+        ToolOutput output = (await InvokeAsync(Voron(), "status", new { })).Value;
+
+        Assert.DoesNotContain("Babysitter", output.Content, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -177,7 +200,7 @@ public sealed class PrinterToolsTests
     {
         var directory = new ConfiguredPrinterDirectory(Microsoft.Extensions.Options.Options.Create(new PrinterOptions { Printers = [.. printers] }));
         var camera = new PrinterCameraTools(directory, new FakeWebcams(), new FakeSnapshotSource(), new FakeVisionRouter(), new FakeTemplateCatalog(), new InMemoryRunRecorder(), new ZeroCost(), TimeProvider.System);
-        return new PrinterToolSource(directory, _client, _states, camera).GetToolsAsync(Ct);
+        return new PrinterToolSource(directory, _client, _states, _babysitter, camera).GetToolsAsync(Ct);
     }
 
     private async Task<ITool> ToolAsync(PrinterConfig printer, string name) =>

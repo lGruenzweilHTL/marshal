@@ -1503,7 +1503,7 @@
         "tags": [
           "Printers"
         ],
-        "summary": "Configured printers with their live state (null while offline) and allowlisted macros.",
+        "summary": "Configured printers with their live state (null while offline), allowlisted macros and babysitter state (null when not enabled).",
         "operationId": "ListPrinters",
         "responses": {
           "200": {
@@ -1803,6 +1803,48 @@
             "in": "path",
             "description": "",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/snapshots/{id}/shared": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "A stored snapshot as JPEG without signing in, with the signature of a shared link (push notification images; expires after a day).",
+        "operationId": "GetSharedPrinterSnapshot",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "signature",
+            "in": "query",
+            "description": "",
             "schema": {
               "type": "string"
             }
@@ -2272,6 +2314,59 @@
           }
         },
         "description": "A background approval in the review queue."
+      },
+      "BabysitterCheck": {
+        "required": [
+          "at",
+          "outcome",
+          "reason",
+          "snapshotUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "snapshotUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "BabysitterStatus": {
+        "required": [
+          "active",
+          "verdicts",
+          "pausedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "verdicts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BabysitterCheck"
+            }
+          },
+          "pausedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
       },
       "ChunkAuthor": {
         "enum": [
@@ -3998,7 +4093,8 @@
           "online",
           "state",
           "macros",
-          "webUrl"
+          "webUrl",
+          "babysitter"
         ],
         "type": "object",
         "properties": {
@@ -4030,6 +4126,16 @@
               "string"
             ],
             "format": "uri"
+          },
+          "babysitter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BabysitterStatus"
+              }
+            ]
           }
         },
         "description": "A printer with its live state (null while offline), its macros and its own web UI, if configured."

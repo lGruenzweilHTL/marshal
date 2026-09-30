@@ -98,11 +98,17 @@ public sealed class NotificationRouterTests : IAsyncLifetime
         AtLocal(3, 0);
         _preferences.Stored[OwnerA] = Preferences() with { DndUntil = _time.GetUtcNow().AddHours(2) };
 
-        Guid id = await SendAsync(Request("Print failure detected; printer paused.") with { Priority = NotificationPriority.Critical, Source = "system:babysitter" });
+        Guid id = await SendAsync(Request("Print failure detected; printer paused.") with
+        {
+            Priority = NotificationPriority.Critical,
+            Source = "system:babysitter",
+            Image = "api/v1/printers/voron/snapshots/s1/shared?signature=x",
+        });
 
         Assert.Equal(Office, Assert.Single(_voice.Messages).Satellite);
         ChannelMessage push = Assert.Single(_push.Messages);
         Assert.Equal((NotificationPriority.Critical, false), (push.Priority, push.Silent));
+        Assert.Equal("https://marshal.example.com/api/v1/printers/voron/snapshots/s1/shared?signature=x", push.Image);
         Assert.Equal((NotificationOutcome.Delivered, "voice+push", "critical"), await HistoryAsync(id));
     }
 

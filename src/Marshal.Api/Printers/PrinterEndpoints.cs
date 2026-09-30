@@ -19,7 +19,7 @@ internal static class PrinterEndpoints
     {
         RouteGroupBuilder printers = group.MapGroup("/printers").WithTags("Printers").RequireAuthorization(Policies.Human);
         printers.MapGet("/", List).WithName("ListPrinters")
-            .WithSummary("Configured printers with their live state (null while offline) and allowlisted macros.");
+            .WithSummary("Configured printers with their live state (null while offline), allowlisted macros and babysitter state (null when not enabled).");
         printers.MapGet("/{printer}", GetStatus).WithName("GetPrinterStatus")
             .WithSummary("Live state from the websocket cache.");
         printers.MapGet("/{printer}/files", ListFilesAsync).WithName("ListPrinterFiles")
@@ -36,16 +36,19 @@ internal static class PrinterEndpoints
             .WithSummary("Takes, resizes and stores a webcam snapshot.");
         printers.MapGet("/{printer}/snapshots/{id}", GetSnapshotAsync).WithName("GetPrinterSnapshot")
             .WithSummary("A stored snapshot as JPEG.");
+        printers.MapGet("/{printer}/snapshots/{id}/shared", GetSharedSnapshotAsync).WithName("GetSharedPrinterSnapshot")
+            .WithSummary("A stored snapshot as JPEG without signing in, with the signature of a shared link (push notification images; expires after a day).")
+            .AllowAnonymous();
         printers.MapGet("/{printer}/webcam/stream", StreamAsync).WithName("StreamPrinterWebcam")
             .WithSummary("The webcam's live stream, proxied so the browser never contacts the printer.");
         return group;
     }
 
-    private static Ok<List<PrinterSummary>> List(IPrinterDirectory directory, IPrinterStateCache states) =>
+    private static Ok<List<PrinterSummary>> List(IPrinterDirectory directory, IPrinterStateCache states, IPrintBabysitterStatus babysitter) =>
         TypedResults.Ok(directory.Printers.Select(printer =>
         {
             Result<PrinterState> state = states.Get(printer.Name);
-            return new PrinterSummary(printer.Name, state.IsSuccess, state.IsSuccess ? state.Value : null, printer.Macros, printer.WebUrl);
+            return new PrinterSummary(printer.Name, state.IsSuccess, state.IsSuccess ? state.Value : null, printer.Macros, printer.WebUrl, babysitter.Get(printer.Name));
         }).ToList());
 
     private static Results<Ok<PrinterState>, ProblemHttpResult> GetStatus(string printer, IPrinterDirectory directory, IPrinterStateCache states)
@@ -159,6 +162,18 @@ internal static class PrinterEndpoints
         Result<PrinterInfo> found = Find(directory, printer);
         if (found.IsFailure)
             return found.Error.ToProblem();
+
+        Result<byte[]> image = await snapshots.OpenAsync(found.Value.Name, id, ct);
+        return image.IsSuccess ? TypedResults.File(image.Value, "image/jpeg") : image.Error.ToProblem();
+    }
+
+    // An invalid or expired signature looks like a missing snapshot.
+    private static async Task<Results<FileContentHttpResult, ProblemHttpResult>> GetSharedSnapshotAsync(
+        string printer, string id, string? signature, IPrinterDirectory directory, ApiSnapshotLinks links, ISnapshotSource snapshots, CancellationToken ct)
+    {
+        Result<PrinterInfo> found = Find(directory, printer);
+        if (found.IsFailure || !links.IsValid(found.Value.Name, id, signature))
+            return PrinterErrors.SnapshotNotFound(id).ToProblem();
 
         Result<byte[]> image = await snapshots.OpenAsync(found.Value.Name, id, ct);
         return image.IsSuccess ? TypedResults.File(image.Value, "image/jpeg") : image.Error.ToProblem();

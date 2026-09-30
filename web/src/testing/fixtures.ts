@@ -79,5 +79,5 @@ export function printerState(overrides: Partial<Schemas['PrinterState']> = {}): 
 }
 
 export function printerSummary(overrides: Partial<Schemas['PrinterSummary']> = {}): Schemas['PrinterSummary'] {
-  return { name: 'voron', online: true, state: printerState(), macros: ['PARK'], webUrl: 'http://voron.local/', ...overrides }
+  return { name: 'voron', online: true, state: printerState(), macros: ['PARK'], webUrl: 'http://voron.local/', babysitter: null, ...overrides }
 }

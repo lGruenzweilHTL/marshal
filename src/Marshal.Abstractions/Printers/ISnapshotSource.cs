@@ -27,5 +27,12 @@ public sealed record PrinterSnapshot(string Printer, string Id, string Url, byte
 /// </summary>
 public interface ISnapshotLinks
 {
+    /// <summary>URL for signed-in users.</summary>
     string For(string printer, string id);
+
+    /// <summary>
+    /// URL carrying a signature that expires after a day, readable without signing in: for a push notification's
+    /// image, which the phone fetches without Marshal's cookie.
+    /// </summary>
+    string Shared(string printer, string id);
 }
