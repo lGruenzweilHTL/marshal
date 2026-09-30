@@ -11,4 +11,7 @@ internal static class MarshalAuthSchemes
     public const string Cookie = "Cookies";
 
     public const string ApiToken = ApiTokenAuthenticationHandler.SchemeName;
+
+    /// <summary>Executor callback tokens; used only by the callback endpoint's policy, never by the default scheme.</summary>
+    public const string ExecutorCallback = ExecutorCallbackAuthenticationHandler.SchemeName;
 }

@@ -39,14 +39,14 @@ public sealed class NoMailSendTests
         type.Contains("smtp", StringComparison.OrdinalIgnoreCase) || type.StartsWith("System.Net.Mail.", StringComparison.Ordinal);
 
     // Every project output next to the tests (the host references all src projects); tests and fakes excluded.
-    private static List<string> SolutionAssemblies() =>
+    internal static List<string> SolutionAssemblies() =>
         [.. Directory.GetFiles(AppContext.BaseDirectory, "*.dll")
             .Where(path => Path.GetFileName(path) is var file && (file == "marshal.dll" || file.StartsWith("Marshal.", StringComparison.Ordinal)))
             .Where(path => !path.EndsWith(".Tests.dll", StringComparison.Ordinal) && !path.EndsWith("Marshal.Testing.dll", StringComparison.Ordinal))];
 
-    private static string AssemblyName(string path) => Path.GetFileNameWithoutExtension(path);
+    internal static string AssemblyName(string path) => Path.GetFileNameWithoutExtension(path);
 
-    private static List<string> TypeReferences(string path)
+    internal static List<string> TypeReferences(string path)
     {
         using FileStream stream = File.OpenRead(path);
         using var pe = new PEReader(stream);
@@ -58,7 +58,7 @@ public sealed class NoMailSendTests
         })];
     }
 
-    private static string RepositoryRoot()
+    internal static string RepositoryRoot()
     {
         string? directory = AppContext.BaseDirectory;
         while (directory is not null && !File.Exists(Path.Combine(directory, "Marshal.sln")))

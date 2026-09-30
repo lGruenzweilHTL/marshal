@@ -51,6 +51,7 @@ internal static class AuthServiceCollectionExtensions
         AuthenticationBuilder authentication = services.AddAuthentication(MarshalAuthSchemes.Default)
             .AddPolicyScheme(MarshalAuthSchemes.Default, null, options => options.ForwardDefaultSelector = SelectScheme)
             .AddScheme<AuthenticationSchemeOptions, ApiTokenAuthenticationHandler>(MarshalAuthSchemes.ApiToken, null)
+            .AddScheme<AuthenticationSchemeOptions, ExecutorCallbackAuthenticationHandler>(MarshalAuthSchemes.ExecutorCallback, null)
             .AddCookie(MarshalAuthSchemes.Cookie, ConfigureCookie)
             .AddCookie(IdentityConstants.TwoFactorUserIdScheme, ConfigurePasskeyCeremonyCookie);
         services.AddOptions<CookieAuthenticationOptions>(MarshalAuthSchemes.Cookie)

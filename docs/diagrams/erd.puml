@@ -374,6 +374,7 @@ package "Background Work" {
     * task_id : TaskId <<FK>>
     * executor : string
     * handle : string
+    target : string  <<e.g. repository>>
     callback_token_id : ApiTokenId <<FK, unique>>
     * status : starting | running | done | failed | cancelled
     * started_at : DateTimeOffset

@@ -55,9 +55,9 @@
 
 - [x] 7.1 Write executor host tests: session lifecycle, callback posting with token, worktree per session (Docker runtime faked)
 - [x] 7.2 Implement `Marshal.ExecutorHost` and its Dockerfile
-- [ ] 7.3 Write `ClaudeCodeExecutor` tests: start, callback token issue / revoke, wrong-task and reused-token rejection, completion event
-- [ ] 7.4 Implement `ClaudeCodeExecutor`, callback endpoint and `Proposal` creation
-- [ ] 7.5 Add an architecture test asserting `Marshal.Api` references no Docker client
+- [x] 7.3 Write `ClaudeCodeExecutor` tests: start, callback token issue / revoke, wrong-task and reused-token rejection, completion event
+- [x] 7.4 Implement `ClaudeCodeExecutor`, callback endpoint and `Proposal` creation
+- [x] 7.5 Add an architecture test asserting `Marshal.Api` references no Docker client
 
 ## 8. Print babysitter
 

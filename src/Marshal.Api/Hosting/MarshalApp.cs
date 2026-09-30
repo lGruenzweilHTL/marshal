@@ -3,6 +3,7 @@ using Marshal.Api.Approvals;
 using Marshal.Api.Auth;
 using Marshal.Api.Configuration;
 using Marshal.Api.Conversation;
+using Marshal.Api.Executors;
 using Marshal.Api.Health;
 using Marshal.Api.LiveEvents;
 using Marshal.Api.Mail;
@@ -95,6 +96,7 @@ public static class MarshalApp
         v1.MapMailAccountEndpoints();
         v1.MapConversationEndpoints();
         v1.MapApprovalEndpoints();
+        v1.MapExecutorCallbackEndpoints();
         app.MapMailOAuthCallback();
         app.MapSpaFallback();
         return app;

@@ -9,7 +9,7 @@ namespace Marshal.Api.Auth;
 
 /// <summary>
 /// <c>Authorization: Bearer &lt;token&gt;</c> for machine clients. The principal carries the token's owner and scopes,
-/// so token and cookie principals go through the same scope policies.
+/// so token and cookie principals go through the same scope policies. Executor callback tokens are refused here.
 /// </summary>
 internal sealed class ApiTokenAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -28,6 +28,9 @@ internal sealed class ApiTokenAuthenticationHandler(
         Result<ApiTokenInfo> token = await tokens.ValidateAsync(header["Bearer ".Length..].Trim(), Context.RequestAborted);
         if (token.IsFailure)
             return AuthenticateResult.Fail(token.Error.Message);
+        // Callback tokens authenticate only on the executor callback endpoint (ExecutorCallbackAuthenticationHandler).
+        if (token.Value.Kind != ApiTokenKind.Standard)
+            return AuthenticateResult.Fail("This token is only valid for executor callbacks.");
 
         List<Claim> claims =
         [

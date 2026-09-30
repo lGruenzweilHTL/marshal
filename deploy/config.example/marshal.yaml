@@ -136,6 +136,16 @@ notifications:
   followUpReplyWindow: "00:00:20"  # a voice turn this soon after a spoken question from the same satellite answers it
   # publicUrl: https://marshal.example.com/   # push notifications link into the web UI
 
+# Coding sessions on the separate executor host (src/Marshal.ExecutorHost); tasks.run_executor is hidden until set.
+# executors:
+#   callbackBaseUrl: http://marshal:8080/     # Marshal as seen from the executor host
+#   claudeCode:
+#     url: http://executor-host:8080/
+#     tokenSecret: executor_host_token        # secret name; the value lives in /run/secrets or the database
+#     repositories:
+#       - name: marshal                       # directory below the host's repositoriesRoot
+#         description: this project
+
 recording:
   redactTools: []           # tool id globs stored as references only (tools flagged sensitive always are)
   keepContentTools: []

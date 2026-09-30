@@ -53,6 +53,15 @@ public sealed class EfTaskStoreTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Create_AwaitsResume_WaitingWithoutRunTime()
+    {
+        TaskRecord task = (await Store().CreateAsync(New(null, TaskTrigger.Now()) with { AwaitsResume = true }, Ct)).Value;
+
+        Assert.Equal((AgentTaskStatus.Waiting, (DateTimeOffset?)null), (task.Status, task.NextRunAt));
+        Assert.Empty(await Store().GetDueAsync(_time.GetUtcNow().AddDays(1), 10, Ct));
+    }
+
+    [Fact]
     public async Task Create_DuplicateNameForSameOwner_ValidationError()
     {
         await Store().CreateAsync(New("briefing"), Ct);

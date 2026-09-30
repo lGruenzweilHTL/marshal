@@ -35,4 +35,7 @@ public sealed record NewTask
     public IReadOnlyList<TaskDelivery> Deliveries { get; init; } = [];
 
     public DateTimeOffset? OverrideQuietHoursUntil { get; init; }
+
+    /// <summary>Created <c>waiting</c> without a run time: runs only when resumed (e.g. by an executor's completion).</summary>
+    public bool AwaitsResume { get; init; }
 }

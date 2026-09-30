@@ -10,6 +10,7 @@ using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
 using Marshal.Core.Guard;
 using Marshal.Data;
+using Marshal.Tasks.Running;
 using Marshal.Tasks.Scheduling;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -240,21 +241,8 @@ public sealed partial class ApprovalQueue(
         if (taint is not null)
             payload[TaintKey] = taint;
 
-        for (int attempt = 0; attempt < 3; attempt++)
-        {
-            Result<TaskRecord> task = await tasks.GetAsync(taskId, cancellationToken);
-            if (task.IsFailure || task.Value.Status != AgentTaskStatus.Waiting)
-                return;
-
-            Result<TaskRecord> saved = await tasks.UpdateAsync(task.Value with { TriggerPayload = payload.ToJsonString(), NextRunAt = time.GetUtcNow() }, cancellationToken);
-            if (saved.IsSuccess)
-            {
-                scheduler.Wake();
-                return;
-            }
-        }
-
-        LogResumeFailed(taskId);
+        if (!await TaskResume.ResumeAsync(tasks, scheduler, time, taskId, payload.ToJsonString(), cancellationToken))
+            LogResumeFailed(taskId);
     }
 
     private sealed record Owned(PendingActionId Id, OwnerId OwnerId);
@@ -271,6 +259,6 @@ public sealed partial class ApprovalQueue(
     [LoggerMessage(Level = LogLevel.Information, Message = "Push decision for approval {PendingActionId} refused: {Code}")]
     private partial void LogPushRefused(PendingActionId pendingActionId, string code);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Task {TaskId} could not be resumed with its approval decision")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "Task {TaskId} was not resumed with its approval decision (it no longer waits or could not be saved)")]
     private partial void LogResumeFailed(TaskId taskId);
 }

@@ -9,6 +9,7 @@ using Marshal.Abstractions.Tasks;
 using Marshal.Core.Agent;
 using Marshal.Core.Context;
 using Marshal.Tasks.Approvals;
+using Marshal.Tasks.Executors;
 using Marshal.Tasks.FollowUps;
 
 namespace Marshal.Tasks.Running;
@@ -24,6 +25,9 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
 {
     /// <summary>Taint kind of runs started by an event payload (events can carry third-party text, e.g. mail subjects).</summary>
     public const string EventTaint = "event";
+
+    /// <summary>Taint kind of runs resumed by an executor's outcome (a model's report about external content).</summary>
+    public const string ExecutorTaint = "executor";
 
     private static readonly string[] _languages = ["de", "en"];
 
@@ -94,7 +98,8 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
     }
 
     // Approval decisions are written by the server; they are untrusted only when the approved action returned
-    // untrusted content. A spoken reply is the user's own. Other event payloads can carry third-party text.
+    // untrusted content. A spoken reply is the user's own. Executor outcomes and event payloads can carry
+    // third-party text.
     private static string? PayloadTaint(TaskRecord task)
     {
         if (task.TriggerPayload is null)
@@ -103,6 +108,8 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
             return approval.TryGetProperty(ApprovalQueue.TaintKey, out JsonElement taint) && taint.ValueKind == JsonValueKind.String ? taint.GetString() : null;
         if (Payload(task, FollowUpReplies.PayloadKey) is not null)
             return null;
+        if (Payload(task, ExecutorService.PayloadKey) is not null)
+            return ExecutorTaint;
         return task.Trigger.Kind == TaskTriggerKind.Event ? EventTaint : null;
     }
 
@@ -127,6 +134,7 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
     private static string Describe(TaskRecord task) =>
         Payload(task, ApprovalQueue.PayloadKey) is not null ? "an approval decision"
         : Payload(task, FollowUpReplies.PayloadKey) is not null ? "the user's spoken reply to your question"
+        : Payload(task, ExecutorService.PayloadKey) is not null ? "the executor session it started finishing"
         : task.Trigger.Kind switch
         {
             TaskTriggerKind.Cron => $"its schedule ({task.Trigger.Spec})",

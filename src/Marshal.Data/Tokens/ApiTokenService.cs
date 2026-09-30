@@ -12,7 +12,7 @@ namespace Marshal.Data.Tokens;
 /// </summary>
 public sealed class ApiTokenService(IDbContextFactory<MarshalDbContext> contexts, IExecutionContextAccessor executionContext, TimeProvider timeProvider) : IApiTokenService
 {
-    private const string Prefix = "mrs_";
+    internal const string Prefix = "mrs_";
 
     private static readonly Error _invalid = new("token.invalid", "The token is unknown, revoked or expired.", ErrorType.Forbidden);
 
@@ -30,7 +30,7 @@ public sealed class ApiTokenService(IDbContextFactory<MarshalDbContext> contexts
 
         MarshalExecutionContext context = executionContext.Current
             ?? throw new InvalidOperationException("Creating a token requires an execution context.");
-        string plaintext = Prefix + Base64Url(RandomNumberGenerator.GetBytes(32));
+        string plaintext = NewPlaintext();
         var row = new ApiToken
         {
             Id = ApiTokenId.New(),
@@ -82,10 +82,12 @@ public sealed class ApiTokenService(IDbContextFactory<MarshalDbContext> contexts
         return ToInfo(row);
     }
 
-    private static string Hash(string plaintext) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(plaintext)));
+    internal static string Hash(string plaintext) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(plaintext)));
+
+    internal static string NewPlaintext() => Prefix + Base64Url(RandomNumberGenerator.GetBytes(32));
+
+    internal static ApiTokenInfo ToInfo(ApiToken row) =>
+        new(row.Id, row.OwnerId, row.Name, row.Scopes, row.Kind, row.CreatedAt, row.ExpiresAt, row.RevokedAt, row.TaskId);
 
     private static string Base64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-
-    private static ApiTokenInfo ToInfo(ApiToken row) =>
-        new(row.Id, row.OwnerId, row.Name, row.Scopes, row.Kind, row.CreatedAt, row.ExpiresAt, row.RevokedAt);
 }

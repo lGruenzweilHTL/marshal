@@ -38,6 +38,7 @@ public static class DataServiceCollectionExtensions
         services.AddSingleton<IInstanceOwner, EfInstanceOwner>();
         services.AddSingleton<IUserDirectory, EfUserDirectory>();
         services.AddSingleton<IApiTokenService, ApiTokenService>();
+        services.AddSingleton<IExecutorCallbackTokens, ExecutorCallbackTokens>();
         services.AddSingleton<DatabaseSecretSource>();
         services.AddSingleton<ISecretSource>(provider => provider.GetRequiredService<DatabaseSecretSource>());
         services.AddSingleton<ISecretCatalog>(provider => provider.GetRequiredService<DatabaseSecretSource>());

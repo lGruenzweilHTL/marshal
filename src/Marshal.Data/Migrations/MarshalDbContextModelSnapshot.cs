@@ -1346,6 +1346,10 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("status");
 
+                    b.Property<string>("Target")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("target");
+
                     b.Property<Guid>("TaskId")
                         .HasColumnType("TEXT")
                         .HasColumnName("task_id");

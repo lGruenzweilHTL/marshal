@@ -30,7 +30,7 @@ internal static class TaskTools
           "task":{"type":"string","description":"For after: id or name of the task to run after."}},"required":["kind"]}
         """;
 
-    private const string DeliverSchema = """
+    internal const string DeliverSchema = """
         {"type":"array","description":"Where the result goes. Default: nowhere (visible in the web UI).","items":{"type":"object","properties":{
           "channel":{"type":"string","enum":["voice","push","inbox","silent"]},
           "target":{"type":"string","description":"Voice only: satellite entity id; omit for where the user is."},

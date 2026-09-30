@@ -1,9 +1,11 @@
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Events;
+using Marshal.Abstractions.Executors;
 using Marshal.Abstractions.FollowUps;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.LiveEvents;
 using Marshal.Abstractions.Notifications;
+using Marshal.Abstractions.Secrets;
 using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
 using Marshal.Core.Agent;
@@ -11,6 +13,7 @@ using Marshal.Core.Conversation;
 using Marshal.Tasks.Approvals;
 using Marshal.Tasks.Deliveries;
 using Marshal.Tasks.Events;
+using Marshal.Tasks.Executors;
 using Marshal.Tasks.FollowUps;
 using Marshal.Tasks.KillSwitch;
 using Marshal.Tasks.Limits;
@@ -82,6 +85,19 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<IApprovalQueue>(provider => provider.GetRequiredService<ApprovalQueue>());
         services.AddSingleton<IHostedService, ApprovalExpiryLoop>();
         services.AddSingleton<IHostedService, ApprovalPushActions>();
+
+        services.AddOptions<ExecutorOptions>().Bind(configuration.GetSection("executors"))
+            .Validate(options => options.CallbackBaseUrl is null || options.CallbackBaseUrl.IsAbsoluteUri, "executors.callbackBaseUrl must be an absolute URL.")
+            .Validate(options => options.ClaudeCode.Url is null
+                || (options.ClaudeCode.Url.IsAbsoluteUri && SecretName.IsValid(options.ClaudeCode.TokenSecret) && options.CallbackBaseUrl is not null && options.ClaudeCode.Repositories.Count > 0),
+                "executors.claudeCode needs an absolute url, a tokenSecret name, at least one repository and executors.callbackBaseUrl.")
+            .ValidateOnStart();
+        services.AddHttpClient(ClaudeCodeExecutor.ClientName);
+        if (!string.IsNullOrWhiteSpace(configuration["executors:claudeCode:url"]))
+            services.AddSingleton<IExecutor, ClaudeCodeExecutor>();
+        services.AddSingleton<ExecutorService>();
+        services.AddSingleton<IExecutorCallbacks>(provider => provider.GetRequiredService<ExecutorService>());
+        services.AddSingleton<ITool, RunExecutorTool>();
 
         services.AddSingleton<ITriggerMatcher, DeclarativeTriggerMatcher>();
         services.AddSingleton<ChannelEventBus>();

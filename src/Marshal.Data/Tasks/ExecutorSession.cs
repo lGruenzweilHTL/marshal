@@ -21,6 +21,9 @@ public sealed class ExecutorSession : IOwned
     /// <summary>The executor's own id for the session.</summary>
     public required string Handle { get; set; }
 
+    /// <summary>What the session works on (e.g. the repository), the target of its proposal.</summary>
+    public string? Target { get; set; }
+
     /// <summary>The session's <c>executor_callback</c> token.</summary>
     public ApiTokenId? CallbackTokenId { get; set; }
 
