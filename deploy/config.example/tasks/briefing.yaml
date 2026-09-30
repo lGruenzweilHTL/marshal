@@ -1,0 +1,21 @@
+# Example briefing task: the arguments of tasks.create. Ask Marshal to create it ("create the morning briefing task
+# with these settings") or pass them to the tool from the web UI; afterwards the task is edited like any other one.
+# The briefing is only a task: the briefing template and the briefing-format and rss-digest skills do the work, the
+# deliveries decide where it is heard. The language follows the owner's preference.
+name: briefing
+template: briefing
+goal: >-
+  Prepare today's morning briefing: appointments, mail that needs attention and waiting drafts, the RSS digest,
+  the weather and the house. Follow the briefing-format skill.
+trigger:
+  kind: cron
+  expression: "0 6 * * *"          # 06:00 in the owner's time zone
+deliver:
+  - channel: voice                  # spoken where the owner is, once both conditions hold
+    followUp: true                  # the satellite listens for "tell me more ..."
+    when:
+      - state($person = home)       # $person is the owner's person entity (notification settings)
+      - state(binary_sensor.kitchen_occupancy = on)
+    expires: "11:00"                # not heard by 11:00: pushed to the phone instead
+    fallback: push
+  - channel: inbox                  # the written version, with links

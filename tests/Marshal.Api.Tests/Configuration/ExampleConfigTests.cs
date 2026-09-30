@@ -25,6 +25,7 @@ public sealed class ExampleConfigTests
     [InlineData("marshal.yaml")]
     [InlineData("risk.yaml")]
     [InlineData("satellites.yaml")]
+    [InlineData("tasks/briefing.yaml")]
     public void ExampleFile_HasNoLiteralSecrets(string file)
     {
         Result<IReadOnlyList<ConfigSecretFinding>> scan = new ConfigSecretScanner().Scan(file, File.ReadAllText(Path.Combine(_directory, file)));
@@ -90,6 +91,22 @@ public sealed class ExampleConfigTests
         AgentTemplate scorer = Assert.Single(templates.Templates, template => template.Name == "rss-scorer");
         Assert.Equal(Abstractions.Models.ModelTier.Fast, scorer.ModelTier);
         Assert.Empty(scorer.Tools);
+    }
+
+    [Fact]
+    public void BriefingTemplateAndFormatSkill_Load_TemplateUsesBothSkills()
+    {
+        var scanner = new ConfigSecretScanner();
+        using var skills = new FileSkillCatalog(Path.Combine(_directory, "skills"), null, "skills/**/*", scanner, NullLogger<FileSkillCatalog>.Instance);
+        using var templates = new FileTemplateCatalog(Path.Combine(_directory, "templates"), null, "templates/*.md", scanner, NullLogger<FileTemplateCatalog>.Instance);
+
+        Assert.Empty(skills.Errors);
+        Assert.Empty(templates.Errors);
+        Abstractions.Skills.Skill format = Assert.Single(skills.Skills, skill => skill.Name == "briefing-format");
+        Assert.Contains("60 to 90 seconds", format.Body, StringComparison.Ordinal);
+        AgentTemplate briefing = Assert.Single(templates.Templates, template => template.Name == "briefing");
+        Assert.Equal(["briefing-format", "rss-digest"], briefing.Skills);
+        Assert.Contains("rss.mark_read", briefing.Tools);
     }
 
     private static string RepositoryRoot()

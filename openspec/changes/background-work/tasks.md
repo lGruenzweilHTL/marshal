@@ -71,9 +71,9 @@
 
 ## 10. Briefing (files only)
 
-- [ ] 10.1 Add `deploy/config/templates/briefing.md`, `deploy/config/skills/briefing-format/SKILL.md` and an example briefing task definition
-- [ ] 10.2 Write an end-to-end test with fake clients: cron prepares the briefing, kitchen occupancy delivers voice with follow-up, "tell me more" runs in the seeded session, expiry falls back to push
-- [ ] 10.3 Add an architecture test asserting no briefing-specific types exist in `src/`
+- [x] 10.1 Add `deploy/config/templates/briefing.md`, `deploy/config/skills/briefing-format/SKILL.md` and an example briefing task definition
+- [x] 10.2 Write an end-to-end test with fake clients: cron prepares the briefing, kitchen occupancy delivers voice with follow-up, "tell me more" runs in the seeded session, expiry falls back to push
+- [x] 10.3 Add an architecture test asserting no briefing-specific types exist in `src/`
 
 ## 11. Web UI
 

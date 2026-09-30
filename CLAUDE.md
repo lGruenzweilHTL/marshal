@@ -64,7 +64,8 @@ web/                         Vue + Vite + TypeScript SPA (API client generated f
                              built into Marshal.Api's wwwroot by the Dockerfile
 ha/                          custom_components/marshal (Python HA integration, HACS; may move to its own repo); uv project, tests in ha/tests
 deploy/                      docker-compose.yml, config.example/ (example /config files: marshal.yaml, risk.yaml,
-                             satellites.yaml, mcp/, skills/, templates/); Dockerfile at repo root
+                             satellites.yaml, mcp/, skills/, templates/, tasks/ with the example briefing task);
+                             Dockerfile at repo root
 docs/                        design notes, images
 openspec/                    specifications and changes
 ```
