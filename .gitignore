@@ -110,3 +110,6 @@ deploy/config/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# session handoff notes
+HANDOFF.md
