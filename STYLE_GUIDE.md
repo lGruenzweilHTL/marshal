@@ -133,6 +133,7 @@ public async Task<Result<PrinterStatus>> GetStatusAsync(CancellationToken ct)
 - A breaking change adds a new version and a new route group; the old version keeps working side by side until it is retired. Never change the contract of a published version in place.
 - Unversioned: `/health`, `/api/versions` (version discovery), `/openapi/{document}.json` (the name carries the version), auth protocol callbacks (`/signin-oidc`, `/signout-callback-oidc`) and SPA routes only.
 - Endpoints return typed results (`Results<Ok<T>, NotFound, ...>`); failed `Result`s become `ProblemDetails`.
+- No `TimeSpan` in request or response contracts: the OpenAPI generator fails on it (HTTP 500 for the document, so `npm run gen:api` breaks). Send durations as numbers with the unit in the name (`wallTimeSeconds`).
 
 ```csharp
 public static class TaskEndpoints
