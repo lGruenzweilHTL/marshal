@@ -3,6 +3,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <!-- App version shown in the system view; CI may override with -p:Version=... -->
     <Version>0.1.0</Version>
+    <!-- The commit hash in the informational version changes AssemblyInfo on every commit, which recompiles every
+         project. Debug builds leave it out; Release (the Docker images) keeps it for the system view. -->
+    <IncludeSourceRevisionInInformationalVersion Condition="'$(Configuration)' == 'Debug'">false</IncludeSourceRevisionInInformationalVersion>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
