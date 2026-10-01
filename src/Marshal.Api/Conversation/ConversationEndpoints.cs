@@ -53,7 +53,8 @@ internal static partial class ConversationEndpoints
         if (prepared.IsFailure)
             return prepared.Error.ToProblem();
 
-        LogTurn(loggers.CreateLogger("Marshal.Conversation"), prepared.Value.Context.SessionId?.Value, turn.InputMode);
+        ILogger logger = loggers.CreateLogger("Marshal.Conversation");
+        LogTurn(logger, prepared.Value.Context.SessionId?.Value, turn.InputMode);
         return TypedResults.ServerSentEvents(StreamAsync(conversations, prepared.Value, ct));
     }
 

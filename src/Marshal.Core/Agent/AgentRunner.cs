@@ -257,7 +257,8 @@ public sealed partial class AgentRunner(
         }
 
         GuardVerdict verdict = await guard.EvaluateAsync(new GuardRequest(call.Name, arguments, context, offered), ct);
-        LogToolDecision(logger, verdict.Tool?.Id.ToString() ?? call.Name, verdict.Decision);
+        string toolName = verdict.Tool?.Id.ToString() ?? call.Name;
+        LogToolDecision(logger, toolName, verdict.Decision);
         switch (verdict.Outcome)
         {
             case GuardOutcome.Deny:

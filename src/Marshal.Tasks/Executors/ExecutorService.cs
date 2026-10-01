@@ -139,12 +139,13 @@ public sealed partial class ExecutorService(
         await tokens.RevokeAsync(token, CancellationToken.None);
 
         JsonObject outcomeJson = Outcome(session, status, report, proposal);
-        events.Publish(new MarshalEvent(EventSource, EventType(status), session.Id.ToString(),
+        string eventType = EventType(status);
+        events.Publish(new MarshalEvent(EventSource, eventType, session.Id.ToString(),
             JsonSerializer.SerializeToElement(Summary(outcomeJson)), session.OwnerId, time.GetUtcNow()));
         if (!await TaskResume.ResumeAsync(tasks, scheduler, time, session.TaskId, new JsonObject { [PayloadKey] = outcomeJson }.ToJsonString(), CancellationToken.None))
             LogResumeFailed(session.TaskId);
 
-        LogFinished(session.Id, EventType(status));
+        LogFinished(session.Id, eventType);
         return Result.Success();
     }
 
