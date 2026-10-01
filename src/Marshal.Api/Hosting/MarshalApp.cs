@@ -55,6 +55,7 @@ public static class MarshalApp
         builder.Services.AddMarshalTasks(builder.Configuration);
         builder.Services.AddMarshalData(builder.Configuration, ConnectionString);
         builder.Services.AddMarshalApi(builder.Configuration);
+        builder.Services.AddSingleton(new ProcessEnvironment(environment));
 
         WebApplication app = builder.Build();
         HttpOptions http = app.Services.GetRequiredService<IOptions<HttpOptions>>().Value;

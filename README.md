@@ -102,6 +102,16 @@ There is no published image yet; Marshal is built from this repository with Dock
 
 Everything Marshal stores lives in `/data` (SQLite database, encryption keys, nightly backups, notes repository); `/config` can live in git.
 
+**If Marshal does not start**, `docker compose logs marshal` lists every configuration problem it found, each with the file (or `MARSHAL__` variable) and key, for example:
+
+```
+marshal: startup failed (2 errors)
+  marshal.yaml  embedding.provider  must be ollama or openai-compatible.
+  marshal.yaml  embedding.model  is required.
+```
+
+Missing secrets are reported the same way once the configuration is valid. Set `logging.logLevel.default: Debug` in `marshal.yaml` to get the stack trace as well.
+
 ---
 
 ## Architecture

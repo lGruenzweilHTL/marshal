@@ -25,7 +25,9 @@ public static partial class PrinterServiceCollectionExtensions
             .Validate(options => options.Printers.All(printer => printer.Url is { IsAbsoluteUri: true } url && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps)), "printers[].url must be an absolute http(s) URL.")
             .Validate(options => options.Printers.All(printer => printer.WebUrl is null || printer.WebUrl is { IsAbsoluteUri: true } url && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps)), "printers[].webUrl must be an absolute http(s) URL.")
             .Validate(options => options.Printers.All(printer => !printer.Babysitter.Enabled || printer.Babysitter.Interval >= TimeSpan.FromSeconds(10)), "printers[].babysitter.interval must be at least 10 seconds.")
-            .Validate(options => options.PrinterSnapshots is { MaxSize: >= 64, Quality: >= 1 and <= 100, Retention: >= 1 }, "printerSnapshots needs maxSize >= 64, quality 1-100 and retention >= 1.")
+            .Validate(options => options.PrinterSnapshots is { MaxSize: >= 64 }, "printerSnapshots.maxSize must be at least 64.")
+            .Validate(options => options.PrinterSnapshots is { Quality: >= 1 and <= 100 }, "printerSnapshots.quality must be between 1 and 100.")
+            .Validate(options => options.PrinterSnapshots is { Retention: >= 1 }, "printerSnapshots.retention must be at least 1.")
             .ValidateOnStart();
 
         // Commands are not idempotent (a retried start could print twice): retries only for safe methods.

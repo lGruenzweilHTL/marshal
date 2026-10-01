@@ -54,24 +54,23 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<IExecutionContextAccessor, AsyncLocalExecutionContextAccessor>();
 
         services.AddOptions<PathsOptions>().Bind(configuration.GetSection("paths"));
-        services.AddOptions<AgentOptions>().Bind(configuration.GetSection("agent")).ValidateDataAnnotations().ValidateOnStart();
-        services.AddOptions<ConfirmationOptions>().Bind(configuration.GetSection("confirmation")).ValidateDataAnnotations().ValidateOnStart();
-        services.AddOptions<SessionOptions>().Bind(configuration.GetSection("sessions")).ValidateDataAnnotations().ValidateOnStart();
+        services.AddOptions<AgentOptions>().Bind(configuration.GetSection("agent")).ValidateAttributes().ValidateOnStart();
+        services.AddOptions<ConfirmationOptions>().Bind(configuration.GetSection("confirmation")).ValidateAttributes().ValidateOnStart();
+        services.AddOptions<SessionOptions>().Bind(configuration.GetSection("sessions")).ValidateAttributes().ValidateOnStart();
         services.AddOptions<ModelRoutingOptions>().Bind(configuration).ValidateOnStart();
         services.AddSingleton<IValidateOptions<ModelRoutingOptions>, ModelRoutingOptionsValidator>();
 
         // Hot-reloaded /config files; a failing first load fails startup.
         services.AddSingleton<IConfigSecretScanner, ConfigSecretScanner>();
         services.AddSingleton<IConfigWatcher>(provider => new ConfigDirectoryWatcher(provider.GetRequiredService<IOptions<PathsOptions>>().Value.Config));
-        services.AddSingleton(provider => LoadConfigFile<RiskRulesFile>(provider, RiskFile, RiskRulesFile.Validate));
-        services.AddSingleton<IOptionsMonitor<RiskRulesFile>>(provider => provider.GetRequiredService<YamlConfigFile<RiskRulesFile>>());
-        services.AddSingleton(provider => LoadConfigFile<SatellitesFile>(provider, SatellitesFileName, SatellitesFile.Validate));
-        services.AddSingleton<IOptionsMonitor<SatellitesFile>>(provider => provider.GetRequiredService<YamlConfigFile<SatellitesFile>>());
+        AddConfigFile<RiskRulesFile>(services, RiskFile, RiskRulesFile.Validate);
+        AddConfigFile<SatellitesFile>(services, SatellitesFileName, SatellitesFile.Validate);
 
         services.AddSingleton<IModelRouter, ConfiguredModelRouter>();
         services.AddSingleton<ICostCalculator, PriceTableCostCalculator>();
+        // ModelRoutingOptionsValidator rejects a missing embedding section at startup, before anything resolves this.
         services.AddSingleton(provider => provider.GetRequiredService<IEmbeddingGeneratorFactory>().Create(
-            provider.GetRequiredService<IOptions<ModelRoutingOptions>>().Value.Embedding ?? throw new InvalidOperationException("embedding is not configured.")));
+            provider.GetRequiredService<IOptions<ModelRoutingOptions>>().Value.Embedding!));
 
         services.AddSingleton<ITool, AskAdvisorTool>();
         services.AddSingleton<IToolSource, BuiltInToolSource>();
@@ -162,11 +161,18 @@ public static class CoreServiceCollectionExtensions
         return services;
     }
 
-    private static YamlConfigFile<T> LoadConfigFile<T>(IServiceProvider provider, string name, Func<T, Abstractions.Result> validate)
+    // The load result is a service of its own so the startup configuration stage can report a broken file with the
+    // other errors; the file itself is only resolved once that stage passed.
+    private static void AddConfigFile<T>(IServiceCollection services, string name, Func<T, Abstractions.Result> validate)
         where T : class, new()
     {
-        string directory = provider.GetRequiredService<IOptions<PathsOptions>>().Value.Config;
-        ILogger logger = provider.GetRequiredService<ILoggerFactory>().CreateLogger("Marshal.Configuration");
-        return YamlConfigFile.Load(directory, name, provider.GetRequiredService<IConfigWatcher>(), provider.GetRequiredService<IConfigSecretScanner>(), validate, logger);
+        services.AddSingleton(provider =>
+        {
+            string directory = provider.GetRequiredService<IOptions<PathsOptions>>().Value.Config;
+            ILogger logger = provider.GetRequiredService<ILoggerFactory>().CreateLogger("Marshal.Configuration");
+            return YamlConfigFile.TryLoad(directory, name, provider.GetRequiredService<IConfigWatcher>(), provider.GetRequiredService<IConfigSecretScanner>(), validate, logger);
+        });
+        services.AddSingleton(provider => provider.GetRequiredService<Abstractions.Result<YamlConfigFile<T>>>().Value);
+        services.AddSingleton<IOptionsMonitor<T>>(provider => provider.GetRequiredService<YamlConfigFile<T>>());
     }
 }

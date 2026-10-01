@@ -32,9 +32,9 @@ internal sealed partial class AuthOptionsValidator : IValidateOptions<AuthOption
         }
 
         foreach (string duplicate in options.Providers.GroupBy(provider => provider.Name).Where(group => group.Count() > 1).Select(group => group.Key))
-            errors.Add($"auth.providers: name '{duplicate}' is used more than once.");
+            errors.Add($"auth.providers uses the name '{duplicate}' more than once.");
         if (options.Providers.Count(provider => provider.Type == LoginProviderOptions.LocalType) > 1)
-            errors.Add("auth.providers: only one 'local' provider is allowed.");
+            errors.Add("auth.providers allows only one 'local' provider.");
 
         return errors.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(errors);
     }

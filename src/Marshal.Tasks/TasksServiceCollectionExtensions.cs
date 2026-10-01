@@ -106,8 +106,9 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<IProposalReview, ProposalReview>();
 
         services.AddOptions<MaintenanceOptions>().Bind(configuration.GetSection("maintenance"))
-            .Validate(options => new[] { options.BackupSchedule, options.ConsolidationSchedule, options.RetentionSchedule }.All(schedule => TaskTriggers.Validate(TaskTrigger.Cron(schedule ?? "")).IsSuccess),
-                "maintenance schedules must be five-field cron expressions.")
+            .Validate(options => IsCron(options.BackupSchedule), "maintenance.backupSchedule must be a five-field cron expression.")
+            .Validate(options => IsCron(options.ConsolidationSchedule), "maintenance.consolidationSchedule must be a five-field cron expression.")
+            .Validate(options => IsCron(options.RetentionSchedule), "maintenance.retentionSchedule must be a five-field cron expression.")
             .Validate(options => options.BackupCopies >= 1, "maintenance.backupCopies must be at least 1.")
             .Validate(options => options.PayloadRetention >= TimeSpan.FromDays(1) && options.MetadataRetention >= options.PayloadRetention,
                 "maintenance.payloadRetention must be at least a day and metadataRetention at least as long.")
@@ -125,4 +126,6 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<ChannelEventBus>());
         return services;
     }
+
+    private static bool IsCron(string? schedule) => TaskTriggers.Validate(TaskTrigger.Cron(schedule ?? "")).IsSuccess;
 }

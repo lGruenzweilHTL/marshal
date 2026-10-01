@@ -31,7 +31,7 @@ public static class ApiServiceCollectionExtensions
     public static IServiceCollection AddMarshalApi(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<HttpOptions>().Bind(configuration.GetSection("http"));
-        services.AddOptions<OwnerOptions>().Bind(configuration.GetSection("owner")).ValidateDataAnnotations().ValidateOnStart();
+        services.AddOptions<OwnerOptions>().Bind(configuration.GetSection("owner")).ValidateAttributes().ValidateOnStart();
 
         services.AddSingleton<ApiSnapshotLinks>();
         services.AddSingleton<ISnapshotLinks>(provider => provider.GetRequiredService<ApiSnapshotLinks>());

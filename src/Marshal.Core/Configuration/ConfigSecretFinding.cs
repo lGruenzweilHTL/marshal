@@ -8,6 +8,14 @@ namespace Marshal.Core.Configuration;
 /// <param name="Rule">The rule that matched.</param>
 public sealed record ConfigSecretFinding(string File, string KeyPath, ConfigSecretRule Rule)
 {
+    /// <summary>What is wrong with the key, without the file and key path.</summary>
+    public string Problem => Rule switch
+    {
+        ConfigSecretRule.InvalidReference => "must hold a secret name (^[a-z][a-z0-9_]{0,63}$), not a value.",
+        ConfigSecretRule.ForbiddenKey => "names a credential. Store the value as a secret and reference it with a '...Secret' key.",
+        _ => "has a value that looks like a credential. Store it as a secret and reference it by name.",
+    };
+
     /// <inheritdoc />
     public override string ToString() => Rule switch
     {

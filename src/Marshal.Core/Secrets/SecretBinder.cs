@@ -12,16 +12,32 @@ namespace Marshal.Core.Secrets;
 /// </summary>
 public sealed class SecretBinder(ISecretStore store)
 {
+    /// <summary>
+    /// Paths of <c>[Secret]</c> properties that already hold a value, i.e. came from configuration. Needs no secret
+    /// store, so startup checks it together with the other configuration errors.
+    /// </summary>
+    public static IReadOnlyList<string> FindConfigured(object options, string path) =>
+        [.. SecretProperties(options, path).Where(found => found.Property.GetValue(found.Node) is not null).Select(found => found.Path)];
+
     public async Task<SecretBindingReport> BindAsync(object options, string path, CancellationToken ct)
     {
         var missingRequired = new List<string>();
         var missingOptional = new List<string>();
         var boundFromConfiguration = new List<string>();
-        await VisitAsync(options, path, missingRequired, missingOptional, boundFromConfiguration, ct);
+        foreach (SecretProperty found in SecretProperties(options, path))
+            await BindPropertyAsync(found, missingRequired, missingOptional, boundFromConfiguration, ct);
+
         return new SecretBindingReport(missingRequired, missingOptional, boundFromConfiguration);
     }
 
-    private async Task VisitAsync(object? node, string path, List<string> missingRequired, List<string> missingOptional, List<string> bound, CancellationToken ct)
+    private static List<SecretProperty> SecretProperties(object options, string path)
+    {
+        var found = new List<SecretProperty>();
+        Visit(options, path, found);
+        return found;
+    }
+
+    private static void Visit(object? node, string path, List<SecretProperty> found)
     {
         switch (node)
         {
@@ -29,13 +45,13 @@ public sealed class SecretBinder(ISecretStore store)
                 return;
             case IDictionary dictionary:
                 foreach (DictionaryEntry entry in dictionary)
-                    await VisitAsync(entry.Value, Join(path, entry.Key.ToString() ?? ""), missingRequired, missingOptional, bound, ct);
+                    Visit(entry.Value, Join(path, entry.Key.ToString() ?? ""), found);
 
                 return;
             case IEnumerable items:
                 int index = 0;
                 foreach (object? item in items)
-                    await VisitAsync(item, $"{path}[{index++}]", missingRequired, missingOptional, bound, ct);
+                    Visit(item, $"{path}[{index++}]", found);
 
                 return;
         }
@@ -52,18 +68,18 @@ public sealed class SecretBinder(ISecretStore store)
             string propertyPath = Join(path, JsonNamingPolicy.CamelCase.ConvertName(property.Name));
             if (property.GetCustomAttribute<SecretAttribute>() is { } secret)
             {
-                await BindPropertyAsync(node, property, secret, path, propertyPath, missingRequired, missingOptional, bound, ct);
+                found.Add(new SecretProperty(node, property, secret, path, propertyPath));
                 continue;
             }
 
-            await VisitAsync(property.GetValue(node), propertyPath, missingRequired, missingOptional, bound, ct);
+            Visit(property.GetValue(node), propertyPath, found);
         }
     }
 
     private async Task BindPropertyAsync(
-        object node, PropertyInfo property, SecretAttribute secret, string parentPath, string propertyPath,
-        List<string> missingRequired, List<string> missingOptional, List<string> bound, CancellationToken ct)
+        SecretProperty found, List<string> missingRequired, List<string> missingOptional, List<string> bound, CancellationToken ct)
     {
+        (object node, PropertyInfo property, SecretAttribute secret, string parentPath, string propertyPath) = found;
         if (property.GetValue(node) is not null)
         {
             property.SetValue(node, null);
@@ -90,4 +106,6 @@ public sealed class SecretBinder(ISecretStore store)
     }
 
     private static string Join(string path, string key) => path.Length == 0 ? key : $"{path}.{key}";
+
+    private sealed record SecretProperty(object Node, PropertyInfo Property, SecretAttribute Secret, string ParentPath, string Path);
 }

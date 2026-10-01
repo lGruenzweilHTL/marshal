@@ -1,3 +1,4 @@
+using System.Reflection;
 using Marshal.Api.Cli;
 using Marshal.Api.Hosting;
 
@@ -7,6 +8,6 @@ if (MarshalCli.IsCommand(args))
 if (OpenApiExport.IsRequested(args))
     return await OpenApiExport.RunAsync(args, environment);
 
-WebApplication app = MarshalApp.Create(args, environment);
-await app.RunAsync();
-return 0;
+// WebApplicationFactory runs Main in-process and observes a failed start through the exception, not the report.
+TextWriter? report = Assembly.GetEntryAssembly() == typeof(MarshalApp).Assembly ? Console.Error : null;
+return await MarshalHost.RunAsync(args, environment, report);

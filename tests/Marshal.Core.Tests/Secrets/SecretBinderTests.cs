@@ -53,6 +53,20 @@ public sealed class SecretBinderTests
     }
 
     [Fact]
+    public void FindConfigured_ValueFromConfiguration_ReportsPathWithoutAStore()
+    {
+        var options = new RootOptions
+        {
+            Models = { ["claude"] = new ModelEntry { ApiKey = "literal" }, ["local"] = new ModelEntry { ApiKeySecret = "anthropic_key" } },
+            Printers = [new PrinterEntry { ApiKey = "literal" }],
+        };
+
+        IReadOnlyList<string> configured = SecretBinder.FindConfigured(options, "");
+
+        Assert.Equal(["models.claude.apiKey", "printers[0].apiKey"], configured);
+    }
+
+    [Fact]
     public async Task Bind_NoReference_LeavesPropertyEmpty()
     {
         var options = new RootOptions { Models = { ["local"] = new ModelEntry() } };
