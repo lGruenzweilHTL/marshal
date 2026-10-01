@@ -39,4 +39,4 @@
 
 - [x] 6.1 Update README (getting started / troubleshooting, if present) with what a failed start looks like and how to get the stack trace (`logging.logLevel.default: Debug`). Verify the documented setting produces the trace by running 5.1's debug case.
 - [x] 6.2 Run the published `marshal.dll` (`dotnet src/Marshal.Api/bin/Debug/net10.0/marshal.dll`) with a config missing `embedding`, or build the Docker image and start it with that config. Verify the output shows only the error list and the process exits with `1`.
-- [ ] 6.3 Run the full test suite (`dotnet test`) and `openspec validate clean-startup-failures --strict`. Verify both pass.
+- [x] 6.3 Run the full test suite (`dotnet test`) and `openspec validate clean-startup-failures --strict`. Verify both pass.
