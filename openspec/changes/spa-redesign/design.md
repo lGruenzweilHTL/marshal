@@ -19,7 +19,7 @@ Current state that shapes the approach:
 **Goals:**
 - Every page touched once: rebuilt on the design system with i18n text and all states in the same edit.
 - The error model makes unhandled failures hard to write: the type system and a test catch a call site that ignores failure.
-- Preview mode doubles as the fixture source for component tests and for checking pages against Figma.
+- Preview mode doubles as the fixture source for component tests and for checking pages against the design canvas.
 
 **Non-Goals:**
 - Server-side rendering, a UI framework change or a CSS framework. Vue, Vite and plain CSS with custom properties stay.
@@ -27,10 +27,10 @@ Current state that shapes the approach:
 
 ## Decisions
 
-### 1. Order of work: foundations, Figma, checkpoint, shell, areas
+### 1. Order of work: foundations, design canvas, checkpoint, shell, areas
 
 ```
- 1 foundations (no visual change)      2 Figma design            3 checkpoint
+ 1 foundations (no visual change)      2 design canvas                   3 checkpoint
    error model, i18n setup,              tokens, components,        user approves design;
    preview mode, server fixes,           every page phone +         view specs + tasks for
    PWA plumbing                          desktop, all states        areas updated here
@@ -40,7 +40,7 @@ Current state that shapes the approach:
                                                        5 areas, one at a time
 ```
 
-Foundations and the Figma work are independent and can overlap. The information architecture is an outcome of the Figma phase, so the view-level spec deltas and the per-area tasks are written at the checkpoint, inside this change, before any page is rebuilt.
+Foundations and the design work are independent and can overlap. The information architecture is an outcome of the design phase, so the view-level spec deltas and the per-area tasks are written at the checkpoint, inside this change, before any page is rebuilt.
 
 Alternative: three separate changes (foundations, design, rebuild). Rejected because the rebuild's specs depend on the design, and splitting would archive half-finished intent.
 
@@ -90,16 +90,16 @@ Alternative: a hand-written `t()` with plain objects. Smaller, but pluralization
 
 Alternative: Mock Service Worker. It would add a dependency and a second service worker next to the PWA one.
 
-### 5. Design system: tokens from Figma variables, components in `web/src/ui/`
+### 5. Design system: tokens from design tokens, components in `web/src/ui/`
 
-- Figma variables (color with light and dark modes, spacing, radius, elevation) and text styles are the source. They are exported to `web/src/ui/tokens.css` as CSS custom properties; the export is a documented manual step at first.
-- Components in `web/src/ui/` (names settle in Figma; expected: `AppButton`, `IconButton`, `Card`, `Badge`, `ListRow`, `Field`, `Sheet`, `Dialog`, `Banner`, `LoadState` for loading, empty and error, `TabBar`, `SideNav`, `PageHeader`).
-- Fonts and icons are bundled and served from the same origin. Font and icon set are chosen in the Figma phase; candidates are a variable font via `@fontsource` packages and Lucide icons (`lucide-vue-next`, MIT). The chosen packages are added to the package index.
+- design tokens (color with light and dark modes, spacing, radius, elevation) and text styles are the source. They are exported to `web/src/ui/tokens.css` as CSS custom properties; the export is a documented manual step at first.
+- Components in `web/src/ui/` (names settle on the design canvas; expected: `AppButton`, `IconButton`, `Card`, `Badge`, `ListRow`, `Field`, `Sheet`, `Dialog`, `Banner`, `LoadState` for loading, empty and error, `TabBar`, `SideNav`, `PageHeader`).
+- Fonts and icons are bundled and served from the same origin. Font and icon set are chosen in the design phase; candidates are a variable font via `@fontsource` packages and Lucide icons (`lucide-vue-next`, MIT). The chosen packages are added to the package index.
 - `styles.css` is replaced area by area: new components use only tokens; the old global classes are deleted once the last old view is gone.
 
 ### 6. Phone and desktop layouts
 
-- The shell switches between a bottom `TabBar` (phone) and a grouped `SideNav` (desktop) at one breakpoint chosen in Figma.
+- The shell switches between a bottom `TabBar` (phone) and a grouped `SideNav` (desktop) at one breakpoint chosen on the design canvas.
 - Act surfaces are designed phone-first. Deep links from push land on focused screens: the approval screen shows the frozen action, arguments and a TTL countdown with approve and reject in thumb reach.
 - Manage surfaces are designed desktop-first; their phone layout may be reduced (the memory graph and scatter become a list on phones).
 - Layout differences use CSS (container and media queries) where the structure is the same, and separate components where it is not. Both layouts share the same `useLoad` / `useSubmit` logic.
@@ -120,24 +120,27 @@ Alternative: a hand-written service worker. It would need its own precache manif
 - Unexpected exceptions: `app.UseExceptionHandler()` early in the pipeline, with `AddProblemDetails(options => options.CustomizeProblemDetails = …)` setting `code: server.unexpected`, a generic `detail` and `traceId` (`Activity.Current?.Id ?? HttpContext.TraceIdentifier`). The exception handler middleware logs the exception; the trace id ties the log to the response.
 - No new C# interfaces. Both changes use ASP.NET Core's built-in services.
 
-### 9. Figma file structure
+### 9. Design canvas structure
 
-One Figma design file, created through the Figma MCP tools:
+The design lives in one Claude Design canvas, "Marshal Redesign" (https://claude.ai/artifact/9fkrDjPA9KxC6hQDf1kEs9, private to the owner). Figma was the first choice, but the account's Starter plan with a View seat allows only a handful of MCP calls per month, far below what a full design system needs.
 
-- **Foundations**: variables (color in light and dark modes, spacing, radius, elevation), text styles, icon set.
-- **Components**: the `web/src/ui/` components with variants (state, size, tone) and German and English content.
-- **Phone** and **Desktop**: every page, grouped by the new information architecture.
+The canvas has one page per part:
+
+- **Information architecture**: destinations, grouping, phone tab bar, desktop side navigation, deep-link screens.
+- **Foundations**: color tokens with light and dark values, font tokens, spacing, radius, elevation and the type scale, kept as one `tokens.json` (a Design System artifact installed into the canvas) and shown as specimens. The same names become the CSS custom properties in `web/src/ui/tokens.css`.
+- **Components**: the `web/src/ui/` components as reusable artboards (`<dc-import>`), with variants for state, size and tone, in German and English.
+- **Phone** and **Desktop**: every page, built from the component artboards, grouped by the information architecture.
 - **States**: loading, empty, error, session expired, offline, HTTPS hint, global banner; at least one page per state in German.
 
-The checkpoint (Decision 1) reviews this file with the user before any page is rebuilt.
+The checkpoint (Decision 1) reviews this canvas with the user before any page is rebuilt.
 
 ## Risks / Trade-offs
 
 - [A long-running redesign leaves the app half old, half new] → Areas are rebuilt one at a time behind the new shell; each area is complete (design, i18n, states, tests) before the next starts, and old views keep working inside the new shell until replaced.
-- [German text is longer and breaks tight layouts] → German frames in Figma for every component and for the longest pages; preview mode switches language for checking.
+- [German text is longer and breaks tight layouts] → German frames on the design canvas for every component and for the longest pages; preview mode switches language for checking.
 - [Service worker serves a stale or broken shell] → `index.html` is never cached; assets are content-hashed; `autoUpdate`. A test checks that the generated service worker has no route for `/api/`.
 - [The architecture test misses an indirect use of the raw client] → `session.api` is no longer part of the type returned to views; only `web/src/api/` can reach it.
-- [Figma tokens and `tokens.css` drift apart] → The export step is listed in the design file's README frame and in the tasks; a later change can automate it.
+- [Canvas tokens and `tokens.css` drift apart] → The export step is listed on the canvas foundations page and in the tasks; a later change can automate it.
 - [Scope grows with the IA rethink] → The checkpoint lists any view the new IA adds that needs new API data; those become follow-up changes, not part of this one (proposal Non-goals).
 
 ## Migration Plan
@@ -146,4 +149,4 @@ No data migration. Deploying the PWA is optional for users. Rollback is a revert
 
 ## Open Questions
 
-- Font family, icon set and the phone/desktop breakpoint: chosen in the Figma phase (Decision 5, 6); they do not change the tasks.
+- Font family, icon set and the phone/desktop breakpoint: chosen in the design phase (Decision 5, 6); they do not change the tasks.

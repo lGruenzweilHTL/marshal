@@ -32,9 +32,9 @@
 - [ ] 5.1 Add `vite-plugin-pwa` (package index), manifest with placeholder icons, precache of assets only, network-only navigations with a static offline page. Write a test on the generated service worker: no route matches `/api/` or `/health`, and `index.html` is not precached. Verify it passes.
 - [ ] 5.2 Run the built app behind the host under a non-root base path. Verify the app installs, opens standalone, loads under the base path, and shows the offline page without a connection.
 
-## 6. Figma design
+## 6. Design canvas
 
-- [ ] 6.1 Create the Figma design file with the structure from design.md (Decision 9). Verify the file and its pages exist and the link is recorded in this change's design.md.
+- [x] 6.1 Create the design canvas with the structure from design.md (Decision 9). Verify the file and its pages exist and the link is recorded in this change's design.md.
 - [ ] 6.2 Draft the information architecture: destinations, grouping, phone tab bar (at most five), desktop side navigation, deep-link screens. Verify by reviewing it with the user.
 - [ ] 6.3 Build the foundations: color variables with light and dark modes, spacing, radius, elevation, text styles, chosen font and icon set. Verify contrast (WCAG AA for text) in both modes.
 - [ ] 6.4 Build the components with variants and German and English content. Verify every component has focus, disabled, loading and error variants where they apply, and 44 px touch targets.
@@ -44,11 +44,11 @@
 ## 7. Specs and tasks after the checkpoint
 
 - [ ] 7.1 Add delta specs for the view capabilities the approved IA changes (`web-chat`, `memory-view`, `background-views`, `config-view`, `run-insights`, `approval-queue`, `printer`, `user-preferences` as needed). Verify `openspec validate spa-redesign --strict` passes.
-- [ ] 7.2 Export the Figma variables to `web/src/ui/tokens.css` and record the export steps in the Figma README frame. Verify both themes render from the tokens in preview mode.
+- [ ] 7.2 Export the design tokens to `web/src/ui/tokens.css` and record the export steps in the design canvas foundations page. Verify both themes render from the tokens in preview mode.
 - [ ] 7.3 Insert the build groups between this group and Integration: the shell and component library first, then one group per area of the approved IA, each with test-first tasks for its views (layouts, i18n text, all `useLoad` / `useSubmit` states). Verify `openspec validate spa-redesign --strict` passes.
 
 ## 8. Integration
 
 - [ ] 8.1 Run the full .NET and web test suites (`dotnet test`, `npm test`, `npm run build`). Verify all pass, including the architecture test from 2.5 without `todo`.
-- [ ] 8.2 Walk every page in preview mode in both languages, both themes and all scenarios at phone and desktop width against the Figma design. Verify no page is blank in any scenario.
+- [ ] 8.2 Walk every page in preview mode in both languages, both themes and all scenarios at phone and desktop width against the design canvas. Verify no page is blank in any scenario.
 - [ ] 8.3 Replace the `docs/images/placeholder-*.png` files with screenshots from preview mode and update `README.md`. Verify the README shows the new screenshots.
