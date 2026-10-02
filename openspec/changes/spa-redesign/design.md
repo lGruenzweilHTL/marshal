@@ -94,12 +94,13 @@ Alternative: Mock Service Worker. It would add a dependency and a second service
 
 - design tokens (color with light and dark modes, spacing, radius, elevation) and text styles are the source. They are exported to `web/src/ui/tokens.css` as CSS custom properties; the export is a documented manual step at first.
 - Components in `web/src/ui/` (names settle on the design canvas; expected: `AppButton`, `IconButton`, `Card`, `Badge`, `ListRow`, `Field`, `Sheet`, `Dialog`, `Banner`, `LoadState` for loading, empty and error, `TabBar`, `SideNav`, `PageHeader`).
-- Fonts and icons are bundled and served from the same origin. Font and icon set are chosen in the design phase; candidates are a variable font via `@fontsource` packages and Lucide icons (`lucide-vue-next`, MIT). The chosen packages are added to the package index.
+- Fonts and icons are bundled and served from the same origin. Chosen on the design canvas: Bricolage Grotesque (titles, key figures), Instrument Sans (UI text) and JetBrains Mono (tool names, arguments, ids), all OFL, via `@fontsource` packages; Lucide icons (`lucide-vue-next`, ISC) at a 1.75 px stroke. The packages are added to the package index.
+- The tokens live in the "Marshal" design system (https://claude.ai/artifact/DXfMfWe5jKksRwqjNjEFAJ, private to the owner), installed on the design canvas: colour roles with light and dark values (WCAG AA checked for both), type styles, spacing, radius, shadow.
 - `styles.css` is replaced area by area: new components use only tokens; the old global classes are deleted once the last old view is gone.
 
 ### 6. Phone and desktop layouts
 
-- The shell switches between a bottom `TabBar` (phone) and a grouped `SideNav` (desktop) at one breakpoint chosen on the design canvas.
+- The shell switches between a bottom `TabBar` (phone) and a grouped `SideNav` (desktop) at 900 px. Tablets in portrait get the phone layout.
 - Act surfaces are designed phone-first. Deep links from push land on focused screens: the approval screen shows the frozen action, arguments and a TTL countdown with approve and reject in thumb reach.
 - Manage surfaces are designed desktop-first; their phone layout may be reduced (the memory graph and scatter become a list on phones).
 - Layout differences use CSS (container and media queries) where the structure is the same, and separate components where it is not. Both layouts share the same `useLoad` / `useSubmit` logic.
@@ -149,4 +150,4 @@ No data migration. Deploying the PWA is optional for users. Rollback is a revert
 
 ## Open Questions
 
-- Font family, icon set and the phone/desktop breakpoint: chosen in the design phase (Decision 5, 6); they do not change the tasks.
+- Appearance (System / Light / Dark) appears on the Preferences design as a per-device setting stored in the browser. It needs no API; confirm at the checkpoint that it stays in scope.

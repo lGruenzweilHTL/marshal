@@ -35,10 +35,10 @@
 ## 6. Design canvas
 
 - [x] 6.1 Create the design canvas with the structure from design.md (Decision 9). Verify the file and its pages exist and the link is recorded in this change's design.md.
-- [ ] 6.2 Draft the information architecture: destinations, grouping, phone tab bar (at most five), desktop side navigation, deep-link screens. Verify by reviewing it with the user.
-- [ ] 6.3 Build the foundations: color variables with light and dark modes, spacing, radius, elevation, text styles, chosen font and icon set. Verify contrast (WCAG AA for text) in both modes.
-- [ ] 6.4 Build the components with variants and German and English content. Verify every component has focus, disabled, loading and error variants where they apply, and 44 px touch targets.
-- [ ] 6.5 Design every page for phone and desktop per design.md (Decision 6), plus the state frames (loading, empty, error, session expired, offline, HTTPS hint, global banner) with at least one German page per state. Verify every current view (see the before gallery) is either designed or explicitly dropped in the IA.
+- [x] 6.2 Draft the information architecture: destinations, grouping, phone tab bar (at most five), desktop side navigation, deep-link screens. Verify by reviewing it with the user.
+- [x] 6.3 Build the foundations: color variables with light and dark modes, spacing, radius, elevation, text styles, chosen font and icon set. Verify contrast (WCAG AA for text) in both modes.
+- [x] 6.4 Build the components with variants and German and English content. Verify every component has focus, disabled, loading and error variants where they apply, and 44 px touch targets.
+- [x] 6.5 Design every page for phone and desktop per design.md (Decision 6), plus the state frames (loading, empty, error, session expired, offline, HTTPS hint, global banner) with at least one German page per state. Verify every current view (see the before gallery) is either designed or explicitly dropped in the IA.
 - [ ] 6.6 Checkpoint with the user: review and approve the design. Verify approval is recorded in design.md.
 
 ## 7. Specs and tasks after the checkpoint
