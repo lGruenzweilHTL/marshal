@@ -83,6 +83,7 @@ deploy/data/
 .env.*
 !.env.example
 secrets/
+!web/src/secrets/
 *.pem
 *.key
 *.pfx
