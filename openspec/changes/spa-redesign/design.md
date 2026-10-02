@@ -95,6 +95,7 @@ Alternative: Mock Service Worker. It would add a dependency and a second service
 - design tokens (color with light and dark modes, spacing, radius, elevation) and text styles are the source. They are exported to `web/src/ui/tokens.css` as CSS custom properties; the export is a documented manual step at first.
 - Components in `web/src/ui/` (names settle on the design canvas; expected: `AppButton`, `IconButton`, `Card`, `Badge`, `ListRow`, `Field`, `Sheet`, `Dialog`, `Banner`, `LoadState` for loading, empty and error, `TabBar`, `SideNav`, `PageHeader`).
 - Fonts and icons are bundled and served from the same origin. Chosen on the design canvas: Bricolage Grotesque (titles, key figures), Instrument Sans (UI text) and JetBrains Mono (tool names, arguments, ids), all OFL, via `@fontsource` packages; Lucide icons (`lucide-vue-next`, ISC) at a 1.75 px stroke. The packages are added to the package index.
+- Logo: a monoline MARSHAL wordmark whose first A is the mark (two signal wands leaning into an A), shipped as inline SVG, so it needs no font. The mark alone is the PWA icon and favicon (Foundations › Logo on the canvas).
 - The tokens live in the "Marshal" design system (https://claude.ai/artifact/DXfMfWe5jKksRwqjNjEFAJ, private to the owner), installed on the design canvas: colour roles with light and dark values (WCAG AA checked for both), type styles, spacing, radius, shadow.
 - `styles.css` is replaced area by area: new components use only tokens; the old global classes are deleted once the last old view is gone.
 
