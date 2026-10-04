@@ -272,7 +272,7 @@ const days: Schemas['DailyCost'][] = Array.from({ length: 14 }, (_, index) => {
   const standard = [0.031, 0.044, 0.022, 0.061, 0.038, 0.052, 0.029][index % 7]!
   const advisor = index % 4 === 2 ? 0.084 : index % 5 === 0 ? 0.031 : 0
   const date = new Date(anchor - (13 - index) * 86_400_000).toISOString().slice(0, 10)
-  return { date, total: fast + standard + advisor, byTier: { fast, standard, advisor }, advisor }
+  return { date, total: fast + standard + advisor, byTier: { fast, standard }, advisor }
 })
 const sum = (pick: (day: Schemas['DailyCost']) => number) => Math.round(days.reduce((total, day) => total + pick(day), 0) * 10_000) / 10_000
 
@@ -282,7 +282,7 @@ const cost: Schemas['CostReport'] = {
   to: days.at(-1)!.date,
   days,
   total: sum((day) => day.total),
-  byTier: { fast: sum((day) => day.byTier.fast ?? 0), standard: sum((day) => day.byTier.standard ?? 0), advisor: sum((day) => day.advisor) },
+  byTier: { fast: sum((day) => day.byTier.fast ?? 0), standard: sum((day) => day.byTier.standard ?? 0) },
   advisor: sum((day) => day.advisor),
 }
 

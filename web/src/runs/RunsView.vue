@@ -1,125 +1,148 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
-import { RouterLink, useRoute, useRouter, type LocationQuery } from 'vue-router'
+import { Activity } from 'lucide-vue-next'
+import { computed, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApiSession } from '../api/inject'
-import { formatCost, formatDateTime } from '../format'
+import { useApi } from '../api/inject'
+import { usePagedLoad } from '../api/usePagedLoad'
+import { useFormat } from '../i18n/locale'
 import { useLiveEvent } from '../live/liveEvents'
+import { AppButton, Badge, Chip, DataTable, ErrorBanner, Field, ListCard, LoadBoundary, Page, PageHeader, useDesktop, type Tone } from '../ui'
+import RunRow from './RunRow.vue'
+import TaintFlag from './TaintFlag.vue'
 
-const pageSize = 50
 const sources: Schemas['SessionSource'][] = ['voice', 'web', 'task', 'api']
 const outcomes: Schemas['RunOutcome'][] = ['ok', 'error', 'backgrounded', 'cancelled']
+const tones: Record<Schemas['RunOutcome'], Tone> = { ok: 'success', error: 'danger', backgrounded: 'warning', cancelled: 'neutral' }
 
-const session = useApiSession()
+/** Every run, newest first; source, outcome and minimum cost filter on the server and live in the query. */
+const api = useApi()
 const route = useRoute()
 const router = useRouter()
-const runs = ref<Schemas['RunSummary'][]>([])
-const hasMore = ref(false)
-const error = ref<string | null>(null)
-const filters = reactive({ source: '', outcome: '', minCost: '' })
+const desktop = useDesktop()
+const format = useFormat()
+const { t } = useI18n()
 
-function text(query: LocationQuery, key: string): string {
-  const value = query[key]
-  return typeof value === 'string' ? value : ''
-}
+const text = (key: string) => (typeof route.query[key] === 'string' ? (route.query[key] as string) : '')
+const source = computed(() => text('source'))
+const outcome = computed(() => text('outcome'))
+const minCost = shallowRef(text('minCost'))
 
-async function load(before?: string) {
-  const { data } = await session.raw.GET('/api/v1/runs', {
-    params: {
-      query: {
-        source: filters.source || undefined,
-        outcome: filters.outcome || undefined,
-        minCost: filters.minCost ? Number(filters.minCost) : undefined,
-        before,
-        limit: pageSize,
-      },
-    },
-  })
-  if (!data) {
-    error.value = 'The runs could not be loaded.'
-    return
-  }
-  error.value = null
-  runs.value = before ? [...runs.value, ...data] : data
-  hasMore.value = data.length === pageSize
-}
-
-function applyFilters() {
-  const query: Record<string, string> = {}
-  for (const [key, value] of Object.entries(filters)) if (value) query[key] = value
-  void router.push({ query })
-}
-
-function loadMore() {
-  const last = runs.value[runs.value.length - 1]
-  if (last) void load(last.startedAt)
-}
-
+const runs = usePagedLoad(
+  (before, limit) =>
+    api.call((client) =>
+      client.GET('/api/v1/runs', {
+        params: {
+          query: {
+            source: source.value || undefined,
+            outcome: outcome.value || undefined,
+            minCost: text('minCost') ? Number(text('minCost')) : undefined,
+            before,
+            limit,
+          },
+        },
+      }),
+    ),
+  (run) => run.startedAt,
+)
 watch(
   () => route.query,
-  (query) => {
-    filters.source = text(query, 'source')
-    filters.outcome = text(query, 'outcome')
-    filters.minCost = text(query, 'minCost')
-    void load()
+  () => {
+    minCost.value = text('minCost')
+    runs.load.retry()
   },
-  { immediate: true },
 )
+useLiveEvent('runs', 'run.completed', () => runs.load.refresh())
 
-useLiveEvent('runs', 'run.completed', () => void load())
+function apply(change: Record<string, string>) {
+  const query: Record<string, string> = { source: source.value, outcome: outcome.value, minCost: text('minCost'), ...change }
+  void router.replace({ query: Object.fromEntries(Object.entries(query).filter(([, value]) => value)) })
+}
+
+const columns = computed(() => [
+  { key: 'started', label: t('runs.columns.started') },
+  { key: 'source', label: t('runs.columns.source') },
+  { key: 'trigger', label: t('runs.columns.trigger') },
+  { key: 'outcome', label: t('runs.columns.outcome') },
+  { key: 'cost', label: t('runs.columns.cost'), align: 'right' as const },
+])
 </script>
 
 <template>
-  <section class="page">
-    <h1>Runs</h1>
-    <form class="filters" @submit.prevent="applyFilters">
-      <label
-        >Source
-        <select v-model="filters.source" name="source">
-          <option value="">All</option>
-          <option v-for="source in sources" :key="source" :value="source">{{ source }}</option>
-        </select>
-      </label>
-      <label
-        >Outcome
-        <select v-model="filters.outcome" name="outcome">
-          <option value="">All</option>
-          <option v-for="outcome in outcomes" :key="outcome" :value="outcome">{{ outcome }}</option>
-        </select>
-      </label>
-      <label>Min. cost <input v-model="filters.minCost" name="minCost" type="number" min="0" step="any" inputmode="decimal" /></label>
-      <button type="submit">Filter</button>
-    </form>
-    <p v-if="error" role="alert" class="error">{{ error }}</p>
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Started</th>
-            <th>Source</th>
-            <th>Trigger</th>
-            <th>Outcome</th>
-            <th>Cost</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="run in runs" :key="run.id">
-            <td>
-              <RouterLink :to="`/runs/${run.id}`">{{ formatDateTime(run.startedAt) }}</RouterLink>
-            </td>
-            <td>{{ run.source }}</td>
-            <td>
-              {{ run.trigger }} <span v-if="run.tainted" class="badge degraded">tainted</span>
-            </td>
-            <td>
-              <span :class="['badge', run.outcome === 'error' ? 'unhealthy' : 'healthy']">{{ run.outcome }}</span>
-            </td>
-            <td class="number">{{ formatCost(run.cost) }}</td>
-          </tr>
-        </tbody>
-      </table>
+  <Page width="wide">
+    <PageHeader :title="t('runs.title')" :subtitle="desktop ? t('runs.subtitle') : undefined" />
+    <div class="tools">
+      <div class="chips" role="group" :aria-label="t('runs.sources')">
+        <Chip :label="t('runs.all')" :model-value="!source" data-source="" @update:model-value="apply({ source: '' })" />
+        <Chip v-for="value in sources" :key="value" :label="t(`runs.source.${value}`)" :model-value="source === value" :data-source="value" @update:model-value="apply({ source: source === value ? '' : value })" />
+      </div>
+      <div class="chips" role="group" :aria-label="t('runs.outcomes')">
+        <Chip
+          v-for="value in outcomes"
+          :key="value"
+          :label="t(`runs.outcome.${value}`)"
+          :model-value="outcome === value"
+          :data-outcome="value"
+          @update:model-value="apply({ outcome: outcome === value ? '' : value })"
+        />
+      </div>
+      <Field v-model="minCost" kind="number" name="minCost" :label="t('runs.minCost')" class="cost" @change="apply({ minCost: String(minCost ?? '') })" />
     </div>
-    <p v-if="runs.length === 0 && !error">No runs yet.</p>
-    <button v-if="hasMore" type="button" data-test="more" @click="loadMore">Load older runs</button>
-  </section>
+
+    <LoadBoundary :load="runs.load" size="page" :empty-title="t('runs.empty.title')" :empty-body="t('runs.empty.body')" :empty-icon="Activity">
+      <DataTable v-if="desktop" :columns="columns" :rows="runs.items.value" :row-key="(run) => run.id" :label="t('runs.title')" row-attribute="run">
+        <template #cell-started="{ row }">
+          <RouterLink :to="`/runs/${row.id}`" class="link num">{{ format.dateTime(row.startedAt) }}</RouterLink>
+        </template>
+        <template #cell-source="{ row }">{{ [t(`runs.source.${row.source}`), row.satelliteId].filter(Boolean).join(' · ') }}</template>
+        <template #cell-trigger="{ row }">
+          <span class="trigger">{{ row.trigger }}<TaintFlag v-if="row.tainted" /></span>
+        </template>
+        <template #cell-outcome="{ row }">
+          <Badge :tone="tones[row.outcome]" :label="t(`runs.outcome.${row.outcome}`)" />
+          <span v-if="row.outcomeReason" class="reason">{{ row.outcomeReason }}</span>
+        </template>
+        <template #cell-cost="{ row }"><span class="num t-mono-s">{{ format.cost(row.cost) }}</span></template>
+      </DataTable>
+      <ListCard v-else><RunRow v-for="run in runs.items.value" :key="run.id" :run="run" dated /></ListCard>
+      <ErrorBanner v-if="runs.more.error.value" :error="runs.more.error.value" />
+      <AppButton v-if="runs.hasMore.value" variant="ghost" block data-test="more" :loading="runs.more.busy.value" @click="runs.more.submit()">{{ t('runs.more') }}</AppButton>
+    </LoadBoundary>
+  </Page>
 </template>
+
+<style scoped>
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-4);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.cost {
+  width: 140px;
+}
+.link {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.link:hover {
+  text-decoration: underline;
+}
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.reason {
+  display: block;
+  color: var(--ink-3);
+  font: var(--text-body-s);
+}
+</style>

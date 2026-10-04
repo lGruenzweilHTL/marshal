@@ -1,9 +1,10 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import RunsView from './RunsView.vue'
 import { FakeServer, json } from '../testing/fakeServer'
 import { runSummary } from '../testing/fixtures'
 import { me, mountOptions } from '../testing/mountApp'
+import { useViewport } from '../testing/viewport'
 
 function server() {
   return new FakeServer()
@@ -22,12 +23,14 @@ async function mountRuns(fake: FakeServer, path = '/runs') {
 }
 
 describe('RunsView', () => {
+  beforeEach(() => useViewport('desktop'))
+
   it('lists runs with source, outcome, cost and taint, linking to the detail', async () => {
     const { wrapper } = await mountRuns(server())
 
-    const rows = wrapper.findAll('tbody tr')
+    const rows = wrapper.findAll('[data-run]')
     expect(rows).toHaveLength(2)
-    expect(rows[0]!.text()).toContain('web')
+    expect(rows[0]!.text()).toContain('Web')
     expect(rows[0]!.text()).toContain('0.25')
     expect(rows[0]!.text()).toContain('tainted')
     expect(rows[1]!.text()).toContain('error')
@@ -38,10 +41,12 @@ describe('RunsView', () => {
     const fake = server()
     const { wrapper, router } = await mountRuns(fake)
 
-    await wrapper.get('select[name="source"]').setValue('voice')
-    await wrapper.get('select[name="outcome"]').setValue('error')
+    await wrapper.get('[data-source="voice"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-outcome="error"]').trigger('click')
+    await flushPromises()
     await wrapper.get('input[name="minCost"]').setValue('0.1')
-    await wrapper.get('form').trigger('submit')
+    await wrapper.get('input[name="minCost"]').trigger('change')
     await flushPromises()
 
     expect(router.currentRoute.value.query).toEqual({ source: 'voice', outcome: 'error', minCost: '0.1' })
@@ -63,8 +68,23 @@ describe('RunsView', () => {
     await flushPromises()
 
     expect(new URLSearchParams(fake.request('GET', '/api/v1/runs')!.search).get('before')).toBe('2026-09-28T08:10:00Z')
-    expect(wrapper.findAll('tbody tr')).toHaveLength(51)
+    expect(wrapper.findAll('[data-run]')).toHaveLength(51)
     expect(wrapper.find('[data-test="more"]').exists()).toBe(false)
+  })
+
+  it('lists runs as rows on phones', async () => {
+    useViewport('phone')
+    const { wrapper } = await mountRuns(server())
+
+    expect(wrapper.find('table').exists()).toBe(false)
+    expect(wrapper.get('a[href="/runs/r-2"]').text()).toContain('Web')
+  })
+
+  it('shows the error with a retry when the runs cannot be loaded', async () => {
+    const { wrapper } = await mountRuns(server().on('GET', '/api/v1/runs', 503, { status: 503 }))
+
+    expect(wrapper.text()).toContain('Marshal is not available right now.')
+    expect(wrapper.text()).toContain('Try again')
   })
 
   it('offers no older runs after a short page', async () => {

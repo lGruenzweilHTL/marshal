@@ -51,10 +51,10 @@ describe('RunDetailView', () => {
 
     const tool = wrapper.get('[data-step="3"]')
     expect(tool.text()).toContain('memory.write')
-    expect(tool.text()).toContain('escalated_by_taint')
+    expect(tool.text()).toContain('escalated to confirm by taint')
     expect(tool.text()).toContain('The run read untrusted mail.')
     expect(wrapper.get('[data-test="taint"]').text()).toContain('mail')
-    expect(wrapper.get('[data-test="taint"]').text()).toContain('step 2')
+    expect(wrapper.get('[data-test="taint"]').text()).toContain('from step 2')
   })
 
   it('gives every step an anchor, so the review queue can link to the step that tainted a run', async () => {
@@ -76,7 +76,7 @@ describe('RunDetailView', () => {
 
     expect(wrapper.get('[data-step="1"]').text()).toContain('system prompt v3')
     const model = wrapper.get('[data-step="2"]').text()
-    for (const part of ['qwen3:8b', 'fast', '1200', '80', '1000', '310 ms', '900 ms', '0.0004']) expect(model).toContain(part)
+    for (const part of ['qwen3:8b', 'fast', '1,200', '80', '1,000', '310 ms', '900 ms', '0.0004']) expect(model).toContain(part)
     expect(wrapper.get('[data-step="4"]').text()).toContain('Should I remember that?')
   })
 
@@ -105,6 +105,6 @@ describe('RunDetailView', () => {
     const wrapper = mount(RunDetailView, options)
     await flushPromises()
 
-    expect(wrapper.get('[role="alert"]').text()).toContain('not found')
+    expect(wrapper.text()).toContain('This run does not exist.')
   })
 })

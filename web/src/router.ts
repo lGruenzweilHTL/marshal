@@ -62,11 +62,11 @@ const routes: RouteRecordRaw[] = [
       { path: 'inbox/notifications/:id', name: 'notification', component: NotificationView, meta: { title: 'inbox.notification.title', nav: 'inbox' } },
       { path: 'printers/:name?', name: 'printers', component: PrinterView, meta: { title: 'shell.nav.printer', nav: 'printer' } },
       // Activity
-      { path: 'tasks', name: 'tasks', component: TasksView, meta: { title: 'shell.nav.tasks', nav: 'tasks', legacy: true } },
-      { path: 'tasks/:id', name: 'task', component: TaskDetailView, meta: { title: 'shell.nav.tasks', nav: 'tasks', legacy: true } },
-      { path: 'runs', name: 'runs', component: RunsView, meta: { title: 'shell.nav.runs', nav: 'runs', legacy: true } },
-      { path: 'runs/:id', name: 'run', component: RunDetailView, meta: { title: 'shell.nav.runs', nav: 'runs', legacy: true } },
-      { path: 'cost', name: 'cost', component: CostView, meta: { title: 'shell.nav.cost', nav: 'cost', legacy: true } },
+      { path: 'tasks', name: 'tasks', component: TasksView, meta: { title: 'shell.nav.tasks', nav: 'tasks' } },
+      { path: 'tasks/:id', name: 'task', component: TaskDetailView, meta: { title: 'shell.nav.tasks', nav: 'tasks' } },
+      { path: 'runs', name: 'runs', component: RunsView, meta: { title: 'shell.nav.runs', nav: 'runs' } },
+      { path: 'runs/:id', name: 'run', component: RunDetailView, meta: { title: 'shell.nav.runs', nav: 'runs' } },
+      { path: 'cost', name: 'cost', component: CostView, meta: { title: 'shell.nav.cost', nav: 'cost' } },
       // Memory
       {
         path: 'memory',

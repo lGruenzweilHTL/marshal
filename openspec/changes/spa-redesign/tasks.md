@@ -63,9 +63,9 @@
 
 ## 10. Activity: Tasks, Runs, Cost
 
-- [ ] 10.1 Write failing tests for Tasks, the task detail and the task result deep link (goal edit, cancel, all load and submit states). Rebuild them. Verify they pass.
-- [ ] 10.2 Write failing tests for Runs and the run detail (filters, guard decisions, redacted results). Rebuild them. Verify they pass.
-- [ ] 10.3 Write failing tests for Cost (per day, per tier, advisor line, formatted in both languages). Rebuild it. Verify they pass.
+- [x] 10.1 Write failing tests for Tasks, the task detail and the task result deep link (goal edit, cancel, all load and submit states). Rebuild them. Verify they pass.
+- [x] 10.2 Write failing tests for Runs and the run detail (filters, guard decisions, redacted results). Rebuild them. Verify they pass.
+- [x] 10.3 Write failing tests for Cost (per day, per tier, advisor line, formatted in both languages). Rebuild it. Verify they pass.
 
 ## 11. Memory: Chunks, Projects, Map, Audit
 

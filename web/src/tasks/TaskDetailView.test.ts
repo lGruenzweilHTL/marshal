@@ -1,5 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import TaskDetailView from './TaskDetailView.vue'
 import { FakeServer, json } from '../testing/fakeServer'
 import { taskDetail, taskItem } from '../testing/fixtures'
@@ -11,10 +11,14 @@ function server(detail = taskDetail()) {
 
 async function mountDetail(fake: FakeServer) {
   const mounted = await mountOptions(fake, '/tasks/t-1')
-  const wrapper = mount(TaskDetailView, mounted.options)
+  const wrapper = mount(TaskDetailView, { ...mounted.options, attachTo: document.body })
   await flushPromises()
   return { ...mounted, wrapper }
 }
+
+afterEach(() => {
+  document.body.innerHTML = ''
+})
 
 describe('TaskDetailView', () => {
   it('shows goal, notes, the result body as markdown, deliveries, runs and notifications', async () => {
@@ -29,6 +33,7 @@ describe('TaskDetailView', () => {
     expect(delivery).toContain('state(binary_sensor.kitchen_occupancy = on)')
     expect(delivery).toContain('11:00')
     expect(wrapper.get('[data-test="runs"] a').attributes('href')).toBe('/runs/r-9')
+    expect(wrapper.get('[data-test="facts"]').text()).toContain('0 6 * * *')
     expect(wrapper.get('[data-test="notifications"]').text()).toContain('delivered')
   })
 
@@ -67,11 +72,12 @@ describe('TaskDetailView', () => {
     const { wrapper } = await mountDetail(fake)
 
     await wrapper.get('[data-test="edit-goal"]').trigger('click')
-    await wrapper.get('textarea[name="goal"]').setValue(' ')
+    await wrapper.get('textarea[name="goal"]').setValue('x')
     await wrapper.get('form[data-test="goal-form"]').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[role="alert"]').text()).toBe('A task needs a goal.')
+    expect(wrapper.get('[role="alert"]').text()).toContain('A task needs a goal.')
+    expect((wrapper.get('textarea[name="goal"]').element as HTMLTextAreaElement).value).toBe('x')
   })
 
   it('cancels an unfinished task after confirming', async () => {
@@ -86,7 +92,7 @@ describe('TaskDetailView', () => {
 
     await wrapper.get('[data-test="cancel"]').trigger('click')
     expect(fake.count('POST', '/api/v1/tasks/t-1/cancel')).toBe(0)
-    await wrapper.get('[data-test="cancel-confirm"]').trigger('click')
+    ;(document.body.querySelector('[data-test="cancel-confirm"]') as HTMLButtonElement).click()
     await flushPromises()
 
     expect(fake.count('POST', '/api/v1/tasks/t-1/cancel')).toBe(1)
@@ -101,9 +107,20 @@ describe('TaskDetailView', () => {
   })
 
   it('reports a missing task', async () => {
-    const fake = new FakeServer().on('GET', '/api/v1/me', 200, me).on('GET', '/api/v1/tasks/t-1', 404, { title: 'Not found' })
+    const fake = new FakeServer().on('GET', '/api/v1/me', 200, me).on('GET', '/api/v1/tasks/t-1', 404, { status: 404, code: 'tasks.not_found' })
     const { wrapper } = await mountDetail(fake)
 
-    expect(wrapper.get('[role="alert"]').text()).toContain('does not exist')
+    expect(wrapper.text()).toContain('This task no longer exists.')
+  })
+
+  it('keeps the dialog open with the error when cancelling fails', async () => {
+    const fake = server().on('POST', '/api/v1/tasks/t-1/cancel', 409, { status: 409, code: 'task.finished', detail: 'The task already finished.' })
+    const { wrapper } = await mountDetail(fake)
+
+    await wrapper.get('[data-test="cancel"]').trigger('click')
+    ;(document.body.querySelector('[data-test="cancel-confirm"]') as HTMLButtonElement).click()
+    await flushPromises()
+
+    expect(document.body.querySelector('[role="dialog"]')?.textContent).toContain('The task already finished.')
   })
 })

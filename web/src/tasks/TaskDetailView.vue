@@ -1,187 +1,283 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { Bell, Check, Pencil, Radio, Square, X } from 'lucide-vue-next'
+import { computed, shallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApiSession } from '../api/inject'
-import { problemMessage } from '../api/problem'
+import { useApi } from '../api/inject'
+import { useLoad } from '../api/useLoad'
+import { useSubmit } from '../api/useSubmit'
 import { renderMarkdown } from '../chat/markdown'
-import { formatCost, formatDateTime } from '../format'
+import { useFormat } from '../i18n/locale'
+import NotificationRow from '../inbox/NotificationRow.vue'
 import { useLiveEvent } from '../live/liveEvents'
-import { budgetUse, describeTrigger, isUnfinished, taskLabel } from './taskFormat'
+import RunRow from '../runs/RunRow.vue'
+import {
+  AppButton,
+  Badge,
+  Card,
+  Dialog,
+  ErrorBanner,
+  Field,
+  IconTile,
+  KeyValueList,
+  ListCard,
+  ListRow,
+  LoadBoundary,
+  LoadState,
+  Page,
+  PageHeader,
+  Section,
+  useDesktop,
+} from '../ui'
+import BudgetMeter from './BudgetMeter.vue'
+import TriggerLabel from './TriggerLabel.vue'
+import { isUnfinished, taskLabel } from './taskFormat'
+import { statusTone } from './taskTone'
 
-const session = useApiSession()
+/**
+ * One task: goal (editable), latest result, runs, deliveries and notifications, with its trigger and budget use.
+ * Push actions for a task result link here.
+ */
+const api = useApi()
 const route = useRoute()
-const detail = ref<Schemas['TaskDetail'] | null>(null)
-const error = ref<string | null>(null)
-const editing = ref(false)
-const goal = ref('')
-const confirmingCancel = ref(false)
+const desktop = useDesktop()
+const format = useFormat()
+const { t } = useI18n()
+const id = String(route.params.id)
 
-const id = computed(() => (typeof route.params.id === 'string' ? route.params.id : null))
+const detail = useLoad(() => api.call((client) => client.GET('/api/v1/tasks/{id}', { params: { path: { id } } })), { isEmpty: () => false })
+// Answers of edits and cancels are shown until the next load replaces them.
+const task = shallowRef<Schemas['TaskItem'] | null>(null)
+const current = computed(() => task.value ?? detail.data.value?.task ?? null)
 
-async function load() {
-  if (!id.value) return
-  const { data, response } = await session.raw.GET('/api/v1/tasks/{id}', { params: { path: { id: id.value } } })
-  if (data) detail.value = data
-  error.value = data ? null : response.status === 404 ? 'This task does not exist.' : 'The task could not be loaded.'
-}
+const editing = shallowRef(false)
+const goal = shallowRef('')
+const saveGoal = useSubmit(async () => {
+  const result = await api.call((client) => client.PUT('/api/v1/tasks/{id}/goal', { params: { path: { id } }, body: { goal: goal.value } }))
+  if (result.data) {
+    task.value = result.data
+    editing.value = false
+  }
+  return result
+})
+
+const asking = shallowRef(false)
+const cancel = useSubmit(async () => {
+  const result = await api.call((client) => client.POST('/api/v1/tasks/{id}/cancel', { params: { path: { id } } }))
+  if (result.data) {
+    asking.value = false
+    task.value = null
+    detail.refresh()
+  }
+  return result
+})
 
 function edit() {
-  goal.value = detail.value?.task.goal ?? ''
+  goal.value = current.value?.goal ?? ''
   editing.value = true
 }
 
-async function saveGoal() {
-  if (!id.value || !detail.value) return
-  const { data, error: problem } = await session.raw.PUT('/api/v1/tasks/{id}/goal', { params: { path: { id: id.value } }, body: { goal: goal.value } })
-  if (!data) {
-    error.value = problemMessage(problem, 'The goal could not be saved.')
-    return
+useLiveEvent('tasks', 'task.changed', (payload) => {
+  if (payload.taskId === id && !editing.value) {
+    task.value = null
+    detail.refresh()
   }
-  error.value = null
-  detail.value = { ...detail.value, task: data }
-  editing.value = false
-}
-
-async function cancel() {
-  if (!id.value) return
-  confirmingCancel.value = false
-  const { data, error: problem } = await session.raw.POST('/api/v1/tasks/{id}/cancel', { params: { path: { id: id.value } } })
-  if (!data) {
-    error.value = problemMessage(problem, 'The task could not be cancelled.')
-    return
-  }
-  await load()
-}
+})
 
 function describeDelivery(delivery: Schemas['TaskDelivery']): string {
-  const parts: string[] = [delivery.channel]
-  if (delivery.target) parts.push(`to ${delivery.target}`)
-  if (delivery.priority && delivery.priority !== 'normal') parts.push(delivery.priority)
-  if (delivery.followUp) parts.push('listens for a reply')
-  if (delivery.when?.length) parts.push(`when ${delivery.when.join(' and ')}`)
-  if (delivery.expires) parts.push(`expires ${delivery.expires}`)
-  if (delivery.fallback) parts.push(`then ${delivery.fallback}`)
-  if (delivery.pendingSince) parts.push(`waiting since ${formatDateTime(delivery.pendingSince)}`)
+  const parts: string[] = []
+  if (delivery.target) parts.push(t('tasks.detail.delivery.to', { target: delivery.target }))
+  if (delivery.priority && delivery.priority !== 'normal') parts.push(t(`inbox.notification.priority.${delivery.priority}`))
+  if (delivery.followUp) parts.push(t('tasks.detail.delivery.followUp'))
+  if (delivery.when?.length) parts.push(t('tasks.detail.delivery.when', { condition: delivery.when.join(' & ') }))
+  if (delivery.expires) parts.push(t('tasks.detail.delivery.expires', { time: delivery.expires }))
+  if (delivery.fallback) parts.push(t('tasks.detail.delivery.then', { channel: delivery.fallback }))
+  if (delivery.pendingSince) parts.push(t('tasks.detail.delivery.waiting', { time: format.value.dateTime(delivery.pendingSince) }))
   return parts.join(' · ')
 }
-
-watch(id, () => {
-  detail.value = null
-  editing.value = false
-  void load()
-}, { immediate: true })
-
-useLiveEvent('tasks', 'task.changed', (payload) => {
-  if (payload.taskId === id.value && !editing.value) void load()
-})
 </script>
 
 <template>
-  <section class="page">
-    <p><RouterLink to="/tasks">← Tasks</RouterLink></p>
-    <p v-if="error" role="alert" class="error">{{ error }}</p>
-    <template v-if="detail">
-      <h1>{{ taskLabel(detail.task) }}</h1>
-      <p data-test="status">
-        <span :class="['badge', detail.task.status === 'failed' ? 'unhealthy' : 'healthy']">{{ detail.task.status }}</span>
-        <span v-if="detail.task.statusReason" class="muted"> {{ detail.task.statusReason }}</span>
-        <template v-if="isUnfinished(detail.task.status)">
-          <button v-if="!confirmingCancel" type="button" data-test="cancel" @click="confirmingCancel = true">Cancel task</button>
-          <span v-else>
-            Cancels this task and its unfinished child tasks.
-            <button type="button" data-test="cancel-confirm" @click="cancel">Cancel now</button>
-            <button type="button" @click="confirmingCancel = false">Keep it</button>
-          </span>
-        </template>
-      </p>
+  <Page width="wide">
+    <PageHeader v-if="!current" :title="t('tasks.title')" back="/tasks" :back-label="t('tasks.title')" />
+    <LoadBoundary :load="detail" size="page">
+      <template v-if="detail.data.value && current">
+        <PageHeader :title="taskLabel(current)" back="/tasks" :back-label="t('tasks.title')">
+          <template v-if="isUnfinished(current.status)" #actions>
+            <AppButton :icon="Square" data-test="cancel" @click="asking = true">{{ t('tasks.detail.cancel') }}</AppButton>
+          </template>
+        </PageHeader>
+        <p class="status" data-test="status">
+          <Badge :tone="statusTone[current.status]" dot :label="t(`tasks.status.${current.status}`)" />
+          <span v-if="current.statusReason" class="ink-3">{{ current.statusReason }}</span>
+        </p>
 
-      <h2>Goal</h2>
-      <form v-if="editing" data-test="goal-form" class="stack" @submit.prevent="saveGoal">
-        <textarea v-model="goal" name="goal" rows="5" aria-label="Goal"></textarea>
-        <div>
-          <button type="submit">Save goal</button>
-          <button type="button" @click="editing = false">Discard</button>
+        <div class="layout" :class="{ split: desktop }">
+          <div class="main">
+            <Card>
+              <span class="t-overline">{{ t('tasks.detail.goal') }}</span>
+              <form v-if="editing" data-test="goal-form" class="goal-form" @submit.prevent="saveGoal.submit()">
+                <Field v-model="goal" kind="textarea" name="goal" :rows="4" :label="t('tasks.detail.goal')" hide-label />
+                <ErrorBanner v-if="saveGoal.error.value" :error="saveGoal.error.value" />
+                <div class="buttons">
+                  <AppButton type="submit" variant="primary" size="sm" :icon="Check" :loading="saveGoal.busy.value">{{ t('tasks.detail.saveGoal') }}</AppButton>
+                  <AppButton size="sm" variant="ghost" :icon="X" @click="editing = false">{{ t('tasks.detail.discard') }}</AppButton>
+                </div>
+              </form>
+              <template v-else>
+                <p data-test="goal" class="goal">{{ current.goal }}</p>
+                <AppButton size="sm" :icon="Pencil" data-test="edit-goal" @click="edit">{{ t('tasks.detail.editGoal') }}</AppButton>
+              </template>
+            </Card>
+
+            <Card v-if="detail.data.value.notes">
+              <span class="t-overline">{{ t('tasks.detail.notes') }}</span>
+              <p data-test="notes" class="goal">{{ detail.data.value.notes }}</p>
+            </Card>
+
+            <Card>
+              <span class="t-overline">{{ current.resultAt ? t('tasks.detail.resultAt', { time: format.dateTime(current.resultAt) }) : t('tasks.detail.result') }}</span>
+              <!-- eslint-disable-next-line vue/no-v-html -- renderMarkdown escapes HTML and allows same-origin images only -->
+              <div v-if="detail.data.value.result" data-test="result" class="markdown" v-html="renderMarkdown(detail.data.value.result.body)"></div>
+              <p v-else class="ink-3">{{ t('tasks.detail.noResult') }}</p>
+            </Card>
+
+            <Section :title="t('tasks.detail.runs')" :count="detail.data.value.runs.length" data-test="runs">
+              <ListCard v-if="detail.data.value.runs.length"><RunRow v-for="run in detail.data.value.runs" :key="run.id" :run="run" /></ListCard>
+              <LoadState v-else state="empty" :title="t('tasks.detail.noRuns')" />
+            </Section>
+
+            <Section :title="t('tasks.detail.deliveries')" data-test="deliveries">
+              <ListCard v-if="detail.data.value.deliveries.length">
+                <ListRow
+                  v-for="(delivery, index) in detail.data.value.deliveries"
+                  :key="index"
+                  :title="delivery.channel"
+                  :subtitle="describeDelivery(delivery)"
+                  :chevron="false"
+                >
+                  <template #lead><IconTile :icon="delivery.channel === 'voice' ? Radio : Bell" tone="info" /></template>
+                </ListRow>
+              </ListCard>
+              <LoadState v-else state="empty" :title="t('tasks.detail.noDeliveries')" />
+            </Section>
+
+            <Section v-if="detail.data.value.executorSessions.length" :title="t('tasks.detail.executors')" data-test="executor-sessions">
+              <ListCard>
+                <ListRow
+                  v-for="executor in detail.data.value.executorSessions"
+                  :key="executor.id"
+                  :title="[executor.executor, executor.target].filter(Boolean).join(' · ')"
+                  :subtitle="format.dateTime(executor.startedAt)"
+                  :chevron="false"
+                >
+                  <template #trail><Badge :tone="executor.status === 'failed' ? 'danger' : 'info'" :label="executor.status" /></template>
+                </ListRow>
+              </ListCard>
+            </Section>
+
+            <Section :title="t('tasks.detail.notifications')" data-test="notifications">
+              <ListCard v-if="detail.data.value.notifications.length">
+                <NotificationRow v-for="item in detail.data.value.notifications" :key="item.id" :notification="item" />
+              </ListCard>
+              <LoadState v-else state="empty" :title="t('tasks.detail.noNotifications')" />
+            </Section>
+          </div>
+
+          <Card :title="t('tasks.detail.details')" class="facts" data-test="facts">
+            <KeyValueList
+              :items="[
+                { key: 'trigger', label: t('tasks.detail.trigger') },
+                { key: 'next', label: t('tasks.detail.next'), value: current.nextRunAt ? format.dateTime(current.nextRunAt) : null },
+                { key: 'created', label: t('tasks.detail.created'), value: t('tasks.detail.createdBy', { time: format.dateTime(current.createdAt), who: current.createdBy }) },
+                ...(detail.data.value.overrideQuietHoursUntil
+                  ? [{ key: 'quiet', label: t('tasks.detail.quietOverride'), value: t('tasks.detail.quietUntil', { time: format.dateTime(detail.data.value.overrideQuietHoursUntil) }) }]
+                  : []),
+              ]"
+            >
+              <template #trigger><TriggerLabel :trigger="current.trigger" /></template>
+            </KeyValueList>
+            <div class="meters">
+              <BudgetMeter :label="t('tasks.detail.cost')" :spent="current.spent.cost" :budget="current.budget.cost" />
+              <BudgetMeter :label="t('tasks.detail.runsMeter')" kind="count" :spent="current.spent.runs" :budget="current.budget.runs" />
+              <BudgetMeter :label="t('tasks.detail.steps')" kind="count" :spent="current.spent.steps" :budget="current.budget.steps" />
+            </div>
+          </Card>
         </div>
-      </form>
-      <template v-else>
-        <p data-test="goal" class="goal">{{ detail.task.goal }}</p>
-        <button type="button" data-test="edit-goal" @click="edit">Edit goal</button>
+
+        <Dialog :open="asking" :title="t('tasks.detail.cancelTitle')" :description="t('tasks.detail.cancelBody')" @close="asking = false">
+          <ErrorBanner v-if="cancel.error.value" :error="cancel.error.value" />
+          <template #actions>
+            <AppButton @click="asking = false">{{ t('tasks.detail.keep') }}</AppButton>
+            <AppButton variant="danger" :icon="Square" data-test="cancel-confirm" :loading="cancel.busy.value" @click="cancel.submit()">
+              {{ t('tasks.detail.cancelConfirm') }}
+            </AppButton>
+          </template>
+        </Dialog>
       </template>
-
-      <dl class="facts">
-        <dt>Trigger</dt>
-        <dd><code>{{ describeTrigger(detail.task.trigger) }}</code></dd>
-        <dt>Next run</dt>
-        <dd>{{ detail.task.nextRunAt ? formatDateTime(detail.task.nextRunAt) : '–' }}</dd>
-        <dt>Cost / budget</dt>
-        <dd>{{ budgetUse(detail.task) }} ({{ detail.task.spent.runs }} runs)</dd>
-        <dt>Created</dt>
-        <dd>{{ formatDateTime(detail.task.createdAt) }} by {{ detail.task.createdBy }}</dd>
-        <template v-if="detail.overrideQuietHoursUntil">
-          <dt>Quiet hours override</dt>
-          <dd>until {{ formatDateTime(detail.overrideQuietHoursUntil) }}</dd>
-        </template>
-      </dl>
-
-      <template v-if="detail.notes">
-        <h2>Notes</h2>
-        <p data-test="notes" class="goal">{{ detail.notes }}</p>
-      </template>
-
-      <h2>Latest result</h2>
-      <template v-if="detail.result">
-        <p class="muted" v-if="detail.task.resultAt">{{ formatDateTime(detail.task.resultAt) }}</p>
-        <!-- eslint-disable-next-line vue/no-v-html -- renderMarkdown escapes HTML and allows same-origin images only -->
-        <div data-test="result" class="markdown" v-html="renderMarkdown(detail.result.body)"></div>
-      </template>
-      <p v-else class="muted">No result yet.</p>
-
-      <h2>Deliveries</h2>
-      <ul v-if="detail.deliveries.length" data-test="deliveries" class="plain">
-        <li v-for="(delivery, index) in detail.deliveries" :key="index">{{ describeDelivery(delivery) }}</li>
-      </ul>
-      <p v-else class="muted">The result stays here.</p>
-
-      <template v-if="detail.executorSessions.length">
-        <h2>Executor sessions</h2>
-        <ul data-test="executor-sessions" class="plain">
-          <li v-for="executor in detail.executorSessions" :key="executor.id">
-            {{ executor.executor }}<template v-if="executor.target"> on {{ executor.target }}</template> ·
-            <span :class="['badge', executor.status === 'failed' ? 'unhealthy' : 'healthy']">{{ executor.status }}</span> ·
-            {{ formatDateTime(executor.startedAt) }}
-          </li>
-        </ul>
-      </template>
-
-      <h2>Runs</h2>
-      <ul v-if="detail.runs.length" data-test="runs" class="plain">
-        <li v-for="run in detail.runs" :key="run.id">
-          <RouterLink :to="`/runs/${run.id}`">{{ formatDateTime(run.startedAt) }}</RouterLink>
-          {{ run.outcome }}<template v-if="run.outcomeReason"> ({{ run.outcomeReason }})</template> · {{ formatCost(run.cost) }}
-        </li>
-      </ul>
-      <p v-else class="muted">No runs yet.</p>
-
-      <h2>Notifications</h2>
-      <ul v-if="detail.notifications.length" data-test="notifications" class="plain">
-        <li v-for="notification in detail.notifications" :key="notification.id">
-          {{ formatDateTime(notification.createdAt) }} · {{ notification.outcome }}<template v-if="notification.channel"> via {{ notification.channel }}</template
-          ><template v-if="notification.reason"> ({{ notification.reason }})</template>: {{ notification.content }}
-        </li>
-      </ul>
-      <p v-else class="muted">Nothing sent yet.</p>
-    </template>
-  </section>
+    </LoadBoundary>
+  </Page>
 </template>
 
 <style scoped>
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: calc(-1 * var(--space-4));
+  font: var(--text-body-s);
+}
+.layout,
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.layout.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 28px;
+  align-items: start;
+}
+.split .facts {
+  position: sticky;
+  top: var(--space-8);
+}
+.layout:not(.split) .facts {
+  order: -1;
+}
 .goal {
+  margin: var(--space-2) 0 var(--space-3);
+  font: 400 17px/26px var(--font-sans);
   white-space: pre-wrap;
 }
-
-textarea {
-  width: 100%;
-  font: inherit;
+.goal-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+.buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+.markdown {
+  margin-top: var(--space-2);
+}
+.markdown :deep(h2) {
+  font: var(--text-title-3);
+  margin: var(--space-3) 0 var(--space-1);
+}
+.markdown :deep(p) {
+  margin: 0 0 var(--space-2);
+}
+.meters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
 }
 </style>
