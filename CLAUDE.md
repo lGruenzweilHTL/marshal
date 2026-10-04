@@ -132,6 +132,8 @@ No mocking or assertion libraries — use hand-written fakes from `Marshal.Testi
 | `vue-i18n` | Interface text in German and English (Composition API mode); catalogs per feature (`messages.ts`), German typed against English |
 | `lucide-vue-next` | Icons (Lucide, ISC) at a 1.75 px stroke through `AppIcon` |
 | `@fontsource-variable/bricolage-grotesque`, `@fontsource-variable/instrument-sans`, `@fontsource-variable/jetbrains-mono` | Bundled fonts (OFL) served from the app's origin; declared in `web/src/ui/fonts.css` |
+| `vite-plugin-pwa` | Web app manifest and Workbox service worker (app shell only, network-only navigations, static offline page) |
+| `@resvg/resvg-js` | Build-time rendering of the PWA icon PNGs from the logo SVGs (`web/scripts/appAssets.ts`) |
 | `markdown-it` | Chat markdown rendering with HTML disabled and a same-origin-only image rule (ships its own types) |
 | `vitest`, `@vue/test-utils`, `jsdom` | Component tests (`npm test`) against a hand-written fake API server (`src/testing/fakeServer.ts`) |
 

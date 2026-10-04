@@ -1,0 +1,63 @@
+/* Offline page styles; the build prepends tokens.css, so the page uses the same tokens as the app. */
+body {
+  margin: 0;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--ink);
+  font: var(--text-body);
+}
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 420px;
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+}
+.logo {
+  height: 20px;
+  margin-bottom: var(--space-8);
+  color: var(--ink);
+}
+.logo svg {
+  height: 100%;
+  width: auto;
+}
+.tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-3);
+  color: var(--ink-2);
+}
+h1 {
+  margin: 0;
+  font: var(--text-title-2);
+  letter-spacing: var(--tracking-title-2);
+}
+p {
+  margin: 0;
+  color: var(--ink-2);
+}
+button {
+  margin-top: var(--space-3);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font: 600 15px/1 var(--font-sans);
+  cursor: pointer;
+}
+button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}

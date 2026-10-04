@@ -1,0 +1,23 @@
+<!doctype html>
+<!-- Served by the service worker when Marshal cannot be reached. Static: no base path, no app code, CSP-safe. -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Marshal is not reachable</title>
+    <link rel="stylesheet" href="offline.css" />
+    <script src="offline.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <div class="logo" role="img" aria-label="Marshal"><!--wordmark--></div>
+      <div class="tile" aria-hidden="true"><!--wifi-off--></div>
+      <h1 data-de="Marshal ist nicht erreichbar">Marshal is not reachable</h1>
+      <p data-de="Dein Gerät ist offline oder der Server antwortet nicht. Marshal speichert keine Daten auf dem Gerät, deshalb ist ohne Verbindung nichts verfügbar.">
+        Your device is offline or the server does not answer. Marshal keeps no data on the device, so nothing is available without a connection.
+      </p>
+      <button type="button" id="retry" data-de="Erneut versuchen">Try again</button>
+    </main>
+  </body>
+</html>
