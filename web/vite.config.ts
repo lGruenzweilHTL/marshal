@@ -6,8 +6,15 @@ import vue from '@vitejs/plugin-vue'
 // production) so Secure cookies and the antiforgery check work on http://localhost.
 const api = { target: 'http://localhost:8080', headers: { 'X-Forwarded-Proto': 'https' } }
 
-export default defineConfig({
-  plugins: [vue()],
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    vue(),
+    // Preview mode (`npm run dev:preview`) swaps the entry for the fake-API one; the production entry never imports it.
+    mode === 'preview' && {
+      name: 'marshal-preview-entry',
+      transformIndexHtml: (html: string) => html.replace('src/main.ts', 'src/preview/main.ts'),
+    },
+  ],
   // Relative asset URLs: the host serves the SPA under any configured base path.
   base: './',
   server: {
@@ -15,4 +22,4 @@ export default defineConfig({
   },
   build: { outDir: 'dist', emptyOutDir: true },
   test: { environment: 'jsdom', include: ['src/**/*.test.ts'] },
-})
+}))

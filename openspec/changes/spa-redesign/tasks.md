@@ -23,9 +23,9 @@
 
 ## 4. Preview mode
 
-- [ ] 4.1 Move the screenshot sample data into `web/src/preview/scenarios/` (normal, empty, failing, offline) on top of `FakeServer`. Write a test that every GET endpoint in `openapi/v1.json` used by the SPA has data in the `normal` scenario. Verify it passes.
-- [ ] 4.2 Add the preview entry, `npm run dev:preview` and the scenario and language panel. Verify by running it: the current views render with sample data, and the `failing` scenario reaches the views (their current, incomplete error handling is expected).
-- [ ] 4.3 Write a test that the production build contains no module from `web/src/preview/`. Verify it passes.
+- [x] 4.1 Move the screenshot sample data (rewritten as typed TS) into `web/src/preview/scenarios/` (normal, empty, failing, offline) on top of `FakeServer`. Write a test that every GET endpoint in `openapi/v1.json` used by the SPA has data in the `normal` scenario. Verify it passes.
+- [x] 4.2 Add the preview entry, `npm run dev:preview` and the scenario and language panel. Verify by running it: the current views render with sample data, and the `failing` scenario reaches the views (their current, incomplete error handling is expected).
+- [x] 4.3 Write a test that the production build contains no module from `web/src/preview/`. Verify it passes.
 
 ## 5. Installable app
 

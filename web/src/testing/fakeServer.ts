@@ -10,18 +10,27 @@ export interface RecordedRequest {
 type Handler = (request: RecordedRequest) => Response | Promise<Response>
 
 /**
- * A fake Marshal API behind the `fetch` option of the API client: routes by method + path, records requests.
+ * A fake Marshal API behind the `fetch` option of the API client: routes by method + path, records requests. Paths
+ * may contain `{name}` segments (`/api/v1/runs/{id}`); exact paths win over patterns.
  */
 export class FakeServer {
   readonly requests: RecordedRequest[] = []
   private readonly routes = new Map<string, Handler>()
+  private readonly patterns: { method: string; pattern: RegExp; key: string }[] = []
+  /** Answers requests no route matches (default: 404). */
+  fallback: Handler = () => json(404, { title: 'not found' })
 
   on(method: string, path: string, status: number, body?: unknown, headers?: Record<string, string>): this {
     return this.handle(method, path, () => json(status, body, headers))
   }
 
   handle(method: string, path: string, handler: Handler): this {
-    this.routes.set(`${method} ${path}`, handler)
+    const key = `${method} ${path}`
+    if (path.includes('{') && !this.routes.has(key)) {
+      const pattern = new RegExp(`^${path.replace(/[.*+?^$()|[\]\\]/g, '\\$&').replace(/\{[^}]+\}/g, '[^/]+')}$`)
+      this.patterns.push({ method, pattern, key })
+    }
+    this.routes.set(key, handler)
     return this
   }
 
@@ -48,8 +57,11 @@ export class FakeServer {
       body: request.body ? await request.text() : '',
     }
     this.requests.push(recorded)
-    const handler = this.routes.get(`${recorded.method} ${recorded.path}`)
-    return handler ? handler(recorded) : json(404, { title: 'not found' })
+    const key =
+      this.routes.has(`${recorded.method} ${recorded.path}`) ? `${recorded.method} ${recorded.path}`
+      : this.patterns.find((route) => route.method === recorded.method && route.pattern.test(recorded.path))?.key
+    const handler = key ? this.routes.get(key) : undefined
+    return (handler ?? this.fallback)(recorded)
   }
 }
 

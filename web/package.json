@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:preview": "vite --mode preview",
     "gen:api": "dotnet run --project ../src/Marshal.Api -- --export-openapi \"$PWD/openapi/v1.json\" && npm run gen:types",
     "gen:types": "openapi-typescript openapi/v1.json -o src/api/schema.d.ts",
+    "gen:tokens": "node scripts/tokens.mjs",
     "typecheck": "vue-tsc --noEmit",
     "build": "npm run gen:types && npm run typecheck && vite build",
-    "test": "vitest run",
-    "gen:tokens": "node scripts/tokens.mjs"
+    "test": "vitest run"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
