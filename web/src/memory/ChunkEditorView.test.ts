@@ -1,5 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import ChunkEditorView from './ChunkEditorView.vue'
 import { chunk, project, projectId } from './fixtures'
 import { FakeServer } from '../testing/fakeServer'
@@ -28,13 +28,15 @@ function server() {
 
 async function mountEditor(fake: FakeServer, path = `/memory/chunks/${id}`) {
   const { options, router } = await mountOptions(fake, path)
-  const wrapper = mount(ChunkEditorView, options)
+  const wrapper = mount(ChunkEditorView, { ...options, attachTo: document.body })
   await flushPromises()
   return { wrapper, router }
 }
 
 describe('ChunkEditorView', () => {
-  afterEach(() => vi.restoreAllMocks())
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
 
   it('creates a chunk and opens it', async () => {
     const fake = server().on('POST', '/api/v1/memory/chunks', 201, { id, outcome: 'created' })
@@ -45,7 +47,7 @@ describe('ChunkEditorView', () => {
     await wrapper.get('select[name="type"]').setValue('procedure')
     await wrapper.get('input[name="title"]').setValue('Calibration')
     await wrapper.get('textarea[name="content"]').setValue('Run the z offset macro.')
-    await wrapper.get('input[name="importance"]').setValue('4')
+    await wrapper.get('[data-test="importance"] [data-value="4"]').trigger('click')
     await wrapper.get('form[data-test="chunk"]').trigger('submit')
     await flushPromises()
 
@@ -78,7 +80,7 @@ describe('ChunkEditorView', () => {
     const fake = server().on('PUT', `/api/v1/memory/chunks/${id}/pin`, 204)
     const { wrapper } = await mountEditor(fake)
 
-    await wrapper.get('[data-test="pin"]').trigger('click')
+    await wrapper.get('[data-test="pin"] input').setValue(true)
     await flushPromises()
 
     expect(fake.count('PUT', `/api/v1/memory/chunks/${id}/pin`)).toBe(1)
@@ -112,11 +114,12 @@ describe('ChunkEditorView', () => {
   })
 
   it('deletes after confirmation and returns to the list', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     const fake = server().on('DELETE', `/api/v1/memory/chunks/${id}`, 204)
     const { wrapper, router } = await mountEditor(fake)
 
     await wrapper.get('[data-test="delete"]').trigger('click')
+    expect(fake.count('DELETE', `/api/v1/memory/chunks/${id}`)).toBe(0)
+    ;(document.body.querySelector('[data-test="confirm-delete"]') as HTMLButtonElement).click()
     await flushPromises()
 
     expect(fake.count('DELETE', `/api/v1/memory/chunks/${id}`)).toBe(1)
@@ -131,5 +134,13 @@ describe('ChunkEditorView', () => {
     await flushPromises()
 
     expect(wrapper.get('[role="alert"]').text()).toContain('The content must have')
+    expect((wrapper.get('textarea[name="content"]').element as HTMLTextAreaElement).value).toBe('0.6 mm nozzle.')
+  })
+
+  it('reports a missing chunk', async () => {
+    const fake = server().on('GET', `/api/v1/memory/chunks/${id}`, 404, { status: 404, code: 'memory.chunk_not_found' })
+    const { wrapper } = await mountEditor(fake)
+
+    expect(wrapper.text()).toContain('This memory chunk does not exist.')
   })
 })

@@ -1,92 +1,155 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { BookOpen, Pin, Plus } from 'lucide-vue-next'
+import { computed, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApiSession } from '../api/inject'
-import { formatDateTime } from '../format'
+import { useApi } from '../api/inject'
+import { useLoad } from '../api/useLoad'
+import { useFormat } from '../i18n/locale'
+import { AppButton, AppIcon, Chip, DataTable, Field, ListCard, ListRow, LoadBoundary, Page, PageHeader, useDesktop } from '../ui'
+import ChunkType from './ChunkType.vue'
+import ImportanceDots from './ImportanceDots.vue'
+import MemoryTabs from './MemoryTabs.vue'
 import { chunkTypes } from './memoryLabels'
 
-const session = useApiSession()
+/** Memory chunks: full-text search, type and project filters (a project card links here with ?project=). */
+const api = useApi()
 const route = useRoute()
-const chunks = ref<Schemas['MemoryChunk'][] | null>(null)
-const projects = ref<Schemas['ProjectView'][]>([])
-const error = ref<string | null>(null)
-// A project card links here with ?project=<id>.
-const filter = reactive({ query: '', type: '', project: typeof route.query.project === 'string' ? route.query.project : '', pinned: false })
-const projectNames = computed(() => new Map(projects.value.map((project) => [project.id, project.name])))
+const desktop = useDesktop()
+const format = useFormat()
+const { t } = useI18n()
 
-async function load() {
-  const query = {
-    query: filter.query.trim() || undefined,
-    type: filter.type || undefined,
-    projectId: filter.project || undefined,
-    pinned: filter.pinned ? true : undefined,
-  }
-  const { data } = await session.raw.GET('/api/v1/memory/chunks', { params: { query } })
-  chunks.value = data ?? null
-  error.value = data ? null : 'The memory could not be loaded.'
+const filter = reactive({ query: '', type: '', project: typeof route.query.project === 'string' ? route.query.project : '', pinned: false })
+const projects = useLoad(() => api.call((client) => client.GET('/api/v1/memory/projects')), { isEmpty: () => false })
+const chunks = useLoad(() =>
+  api.call((client) =>
+    client.GET('/api/v1/memory/chunks', {
+      params: {
+        query: {
+          query: filter.query.trim() || undefined,
+          type: (filter.type || undefined) as Schemas['ChunkType'] | undefined,
+          projectId: filter.project || undefined,
+          pinned: filter.pinned ? true : undefined,
+        },
+      },
+    }),
+  ),
+)
+const projectNames = computed(() => new Map((projects.data.value ?? []).map((project) => [project.id, project.name])))
+const projectName = (id: string | null) => (id ? (projectNames.value.get(id) ?? t('memory.list.deletedProject')) : t('memory.list.general'))
+
+function setType(type: string) {
+  filter.type = filter.type === type ? '' : type
+  chunks.retry()
+}
+function togglePinned() {
+  filter.pinned = !filter.pinned
+  chunks.retry()
 }
 
-onMounted(async () => {
-  const { data } = await session.raw.GET('/api/v1/memory/projects')
-  projects.value = data ?? []
-  await load()
-})
+const columns = computed(() => [
+  { key: 'chunk', label: t('memory.list.columns.chunk') },
+  { key: 'type', label: t('memory.list.columns.type') },
+  { key: 'project', label: t('memory.list.columns.project') },
+  { key: 'importance', label: t('memory.list.columns.importance') },
+  { key: 'updated', label: t('memory.list.columns.updated') },
+])
 </script>
 
 <template>
-  <section class="page">
-    <h1>Memory</h1>
-    <form class="filters" data-test="search" role="search" @submit.prevent="load">
-      <input v-model="filter.query" name="query" type="search" placeholder="Search memory" aria-label="Search memory" />
-      <select v-model="filter.type" name="type" aria-label="Type">
-        <option value="">All types</option>
-        <option v-for="type in chunkTypes" :key="type" :value="type">{{ type }}</option>
-      </select>
-      <select v-model="filter.project" name="project" aria-label="Project">
-        <option value="">All projects</option>
-        <option v-for="project in projects" :key="project.id" :value="project.id">{{ project.name }}</option>
-      </select>
-      <label class="inline"><input v-model="filter.pinned" name="pinned" type="checkbox" /> Pinned only</label>
-      <button type="submit">Search</button>
-      <RouterLink to="/memory/new" class="button">New</RouterLink>
+  <Page width="wide">
+    <PageHeader :title="t('memory.title')" :subtitle="desktop ? t('memory.subtitle') : undefined">
+      <template #actions>
+        <AppButton variant="primary" :icon="Plus" :icon-only="!desktop" :label="t('memory.list.newChunk')" to="/memory/new">{{ t('memory.list.newChunk') }}</AppButton>
+      </template>
+    </PageHeader>
+    <MemoryTabs />
+
+    <form class="tools" data-test="search" role="search" @submit.prevent="chunks.retry()">
+      <Field v-model="filter.query" kind="search" name="query" :label="t('memory.list.search')" hide-label :placeholder="t('memory.list.search')" class="search" />
+      <Field v-model="filter.project" kind="select" name="project" :label="t('memory.list.project')" hide-label class="project" @change="chunks.retry()">
+        <option value="">{{ t('memory.list.allProjects') }}</option>
+        <option v-for="project in projects.data.value ?? []" :key="project.id" :value="project.id">{{ project.name }}</option>
+      </Field>
+      <div class="chips">
+        <Chip :label="t('memory.list.allTypes')" :model-value="!filter.type" data-type="" @update:model-value="setType('')" />
+        <Chip v-for="type in chunkTypes" :key="type" :label="t(`memory.type.${type}`)" :model-value="filter.type === type" :data-type="type" @update:model-value="setType(type)" />
+        <Chip :label="t('memory.pinned')" :model-value="filter.pinned" data-test="pinned-only" @update:model-value="togglePinned" />
+      </div>
     </form>
-    <p v-if="error" role="alert" class="error">{{ error }}</p>
-    <p v-else-if="chunks && chunks.length === 0" class="muted">No memory matches.</p>
-    <ul v-if="chunks" class="plain chunks">
-      <li v-for="chunk in chunks" :key="chunk.id" :data-chunk="chunk.id">
-        <RouterLink :to="`/memory/chunks/${chunk.id}`">{{ chunk.title }}</RouterLink>
-        <span class="badge">{{ chunk.type }}</span>
-        <span v-if="chunk.projectId" class="badge">{{ projectNames.get(chunk.projectId) ?? 'deleted project' }}</span>
-        <span v-if="chunk.pinned" class="badge healthy">pinned</span>
-        <div class="muted">{{ chunk.content }}</div>
-        <div class="muted small">updated {{ formatDateTime(chunk.updatedAt) }} · importance {{ chunk.importance }}</div>
-      </li>
-    </ul>
-  </section>
+
+    <LoadBoundary :load="chunks" size="page" :empty-title="t('memory.list.empty.title')" :empty-body="t('memory.list.empty.body')" :empty-icon="BookOpen">
+      <template #default="{ data }">
+        <DataTable v-if="desktop" :columns="columns" :rows="data" :row-key="(chunk) => chunk.id" :label="t('memory.title')" row-attribute="chunk">
+          <template #cell-chunk="{ row }">
+            <span class="title">
+              <AppIcon v-if="row.pinned" :icon="Pin" :size="14" class="pin" data-test="pinned" :aria-label="t('memory.pinned')" />
+              <RouterLink :to="`/memory/chunks/${row.id}`" class="link">{{ row.title }}</RouterLink>
+            </span>
+            <span class="content">{{ row.content }}</span>
+          </template>
+          <template #cell-type="{ row }"><ChunkType :type="row.type" /></template>
+          <template #cell-project="{ row }"><span class="ink-2">{{ projectName(row.projectId) }}</span></template>
+          <template #cell-importance="{ row }"><ImportanceDots :value="row.importance" /></template>
+          <template #cell-updated="{ row }"><span class="num ink-2">{{ format.dateTime(row.updatedAt) }}</span></template>
+        </DataTable>
+        <ListCard v-else>
+          <ListRow v-for="chunk in data" :key="chunk.id" :to="`/memory/chunks/${chunk.id}`" :data-chunk="chunk.id">
+            <template #title>
+              <span class="title"><AppIcon v-if="chunk.pinned" :icon="Pin" :size="14" class="pin" data-test="pinned" />{{ chunk.title }}</span>
+            </template>
+            <template #subtitle><span class="content">{{ chunk.content }}</span></template>
+            <template #trail><ChunkType :type="chunk.type" /></template>
+          </ListRow>
+        </ListCard>
+      </template>
+    </LoadBoundary>
+  </Page>
 </template>
 
 <style scoped>
-.filters {
+.tools {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
   align-items: center;
-  margin-bottom: 1rem;
+  gap: var(--space-3);
 }
-
-.filters input[type='search'] {
-  flex: 1 1 12rem;
-  min-width: 0;
+.search {
+  flex: 1 1 260px;
+  max-width: 360px;
 }
-
-.chunks li {
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--border);
-  overflow-wrap: anywhere;
+.project {
+  flex: 0 1 200px;
 }
-
-.small {
-  font-size: 0.85rem;
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pin {
+  color: var(--accent-text);
+}
+.link {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.link:hover {
+  text-decoration: underline;
+}
+.content {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ink-2);
+  font: var(--text-body-s);
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
 }
 </style>

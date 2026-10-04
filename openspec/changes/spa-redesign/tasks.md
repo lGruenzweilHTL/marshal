@@ -69,9 +69,9 @@
 
 ## 11. Memory: Chunks, Projects, Map, Audit
 
-- [ ] 11.1 Write failing tests for the chunk list and the editor with history (search, filters, pin, save errors keep the text). Rebuild them. Verify they pass.
-- [ ] 11.2 Write failing tests for Projects (aliases, alias candidates, correction log). Rebuild it. Verify they pass.
-- [ ] 11.3 Write failing tests for Map (graph / scatter toggle on desktop, list on phones) and Audit. Rebuild them. Verify they pass.
+- [x] 11.1 Write failing tests for the chunk list and the editor with history (search, filters, pin, save errors keep the text). Rebuild them. Verify they pass.
+- [x] 11.2 Write failing tests for Projects (aliases, alias candidates, correction log). Rebuild it. Verify they pass.
+- [x] 11.3 Write failing tests for Map (graph / scatter toggle on desktop, list on phones) and Audit. Rebuild them. Verify they pass.
 
 ## 12. Connections and settings
 

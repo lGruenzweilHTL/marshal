@@ -1,9 +1,11 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import GraphView from './GraphView.vue'
+import MapView from './MapView.vue'
 import ScatterView from './ScatterView.vue'
 import { FakeServer } from '../testing/fakeServer'
 import { me, mountOptions } from '../testing/mountApp'
+import { useViewport } from '../testing/viewport'
 
 const printer = 'PRINTERPRINTERPRINTERPRINT'
 const nozzle = 'NOZZLENOZZLENOZZLENOZZLENO'
@@ -66,5 +68,37 @@ describe('ScatterView', () => {
     const { wrapper } = await mountView(ScatterView, '/memory/scatter', '/api/v1/memory/scatter', [])
 
     expect(wrapper.text()).toContain('No memory yet')
+  })
+})
+
+describe('MapView', () => {
+  async function mountMap(path: string) {
+    const fake = new FakeServer().on('GET', '/api/v1/me', 200, me).on('GET', '/api/v1/memory/graph', 200, graph).on('GET', '/api/v1/memory/scatter', 200, scatter)
+    const { options, router } = await mountOptions(fake, path)
+    const wrapper = mount(MapView, options)
+    await flushPromises()
+    return { wrapper, router }
+  }
+
+  it('toggles between graph and scatter on desktop and keeps the choice in the query', async () => {
+    useViewport('desktop')
+    const { wrapper, router } = await mountMap('/memory/map')
+
+    expect(wrapper.findAll('[data-node]')).toHaveLength(2)
+    await wrapper.get('[data-value="scatter"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ view: 'scatter' })
+    expect(wrapper.findAll('[data-point]')).toHaveLength(2)
+  })
+
+  it('lists memory grouped by type on phones', async () => {
+    useViewport('phone')
+    const { wrapper } = await mountMap('/memory/map')
+
+    expect(wrapper.text()).toContain('The map needs a larger screen')
+    expect(wrapper.find('svg[role="img"]').exists()).toBe(false)
+    expect(wrapper.get('[data-group="device"]').text()).toContain('Printer')
+    expect(wrapper.get(`a[href="/memory/chunks/${nozzle}"]`).text()).toContain('Nozzle')
   })
 })

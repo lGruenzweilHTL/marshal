@@ -1,9 +1,10 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import ChunkListView from './ChunkListView.vue'
 import { chunk, project, projectId } from './fixtures'
 import { FakeServer } from '../testing/fakeServer'
 import { me, mountOptions } from '../testing/mountApp'
+import { useViewport } from '../testing/viewport'
 
 const chunks = [
   chunk({ pinned: true, title: 'Allergy', type: 'fact', id: 'BBBBBBBBBBBBBBBBBBBBBBBBBB', content: 'Allergic to peanuts.' }),
@@ -25,13 +26,15 @@ async function mountList(fake: FakeServer) {
 }
 
 describe('ChunkListView', () => {
+  beforeEach(() => useViewport('desktop'))
+
   it('lists chunks with type, project and pinned badge, linking to the editor', async () => {
     const { wrapper } = await mountList(server())
 
     const allergy = wrapper.get('[data-chunk="BBBBBBBBBBBBBBBBBBBBBBBBBB"]')
     expect(allergy.text()).toContain('Allergy')
     expect(allergy.text()).toContain('fact')
-    expect(allergy.text()).toContain('pinned')
+    expect(allergy.find('[data-test="pinned"]').exists()).toBe(true)
     expect(allergy.get('a').attributes('href')).toBe('/memory/chunks/BBBBBBBBBBBBBBBBBBBBBBBBBB')
     expect(wrapper.get('[data-chunk="CCCCCCCCCCCCCCCCCCCCCCCCCC"]').text()).toContain('Voron')
   })
@@ -41,9 +44,9 @@ describe('ChunkListView', () => {
     const { wrapper } = await mountList(fake)
 
     await wrapper.get('input[name="query"]').setValue('nozzle')
-    await wrapper.get('select[name="type"]').setValue('device')
+    await wrapper.get('[data-type="device"]').trigger('click')
     await wrapper.get('select[name="project"]').setValue(projectId)
-    await wrapper.get('input[name="pinned"]').setValue(true)
+    await wrapper.get('[data-test="pinned-only"]').trigger('click')
     await wrapper.get('form[data-test="search"]').trigger('submit')
     await flushPromises()
 
@@ -66,6 +69,14 @@ describe('ChunkListView', () => {
   it('says so when memory is empty', async () => {
     const { wrapper } = await mountList(server().on('GET', '/api/v1/memory/chunks', 200, []))
 
-    expect(wrapper.text()).toContain('No memory')
+    expect(wrapper.text()).toContain('No memory matches')
+  })
+
+  it('lists chunks as rows on phones', async () => {
+    useViewport('phone')
+    const { wrapper } = await mountList(server())
+
+    expect(wrapper.find('table').exists()).toBe(false)
+    expect(wrapper.get('a[href="/memory/chunks/BBBBBBBBBBBBBBBBBBBBBBBBBB"]').text()).toContain('Allergy')
   })
 })

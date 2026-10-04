@@ -1,5 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import ProjectsView from './ProjectsView.vue'
 import { project, projectId } from './fixtures'
 import { FakeServer } from '../testing/fakeServer'
@@ -20,13 +20,15 @@ function server() {
 
 async function mountProjects(fake: FakeServer) {
   const { options } = await mountOptions(fake, '/memory/projects')
-  const wrapper = mount(ProjectsView, options)
+  const wrapper = mount(ProjectsView, { ...options, attachTo: document.body })
   await flushPromises()
   return wrapper
 }
 
 describe('ProjectsView', () => {
-  afterEach(() => vi.restoreAllMocks())
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
 
   it('lists projects with aliases and candidates', async () => {
     const wrapper = await mountProjects(server())
@@ -42,6 +44,7 @@ describe('ProjectsView', () => {
     const fake = server().on('POST', '/api/v1/memory/projects', 201, project({ id: '0199bbbb-0000-7000-8000-000000000002', name: 'Marshal' }))
     const wrapper = await mountProjects(fake)
 
+    await wrapper.get('[data-test="show-new"]').trigger('click')
     await wrapper.get('form[data-test="new-project"] input[name="name"]').setValue('Marshal')
     await wrapper.get('form[data-test="new-project"] textarea[name="description"]').setValue('The voice assistant.')
     await wrapper.get('form[data-test="new-project"]').trigger('submit')
@@ -85,7 +88,6 @@ describe('ProjectsView', () => {
   })
 
   it('renames and deletes a project', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     const fake = server().on('PUT', base, 200, voron).on('DELETE', base, 204)
     const wrapper = await mountProjects(fake)
 
@@ -94,6 +96,8 @@ describe('ProjectsView', () => {
     await wrapper.get(`[data-project="${projectId}"] form[data-test="edit-project"]`).trigger('submit')
     await flushPromises()
     await wrapper.get(`[data-project="${projectId}"] [data-test="delete"]`).trigger('click')
+    expect(fake.count('DELETE', base)).toBe(0)
+    ;(document.body.querySelector('[data-test="confirm-delete"]') as HTMLButtonElement).click()
     await flushPromises()
 
     expect(JSON.parse(fake.request('PUT', base)!.body)).toEqual({ name: 'Voron 2.4', description: 'The 3D printer.' })

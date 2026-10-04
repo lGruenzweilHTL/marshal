@@ -3,6 +3,7 @@ import * as common from './common'
 import * as chat from '../chat/messages'
 import * as home from '../home/messages'
 import * as inbox from '../inbox/messages'
+import * as memory from '../memory/messages'
 import * as shell from '../layout/messages'
 import * as printers from '../printers/messages'
 import * as runs from '../runs/messages'
@@ -21,6 +22,7 @@ export const en = {
   runs: runs.en,
   tasks: tasks.en,
   chat: chat.en,
+  memory: memory.en,
 }
 
 export const de: Catalog<typeof en> = {
@@ -32,6 +34,7 @@ export const de: Catalog<typeof en> = {
   runs: runs.de,
   tasks: tasks.de,
   chat: chat.de,
+  memory: memory.de,
 }
 
 export type MessageSchema = typeof en

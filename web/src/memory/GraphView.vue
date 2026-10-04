@@ -1,127 +1,156 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { Network } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import type { Schemas } from '../api/client'
-import { useApiSession } from '../api/inject'
+import { useApi } from '../api/inject'
+import { useLoad } from '../api/useLoad'
+import { LoadBoundary } from '../ui'
+import MapLegend from './MapLegend.vue'
 import { forceLayout } from './forceLayout'
-import { chunkTypes, typeColors } from './memoryLabels'
 
-const session = useApiSession()
+/** Memory chunks as a force-laid-out graph of their links; a node opens its chunk. */
+const api = useApi()
 const router = useRouter()
-const graph = ref<Schemas['MemoryGraph'] | null>(null)
-const error = ref<string | null>(null)
+const { t } = useI18n()
 
+const graph = useLoad(() => api.call((client) => client.GET('/api/v1/memory/graph')), { isEmpty: (data) => !data.nodes.length })
+// The layout is stretched onto a fixed canvas, so a few far-apart clusters do not shrink every node to a dot.
+const width = 1000
+const height = 600
+const pad = 60
 const drawing = computed(() => {
-  if (!graph.value) return null
-  const positions = forceLayout(
-    graph.value.nodes.map((node) => node.id),
-    graph.value.edges.map((edge) => [edge.from, edge.to]),
+  const data = graph.data.value
+  if (!data?.nodes.length) return null
+  const layout = forceLayout(
+    data.nodes.map((node) => node.id),
+    data.edges.map((edge) => [edge.from, edge.to]),
   )
-  const points = [...positions.values()]
-  const pad = 20
-  const minX = Math.min(...points.map((point) => point.x)) - pad
-  const minY = Math.min(...points.map((point) => point.y)) - pad
-  const width = Math.max(...points.map((point) => point.x)) - minX + pad
-  const height = Math.max(...points.map((point) => point.y)) - minY + pad
-  return { positions, viewBox: `${minX} ${minY} ${Math.max(width, 1)} ${Math.max(height, 1)}` }
+  const points = [...layout.values()]
+  const minX = Math.min(...points.map((point) => point.x))
+  const minY = Math.min(...points.map((point) => point.y))
+  const spanX = Math.max(...points.map((point) => point.x)) - minX || 1
+  const spanY = Math.max(...points.map((point) => point.y)) - minY || 1
+  const positions = new Map(
+    [...layout].map(([id, point]) => [id, { x: pad + ((point.x - minX) / spanX) * (width - 2 * pad), y: pad + ((point.y - minY) / spanY) * (height - 2 * pad) }]),
+  )
+  return { positions, viewBox: `0 0 ${width} ${height}` }
 })
-
-onMounted(async () => {
-  const { data } = await session.raw.GET('/api/v1/memory/graph')
-  graph.value = data ?? null
-  error.value = data ? null : 'The graph could not be loaded.'
-})
+const open = (id: string) => router.push(`/memory/chunks/${id}`)
 </script>
 
 <template>
-  <section class="page">
-    <h1>Memory graph</h1>
-    <p v-if="error" role="alert" class="error">{{ error }}</p>
-    <p v-if="graph && !graph.nodes.length" class="muted">No memory yet.</p>
-    <template v-if="graph && graph.nodes.length && drawing">
-      <ul class="legend plain">
-        <li v-for="type in chunkTypes" :key="type"><span class="swatch" :style="{ background: typeColors[type] }"></span>{{ type }}</li>
-      </ul>
-      <svg class="map" :viewBox="drawing.viewBox" role="img" aria-label="Memory chunks and their links">
+  <LoadBoundary :load="graph" size="page" :empty-title="t('memory.map.empty')" :empty-icon="Network">
+    <div v-if="graph.data.value && drawing" class="canvas">
+      <svg class="map" :viewBox="drawing.viewBox" role="img" :aria-label="t('memory.map.graphLabel')">
         <line
-          v-for="edge in graph.edges"
+          v-for="edge in graph.data.value.edges"
           :key="`${edge.from}/${edge.kind}/${edge.to}`"
           :data-edge="edge.kind"
-          :class="['edge', edge.kind]"
+          class="edge"
+          :class="edge.kind"
           :x1="drawing.positions.get(edge.from)!.x"
           :y1="drawing.positions.get(edge.from)!.y"
           :x2="drawing.positions.get(edge.to)!.x"
           :y2="drawing.positions.get(edge.to)!.y"
         >
-          <title>{{ edge.kind }}</title>
+          <title>{{ t(`memory.editor.edge.${edge.kind}`) }}</title>
         </line>
         <g
-          v-for="node in graph.nodes"
+          v-for="node in graph.data.value.nodes"
           :key="node.id"
           :data-node="node.id"
           class="node"
+          :class="[node.type, { pinned: node.pinned }]"
           tabindex="0"
           role="link"
+          :aria-label="node.title"
           :transform="`translate(${drawing.positions.get(node.id)!.x} ${drawing.positions.get(node.id)!.y})`"
-          @click="router.push(`/memory/chunks/${node.id}`)"
-          @keydown.enter="router.push(`/memory/chunks/${node.id}`)"
+          @click="open(node.id)"
+          @keydown.enter="open(node.id)"
         >
-          <circle :r="2 + node.importance" :fill="typeColors[node.type]" :stroke-width="node.pinned ? 1.5 : 0" />
-          <text :y="-(4 + node.importance)" text-anchor="middle">{{ node.title }}</text>
+          <circle :r="5 + node.importance * 1.5" />
+          <text :y="-(10 + node.importance * 1.5)" text-anchor="middle">{{ node.title }}</text>
         </g>
       </svg>
-    </template>
-  </section>
+      <MapLegend class="legend" />
+    </div>
+  </LoadBoundary>
 </template>
 
 <style scoped>
+.canvas {
+  position: relative;
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  background-image: radial-gradient(var(--line) 1px, transparent 1px);
+  background-size: 22px 22px;
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
 .map {
   display: block;
   width: 100%;
-  max-height: 75vh;
-  border: 1px solid var(--border);
+  height: 70vh;
+  min-height: 420px;
 }
-
 .edge {
-  stroke: var(--muted, #888);
-  stroke-width: 0.6;
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
 }
-
 .edge.contradicts {
-  stroke: var(--error);
-  stroke-dasharray: 2 1;
+  stroke: var(--danger);
+  stroke-dasharray: 6 4;
 }
-
 .edge.supersedes {
-  stroke-dasharray: 1 1;
+  stroke-dasharray: 3 3;
 }
-
 .node {
   cursor: pointer;
 }
-
 .node circle {
-  stroke: currentColor;
+  fill: var(--mem);
+  stroke: var(--surface);
+  stroke-width: 2;
 }
-
+.node.pinned circle {
+  stroke: var(--ink);
+}
+.node:focus-visible {
+  outline: none;
+}
+.node:focus-visible circle {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
 .node text {
-  font-size: 4px;
-  fill: currentColor;
+  fill: var(--ink-2);
+  font: 500 12px var(--font-sans);
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 4px;
 }
-
 .legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 1rem;
-  margin-bottom: 0.5rem;
+  position: absolute;
+  left: var(--space-4);
+  bottom: var(--space-4);
 }
-
-.swatch {
-  display: inline-block;
-  width: 0.75rem;
-  height: 0.75rem;
-  margin-right: 0.25rem;
-  border-radius: 50%;
-  vertical-align: middle;
+.fact {
+  --mem: var(--mem-fact);
+}
+.preference {
+  --mem: var(--mem-preference);
+}
+.event {
+  --mem: var(--mem-event);
+}
+.procedure {
+  --mem: var(--mem-procedure);
+}
+.person {
+  --mem: var(--mem-person);
+}
+.device {
+  --mem: var(--mem-device);
 }
 </style>

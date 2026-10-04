@@ -14,7 +14,7 @@ import MailAccountsView from './mail/MailAccountsView.vue'
 import AuditView from './memory/AuditView.vue'
 import ChunkEditorView from './memory/ChunkEditorView.vue'
 import ChunkListView from './memory/ChunkListView.vue'
-import GraphView from './memory/GraphView.vue'
+import MapView from './memory/MapView.vue'
 import MemoryLayout from './memory/MemoryLayout.vue'
 import ProjectsView from './memory/ProjectsView.vue'
 import NotFoundView from './layout/NotFoundView.vue'
@@ -72,12 +72,12 @@ const routes: RouteRecordRaw[] = [
         path: 'memory',
         component: MemoryLayout,
         children: [
-          { path: '', name: 'memory', component: ChunkListView, meta: { title: 'shell.nav.chunks', nav: 'chunks', legacy: true } },
-          { path: 'new', name: 'memory-new', component: ChunkEditorView, meta: { title: 'shell.nav.chunks', nav: 'chunks', legacy: true } },
-          { path: 'chunks/:id', name: 'memory-chunk', component: ChunkEditorView, meta: { title: 'shell.nav.chunks', nav: 'chunks', legacy: true } },
-          { path: 'projects', name: 'memory-projects', component: ProjectsView, meta: { title: 'shell.nav.projects', nav: 'projects', legacy: true } },
-          { path: 'map', name: 'memory-map', component: GraphView, meta: { title: 'shell.nav.map', nav: 'map', legacy: true } },
-          { path: 'audit', name: 'memory-audit', component: AuditView, meta: { title: 'shell.nav.audit', nav: 'audit', legacy: true } },
+          { path: '', name: 'memory', component: ChunkListView, meta: { title: 'shell.nav.chunks', nav: 'chunks' } },
+          { path: 'new', name: 'memory-new', component: ChunkEditorView, meta: { title: 'shell.nav.chunks', nav: 'chunks' } },
+          { path: 'chunks/:id', name: 'memory-chunk', component: ChunkEditorView, meta: { title: 'shell.nav.chunks', nav: 'chunks' } },
+          { path: 'projects', name: 'memory-projects', component: ProjectsView, meta: { title: 'shell.nav.projects', nav: 'projects' } },
+          { path: 'map', name: 'memory-map', component: MapView, meta: { title: 'shell.nav.map', nav: 'map' } },
+          { path: 'audit', name: 'memory-audit', component: AuditView, meta: { title: 'shell.nav.audit', nav: 'audit' } },
         ],
       },
       // Connections and settings
