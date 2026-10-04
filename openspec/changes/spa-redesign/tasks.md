@@ -2,10 +2,10 @@
 
 ## 1. Server error fixes
 
-- [ ] 1.1 Write a failing API test: `GET /api/v1/auth/antiforgery` over plain HTTP returns 400 ProblemDetails with code `auth.https_required`. Verify it fails.
-- [ ] 1.2 Check `Request.IsHttps` in the antiforgery token endpoint and return the existing error. Verify 1.1 passes and the existing antiforgery tests still pass.
-- [ ] 1.3 Write failing API tests: an endpoint that throws (test-only endpoint registered by the test factory) returns 500 ProblemDetails with code `server.unexpected` and a `traceId`, and the body does not contain the exception message. Verify they fail.
-- [ ] 1.4 Register `UseExceptionHandler()` with `CustomizeProblemDetails` for code, generic detail and trace id. Verify 1.3 passes and existing ProblemDetails responses are unchanged.
+- [x] 1.1 Write a failing API test: `GET /api/v1/auth/antiforgery` over plain HTTP returns 400 ProblemDetails with code `auth.https_required`. Verify it fails.
+- [x] 1.2 Check `Request.IsHttps` in the antiforgery token endpoint and return the existing error. Verify 1.1 passes and the existing antiforgery tests still pass.
+- [x] 1.3 Write failing API tests: an endpoint that throws (a test-only service, armed after startup, makes `/me` throw) returns 500 ProblemDetails with code `server.unexpected` and a `traceId`, and the body does not contain the exception message. Verify they fail.
+- [x] 1.4 Register `UseExceptionHandler()` with `CustomizeProblemDetails` for code, generic detail and trace id. Verify 1.3 passes and existing ProblemDetails responses are unchanged.
 
 ## 2. SPA error model
 
@@ -39,7 +39,7 @@
 - [x] 6.3 Build the foundations: color variables with light and dark modes, spacing, radius, elevation, text styles, chosen font and icon set. Verify contrast (WCAG AA for text) in both modes.
 - [x] 6.4 Build the components with variants and German and English content. Verify every component has focus, disabled, loading and error variants where they apply, and 44 px touch targets.
 - [x] 6.5 Design every page for phone and desktop per design.md (Decision 6), plus the state frames (loading, empty, error, session expired, offline, HTTPS hint, global banner) with at least one German page per state. Verify every current view (see the before gallery) is either designed or explicitly dropped in the IA.
-- [ ] 6.6 Checkpoint with the user: review and approve the design. Verify approval is recorded in design.md.
+- [x] 6.6 Checkpoint with the user: review and approve the design. Verify approval is recorded in design.md.
 
 ## 7. Specs and tasks after the checkpoint
 

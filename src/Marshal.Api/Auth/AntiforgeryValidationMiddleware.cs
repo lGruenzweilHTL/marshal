@@ -19,7 +19,7 @@ internal sealed class AntiforgeryValidationMiddleware(RequestDelegate next, IAnt
             // The session and antiforgery cookies are Secure-only; behind the TLS proxy requests arrive as https.
             if (!context.Request.IsHttps)
             {
-                await new Error("auth.https_required", "Browser sessions require HTTPS.", ErrorType.Validation).ToProblem().ExecuteAsync(context);
+                await AntiforgeryErrors.HttpsRequired.ToProblem().ExecuteAsync(context);
                 return;
             }
 
@@ -41,4 +41,10 @@ internal sealed class AntiforgeryValidationMiddleware(RequestDelegate next, IAnt
         !HttpMethods.IsGet(request.Method) && !HttpMethods.IsHead(request.Method) && !HttpMethods.IsOptions(request.Method) && !HttpMethods.IsTrace(request.Method)
         && request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase)
         && !request.Headers.Authorization.ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase);
+}
+
+/// <summary>Failures of browser sessions shared by the antiforgery token endpoint and the validation middleware.</summary>
+internal static class AntiforgeryErrors
+{
+    public static readonly Error HttpsRequired = new("auth.https_required", "Browser sessions require HTTPS.", ErrorType.Validation);
 }

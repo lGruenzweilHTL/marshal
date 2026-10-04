@@ -39,9 +39,13 @@ internal static class MeEndpoints
         return TypedResults.Ok(new MeResponse(owner, profile.Value.DisplayName, roles, scopes));
     }
 
-    private static Ok<AntiforgeryToken> GetAntiforgeryToken(HttpContext context, IAntiforgery antiforgery)
+    private static Results<Ok<AntiforgeryToken>, ProblemHttpResult> GetAntiforgeryToken(HttpContext context, IAntiforgery antiforgery)
     {
         context.Response.Headers.CacheControl = "no-store";
+        // The antiforgery cookie is Secure-only; over plain HTTP GetAndStoreTokens would throw.
+        if (!context.Request.IsHttps)
+            return AntiforgeryErrors.HttpsRequired.ToProblem();
+
         return TypedResults.Ok(new AntiforgeryToken(antiforgery.GetAndStoreTokens(context).RequestToken!));
     }
 }

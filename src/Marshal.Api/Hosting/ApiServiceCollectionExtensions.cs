@@ -10,6 +10,7 @@ using Marshal.Api.Health;
 using Marshal.Api.Mail;
 using Marshal.Api.Models;
 using Marshal.Api.Printers;
+using Marshal.Api.Problems;
 using Marshal.Api.Versioning;
 using Marshal.Core.Configuration;
 using Marshal.Core.Models;
@@ -52,7 +53,7 @@ public static class ApiServiceCollectionExtensions
             // Numbers are JSON numbers only, so OpenAPI (and the generated SPA types) describe them as `number`.
             options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
         });
-        services.AddProblemDetails();
+        services.AddProblemDetails(options => options.CustomizeProblemDetails = UnexpectedProblems.Customize);
         services.AddApiVersioning(options =>
             {
                 options.DefaultApiVersion = ApiVersions.V1;

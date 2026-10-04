@@ -136,6 +136,16 @@ public sealed class AuthorizationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AntiforgeryToken_OverPlainHttp_Returns400HttpsRequired()
+    {
+        HttpResponseMessage response = await _factory.CreateClient().GetAsync("/api/v1/auth/antiforgery", Ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        Assert.Equal("auth.https_required", (await response.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("code").GetString());
+    }
+
+    [Fact]
     public async Task BrowserPost_ForwardedAsHttpsByTheProxy_PassesTheHttpsCheck()
     {
         HttpClient client = _factory.CreateClient();

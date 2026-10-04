@@ -67,6 +67,8 @@ public static class MarshalApp
             app.UseForwardedHeaders(forwarded);
         }
 
+        // Unhandled exceptions become a `server.unexpected` problem (UnexpectedProblems) and are logged with the trace id.
+        app.UseExceptionHandler();
         app.UseSecurityHeaders();
         string? pathBase = http.PathBase;
         if (!string.IsNullOrWhiteSpace(pathBase))
