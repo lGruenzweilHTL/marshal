@@ -149,6 +149,8 @@ The checkpoint (Decision 1) reviews this canvas with the user before any page is
 
 No data migration. Deploying the PWA is optional for users. Rollback is a revert; a service worker from a reverted version is replaced on the next start because `autoUpdate` checks on every navigation.
 
-## Open Questions
+## Checkpoint
 
-- Appearance (System / Light / Dark) appears on the Preferences design as a per-device setting stored in the browser. It needs no API; confirm at the checkpoint that it stays in scope.
+The owner approved the design canvas on 2026-10-04 (Version 10 of "Marshal Redesign") and asked to start the implementation, with three standing requirements: colours, fonts and every other value that must stay consistent come from CSS custom properties; views are built from reusable components; the logo sits behind one component so it can be replaced in one place.
+
+Appearance (System / Light / Dark) stays in scope as a per-device setting stored in the browser; it needs no API.
