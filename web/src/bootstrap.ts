@@ -34,7 +34,7 @@ export function startApp(options: StartOptions = {}) {
   const i18n = createAppI18n()
   const locale = createLocale(i18n, options.browser ?? browserLocale())
   const banner = createErrorBanner()
-  const router = createAppRouter(user, undefined, () => locale.loadPreferences(api))
+  const router = createAppRouter(user, undefined, () => locale.loadPreferences(api), (key) => i18n.global.t(key))
   const app = createApp(options.root ?? App)
   app.provide(apiKey, api)
   app.provide(sessionKey, user)

@@ -9,6 +9,8 @@ import { createAppRouter } from './router'
 import { createUserSession, sessionKey } from './session'
 import { FakeServer } from './testing/fakeServer'
 import { me } from './testing/mountApp'
+import { FakeLiveEvents } from './testing/fakeLiveEvents'
+import { liveKey } from './live/liveEvents'
 
 function setup(server: FakeServer) {
   const api = createApiSession({ baseUrl: 'https://marshal.test', fetch: server.fetch })
@@ -55,7 +57,7 @@ describe('router', () => {
 
     const App = defineComponent({ render: () => h(RouterView) })
     const wrapper = mount(App, {
-      global: { plugins: [router, createAppI18n()], provide: { [apiKey as symbol]: api, [sessionKey as symbol]: user } },
+      global: { plugins: [router, createAppI18n()], provide: { [apiKey as symbol]: api, [sessionKey as symbol]: user, [liveKey as symbol]: new FakeLiveEvents() }, stubs: { AppShell: true } },
       attachTo: document.body,
     })
     await flushPromises()
@@ -67,5 +69,20 @@ describe('router', () => {
 
     expect(router.currentRoute.value.fullPath).toBe('/tasks')
     wrapper.unmount()
+  })
+})
+
+describe('router: paths of the previous layout', () => {
+  it.each([
+    ['/review/a-1', '/inbox/approvals/a-1'],
+    ['/review', '/inbox'],
+    ['/notifications', '/inbox'],
+    ['/secrets', '/security/secrets'],
+    ['/config', '/system/config'],
+    ['/memory/graph', '/memory/map'],
+  ])('redirects %s to %s', async (from, to) => {
+    const { router } = setup(new FakeServer().on('GET', '/api/v1/me', 200, me))
+    await router.push(from)
+    expect(router.currentRoute.value.path).toBe(to)
   })
 })

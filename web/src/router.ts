@@ -13,7 +13,6 @@ import ChunkListView from './memory/ChunkListView.vue'
 import GraphView from './memory/GraphView.vue'
 import MemoryLayout from './memory/MemoryLayout.vue'
 import ProjectsView from './memory/ProjectsView.vue'
-import ScatterView from './memory/ScatterView.vue'
 import NotFoundView from './layout/NotFoundView.vue'
 import NotificationsView from './notifications/NotificationsView.vue'
 import PreferencesView from './preferences/PreferencesView.vue'
@@ -34,8 +33,12 @@ declare module 'vue-router' {
   interface RouteMeta {
     /** Reachable without a session (login and setup). */
     public?: boolean
-    /** Page title for the browser tab. */
+    /** Catalog key of the page title for the browser tab. */
     title?: string
+    /** Navigation destination the page belongs to (`layout/navigation.ts`). */
+    nav?: string
+    /** Not rebuilt on the design system yet: rendered inside `.legacy` with the old styles (removed by task 13.2). */
+    legacy?: boolean
   }
 }
 
@@ -48,36 +51,48 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     component: AppShell,
     children: [
-      { path: '', name: 'dashboard', component: DashboardView, meta: { title: 'Dashboard' } },
-      { path: 'chat', name: 'chat', component: ChatView, meta: { title: 'Chat' } },
-      { path: 'tasks', name: 'tasks', component: TasksView, meta: { title: 'Tasks' } },
-      { path: 'tasks/:id', name: 'task', component: TaskDetailView, meta: { title: 'Task' } },
-      { path: 'review/:id?', name: 'review', component: ReviewQueueView, meta: { title: 'Review' } },
-      { path: 'notifications', name: 'notifications', component: NotificationsView, meta: { title: 'Notifications' } },
-      { path: 'runs', name: 'runs', component: RunsView, meta: { title: 'Runs' } },
-      { path: 'runs/:id', name: 'run', component: RunDetailView, meta: { title: 'Run' } },
-      { path: 'cost', name: 'cost', component: CostView, meta: { title: 'Cost' } },
-      { path: 'mail/accounts', name: 'mail-accounts', component: MailAccountsView, meta: { title: 'Mail accounts' } },
-      { path: 'printers/:name?', name: 'printers', component: PrinterView, meta: { title: 'Printer' } },
+      // Act
+      { path: '', name: 'home', component: DashboardView, meta: { title: 'shell.nav.home', nav: 'home', legacy: true } },
+      { path: 'chat', name: 'chat', component: ChatView, meta: { title: 'shell.nav.chat', nav: 'chat', legacy: true } },
+      { path: 'inbox', name: 'inbox', component: ReviewQueueView, meta: { title: 'shell.nav.inbox', nav: 'inbox', legacy: true } },
+      { path: 'inbox/approvals/:id', name: 'approval', component: ReviewQueueView, meta: { title: 'shell.nav.inbox', nav: 'inbox', legacy: true } },
+      { path: 'inbox/proposals/:id', name: 'proposal', component: ReviewQueueView, meta: { title: 'shell.nav.inbox', nav: 'inbox', legacy: true } },
+      { path: 'inbox/notifications/:id', name: 'notification', component: NotificationsView, meta: { title: 'shell.nav.inbox', nav: 'inbox', legacy: true } },
+      { path: 'printers/:name?', name: 'printers', component: PrinterView, meta: { title: 'shell.nav.printer', nav: 'printer', legacy: true } },
+      // Activity
+      { path: 'tasks', name: 'tasks', component: TasksView, meta: { title: 'shell.nav.tasks', nav: 'tasks', legacy: true } },
+      { path: 'tasks/:id', name: 'task', component: TaskDetailView, meta: { title: 'shell.nav.tasks', nav: 'tasks', legacy: true } },
+      { path: 'runs', name: 'runs', component: RunsView, meta: { title: 'shell.nav.runs', nav: 'runs', legacy: true } },
+      { path: 'runs/:id', name: 'run', component: RunDetailView, meta: { title: 'shell.nav.runs', nav: 'runs', legacy: true } },
+      { path: 'cost', name: 'cost', component: CostView, meta: { title: 'shell.nav.cost', nav: 'cost', legacy: true } },
+      // Memory
       {
         path: 'memory',
         component: MemoryLayout,
         children: [
-          { path: '', name: 'memory', component: ChunkListView, meta: { title: 'Memory' } },
-          { path: 'new', name: 'memory-new', component: ChunkEditorView, meta: { title: 'New memory' } },
-          { path: 'chunks/:id', name: 'memory-chunk', component: ChunkEditorView, meta: { title: 'Memory' } },
-          { path: 'projects', name: 'memory-projects', component: ProjectsView, meta: { title: 'Projects' } },
-          { path: 'audit', name: 'memory-audit', component: AuditView, meta: { title: 'Memory audit' } },
-          { path: 'graph', name: 'memory-graph', component: GraphView, meta: { title: 'Memory graph' } },
-          { path: 'scatter', name: 'memory-scatter', component: ScatterView, meta: { title: 'Memory scatter' } },
+          { path: '', name: 'memory', component: ChunkListView, meta: { title: 'shell.nav.chunks', nav: 'chunks', legacy: true } },
+          { path: 'new', name: 'memory-new', component: ChunkEditorView, meta: { title: 'shell.nav.chunks', nav: 'chunks', legacy: true } },
+          { path: 'chunks/:id', name: 'memory-chunk', component: ChunkEditorView, meta: { title: 'shell.nav.chunks', nav: 'chunks', legacy: true } },
+          { path: 'projects', name: 'memory-projects', component: ProjectsView, meta: { title: 'shell.nav.projects', nav: 'projects', legacy: true } },
+          { path: 'map', name: 'memory-map', component: GraphView, meta: { title: 'shell.nav.map', nav: 'map', legacy: true } },
+          { path: 'audit', name: 'memory-audit', component: AuditView, meta: { title: 'shell.nav.audit', nav: 'audit', legacy: true } },
         ],
       },
-      { path: 'security', name: 'security', component: SecurityView, meta: { title: 'Security' } },
-      { path: 'secrets', name: 'secrets', component: SecretsView, meta: { title: 'Secrets' } },
-      { path: 'preferences', name: 'preferences', component: PreferencesView, meta: { title: 'Preferences' } },
-      { path: 'system', name: 'system', component: SystemView, meta: { title: 'System' } },
-      { path: 'config', name: 'config', component: ConfigView, meta: { title: 'Configuration' } },
-      { path: ':pathMatch(.*)*', name: 'not-found', component: NotFoundView, meta: { title: 'Not found' } },
+      // Connections and settings
+      { path: 'mail/accounts', name: 'mail-accounts', component: MailAccountsView, meta: { title: 'shell.nav.mail', nav: 'mail', legacy: true } },
+      { path: 'preferences', name: 'preferences', component: PreferencesView, meta: { title: 'shell.nav.preferences', nav: 'preferences', legacy: true } },
+      { path: 'security', name: 'security', component: SecurityView, meta: { title: 'shell.nav.security', nav: 'security', legacy: true } },
+      { path: 'security/secrets', name: 'secrets', component: SecretsView, meta: { title: 'shell.nav.security', nav: 'security', legacy: true } },
+      { path: 'system', name: 'system', component: SystemView, meta: { title: 'shell.nav.system', nav: 'system', legacy: true } },
+      { path: 'system/config', name: 'config', component: ConfigView, meta: { title: 'shell.nav.config', nav: 'config', legacy: true } },
+      // Paths of the previous layout; push notifications already sent still link to some of them.
+      { path: 'review/:id?', redirect: (to) => (to.params.id ? `/inbox/approvals/${String(to.params.id)}` : '/inbox') },
+      { path: 'notifications', redirect: '/inbox' },
+      { path: 'secrets', redirect: '/security/secrets' },
+      { path: 'config', redirect: '/system/config' },
+      { path: 'memory/graph', redirect: '/memory/map' },
+      { path: 'memory/scatter', redirect: { path: '/memory/map', query: { view: 'scatter' } } },
+      { path: ':pathMatch(.*)*', name: 'not-found', component: NotFoundView, meta: { title: 'shell.notFound.title' } },
     ],
   },
 ]
@@ -88,6 +103,8 @@ export function createAppRouter(
   history: RouterHistory = createWebHistory(new URL(document.baseURI).pathname),
   /** Runs once per signed-in user before the first protected page (the locale store loads the preferences). */
   onSignedIn?: (me: Me) => Promise<unknown>,
+  /** Translates the `meta.title` keys for the browser tab. */
+  translate?: (key: string) => string,
 ): Router {
   const router = createRouter({ history, routes })
   let signedIn: string | null = null
@@ -108,7 +125,7 @@ export function createAppRouter(
     void router.push({ path: '/login', query: { reason: 'expired', returnUrl: current.fullPath } })
   })
   router.afterEach((to) => {
-    document.title = to.meta.title ? `${to.meta.title} · Marshal` : 'Marshal'
+    document.title = to.meta.title && translate ? `${translate(to.meta.title)} · Marshal` : 'Marshal'
   })
   return router
 }

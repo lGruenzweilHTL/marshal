@@ -49,10 +49,10 @@
 
 ## 8. Shell and component library
 
-- [ ] 8.1 Write failing component tests for the `web/src/ui/` library (`AppButton`, `IconButton`, `AppIcon`, `Badge`, `Card`, `ListRow`, `Field`, `Segmented`, `Switch`, `Sheet`, `Dialog`, `Banner`, `LoadState`, `PageHeader`, `AppBar`, `TabBar`, `SideNav`, `Logo`): variants, focus, disabled and loading states, 44 px targets, German labels. Implement them on `tokens.css` and `base.css` only (no literal colours, fonts or radii outside `tokens.css`). Verify they pass.
-- [ ] 8.2 Put the logo behind one component (`Logo` with `mark` and `wordmark` variants, SVG in `web/src/ui/logo/`) and generate the PWA icons and favicon from the same SVG. Verify no other file contains logo geometry.
-- [ ] 8.3 Write failing tests for the new shell: tab bar below 900 px and side navigation from 900 px, grouped as on the canvas, Inbox badge count, admin-only Configuration, More sheet, global banner, sign-out. Rebuild `AppShell` and the router on the approved IA (old paths redirect to their new places). Verify they pass.
-- [ ] 8.4 Add the appearance setting (System / Light / Dark, per device in `localStorage`, applied as `data-theme`). Write a test that it applies without a reload. Verify it passes.
+- [x] 8.1 Write failing component tests for the `web/src/ui/` library (`AppButton`, `IconButton`, `AppIcon`, `Badge`, `Card`, `ListRow`, `Field`, `Segmented`, `Switch`, `Sheet`, `Dialog`, `Banner`, `LoadState`, `PageHeader`, `AppBar`, `TabBar`, `SideNav`, `Logo`): variants, focus, disabled and loading states, 44 px targets, German labels. Implement them on `tokens.css` and `base.css` only (no literal colours, fonts or radii outside `tokens.css`). Verify they pass.
+- [x] 8.2 Put the logo behind one component (`Logo` with `mark` and `wordmark` variants, SVG in `web/src/ui/logo/`) and generate the PWA icons and favicon from the same SVG. Verify no other file contains logo geometry.
+- [x] 8.3 Write failing tests for the new shell: tab bar below 900 px and side navigation from 900 px, grouped as on the canvas, Inbox badge count, admin-only Configuration, More sheet, global banner, sign-out. Rebuild `AppShell` and the router on the approved IA (old paths redirect to their new places). Verify they pass.
+- [x] 8.4 Add the appearance setting (System / Light / Dark, per device in `localStorage`, applied as `data-theme`). Write a test that it applies without a reload. Verify it passes.
 
 ## 9. Act: Home, Chat, Inbox, Printer
 

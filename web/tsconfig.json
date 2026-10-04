@@ -5,6 +5,8 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
     "types": ["vite/client", "node"],
     "lib": ["ES2023", "DOM", "DOM.Iterable"]
   },

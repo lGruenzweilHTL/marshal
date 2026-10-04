@@ -76,3 +76,8 @@ export function useLiveEvent<T extends LiveEventType>(topic: string, type: T, ha
   if (!live) throw new Error('No live events provided.')
   onBeforeUnmount(live.on(topic, type, handler))
 }
+
+/** The app's live-update stream (for subscriptions outside a component's lifetime, such as the Inbox badge). */
+export function useLiveEvents(): LiveEvents | undefined {
+  return inject(liveKey, undefined)
+}

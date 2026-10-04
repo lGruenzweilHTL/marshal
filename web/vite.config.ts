@@ -2,7 +2,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
-import { appAssets, icons } from './scripts/appAssets'
+import { appAssets, icons } from './scripts/appAssets.ts'
 
 // The API runs on :8080 during development; the proxy marks requests as https (as the TLS reverse proxy does in
 // production) so Secure cookies and the antiforgery check work on http://localhost.

@@ -26,7 +26,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="auth-page">
+  <main class="auth-page legacy">
     <h1>Marshal</h1>
     <p v-if="denied" role="alert" class="error">Your account has no access to Marshal. Ask the administrator to add you to a Marshal group.</p>
     <p v-if="failed" role="alert" class="error">The login providers could not be loaded.</p>

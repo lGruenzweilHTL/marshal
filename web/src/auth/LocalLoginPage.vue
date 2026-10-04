@@ -52,7 +52,7 @@ async function passkeyLogin() {
 </script>
 
 <template>
-  <main class="auth-page">
+  <main class="auth-page legacy">
     <h1>Sign in</h1>
     <p v-if="error" role="alert" class="error">{{ error }}</p>
     <form class="stack" @submit.prevent="passwordLogin">

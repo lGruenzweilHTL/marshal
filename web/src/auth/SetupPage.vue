@@ -34,7 +34,7 @@ async function submit() {
 </script>
 
 <template>
-  <main class="auth-page">
+  <main class="auth-page legacy">
     <h1>Set up Marshal</h1>
     <p>Create the owner account. You can add a passkey afterwards under Security.</p>
     <p v-if="error" role="alert" class="error">{{ error }}</p>

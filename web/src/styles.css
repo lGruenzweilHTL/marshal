@@ -1,50 +1,24 @@
-:root {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  line-height: 1.5;
-  color-scheme: light dark;
-  --bg: #ffffff;
-  --surface: #f4f5f7;
-  --text: #1c1e21;
-  --muted: #5f6368;
-  --accent: #2f6fde;
-  --error: #b3261e;
-  --warning: #b26a00;
-  --ok: #1e7b34;
-  --border: #d9dce1;
+/*
+ * Styles of the views that are not rebuilt on the design system yet. Every rule is scoped to `.legacy` (the app shell
+ * and the sign-in pages set it for routes with `meta.legacy`); the old colour names map onto the tokens. Deleted with
+ * task 13.2.
+ */
+.legacy {
+  --text: var(--ink);
+  --muted: var(--ink-2);
+  --error: var(--danger);
+  --ok: var(--success);
+  --border: var(--line);
+  color: var(--ink);
+  padding: var(--space-6) var(--page-gutter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #15171a;
-    --surface: #1f2226;
-    --text: #e6e7e9;
-    --muted: #a0a4aa;
-    --accent: #7aa7ff;
-    --error: #f2b8b5;
-    --warning: #f0c36d;
-    --ok: #8fd19e;
-    --border: #33373d;
-  }
+.legacy a {
+  color: var(--info);
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-}
-
-a {
-  color: var(--accent);
-}
-
-button,
-.button {
+.legacy button,
+.legacy .button {
   display: inline-block;
   min-height: 44px;
   padding: 0.5rem 1rem;
@@ -58,9 +32,9 @@ button,
   cursor: pointer;
 }
 
-input,
-select,
-textarea {
+.legacy input,
+.legacy select,
+.legacy textarea {
   width: 100%;
   min-height: 44px;
   padding: 0.5rem;
@@ -71,17 +45,17 @@ textarea {
   font: inherit;
 }
 
-.error {
+.legacy .error {
   color: var(--error);
 }
 
-.stack {
+.legacy .stack {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.auth-page {
+.legacy .auth-page {
   max-width: 24rem;
   margin: 3rem auto;
   padding: 0 1rem;
@@ -90,7 +64,7 @@ textarea {
   gap: 1rem;
 }
 
-.providers {
+.legacy .providers {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -99,125 +73,37 @@ textarea {
   gap: 0.5rem;
 }
 
-.providers .button {
+.legacy .providers .button {
   width: 100%;
   text-align: center;
 }
 
-.shell {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: 12rem minmax(0, 1fr);
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    'top top'
-    'nav content';
-}
-
-.topbar {
-  grid-area: top;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.topbar .brand {
-  font-weight: 600;
-  color: inherit;
-  text-decoration: none;
-}
-
-.topbar .user {
-  margin-left: auto;
-  color: var(--muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.topbar .menu {
-  display: none;
-}
-
-.shell nav {
-  grid-area: nav;
-  display: flex;
-  flex-direction: column;
-  padding: 0.5rem;
-  border-right: 1px solid var(--border);
-}
-
-.shell nav a {
-  padding: 0.6rem 0.75rem;
-  border-radius: 8px;
-  color: inherit;
-  text-decoration: none;
-}
-
-.shell nav a.router-link-exact-active {
-  background: var(--surface);
-  font-weight: 600;
-}
-
-.content {
-  grid-area: content;
-  min-width: 0;
-  padding: 1rem;
-}
-
-@media (max-width: 720px) {
-  .shell {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      'top'
-      'content';
-  }
-
-  .topbar .menu {
-    display: inline-block;
-  }
-
-  .shell nav {
-    display: none;
-    grid-area: content;
-    z-index: 1;
-    background: var(--bg);
-    border-right: none;
-  }
-
-  .shell nav.open {
-    display: flex;
-  }
-}
-
-.page h1 {
+.legacy .page h1 {
   margin-top: 0;
   font-size: 1.4rem;
 }
 
-.muted {
+.legacy .muted {
   color: var(--muted);
 }
 
-.plain {
+.legacy .plain {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.plain li + li {
+.legacy .plain li + li {
   margin-top: 0.25rem;
 }
 
-.figure {
+.legacy .figure {
   margin: 0;
   font-size: 2rem;
   font-weight: 600;
 }
 
-.filters {
+.legacy .filters {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
@@ -225,56 +111,56 @@ textarea {
   margin-bottom: 1rem;
 }
 
-.filters label {
+.legacy .filters label {
   display: flex;
   flex-direction: column;
   flex: 1 1 9rem;
 }
 
-.facts {
+.legacy .facts {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 0.25rem 1rem;
   margin: 0 0 1rem;
 }
 
-.facts dt {
+.legacy .facts dt {
   color: var(--muted);
 }
 
-.facts dd {
+.legacy .facts dd {
   margin: 0;
   overflow-wrap: anywhere;
 }
 
-.table-scroll {
+.legacy .table-scroll {
   max-width: 100%;
   overflow-x: auto;
 }
 
-table {
+.legacy table {
   width: 100%;
   border-collapse: collapse;
 }
 
-th,
-td {
+.legacy th,
+.legacy td {
   padding: 0.4rem 0.6rem;
   border-bottom: 1px solid var(--border);
   text-align: left;
   white-space: nowrap;
 }
 
-td.number {
+.legacy td.number {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-tfoot td {
+.legacy tfoot td {
   font-weight: 600;
 }
 
-.badge {
+.legacy .badge {
   display: inline-block;
   padding: 0 0.4rem;
   border-radius: 999px;
@@ -282,14 +168,14 @@ tfoot td {
   border: 1px solid currentColor;
 }
 
-.badge.healthy {
+.legacy .badge.healthy {
   color: var(--ok);
 }
 
-.badge.degraded {
+.legacy .badge.degraded {
   color: var(--warning);
 }
 
-.badge.unhealthy {
+.legacy .badge.unhealthy {
   color: var(--error);
 }

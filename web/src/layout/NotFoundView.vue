@@ -1,10 +1,21 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { House, SearchX } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
+import { AppButton, LoadState, Page } from '../ui'
+
+const { t } = useI18n()
 </script>
 
 <template>
-  <section class="page">
-    <h1>Not found</h1>
-    <p>This page does not exist. <RouterLink to="/">Back to the dashboard</RouterLink></p>
-  </section>
+  <Page width="narrow">
+    <LoadState state="empty" :icon="SearchX" :title="t('shell.notFound.title')" :body="t('shell.notFound.body')" size="page">
+      <AppButton to="/" :icon="House" class="home">{{ t('shell.notFound.home') }}</AppButton>
+    </LoadState>
+  </Page>
 </template>
+
+<style scoped>
+.home {
+  margin-top: var(--space-2);
+}
+</style>
