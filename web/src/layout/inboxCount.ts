@@ -68,3 +68,8 @@ export function useInboxCount(): InboxCount {
   if (!inbox) throw new Error('No inbox count provided.')
   return inbox
 }
+
+/** The Inbox count when inside the app shell, else null (deep-link screens tested alone, the preview of a component). */
+export function useInboxCountOptional(): InboxCount | null {
+  return inject(inboxCountKey, null)
+}

@@ -81,26 +81,26 @@ describe('TasksView', () => {
     const fake = server().on('POST', '/api/v1/tasks/kill-switch/activate', 200, { active: true, cancelled: 2 })
     const { wrapper } = await mountTasks(fake)
 
-    await wrapper.get('[data-test="kill-switch"] button').trigger('click')
+    await wrapper.get('[data-test="kill-switch"] [data-test="stop"]').trigger('click')
     expect(fake.count('POST', '/api/v1/tasks/kill-switch/activate')).toBe(0)
-    await wrapper.get('[data-test="kill-switch-confirm"]').trigger('click')
+    ;(document.body.querySelector('[data-test="confirm-stop"]') as HTMLButtonElement).click()
     await flushPromises()
 
     expect(fake.count('POST', '/api/v1/tasks/kill-switch/activate')).toBe(1)
     expect(fake.request('POST', '/api/v1/tasks/kill-switch/activate')!.headers.get('X-XSRF-TOKEN')).toBe('xsrf')
-    expect(wrapper.get('[data-test="kill-switch"]').text()).toContain('stopped')
-    expect(wrapper.get('[data-test="kill-switch"]').text()).toContain('2 tasks cancelled')
+    expect(wrapper.get('[data-test="kill-switch"]').text()).toContain('All background work stopped')
+    expect(wrapper.get('[data-test="kill-switch"]').text()).toContain('2 cancelled')
   })
 
   it('resumes background work when the kill switch is active', async () => {
     const fake = server(true).on('POST', '/api/v1/tasks/kill-switch/release', 200, { active: false })
     const { wrapper } = await mountTasks(fake)
 
-    expect(wrapper.get('[data-test="kill-switch"]').text()).toContain('stopped')
-    await wrapper.get('[data-test="kill-switch-release"]').trigger('click')
+    expect(wrapper.get('[data-test="kill-switch"]').text()).toContain('All background work stopped')
+    await wrapper.get('[data-test="kill-switch"] [data-test="resume"]').trigger('click')
     await flushPromises()
 
     expect(fake.count('POST', '/api/v1/tasks/kill-switch/release')).toBe(1)
-    expect(wrapper.get('[data-test="kill-switch"]').text()).toContain('running normally')
+    expect(wrapper.get('[data-test="kill-switch"]').text()).toContain('Stop all')
   })
 })

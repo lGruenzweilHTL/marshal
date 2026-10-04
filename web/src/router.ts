@@ -5,8 +5,12 @@ import SetupPage from './auth/SetupPage.vue'
 import AppShell from './layout/AppShell.vue'
 import ChatView from './chat/ChatView.vue'
 import ConfigView from './config/ConfigView.vue'
+import HomeView from './home/HomeView.vue'
+import ApprovalView from './inbox/ApprovalView.vue'
+import InboxView from './inbox/InboxView.vue'
+import NotificationView from './inbox/NotificationView.vue'
+import ProposalView from './inbox/ProposalView.vue'
 import MailAccountsView from './mail/MailAccountsView.vue'
-import DashboardView from './dashboard/DashboardView.vue'
 import AuditView from './memory/AuditView.vue'
 import ChunkEditorView from './memory/ChunkEditorView.vue'
 import ChunkListView from './memory/ChunkListView.vue'
@@ -14,10 +18,8 @@ import GraphView from './memory/GraphView.vue'
 import MemoryLayout from './memory/MemoryLayout.vue'
 import ProjectsView from './memory/ProjectsView.vue'
 import NotFoundView from './layout/NotFoundView.vue'
-import NotificationsView from './notifications/NotificationsView.vue'
 import PreferencesView from './preferences/PreferencesView.vue'
 import PrinterView from './printers/PrinterView.vue'
-import ReviewQueueView from './review/ReviewQueueView.vue'
 import CostView from './runs/CostView.vue'
 import RunDetailView from './runs/RunDetailView.vue'
 import RunsView from './runs/RunsView.vue'
@@ -52,13 +54,13 @@ const routes: RouteRecordRaw[] = [
     component: AppShell,
     children: [
       // Act
-      { path: '', name: 'home', component: DashboardView, meta: { title: 'shell.nav.home', nav: 'home', legacy: true } },
-      { path: 'chat', name: 'chat', component: ChatView, meta: { title: 'shell.nav.chat', nav: 'chat', legacy: true } },
-      { path: 'inbox', name: 'inbox', component: ReviewQueueView, meta: { title: 'shell.nav.inbox', nav: 'inbox', legacy: true } },
-      { path: 'inbox/approvals/:id', name: 'approval', component: ReviewQueueView, meta: { title: 'shell.nav.inbox', nav: 'inbox', legacy: true } },
-      { path: 'inbox/proposals/:id', name: 'proposal', component: ReviewQueueView, meta: { title: 'shell.nav.inbox', nav: 'inbox', legacy: true } },
-      { path: 'inbox/notifications/:id', name: 'notification', component: NotificationsView, meta: { title: 'shell.nav.inbox', nav: 'inbox', legacy: true } },
-      { path: 'printers/:name?', name: 'printers', component: PrinterView, meta: { title: 'shell.nav.printer', nav: 'printer', legacy: true } },
+      { path: '', name: 'home', component: HomeView, meta: { title: 'shell.nav.home', nav: 'home' } },
+      { path: 'chat', name: 'chat', component: ChatView, meta: { title: 'shell.nav.chat', nav: 'chat' } },
+      { path: 'inbox', name: 'inbox', component: InboxView, meta: { title: 'shell.nav.inbox', nav: 'inbox' } },
+      { path: 'inbox/approvals/:id', name: 'approval', component: ApprovalView, meta: { title: 'inbox.approval', nav: 'inbox' } },
+      { path: 'inbox/proposals/:id', name: 'proposal', component: ProposalView, meta: { title: 'inbox.proposals', nav: 'inbox' } },
+      { path: 'inbox/notifications/:id', name: 'notification', component: NotificationView, meta: { title: 'inbox.notification.title', nav: 'inbox' } },
+      { path: 'printers/:name?', name: 'printers', component: PrinterView, meta: { title: 'shell.nav.printer', nav: 'printer' } },
       // Activity
       { path: 'tasks', name: 'tasks', component: TasksView, meta: { title: 'shell.nav.tasks', nav: 'tasks', legacy: true } },
       { path: 'tasks/:id', name: 'task', component: TaskDetailView, meta: { title: 'shell.nav.tasks', nav: 'tasks', legacy: true } },

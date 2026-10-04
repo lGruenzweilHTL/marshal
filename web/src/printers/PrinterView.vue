@@ -1,332 +1,299 @@
 <script setup lang="ts">
-import { computed, onUnmounted, reactive, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { ExternalLink, FileCode2, ListPlus, Pause, Play, Printer, SkipForward, Trash2, X } from 'lucide-vue-next'
+import { computed, onUnmounted, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApiSession } from '../api/inject'
-import { problemMessage } from '../api/problem'
-import { formatDateTime } from '../format'
-import { useLiveEvent } from '../live/liveEvents'
+import { useApi } from '../api/inject'
+import { useLoad, type Load } from '../api/useLoad'
+import { useFormat } from '../i18n/locale'
+import {
+  AppButton,
+  AppIcon,
+  Badge,
+  Card,
+  ErrorBanner,
+  IconTile,
+  ListCard,
+  ListRow,
+  LoadBoundary,
+  LoadState,
+  Page,
+  PageHeader,
+  Section,
+  Segmented,
+  useDesktop,
+} from '../ui'
+import BabysitterCard from './BabysitterCard.vue'
+import ConfirmControlDialog from './ConfirmControlDialog.vue'
+import ManualControls from './ManualControls.vue'
+import PrintHistory from './PrintHistory.vue'
+import PrinterCard from './PrinterCard.vue'
 import TemperatureChart, { type TemperatureSample } from './TemperatureChart.vue'
-import { formatEta, formatPercent, formatTemperature } from './printerFormat'
-
-type ControlRequest = Schemas['PrinterControlRequest']
+import WebcamCard from './WebcamCard.vue'
+import { formatTemperature } from './printerFormat'
+import { usePrinters } from './usePrinters'
+import { usePrinterControls } from './usePrinterControls'
 
 const maxSamples = 120
 const babysitterRefresh = 60_000
 
-const session = useApiSession()
+/** One printer: live state, webcam, temperatures, allowlisted macros and controls, queue, files and history. */
+const api = useApi()
 const route = useRoute()
-const printers = ref<Schemas['PrinterSummary'][] | null>(null)
-const files = ref<Schemas['PrinterFile'][]>([])
-const queue = ref<Schemas['JobQueueStatus'] | null>(null)
-const history = ref<Schemas['PrintJob'][]>([])
-const samples = ref<TemperatureSample[]>([])
-const snapshotUrl = ref<string | null>(null)
-const pending = ref<{ description: string; token: string } | null>(null)
-const error = ref<string | null>(null)
-const busy = ref(false)
-const inputs = reactive({ extruderTarget: '', bedTarget: '', axis: 'z', distance: '10' })
+const router = useRouter()
+const desktop = useDesktop()
+const format = useFormat()
+const { t } = useI18n()
 
+const { load, printers } = usePrinters()
 const selected = computed(() => {
   const name = typeof route.params.name === 'string' ? route.params.name : undefined
-  return printers.value?.find((printer) => printer.name === name) ?? printers.value?.[0] ?? null
+  return printers.value.find((printer) => printer.name === name) ?? printers.value[0] ?? null
+})
+const name = computed(() => selected.value?.name ?? '')
+const choice = computed({
+  get: () => name.value,
+  set: (value: string) => void router.push(`/printers/${encodeURIComponent(value)}`),
 })
 const state = computed(() => (selected.value?.online ? selected.value.state : null))
-const path = computed(() => ({ printer: selected.value?.name ?? '' }))
-const streamUrl = computed(() => `${session.baseUrl}/api/v1/printers/${encodeURIComponent(path.value.printer)}/webcam/stream`)
-const active = computed(() => state.value?.printState === 'printing' || state.value?.printState === 'paused')
 
-function record(sample: Schemas['PrinterState'] | null) {
-  if (!sample) return
-  samples.value = [...samples.value, { extruder: sample.extruder.temperature, bed: sample.bed.temperature }].slice(-maxSamples)
+// Details load per printer; each list fails on its own.
+const params = () => ({ path: { printer: name.value } })
+const files = shallowRef<Load<Schemas['PrinterFile'][]> | null>(null)
+const queue = shallowRef<Load<Schemas['JobQueueStatus']> | null>(null)
+const history = shallowRef<Load<Schemas['PrintJob'][]> | null>(null)
+function loadDetails() {
+  files.value = useLoad(() => api.call((client) => client.GET('/api/v1/printers/{printer}/files', { params: params() })))
+  queue.value = useLoad(() => api.call((client) => client.GET('/api/v1/printers/{printer}/queue', { params: params() })), { isEmpty: () => false })
+  history.value = useLoad(() => api.call((client) => client.GET('/api/v1/printers/{printer}/history', { params: { ...params(), query: { limit: 10 } } })))
 }
+watch(name, (value) => value && loadDetails(), { immediate: true })
 
-async function loadPrinters() {
-  const { data } = await session.raw.GET('/api/v1/printers')
-  printers.value = data ?? []
-  record(state.value)
-}
-
-async function loadDetails() {
-  if (!selected.value) return
-  const params = { path: path.value }
-  const [fileList, jobQueue, jobs] = await Promise.all([
-    session.raw.GET('/api/v1/printers/{printer}/files', { params }),
-    session.raw.GET('/api/v1/printers/{printer}/queue', { params }),
-    session.raw.GET('/api/v1/printers/{printer}/history', { params: { ...params, query: { limit: 10 } } }),
-  ])
-  files.value = fileList.data ?? []
-  queue.value = jobQueue.data ?? null
-  history.value = jobs.data ?? []
-}
-
-async function control(body: ControlRequest) {
-  error.value = null
-  busy.value = true
-  const { data, error: problem } = await session.raw.POST('/api/v1/printers/{printer}/controls', { params: { path: path.value }, body })
-  busy.value = false
-  if (!data) {
-    error.value = problemMessage(problem, 'The printer did not accept the command.')
-    return
-  }
-  if (data.status === 'confirmation_required' && data.token) pending.value = { description: data.description, token: data.token }
-  else await loadDetails()
-}
-
-async function confirm() {
-  const token = pending.value?.token
-  pending.value = null
-  if (!token) return
-  const { data, error: problem } = await session.raw.POST('/api/v1/printers/{printer}/controls/confirm', { params: { path: path.value }, body: { token } })
-  if (!data) error.value = problemMessage(problem, 'The command was not carried out.')
-  else await loadDetails()
-}
-
-function setTemperature(heater: 'extruder' | 'bed') {
-  const target = Number(heater === 'extruder' ? inputs.extruderTarget : inputs.bedTarget)
-  void control({ action: 'set_temperature', heater, target })
-}
-
-async function snapshot() {
-  const { data, error: problem } = await session.raw.POST('/api/v1/printers/{printer}/snapshots', { params: { path: path.value } })
-  if (data) snapshotUrl.value = data.url
-  else error.value = problemMessage(problem, 'No snapshot could be taken.')
-}
-
-useLiveEvent('printer', 'printer.state', ({ printer, state: next }) => {
-  const summary = printers.value?.find((candidate) => candidate.name === printer)
-  if (!summary) return
-  summary.online = next !== null
-  summary.state = next
-  if (summary === selected.value) record(next)
-})
-
-watch(
-  () => selected.value?.name,
-  () => void loadDetails(),
+const controls = usePrinterControls(
+  () => name.value,
+  () => {
+    queue.value?.refresh()
+    history.value?.refresh()
+  },
 )
 
-// The babysitter checks on its own interval; its verdicts come with the printer list.
-const refresh = setInterval(() => {
-  if (printers.value?.some((printer) => printer.babysitter?.active)) void loadPrinters()
-}, babysitterRefresh)
-onUnmounted(() => clearInterval(refresh))
+const samples = shallowRef<TemperatureSample[]>([])
+watch(
+  state,
+  (next) => {
+    if (next) samples.value = [...samples.value, { extruder: next.extruder.temperature, bed: next.bed.temperature }].slice(-maxSamples)
+  },
+  { immediate: true },
+)
+watch(name, () => (samples.value = []))
 
-void loadPrinters()
+// The babysitter checks on its own interval; its verdicts come with the printer list.
+const timer = setInterval(() => {
+  if (printers.value.some((printer) => printer.babysitter?.active)) load.refresh()
+}, babysitterRefresh)
+onUnmounted(() => clearInterval(timer))
+
+const size = (bytes: number) => `${format.value.number(Math.round((bytes / 1_048_576) * 10) / 10)} MB`
 </script>
 
 <template>
-  <section class="page">
-    <h1>Printer</h1>
-    <p v-if="printers && printers.length === 0" class="muted">No printer is configured.</p>
-    <template v-else-if="selected">
-      <nav v-if="printers && printers.length > 1" class="tabs">
-        <RouterLink v-for="printer in printers" :key="printer.name" :to="`/printers/${printer.name}`">{{ printer.name }}</RouterLink>
-      </nav>
-      <p v-if="error" role="alert" class="error">{{ error }}</p>
+  <Page width="wide">
+    <PageHeader v-if="load.state.value !== 'ready'" :title="t('printers.title')" />
+    <LoadBoundary :load="load" size="page" :empty-title="t('printers.notConfigured')" :empty-body="t('printers.notConfiguredBody')" :empty-icon="Printer">
+      <template v-if="selected">
+        <PageHeader :title="selected.name" :subtitle="state ? `Klipper ${state.klippyState}` : t('printers.status.offline')">
+          <template v-if="printers.length > 1" #actions>
+            <Segmented v-model="choice" :options="printers.map((printer) => ({ value: printer.name, label: printer.name }))" :label="t('printers.choose')" data-test="printers" />
+          </template>
+        </PageHeader>
 
-      <div class="grid">
-        <article class="card" data-test="status">
-          <h2>{{ selected.name }}</h2>
-          <template v-if="state">
-            <p>
-              <strong>{{ state.printState }}</strong>
-              <span v-if="state.filename && active"> · {{ state.filename }}</span>
-              <span v-if="state.klippyState !== 'ready'"> · Klipper {{ state.klippyState }}<template v-if="state.stateMessage"> ({{ state.stateMessage }})</template></span>
-            </p>
-            <template v-if="active">
-              <progress max="1" :value="state.progress" />
-              <p>
-                {{ formatPercent(state.progress) }}
-                <span v-if="state.etaSeconds !== null"> · {{ formatEta(state.etaSeconds) }} left</span>
-                <span v-if="state.currentLayer !== null && state.totalLayers !== null"> · Layer {{ state.currentLayer }} / {{ state.totalLayers }}</span>
+        <div class="columns" :class="{ split: desktop }">
+          <div class="column">
+            <PrinterCard :key="selected.name" :printer="selected" actions />
+            <WebcamCard :key="`cam-${selected.name}`" :printer="selected.name" />
+            <Section :title="t('printers.temperature')">
+              <Card data-test="temperatures">
+                <TemperatureChart :samples="samples" :targets="state ? { extruder: state.extruder.target, bed: state.bed.target } : undefined" />
+                <div v-if="state" class="legend">
+                  <span class="key"><span class="dot hotend" />{{ t('printers.temperatureNow', { heater: t('printers.hotend'), value: formatTemperature(state.extruder) }) }}</span>
+                  <span class="key"><span class="dot bed" />{{ t('printers.temperatureNow', { heater: t('printers.bed'), value: formatTemperature(state.bed) }) }}</span>
+                </div>
+              </Card>
+            </Section>
+            <BabysitterCard v-if="selected.babysitter" :babysitter="selected.babysitter" />
+            <Section v-if="desktop" :title="t('printers.history')" data-test="history">
+              <PrintHistory v-if="history" :load="history" />
+            </Section>
+          </div>
+
+          <div class="column">
+            <Section :title="t('printers.macros')">
+              <div v-if="selected.macros.length" class="macros">
+                <button
+                  v-for="macro in selected.macros"
+                  :key="macro"
+                  type="button"
+                  class="macro"
+                  data-control="macro"
+                  :disabled="controls.busy.value"
+                  @click="controls.send({ action: 'run_macro', macro })"
+                >
+                  <AppIcon :icon="Play" :size="16" />
+                  <span>{{ macro }}</span>
+                </button>
+              </div>
+              <p class="note">
+                {{ t('printers.macrosNote') }} {{ t('printers.elsewhere') }}
+                <a v-if="selected.webUrl" data-test="web-ui" :href="selected.webUrl" target="_blank" rel="noopener noreferrer">
+                  {{ t('printers.webUi') }} <AppIcon :icon="ExternalLink" :size="14" />
+                </a>
               </p>
-            </template>
-            <p v-if="state.message" class="muted">{{ state.message }}</p>
-          </template>
-          <p v-else class="muted">The printer is offline.</p>
-        </article>
+            </Section>
+            <ErrorBanner v-if="controls.error.value" :error="controls.error.value" />
+            <ManualControls :controls="controls" />
 
-        <article class="card" data-test="temperatures">
-          <h2>Temperatures</h2>
-          <template v-if="state">
-            <p>Hotend {{ formatTemperature(state.extruder) }} · Bed {{ formatTemperature(state.bed) }}</p>
-          </template>
-          <TemperatureChart :samples="samples" />
-        </article>
+            <Section :title="t('printers.queue')" :count="queue?.data.value?.jobs.length" data-test="queue">
+              <template #actions>
+                <Badge v-if="queue?.data.value" :label="queue.data.value.state" />
+              </template>
+              <LoadBoundary v-if="queue" :load="queue">
+                <template #default="{ data }">
+                  <ListCard>
+                    <ListRow v-for="job in data.jobs" :key="job.jobId" :chevron="false">
+                      <template #lead><IconTile :icon="FileCode2" /></template>
+                      <template #title><span class="t-mono-s">{{ job.filename }}</span></template>
+                      <template #subtitle><span class="num">{{ t('printers.added', { time: format.dateTime(job.addedAt) }) }}</span></template>
+                      <template #trail>
+                        <span class="row-actions">
+                          <AppButton size="sm" variant="ghost" :icon="SkipForward" icon-only :label="t('printers.printNext')" @click="controls.send({ action: 'queue_jump', jobId: job.jobId })" />
+                          <AppButton size="sm" variant="ghost" :icon="X" icon-only :label="t('printers.remove')" @click="controls.send({ action: 'queue_remove', jobIds: [job.jobId] })" />
+                        </span>
+                      </template>
+                    </ListRow>
+                    <LoadState v-if="data.jobs.length === 0" state="empty" :title="t('printers.emptyQueue')" />
+                    <template #footer>
+                      <div class="queue-actions">
+                        <AppButton size="sm" :icon="Play" @click="controls.send({ action: 'queue_start' })">{{ t('printers.queueStart') }}</AppButton>
+                        <AppButton size="sm" :icon="Pause" @click="controls.send({ action: 'queue_pause' })">{{ t('printers.queuePause') }}</AppButton>
+                        <AppButton size="sm" variant="ghost" :icon="Trash2" @click="controls.send({ action: 'queue_clear' })">{{ t('printers.queueClear') }}</AppButton>
+                      </div>
+                    </template>
+                  </ListCard>
+                </template>
+              </LoadBoundary>
+            </Section>
 
-        <article v-if="selected.babysitter" class="card" data-test="babysitter">
-          <h2>Babysitter</h2>
-          <p>{{ selected.babysitter.active ? 'Watching this print.' : 'Not watching.' }}</p>
-          <p v-if="selected.babysitter.pausedAt" class="muted">Paused a failed print at {{ formatDateTime(selected.babysitter.pausedAt) }}.</p>
-          <ul class="plain">
-            <li v-for="check in [...selected.babysitter.verdicts].reverse()" :key="check.at">
-              {{ formatDateTime(check.at) }} · {{ check.outcome }} · {{ check.reason }}
-              <a v-if="check.snapshotUrl" :href="check.snapshotUrl" target="_blank" rel="noopener">Snapshot</a>
-            </li>
-          </ul>
-          <p class="muted">Configured in marshal.yaml; pauses the print after two failed checks in a row.</p>
-        </article>
+            <Section :title="t('printers.files')">
+              <LoadBoundary v-if="files" :load="files" :empty-title="t('printers.noFiles')">
+                <template #default="{ data }">
+                  <ListCard>
+                    <ListRow v-for="file in data" :key="file.path" :chevron="false" :data-file="file.path">
+                      <template #lead><IconTile :icon="FileCode2" /></template>
+                      <template #title><span class="t-mono-s">{{ file.path }}</span></template>
+                      <template #subtitle><span class="num">{{ size(file.size) }} · {{ format.dateTime(file.modified) }}</span></template>
+                      <template #trail>
+                        <span class="row-actions">
+                          <AppButton size="sm" variant="ghost" :icon="ListPlus" icon-only :label="t('printers.addToQueue')" @click="controls.send({ action: 'queue_add', files: [file.path] })" />
+                          <AppButton size="sm" :icon="Play" data-control="print" @click="controls.send({ action: 'start_print', file: file.path })">{{ t('printers.print') }}</AppButton>
+                        </span>
+                      </template>
+                    </ListRow>
+                  </ListCard>
+                </template>
+              </LoadBoundary>
+            </Section>
 
-        <article class="card">
-          <h2>Webcam</h2>
-          <img data-test="webcam" class="webcam" :src="streamUrl" alt="Webcam stream" />
-          <button type="button" @click="snapshot">Snapshot</button>
-          <img v-if="snapshotUrl" class="webcam" :src="snapshotUrl" alt="Webcam snapshot" />
-        </article>
-
-        <article class="card">
-          <h2>Controls</h2>
-          <div class="row">
-            <button type="button" data-control="pause" :disabled="busy" @click="control({ action: 'pause' })">Pause</button>
-            <button type="button" data-control="resume" :disabled="busy" @click="control({ action: 'resume' })">Resume</button>
-            <button type="button" data-control="cancel" :disabled="busy" @click="control({ action: 'cancel' })">Cancel</button>
-            <button type="button" class="danger" data-control="emergency_stop" :disabled="busy" @click="control({ action: 'emergency_stop' })">Emergency stop</button>
-          </div>
-          <div class="row">
-            <label>Hotend °C <input v-model="inputs.extruderTarget" name="extruderTarget" type="number" min="0" /></label>
-            <button type="button" data-control="extruder" @click="setTemperature('extruder')">Set</button>
-            <label>Bed °C <input v-model="inputs.bedTarget" name="bedTarget" type="number" min="0" /></label>
-            <button type="button" data-control="bed" @click="setTemperature('bed')">Set</button>
-          </div>
-          <div class="row">
-            <button type="button" data-control="home" @click="control({ action: 'home' })">Home all</button>
-            <label>Axis
-              <select v-model="inputs.axis" name="axis">
-                <option value="x">X</option>
-                <option value="y">Y</option>
-                <option value="z">Z</option>
-              </select>
-            </label>
-            <label>mm <input v-model="inputs.distance" name="distance" type="number" step="0.1" /></label>
-            <button type="button" data-control="move" @click="control({ action: 'move', axis: inputs.axis, distance: Number(inputs.distance) })">Move</button>
-          </div>
-          <div v-if="selected.macros.length > 0" class="row">
-            <button v-for="macro in selected.macros" :key="macro" type="button" data-control="macro" @click="control({ action: 'run_macro', macro })">{{ macro }}</button>
-          </div>
-          <p class="muted">
-            Firmware restarts, G-code and file management are not available here<template v-if="selected.webUrl">; use
-              <a data-test="web-ui" :href="selected.webUrl" target="_blank" rel="noopener noreferrer">the printer's own interface</a></template>.
-          </p>
-        </article>
-
-        <article class="card">
-          <h2>Files</h2>
-          <ul class="plain">
-            <li v-for="file in files" :key="file.path" :data-file="file.path">
-              {{ file.path }}
-              <button type="button" @click="control({ action: 'start_print', file: file.path })">Print</button>
-              <button type="button" @click="control({ action: 'queue_add', files: [file.path] })">Queue</button>
-            </li>
-          </ul>
-          <p v-if="files.length === 0" class="muted">No files.</p>
-        </article>
-
-        <article class="card" data-test="queue">
-          <h2>Queue <span v-if="queue" class="muted">({{ queue.state }})</span></h2>
-          <ul class="plain">
-            <li v-for="job in queue?.jobs ?? []" :key="job.jobId">
-              {{ job.filename }}
-              <button type="button" @click="control({ action: 'queue_jump', jobId: job.jobId })">Next</button>
-              <button type="button" @click="control({ action: 'queue_remove', jobIds: [job.jobId] })">Remove</button>
-            </li>
-          </ul>
-          <div class="row">
-            <button type="button" @click="control({ action: 'queue_start' })">Start queue</button>
-            <button type="button" @click="control({ action: 'queue_pause' })">Pause queue</button>
-            <button type="button" @click="control({ action: 'queue_clear' })">Clear</button>
-          </div>
-        </article>
-
-        <article class="card" data-test="history">
-          <h2>History</h2>
-          <ul class="plain">
-            <li v-for="job in history" :key="job.jobId">{{ formatDateTime(job.startedAt) }} · {{ job.filename }} · {{ job.status }}</li>
-          </ul>
-          <p v-if="history.length === 0" class="muted">No prints yet.</p>
-        </article>
-      </div>
-
-      <div v-if="pending" class="backdrop">
-        <div role="dialog" aria-modal="true" aria-labelledby="confirm-title" class="dialog">
-          <h2 id="confirm-title">Confirm</h2>
-          <p>{{ selected.name }}: {{ pending.description }}?</p>
-          <div class="row">
-            <button type="button" data-test="confirm" @click="confirm">Confirm</button>
-            <button type="button" data-test="cancel" @click="pending = null">Cancel</button>
+            <Section v-if="!desktop" :title="t('printers.history')" data-test="history">
+              <PrintHistory v-if="history" :load="history" />
+            </Section>
           </div>
         </div>
-      </div>
-    </template>
-  </section>
+        <ConfirmControlDialog :controls="controls" />
+      </template>
+    </LoadBoundary>
+  </Page>
 </template>
 
 <style scoped>
-.grid {
+.columns,
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.columns.split {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  align-items: start;
 }
-
-.card {
-  padding: 1rem;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  min-width: 0;
-}
-
-.card h2 {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
-}
-
-.row {
+.legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: end;
-  margin-block: 0.5rem;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+  color: var(--ink-2);
+  font: 400 13px/18px var(--font-sans);
 }
-
-.row input {
-  width: 5rem;
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
-
-progress {
-  width: 100%;
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
 }
-
-.webcam {
-  display: block;
-  width: 100%;
-  border-radius: 8px;
-  margin-bottom: 0.5rem;
-  background: var(--border);
+.dot.hotend {
+  background: var(--accent);
 }
-
-.tabs {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
+.dot.bed {
+  background: var(--info);
 }
-
-.danger {
-  border-color: var(--error);
-  color: var(--error);
-}
-
-.backdrop {
-  position: fixed;
-  inset: 0;
+.macros {
   display: grid;
-  place-items: center;
-  background: rgb(0 0 0 / 40%);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
 }
-
-.dialog {
-  max-width: min(90vw, 24rem);
-  padding: 1.5rem;
-  border-radius: 12px;
-  background: var(--bg);
+.macro {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: var(--text-mono-s);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.macro:hover {
+  background: var(--surface-2);
+}
+.macro:focus-visible {
+  outline: var(--focus-ring);
+}
+.macro:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.note {
+  margin-top: var(--space-3);
+  color: var(--ink-3);
+  font: 400 13px/18px var(--font-sans);
+}
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.queue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 </style>

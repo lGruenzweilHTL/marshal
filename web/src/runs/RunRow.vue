@@ -1,0 +1,40 @@
+<script setup lang="ts">
+import { Mic, MessageSquare, Plug, Zap } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
+import type { Schemas } from '../api/client'
+import { useFormat } from '../i18n/locale'
+import { Badge, IconTile, ListRow, type Tone } from '../ui'
+
+/** One run in a list: where it came from, its trigger and time, the outcome and what it cost. */
+defineProps<{ run: Schemas['RunSummary'] }>()
+const { t } = useI18n()
+const format = useFormat()
+const icons = { voice: Mic, web: MessageSquare, task: Zap, api: Plug }
+const tones: Record<Schemas['RunOutcome'], Tone> = { ok: 'success', error: 'danger', backgrounded: 'warning', cancelled: 'neutral' }
+</script>
+
+<template>
+  <ListRow :to="`/runs/${run.id}`" :chevron="false">
+    <template #lead><IconTile :icon="icons[run.source]" /></template>
+    <template #title>{{ [t(`runs.source.${run.source}`), run.satelliteId].filter(Boolean).join(' · ') }}</template>
+    <template #subtitle>{{ run.trigger }} · <span class="num">{{ format.time(run.startedAt) }}</span></template>
+    <template #trail>
+      <span class="trail">
+        <Badge :tone="tones[run.outcome]" :label="t(`runs.outcome.${run.outcome}`)" />
+        <span class="num cost">{{ format.cost(run.cost) }}</span>
+      </span>
+    </template>
+  </ListRow>
+</template>
+
+<style scoped>
+.trail {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cost {
+  color: var(--ink-2);
+  font: 450 13px/18px var(--font-mono);
+}
+</style>

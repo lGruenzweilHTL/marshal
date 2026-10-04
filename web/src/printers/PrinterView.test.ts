@@ -1,5 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import PrinterView from './PrinterView.vue'
 import { FakeServer } from '../testing/fakeServer'
 import { printerState, printerSummary } from '../testing/fixtures'
@@ -26,18 +26,24 @@ async function mountPrinter(fake: FakeServer, path = '/printers') {
   return { ...mounted, wrapper }
 }
 
+const dialog = () => document.body.querySelector<HTMLElement>('[role="dialog"]')
+
+afterEach(() => {
+  document.body.innerHTML = ''
+})
+
 describe('PrinterView', () => {
   it('shows live status: job, progress, time left, layer and temperatures', async () => {
     const { wrapper } = await mountPrinter(server())
 
-    const status = wrapper.get('[data-test="status"]').text()
+    const status = wrapper.get('[data-printer="voron"]').text()
     expect(status).toContain('printing')
     expect(status).toContain('benchy.gcode')
     expect(status).toContain('25%')
     expect(status).toContain('30 min left')
     expect(status).toContain('Layer 30 / 120')
     expect(wrapper.get('[data-test="temperatures"]').text()).toContain('200 / 245 °C')
-    expect(wrapper.get('progress').attributes('value')).toBe('0.25')
+    expect(wrapper.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('25')
   })
 
   it('updates from the printer live topic and charts the temperatures', async () => {
@@ -47,11 +53,11 @@ describe('PrinterView', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-test="temperatures"]').text()).toContain('230 / 245 °C')
-    expect(wrapper.findAll('[data-test="chart"] polyline').length).toBeGreaterThan(0)
+    expect(wrapper.findAll('[data-test="chart"] path').length).toBeGreaterThan(0)
 
     live.publish('printer', 'printer.state', { printer: 'voron', state: null })
     await flushPromises()
-    expect(wrapper.get('[data-test="status"]').text()).toContain('offline')
+    expect(wrapper.get('[data-printer="voron"]').text()).toContain('offline')
   })
 
   it('shows the babysitter with its last checks and their snapshots', async () => {
@@ -67,8 +73,8 @@ describe('PrinterView', () => {
 
     const card = wrapper.get('[data-test="babysitter"]').text()
     expect(card).toContain('Watching this print')
-    expect(card).toContain('ok · looks fine')
-    expect(card).toContain('failure · spaghetti')
+    expect(card).toContain('looks fine')
+    expect(card).toContain('spaghetti')
     expect(wrapper.get('[data-test="babysitter"] a').attributes('href')).toBe(`${base}/snapshots/s1`)
   })
 
@@ -92,7 +98,7 @@ describe('PrinterView', () => {
     await flushPromises()
 
     expect(JSON.parse(fake.request('POST', `${base}/controls`)!.body)).toEqual({ action: 'pause' })
-    expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+    expect(dialog()).toBeNull()
   })
 
   it('starts a print only after the confirmation dialog', async () => {
@@ -101,19 +107,18 @@ describe('PrinterView', () => {
       .on('POST', `${base}/controls/confirm`, 200, { status: 'done', description: 'start printing benchy.gcode' })
     const { wrapper } = await mountPrinter(fake)
 
-    await wrapper.get('[data-file="benchy.gcode"] button').trigger('click')
+    await wrapper.get('[data-file="benchy.gcode"] [data-control="print"]').trigger('click')
     await flushPromises()
 
     expect(JSON.parse(fake.request('POST', `${base}/controls`)!.body)).toEqual({ action: 'start_print', file: 'benchy.gcode' })
-    const dialog = wrapper.get('[role="dialog"]')
-    expect(dialog.text()).toContain('start printing benchy.gcode')
+    expect(dialog()?.textContent).toContain('start printing benchy.gcode')
     expect(fake.count('POST', `${base}/controls/confirm`)).toBe(0)
 
-    await dialog.get('[data-test="confirm"]').trigger('click')
+    dialog()!.querySelector<HTMLButtonElement>('[data-test="confirm"]')!.click()
     await flushPromises()
 
     expect(JSON.parse(fake.request('POST', `${base}/controls/confirm`)!.body)).toEqual({ token: 'tok-1' })
-    expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+    expect(dialog()).toBeNull()
   })
 
   it('cancelling the dialog sends nothing', async () => {
@@ -123,12 +128,12 @@ describe('PrinterView', () => {
     await wrapper.get('input[name="bedTarget"]').setValue('60')
     await wrapper.get('[data-control="bed"]').trigger('click')
     await flushPromises()
-    await wrapper.get('[role="dialog"] [data-test="cancel"]').trigger('click')
+    dialog()!.querySelector<HTMLButtonElement>('[data-test="dismiss"]')!.click()
     await flushPromises()
 
     expect(JSON.parse(fake.request('POST', `${base}/controls`)!.body)).toEqual({ action: 'set_temperature', heater: 'bed', target: 60 })
     expect(fake.count('POST', `${base}/controls/confirm`)).toBe(0)
-    expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+    expect(dialog()).toBeNull()
   })
 
   it('offers only allowlisted macros and links to the printer UI for everything else', async () => {
@@ -162,5 +167,37 @@ describe('PrinterView', () => {
     const { wrapper } = await mountPrinter(fake)
 
     expect(wrapper.text()).toContain('No printer is configured')
+  })
+
+  it('shows a failed print as an alert with resume and cancel (the alert deep link)', async () => {
+    const failed = printerSummary({ state: printerState({ printState: 'paused', message: 'Spaghetti detected at layer 112.' }) })
+    const { wrapper } = await mountPrinter(server(failed), '/printers/voron')
+
+    expect(wrapper.get('[data-printer="voron"] [role="alert"]').text()).toContain('Spaghetti detected')
+    expect(wrapper.find('[data-printer="voron"] [data-control="resume"]').exists()).toBe(true)
+    expect(wrapper.find('[data-printer="voron"] [data-control="cancel"]').exists()).toBe(true)
+  })
+
+  it('switches between printers by route', async () => {
+    const fake = server()
+      .on('GET', '/api/v1/printers', 200, [printerSummary(), printerSummary({ name: 'prusa' })])
+      .on('GET', '/api/v1/printers/prusa/files', 200, [])
+      .on('GET', '/api/v1/printers/prusa/queue', 200, { state: 'ready', jobs: [] })
+      .on('GET', '/api/v1/printers/prusa/history', 200, [])
+    const { wrapper, router } = await mountPrinter(fake)
+
+    await wrapper.get('[data-test="printers"] [data-value="prusa"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.fullPath).toBe('/printers/prusa')
+    expect(wrapper.find('[data-printer="prusa"]').exists()).toBe(true)
+    expect(fake.count('GET', '/api/v1/printers/prusa/files')).toBe(1)
+  })
+
+  it('keeps the page when a detail list fails', async () => {
+    const { wrapper } = await mountPrinter(server().on('GET', `${base}/history`, 500, { status: 500, code: 'server.unexpected' }))
+
+    expect(wrapper.get('[data-test="history"]').text()).toContain('Try again')
+    expect(wrapper.get('[data-test="queue"]').text()).toContain('a.gcode')
   })
 })

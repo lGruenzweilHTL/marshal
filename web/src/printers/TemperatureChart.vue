@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 /** One reading per live update. */
 export interface TemperatureSample {
@@ -7,49 +8,61 @@ export interface TemperatureSample {
   bed: number
 }
 
-const props = defineProps<{ samples: TemperatureSample[] }>()
+/** Hotend and bed temperature since the page opened, with guide lines at the current targets. */
+const props = defineProps<{ samples: TemperatureSample[]; targets?: { extruder: number; bed: number } }>()
+const { t } = useI18n()
 
-const width = 300
-const height = 100
+const width = 680
+const height = 180
+const top = 16
 
-const scale = computed(() => Math.max(50, ...props.samples.flatMap((sample) => [sample.extruder, sample.bed])) * 1.1)
+const scale = computed(() => Math.max(50, props.targets?.extruder ?? 0, ...props.samples.flatMap((sample) => [sample.extruder, sample.bed])) * 1.06)
+const y = (value: number) => height - (value / scale.value) * (height - top)
 
-function points(pick: (sample: TemperatureSample) => number): string {
+function path(pick: (sample: TemperatureSample) => number): string {
   const count = props.samples.length
-  return props.samples
-    .map((sample, index) => `${count === 1 ? width : (index / (count - 1)) * width},${height - (pick(sample) / scale.value) * height}`)
-    .join(' ')
+  return props.samples.map((sample, index) => `${index === 0 ? 'M' : 'L'}${count === 1 ? width : (index / (count - 1)) * width},${y(pick(sample)).toFixed(1)}`).join(' ')
 }
+const guides = computed(() => [props.targets?.bed, props.targets?.extruder].filter((value): value is number => !!value))
 </script>
 
 <template>
-  <svg data-test="chart" :viewBox="`0 0 ${width} ${height}`" class="chart" role="img" aria-label="Temperature history">
+  <svg data-test="chart" :viewBox="`0 0 ${width} ${height}`" class="chart" role="img" :aria-label="t('printers.temperature')" preserveAspectRatio="none">
+    <g v-for="guide in guides" :key="guide">
+      <line class="guide" x1="0" :x2="width" :y1="y(guide)" :y2="y(guide)" />
+      <text class="label" :x="width - 4" :y="y(guide) - 4" text-anchor="end">{{ Math.round(guide) }}°</text>
+    </g>
     <template v-if="samples.length > 0">
-      <polyline class="extruder" :points="points((sample) => sample.extruder)" />
-      <polyline class="bed" :points="points((sample) => sample.bed)" />
+      <path class="extruder" :d="path((sample) => sample.extruder)" />
+      <path class="bed" :d="path((sample) => sample.bed)" />
     </template>
   </svg>
 </template>
 
 <style scoped>
 .chart {
+  display: block;
   width: 100%;
-  height: 6rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  height: 160px;
 }
-
-polyline {
-  fill: none;
-  stroke-width: 2;
+.guide {
+  stroke: var(--line);
+  stroke-dasharray: 3 4;
   vector-effect: non-scaling-stroke;
 }
-
-.extruder {
-  stroke: #e4572e;
+.label {
+  fill: var(--ink-3);
+  font: 450 11px var(--font-mono);
 }
-
+path {
+  fill: none;
+  stroke-width: 2.25;
+  vector-effect: non-scaling-stroke;
+}
+.extruder {
+  stroke: var(--accent);
+}
 .bed {
-  stroke: #4c78a8;
+  stroke: var(--info);
 }
 </style>

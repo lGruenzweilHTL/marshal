@@ -21,7 +21,7 @@ function styles(): { file: string; css: string }[] {
 }
 
 /** Areas still on the old styles; each is removed from this list when its group is rebuilt (empty after task 13.2). */
-const notRebuiltYet = ['memory/', 'printers/']
+const notRebuiltYet = ['memory/']
 
 describe('design system', () => {
   it('has no literal colours or font families outside tokens.css', () => {

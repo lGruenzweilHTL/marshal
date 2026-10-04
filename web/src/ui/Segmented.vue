@@ -6,7 +6,7 @@ const model = defineModel<T>({ required: true })
 
 <template>
   <div class="segmented" :class="{ block }" role="group" :aria-label="label">
-    <button v-for="option in options" :key="option.value" type="button" :aria-pressed="model === option.value" @click="model = option.value">
+    <button v-for="option in options" :key="option.value" type="button" :data-value="option.value" :aria-pressed="model === option.value" @click="model = option.value">
       {{ option.label }}
     </button>
   </div>

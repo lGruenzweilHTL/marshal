@@ -56,10 +56,10 @@
 
 ## 9. Act: Home, Chat, Inbox, Printer
 
-- [ ] 9.1 Write failing tests for Home (approvals first, printer alert, running tasks, kill switch only while tasks run, notifications, health, recent runs, today's cost; loading, empty and error per widget). Rebuild Home. Verify they pass.
-- [ ] 9.2 Write failing tests for Chat (streaming reply, confirmation ticket in chat, failure of a turn, new conversation, phone layout). Rebuild Chat. Verify they pass.
-- [ ] 9.3 Write failing tests for Inbox (approvals and proposals before notifications, filter by outcome, approve / reject / merge with errors kept on screen) and the focused approval and notification deep-link screens. Rebuild them. Verify they pass.
-- [ ] 9.4 Write failing tests for Printer and the printer alert deep link (live state, confirm dialog for confirm-tier controls, offline and error states). Rebuild them. Verify they pass.
+- [x] 9.1 Write failing tests for Home (approvals first, printer alert, running tasks, kill switch only while tasks run, notifications, health, recent runs, today's cost; loading, empty and error per widget). Rebuild Home. Verify they pass.
+- [x] 9.2 Write failing tests for Chat (streaming reply, confirmation ticket in chat, failure of a turn, new conversation, phone layout). Rebuild Chat. Verify they pass.
+- [x] 9.3 Write failing tests for Inbox (approvals and proposals before notifications, filter by outcome, approve / reject / merge with errors kept on screen) and the focused approval and notification deep-link screens. Rebuild them. Verify they pass.
+- [x] 9.4 Write failing tests for Printer and the printer alert deep link (live state, confirm dialog for confirm-tier controls, offline and error states). Rebuild them. Verify they pass.
 
 ## 10. Activity: Tasks, Runs, Cost
 
