@@ -98,3 +98,10 @@ The SPA SHALL ship a web app manifest and a service worker so that it can be ins
 #### Scenario: Update
 - **WHEN** a new version of Marshal is deployed and the installed app is started again
 - **THEN** the new version is shown
+
+### Requirement: Appearance
+The SPA SHALL offer the appearance System, Light or Dark as a per-device setting stored in the browser; System SHALL follow the operating system's color scheme. The setting SHALL apply without a reload and SHALL NOT be sent to the API.
+
+#### Scenario: Dark on one device
+- **WHEN** the user chooses Dark in the preferences view on a phone
+- **THEN** the app on that phone uses the dark tokens, and another browser of the same user keeps its own setting
