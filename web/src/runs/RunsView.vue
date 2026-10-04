@@ -2,7 +2,7 @@
 import { reactive, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter, type LocationQuery } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { formatCost, formatDateTime } from '../format'
 import { useLiveEvent } from '../live/liveEvents'
 
@@ -10,7 +10,7 @@ const pageSize = 50
 const sources: Schemas['SessionSource'][] = ['voice', 'web', 'task', 'api']
 const outcomes: Schemas['RunOutcome'][] = ['ok', 'error', 'backgrounded', 'cancelled']
 
-const session = useApi()
+const session = useApiSession()
 const route = useRoute()
 const router = useRouter()
 const runs = ref<Schemas['RunSummary'][]>([])
@@ -24,7 +24,7 @@ function text(query: LocationQuery, key: string): string {
 }
 
 async function load(before?: string) {
-  const { data } = await session.api.GET('/api/v1/runs', {
+  const { data } = await session.raw.GET('/api/v1/runs', {
     params: {
       query: {
         source: filters.source || undefined,

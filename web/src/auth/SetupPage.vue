@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { problemMessage } from '../api/problem'
 import { useUserSession } from '../session'
 
-const session = useApi()
+const session = useApiSession()
 const user = useUserSession()
 const router = useRouter()
 const userName = ref('')
@@ -18,7 +18,7 @@ async function submit() {
   busy.value = true
   error.value = null
   try {
-    const { response, error: problem } = await session.api.POST('/api/v1/auth/local/setup', {
+    const { response, error: problem } = await session.raw.POST('/api/v1/auth/local/setup', {
       body: { userName: userName.value, displayName: displayName.value || null, password: password.value },
     })
     if (!response.ok) {

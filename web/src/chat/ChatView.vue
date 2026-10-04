@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref } from 'vue'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { problemMessage } from '../api/problem'
 import { renderMarkdown } from './markdown'
 import { readEvents } from './sse'
@@ -12,7 +12,7 @@ interface Message {
   text: string
 }
 
-const session = useApi()
+const session = useApiSession()
 const messages = ref<Message[]>([])
 const draft = ref('')
 const status = ref<string | null>(null)
@@ -53,7 +53,7 @@ async function send() {
   const abort = (running = new AbortController())
   busy.value = true
   try {
-    const { error: problem, response } = await session.api.POST('/api/v1/conversation/turns', {
+    const { error: problem, response } = await session.raw.POST('/api/v1/conversation/turns', {
       body: { conversationId, text, inputMode: 'text', language: null, deviceId: null, satelliteId: null, areaId: null, haUserId: null, followupRef: null },
       parseAs: 'stream',
       signal: abort.signal,

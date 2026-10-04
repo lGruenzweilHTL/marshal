@@ -2,14 +2,14 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { problemMessage } from '../api/problem'
 import { formatDateTime } from '../format'
 import { chunkTypes, historyLabels } from './memoryLabels'
 
 type Draft = { scope: Schemas['ChunkScope']; projectId: string; type: Schemas['ChunkType']; title: string; content: string; importance: number; sourceRef: string }
 
-const session = useApi()
+const session = useApiSession()
 const route = useRoute()
 const router = useRouter()
 const detail = ref<Schemas['MemoryChunkDetail'] | null>(null)
@@ -48,7 +48,7 @@ async function load() {
   }
 
   const path = { params: { path: { id: id.value } } }
-  const [{ data, response }, past] = await Promise.all([session.api.GET('/api/v1/memory/chunks/{id}', path), session.api.GET('/api/v1/memory/chunks/{id}/history', path)])
+  const [{ data, response }, past] = await Promise.all([session.raw.GET('/api/v1/memory/chunks/{id}', path), session.raw.GET('/api/v1/memory/chunks/{id}/history', path)])
   detail.value = data ?? null
   history.value = past.data ?? []
   error.value = data ? null : response.status === 404 ? 'Memory chunk not found.' : 'The memory chunk could not be loaded.'
@@ -63,13 +63,13 @@ async function save() {
   error.value = null
   saved.value = null
   if (!id.value) {
-    const { data, error: problem } = await session.api.POST('/api/v1/memory/chunks', { body: body(form) })
+    const { data, error: problem } = await session.raw.POST('/api/v1/memory/chunks', { body: body(form) })
     if (data) await router.push(`/memory/chunks/${data.id}`)
     else error.value = problemMessage(problem, 'The memory chunk could not be saved.')
     return
   }
 
-  const { data, error: problem } = await session.api.PUT('/api/v1/memory/chunks/{id}', {
+  const { data, error: problem } = await session.raw.PUT('/api/v1/memory/chunks/{id}', {
     params: { path: { id: id.value } },
     body: { content: form.content, importance: form.importance, sourceRef: form.sourceRef.trim() || null },
   })
@@ -83,20 +83,20 @@ async function save() {
 
 async function setPinned(pinned: boolean) {
   const path = { params: { path: { id: id.value! } } }
-  const { response } = pinned ? await session.api.PUT('/api/v1/memory/chunks/{id}/pin', path) : await session.api.DELETE('/api/v1/memory/chunks/{id}/pin', path)
+  const { response } = pinned ? await session.raw.PUT('/api/v1/memory/chunks/{id}/pin', path) : await session.raw.DELETE('/api/v1/memory/chunks/{id}/pin', path)
   if (!response.ok) error.value = 'The pin could not be changed.'
   await load()
 }
 
 async function remove() {
   if (!window.confirm(`Delete "${detail.value?.chunk.title}"? It will no longer be used in conversations.`)) return
-  const { response } = await session.api.DELETE('/api/v1/memory/chunks/{id}', { params: { path: { id: id.value! } } })
+  const { response } = await session.raw.DELETE('/api/v1/memory/chunks/{id}', { params: { path: { id: id.value! } } })
   if (response.ok) await router.push('/memory')
   else error.value = 'The memory chunk could not be deleted.'
 }
 
 async function supersede() {
-  const { data, error: problem } = await session.api.POST('/api/v1/memory/chunks/{id}/supersede', { params: { path: { id: id.value! } }, body: body(replacement) })
+  const { data, error: problem } = await session.raw.POST('/api/v1/memory/chunks/{id}/supersede', { params: { path: { id: id.value! } }, body: body(replacement) })
   if (!data) {
     error.value = problemMessage(problem, 'The replacement could not be saved.')
     return
@@ -107,7 +107,7 @@ async function supersede() {
 
 watch(id, load)
 onMounted(async () => {
-  const { data } = await session.api.GET('/api/v1/memory/projects')
+  const { data } = await session.raw.GET('/api/v1/memory/projects')
   projects.value = data ?? []
   await load()
 })

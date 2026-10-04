@@ -27,7 +27,8 @@ import SecurityView from './security/SecurityView.vue'
 import SystemView from './system/SystemView.vue'
 import TaskDetailView from './tasks/TaskDetailView.vue'
 import TasksView from './tasks/TasksView.vue'
-import type { UserSession } from './session'
+import SessionErrorPage from './layout/SessionErrorPage.vue'
+import type { Me, UserSession } from './session'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -42,6 +43,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/login', component: LoginPage, meta: { public: true } },
   { path: '/login/:provider', component: LocalLoginPage, meta: { public: true } },
   { path: '/setup', component: SetupPage, meta: { public: true } },
+  { path: '/unavailable', name: 'unavailable', component: SessionErrorPage, meta: { public: true } },
   {
     path: '/',
     component: AppShell,
@@ -81,11 +83,29 @@ const routes: RouteRecordRaw[] = [
 ]
 
 /** App router; views other than login and setup need a session and send anonymous users to the login page. */
-export function createAppRouter(user: UserSession, history: RouterHistory = createWebHistory(new URL(document.baseURI).pathname)): Router {
+export function createAppRouter(
+  user: UserSession,
+  history: RouterHistory = createWebHistory(new URL(document.baseURI).pathname),
+  /** Runs once per signed-in user before the first protected page (the locale store loads the preferences). */
+  onSignedIn?: (me: Me) => Promise<unknown>,
+): Router {
   const router = createRouter({ history, routes })
+  let signedIn: string | null = null
   router.beforeEach(async (to) => {
     if (to.meta.public) return true
-    return (await user.load()) ? true : { path: '/login', query: { returnUrl: to.fullPath } }
+    const result = await user.load()
+    if (result.error) return { name: 'unavailable', query: { returnUrl: to.fullPath } }
+    if (!result.data) return { path: '/login', query: { returnUrl: to.fullPath } }
+    if (signedIn !== result.data.id) {
+      signedIn = result.data.id
+      await onSignedIn?.(result.data)
+    }
+    return true
+  })
+  user.onExpired(() => {
+    const current = router.currentRoute.value
+    if (current.meta.public) return
+    void router.push({ path: '/login', query: { reason: 'expired', returnUrl: current.fullPath } })
   })
   router.afterEach((to) => {
     document.title = to.meta.title ? `${to.meta.title} · Marshal` : 'Marshal'

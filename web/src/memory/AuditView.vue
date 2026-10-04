@@ -2,10 +2,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { formatDateTime } from '../format'
 
-const session = useApi()
+const session = useApiSession()
 const report = ref<Schemas['MemoryAuditReport'] | null>(null)
 const error = ref<string | null>(null)
 const clean = computed(
@@ -13,7 +13,7 @@ const clean = computed(
 )
 
 onMounted(async () => {
-  const { data } = await session.api.GET('/api/v1/memory/audit')
+  const { data } = await session.raw.GET('/api/v1/memory/audit')
   report.value = data ?? null
   error.value = data ? null : 'The audit could not be loaded.'
 })

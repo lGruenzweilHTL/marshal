@@ -2,10 +2,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { returnUrl } from './returnUrl'
 
-const session = useApi()
+const session = useApiSession()
 const route = useRoute()
 const providers = ref<Schemas['LoginProviderInfo'][]>([])
 const setupAvailable = ref(false)
@@ -18,7 +18,7 @@ function serverLogin(provider: Schemas['LoginProviderInfo']): string {
 }
 
 onMounted(async () => {
-  const [list, setup] = await Promise.all([session.api.GET('/api/v1/auth/providers'), session.api.GET('/api/v1/auth/local/setup')])
+  const [list, setup] = await Promise.all([session.raw.GET('/api/v1/auth/providers'), session.raw.GET('/api/v1/auth/local/setup')])
   if (list.data) providers.value = list.data
   else failed.value = true
   setupAvailable.value = setup.data?.available === true

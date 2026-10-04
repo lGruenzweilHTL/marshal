@@ -1,0 +1,154 @@
+/*
+ * Base styles on top of tokens.css: reset, page defaults, focus ring, type classes and layout variables. Components
+ * style themselves in scoped styles and use only custom properties from tokens.css and this file.
+ */
+:root {
+  /* Layout variables (the 900 px breakpoint itself lives in media queries and useMedia). */
+  --target: 44px;
+  --sidenav-width: 248px;
+  --tabbar-height: 64px;
+  --page-max: 1200px;
+  --page-gutter: var(--space-4);
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--focus);
+  --transition: 120ms ease-out;
+}
+
+@media (min-width: 900px) {
+  :root {
+    --page-gutter: var(--space-8);
+  }
+}
+
+/* Phones read at arm's length: body and page titles one step larger than on desktop. */
+@media (max-width: 899px) {
+  :root {
+    --text-body: 400 16px/24px var(--font-sans);
+    --text-title-1: 620 28px/34px var(--font-display);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--ink);
+  font: var(--text-body);
+  letter-spacing: var(--tracking-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+ul,
+ol,
+dl,
+dd,
+figure,
+pre {
+  margin: 0;
+}
+
+a {
+  color: var(--info);
+  text-underline-offset: 3px;
+}
+
+img,
+svg {
+  display: block;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition: 0s;
+  }
+}
+
+/* Type classes, one per type style in the design system. */
+.t-display {
+  font: var(--text-display);
+  letter-spacing: var(--tracking-display);
+}
+.t-title-1 {
+  font: var(--text-title-1);
+  letter-spacing: var(--tracking-title-1);
+  text-wrap: balance;
+}
+.t-title-2 {
+  font: var(--text-title-2);
+  letter-spacing: var(--tracking-title-2);
+}
+.t-title-3 {
+  font: var(--text-title-3);
+}
+.t-body {
+  font: var(--text-body);
+}
+.t-body-s {
+  font: var(--text-body-s);
+}
+.t-label {
+  font: var(--text-label);
+}
+.t-overline {
+  font: var(--text-overline);
+  letter-spacing: var(--tracking-overline);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.t-mono {
+  font: var(--text-mono);
+}
+.t-mono-s {
+  font: var(--text-mono-s);
+}
+.ink-2 {
+  color: var(--ink-2);
+}
+.ink-3 {
+  color: var(--ink-3);
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

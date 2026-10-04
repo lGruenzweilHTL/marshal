@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 
-const session = useApi()
+const session = useApiSession()
 const summary = ref<Schemas['ConfigSummary'] | null>(null)
 const error = ref<string | null>(null)
 
@@ -14,7 +14,7 @@ const stateBadges: Record<Schemas['McpServerState'], string> = {
 }
 
 onMounted(async () => {
-  const { data, response } = await session.api.GET('/api/v1/config')
+  const { data, response } = await session.raw.GET('/api/v1/config')
   summary.value = data ?? null
   error.value = data
     ? null

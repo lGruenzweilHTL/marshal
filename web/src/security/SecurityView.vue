@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { problemMessage } from '../api/problem'
 import { usePasskeys } from '../auth/passkeys'
 import { formatDateTime } from '../format'
@@ -9,7 +9,7 @@ import { useUserSession } from '../session'
 
 type Token = Schemas['ApiTokenResponse']
 
-const session = useApi()
+const session = useApiSession()
 const user = useUserSession()
 const passkeys = usePasskeys()
 const tokens = ref<Token[]>([])
@@ -24,7 +24,7 @@ const passkeyAdded = ref(false)
 const passkeyError = ref<string | null>(null)
 
 async function loadTokens() {
-  const { data } = await session.api.GET('/api/v1/me/tokens')
+  const { data } = await session.raw.GET('/api/v1/me/tokens')
   if (data) tokens.value = data
   else error.value = 'The tokens could not be loaded.'
 }
@@ -38,7 +38,7 @@ function expiry(): string | null {
 
 async function createToken() {
   error.value = null
-  const { data, error: problem } = await session.api.POST('/api/v1/me/tokens', {
+  const { data, error: problem } = await session.raw.POST('/api/v1/me/tokens', {
     body: { name: tokenName.value, scopes: scopes.value, expiresAt: expiry(), kind: null },
   })
   if (!data) {
@@ -54,7 +54,7 @@ async function createToken() {
 
 async function revoke(token: Token) {
   if (!window.confirm(`Revoke the token "${token.name}"? Clients using it stop working immediately.`)) return
-  const { response } = await session.api.DELETE('/api/v1/me/tokens/{id}', { params: { path: { id: token.id } } })
+  const { response } = await session.raw.DELETE('/api/v1/me/tokens/{id}', { params: { path: { id: token.id } } })
   if (!response.ok) error.value = 'The token could not be revoked.'
   await loadTokens()
 }
@@ -67,10 +67,10 @@ async function addPasskey() {
   passkeyAdded.value = false
   passkeyError.value = null
   try {
-    const options = await session.api.POST('/api/v1/auth/local/passkeys/creation-options', { parseAs: 'text' })
+    const options = await session.raw.POST('/api/v1/auth/local/passkeys/creation-options', { parseAs: 'text' })
     if (!options.data) throw new Error('options')
     const credentialJson = await passkeys.create(options.data)
-    const { response, error: problem } = await session.api.POST('/api/v1/auth/local/passkeys', {
+    const { response, error: problem } = await session.raw.POST('/api/v1/auth/local/passkeys', {
       body: { credentialJson, name: passkeyName.value || null },
     })
     if (!response.ok) {
@@ -85,7 +85,7 @@ async function addPasskey() {
 }
 
 onMounted(async () => {
-  const [, providers] = await Promise.all([loadTokens(), session.api.GET('/api/v1/auth/providers')])
+  const [, providers] = await Promise.all([loadTokens(), session.raw.GET('/api/v1/auth/providers')])
   localLogin.value = providers.data?.some((provider) => provider.type === 'local') === true
 })
 </script>

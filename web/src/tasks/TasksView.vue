@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { formatDateTime } from '../format'
 import { useLiveEvent } from '../live/liveEvents'
 import KillSwitch from './KillSwitch.vue'
@@ -10,7 +10,7 @@ import { budgetUse, describeTrigger, taskLabel } from './taskFormat'
 
 const statuses = ['active', 'all', 'pending', 'running', 'waiting', 'done', 'failed', 'cancelled'] as const
 
-const session = useApi()
+const session = useApiSession()
 const route = useRoute()
 const router = useRouter()
 const tasks = ref<Schemas['TaskItem'][]>([])
@@ -18,7 +18,7 @@ const status = ref<string>('active')
 const error = ref<string | null>(null)
 
 async function load() {
-  const { data } = await session.api.GET('/api/v1/tasks', { params: { query: { status: status.value === 'all' ? undefined : status.value } } })
+  const { data } = await session.raw.GET('/api/v1/tasks', { params: { query: { status: status.value === 'all' ? undefined : status.value } } })
   if (!data) {
     error.value = 'The tasks could not be loaded.'
     return

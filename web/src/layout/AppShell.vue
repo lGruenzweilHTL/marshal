@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { useUserSession } from '../session'
 
 const links = [
@@ -23,7 +23,7 @@ const links = [
 
 const adminLinks = [{ to: '/config', label: 'Config' }]
 
-const session = useApi()
+const session = useApiSession()
 const user = useUserSession()
 const route = useRoute()
 const menuOpen = ref(false)
@@ -42,7 +42,9 @@ async function logout() {
   const token = document.createElement('input')
   token.type = 'hidden'
   token.name = '__RequestVerificationToken'
-  token.value = await session.antiforgeryToken()
+  const result = await session.antiforgeryToken()
+  if (result.error) return
+  token.value = result.data
   form.append(token)
   document.body.append(form)
   form.submit()

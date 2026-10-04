@@ -9,12 +9,18 @@
     "gen:types": "openapi-typescript openapi/v1.json -o src/api/schema.d.ts",
     "typecheck": "vue-tsc --noEmit",
     "build": "npm run gen:types && npm run typecheck && vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "gen:tokens": "node scripts/tokens.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "lucide-vue-next": "^1.0.0",
     "markdown-it": "^15.0.2",
     "openapi-fetch": "^0.17.0",
     "vue": "^3.5.43",
+    "vue-i18n": "^11.4.13",
     "vue-router": "^5.3.1"
   },
   "devDependencies": {

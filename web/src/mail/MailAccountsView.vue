@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { problemMessage } from '../api/problem'
 import { browserNavigation } from './browserNavigation'
 
@@ -16,7 +16,7 @@ const callbackErrors: Record<string, string> = {
   access_denied: 'The sign-in was cancelled at the provider.',
 }
 
-const session = useApi()
+const session = useApiSession()
 const route = useRoute()
 const accounts = ref<Account[]>([])
 const providers = ref<Provider[]>([])
@@ -30,7 +30,7 @@ if (typeof route.query.connected === 'string') status.value = `Connected ${route
 if (typeof route.query.error === 'string') error.value = callbackErrors[route.query.error] ?? `The account could not be connected (${route.query.error}).`
 
 async function load() {
-  const [list, available] = await Promise.all([session.api.GET('/api/v1/mail/accounts'), session.api.GET('/api/v1/mail/oauth/providers')])
+  const [list, available] = await Promise.all([session.raw.GET('/api/v1/mail/accounts'), session.raw.GET('/api/v1/mail/oauth/providers')])
   if (list.data) accounts.value = list.data
   else error.value = 'The mail accounts could not be loaded.'
   if (available.data) providers.value = available.data
@@ -40,7 +40,7 @@ async function addImap() {
   error.value = null
   status.value = null
   const body = { ...imap.value, draftsFolder: imap.value.draftsFolder.trim() || null }
-  const { response, error: problem } = await session.api.POST('/api/v1/mail/accounts', { body })
+  const { response, error: problem } = await session.raw.POST('/api/v1/mail/accounts', { body })
   imap.value.password = ''
   if (!response.ok) {
     error.value = problemMessage(problem, 'The account could not be added.')
@@ -54,7 +54,7 @@ async function addImap() {
 async function connect(provider: string) {
   error.value = null
   status.value = null
-  const { data, error: problem } = await session.api.POST('/api/v1/mail/oauth/{provider}/start', {
+  const { data, error: problem } = await session.raw.POST('/api/v1/mail/oauth/{provider}/start', {
     params: { path: { provider } },
     body: { alias: oauth.value.alias, email: oauth.value.email },
   })
@@ -67,7 +67,7 @@ async function connect(provider: string) {
 
 async function remove(account: Account) {
   if (!window.confirm(`Remove the mail account "${account.alias}"? Its stored credential is deleted too.`)) return
-  const { response } = await session.api.DELETE('/api/v1/mail/accounts/{id}', { params: { path: { id: account.id } } })
+  const { response } = await session.raw.DELETE('/api/v1/mail/accounts/{id}', { params: { path: { id: account.id } } })
   if (!response.ok) error.value = 'The account could not be removed.'
   await load()
 }

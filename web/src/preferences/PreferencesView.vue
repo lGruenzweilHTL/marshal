@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { problemMessage } from '../api/problem'
 
 type Day = Schemas['DayOfWeek']
@@ -17,7 +17,7 @@ interface Window {
 const days: Day[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 const timeZones = typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : []
 
-const session = useApi()
+const session = useApiSession()
 const loaded = ref(false)
 const error = ref<string | null>(null)
 const saved = ref(false)
@@ -56,7 +56,7 @@ function addWindow() {
 async function save() {
   error.value = null
   saved.value = false
-  const { data, error: problem } = await session.api.PUT('/api/v1/me/preferences', {
+  const { data, error: problem } = await session.raw.PUT('/api/v1/me/preferences', {
     body: {
       language: language.value,
       timeZone: timeZone.value.trim(),
@@ -80,7 +80,7 @@ async function save() {
 }
 
 onMounted(async () => {
-  const { data } = await session.api.GET('/api/v1/me/preferences')
+  const { data } = await session.raw.GET('/api/v1/me/preferences')
   if (data) {
     show(data)
     loaded.value = true

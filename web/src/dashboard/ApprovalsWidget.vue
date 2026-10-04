@@ -2,16 +2,16 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { useLiveEvent } from '../live/liveEvents'
 import { decideApproval } from '../review/decisions'
 
-const session = useApi()
+const session = useApiSession()
 const approvals = ref<Schemas['ApprovalItem'][]>([])
 const error = ref<string | null>(null)
 
 async function load() {
-  const { data } = await session.api.GET('/api/v1/approvals')
+  const { data } = await session.raw.GET('/api/v1/approvals')
   if (data) approvals.value = data
 }
 

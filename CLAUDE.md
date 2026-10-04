@@ -129,6 +129,9 @@ No mocking or assertion libraries — use hand-written fakes from `Marshal.Testi
 | `vue-tsc` | Type-checks `.vue` files in `npm run build`, so an API contract change the SPA does not handle fails the build |
 | `openapi-typescript` | Generates TypeScript types from Marshal's versioned OpenAPI document (build step; `npm run gen:api` exports it via `marshal --export-openapi`) |
 | `openapi-fetch` | Small typed `fetch` client driven by those types |
+| `vue-i18n` | Interface text in German and English (Composition API mode); catalogs per feature (`messages.ts`), German typed against English |
+| `lucide-vue-next` | Icons (Lucide, ISC) at a 1.75 px stroke through `AppIcon` |
+| `@fontsource-variable/bricolage-grotesque`, `@fontsource-variable/instrument-sans`, `@fontsource-variable/jetbrains-mono` | Bundled fonts (OFL) served from the app's origin; declared in `web/src/ui/fonts.css` |
 | `markdown-it` | Chat markdown rendering with HTML disabled and a same-origin-only image rule (ships its own types) |
 | `vitest`, `@vue/test-utils`, `jsdom` | Component tests (`npm test`) against a hand-written fake API server (`src/testing/fakeServer.ts`) |
 

@@ -2,7 +2,7 @@
 import { computed, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { problemMessage } from '../api/problem'
 import { formatDateTime } from '../format'
 import { useLiveEvent } from '../live/liveEvents'
@@ -14,7 +14,7 @@ type ControlRequest = Schemas['PrinterControlRequest']
 const maxSamples = 120
 const babysitterRefresh = 60_000
 
-const session = useApi()
+const session = useApiSession()
 const route = useRoute()
 const printers = ref<Schemas['PrinterSummary'][] | null>(null)
 const files = ref<Schemas['PrinterFile'][]>([])
@@ -42,7 +42,7 @@ function record(sample: Schemas['PrinterState'] | null) {
 }
 
 async function loadPrinters() {
-  const { data } = await session.api.GET('/api/v1/printers')
+  const { data } = await session.raw.GET('/api/v1/printers')
   printers.value = data ?? []
   record(state.value)
 }
@@ -51,9 +51,9 @@ async function loadDetails() {
   if (!selected.value) return
   const params = { path: path.value }
   const [fileList, jobQueue, jobs] = await Promise.all([
-    session.api.GET('/api/v1/printers/{printer}/files', { params }),
-    session.api.GET('/api/v1/printers/{printer}/queue', { params }),
-    session.api.GET('/api/v1/printers/{printer}/history', { params: { ...params, query: { limit: 10 } } }),
+    session.raw.GET('/api/v1/printers/{printer}/files', { params }),
+    session.raw.GET('/api/v1/printers/{printer}/queue', { params }),
+    session.raw.GET('/api/v1/printers/{printer}/history', { params: { ...params, query: { limit: 10 } } }),
   ])
   files.value = fileList.data ?? []
   queue.value = jobQueue.data ?? null
@@ -63,7 +63,7 @@ async function loadDetails() {
 async function control(body: ControlRequest) {
   error.value = null
   busy.value = true
-  const { data, error: problem } = await session.api.POST('/api/v1/printers/{printer}/controls', { params: { path: path.value }, body })
+  const { data, error: problem } = await session.raw.POST('/api/v1/printers/{printer}/controls', { params: { path: path.value }, body })
   busy.value = false
   if (!data) {
     error.value = problemMessage(problem, 'The printer did not accept the command.')
@@ -77,7 +77,7 @@ async function confirm() {
   const token = pending.value?.token
   pending.value = null
   if (!token) return
-  const { data, error: problem } = await session.api.POST('/api/v1/printers/{printer}/controls/confirm', { params: { path: path.value }, body: { token } })
+  const { data, error: problem } = await session.raw.POST('/api/v1/printers/{printer}/controls/confirm', { params: { path: path.value }, body: { token } })
   if (!data) error.value = problemMessage(problem, 'The command was not carried out.')
   else await loadDetails()
 }
@@ -88,7 +88,7 @@ function setTemperature(heater: 'extruder' | 'bed') {
 }
 
 async function snapshot() {
-  const { data, error: problem } = await session.api.POST('/api/v1/printers/{printer}/snapshots', { params: { path: path.value } })
+  const { data, error: problem } = await session.raw.POST('/api/v1/printers/{printer}/snapshots', { params: { path: path.value } })
   if (data) snapshotUrl.value = data.url
   else error.value = problemMessage(problem, 'No snapshot could be taken.')
 }

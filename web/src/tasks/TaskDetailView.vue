@@ -2,14 +2,14 @@
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { problemMessage } from '../api/problem'
 import { renderMarkdown } from '../chat/markdown'
 import { formatCost, formatDateTime } from '../format'
 import { useLiveEvent } from '../live/liveEvents'
 import { budgetUse, describeTrigger, isUnfinished, taskLabel } from './taskFormat'
 
-const session = useApi()
+const session = useApiSession()
 const route = useRoute()
 const detail = ref<Schemas['TaskDetail'] | null>(null)
 const error = ref<string | null>(null)
@@ -21,7 +21,7 @@ const id = computed(() => (typeof route.params.id === 'string' ? route.params.id
 
 async function load() {
   if (!id.value) return
-  const { data, response } = await session.api.GET('/api/v1/tasks/{id}', { params: { path: { id: id.value } } })
+  const { data, response } = await session.raw.GET('/api/v1/tasks/{id}', { params: { path: { id: id.value } } })
   if (data) detail.value = data
   error.value = data ? null : response.status === 404 ? 'This task does not exist.' : 'The task could not be loaded.'
 }
@@ -33,7 +33,7 @@ function edit() {
 
 async function saveGoal() {
   if (!id.value || !detail.value) return
-  const { data, error: problem } = await session.api.PUT('/api/v1/tasks/{id}/goal', { params: { path: { id: id.value } }, body: { goal: goal.value } })
+  const { data, error: problem } = await session.raw.PUT('/api/v1/tasks/{id}/goal', { params: { path: { id: id.value } }, body: { goal: goal.value } })
   if (!data) {
     error.value = problemMessage(problem, 'The goal could not be saved.')
     return
@@ -46,7 +46,7 @@ async function saveGoal() {
 async function cancel() {
   if (!id.value) return
   confirmingCancel.value = false
-  const { data, error: problem } = await session.api.POST('/api/v1/tasks/{id}/cancel', { params: { path: { id: id.value } } })
+  const { data, error: problem } = await session.raw.POST('/api/v1/tasks/{id}/cancel', { params: { path: { id: id.value } } })
   if (!data) {
     error.value = problemMessage(problem, 'The task could not be cancelled.')
     return

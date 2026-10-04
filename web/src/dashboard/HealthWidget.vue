@@ -1,20 +1,18 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import HealthChecks from '../system/HealthChecks.vue'
 import { loadHealth, type HealthReport } from '../system/health'
 
-const session = useApi()
+const session = useApiSession()
 const report = ref<HealthReport | null>(null)
 const failed = ref(false)
 
 onMounted(async () => {
-  try {
-    report.value = await loadHealth(session)
-  } catch {
-    failed.value = true
-  }
+  const result = await loadHealth(session)
+  if (result.error) failed.value = true
+  else report.value = result.data
 })
 </script>
 

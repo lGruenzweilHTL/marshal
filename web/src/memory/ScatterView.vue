@@ -2,11 +2,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { chunkTypes, typeColors } from './memoryLabels'
 
 const size = 100
-const session = useApi()
+const session = useApiSession()
 const router = useRouter()
 const points = ref<Schemas['MemoryScatterPoint'][] | null>(null)
 const error = ref<string | null>(null)
@@ -26,7 +26,7 @@ const plotted = computed(() => {
 })
 
 onMounted(async () => {
-  const { data } = await session.api.GET('/api/v1/memory/scatter')
+  const { data } = await session.raw.GET('/api/v1/memory/scatter')
   points.value = data ?? null
   error.value = data ? null : 'The scatter could not be loaded.'
 })

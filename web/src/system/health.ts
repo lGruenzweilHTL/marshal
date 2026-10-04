@@ -1,4 +1,4 @@
-import type { ApiSession } from '../api/client'
+import type { Api, ApiResult } from '../api/client'
 
 /** Body of the unversioned `/health` endpoint (not part of the OpenAPI document). */
 export interface HealthReport {
@@ -12,8 +12,15 @@ export interface HealthCheck {
   warnings: string[] | null
 }
 
-/** Reads `/health`; an unhealthy instance answers 503 with the same body. */
-export async function loadHealth(session: ApiSession): Promise<HealthReport> {
-  const response = await session.fetch('/health')
-  return (await response.json()) as HealthReport
+/** Reads `/health`; an unhealthy instance answers 503 with the same body, so 503 is data, not a failure. */
+export async function loadHealth(api: Api): Promise<ApiResult<HealthReport>> {
+  const result = await api.fetch('/health')
+  if (result.error) return result
+  const response = result.data
+  if (!response.ok && response.status !== 503) return { error: { kind: 'problem', status: response.status } }
+  try {
+    return { data: (await response.json()) as HealthReport }
+  } catch (cause) {
+    return { error: { kind: 'unexpected', cause } }
+  }
 }

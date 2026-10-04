@@ -1,24 +1,24 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 
 const emit = defineEmits<{ changed: [active: boolean] }>()
 
-const session = useApi()
+const session = useApiSession()
 const active = ref<boolean | null>(null)
 const cancelled = ref<number | null>(null)
 const confirming = ref(false)
 const error = ref<string | null>(null)
 
 onMounted(async () => {
-  const { data } = await session.api.GET('/api/v1/tasks/kill-switch')
+  const { data } = await session.raw.GET('/api/v1/tasks/kill-switch')
   if (data) active.value = data.active
   else error.value = 'The kill switch could not be loaded.'
 })
 
 async function activate() {
   confirming.value = false
-  const { data } = await session.api.POST('/api/v1/tasks/kill-switch/activate')
+  const { data } = await session.raw.POST('/api/v1/tasks/kill-switch/activate')
   if (!data) {
     error.value = 'Background tasks could not be stopped.'
     return
@@ -30,7 +30,7 @@ async function activate() {
 }
 
 async function release() {
-  const { data } = await session.api.POST('/api/v1/tasks/kill-switch/release')
+  const { data } = await session.raw.POST('/api/v1/tasks/kill-switch/release')
   if (!data) {
     error.value = 'Background tasks could not be resumed.'
     return

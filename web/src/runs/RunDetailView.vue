@@ -2,10 +2,10 @@
 import { nextTick, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { formatCost, formatDateTime, snakeCase } from '../format'
 
-const session = useApi()
+const session = useApiSession()
 const route = useRoute()
 const detail = ref<Schemas['RunDetail'] | null>(null)
 const error = ref<string | null>(null)
@@ -35,7 +35,7 @@ watch(
   async (id) => {
     if (typeof id !== 'string') return
     detail.value = null
-    const { data, response } = await session.api.GET('/api/v1/runs/{id}', { params: { path: { id } } })
+    const { data, response } = await session.raw.GET('/api/v1/runs/{id}', { params: { path: { id } } })
     if (data) detail.value = data
     error.value = data ? null : response.status === 404 ? 'Run not found.' : 'The run could not be loaded.'
     // A link to one step (`#step-3`, from the review queue) scrolls to it once the steps are shown.

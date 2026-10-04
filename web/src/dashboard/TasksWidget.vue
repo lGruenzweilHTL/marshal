@@ -2,12 +2,12 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { formatDateTime } from '../format'
 import { useLiveEvent } from '../live/liveEvents'
 import { taskLabel } from '../tasks/taskFormat'
 
-const session = useApi()
+const session = useApiSession()
 const tasks = ref<Schemas['TaskItem'][]>([])
 
 const running = computed(() => tasks.value.filter((task) => task.status === 'running'))
@@ -19,7 +19,7 @@ const next = computed(() =>
 )
 
 async function load() {
-  const { data } = await session.api.GET('/api/v1/tasks', { params: { query: { status: 'active' } } })
+  const { data } = await session.raw.GET('/api/v1/tasks', { params: { query: { status: 'active' } } })
   if (data) tasks.value = data
 }
 

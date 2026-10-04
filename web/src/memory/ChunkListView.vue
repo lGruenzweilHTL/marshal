@@ -2,11 +2,11 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { formatDateTime } from '../format'
 import { chunkTypes } from './memoryLabels'
 
-const session = useApi()
+const session = useApiSession()
 const route = useRoute()
 const chunks = ref<Schemas['MemoryChunk'][] | null>(null)
 const projects = ref<Schemas['ProjectView'][]>([])
@@ -22,13 +22,13 @@ async function load() {
     projectId: filter.project || undefined,
     pinned: filter.pinned ? true : undefined,
   }
-  const { data } = await session.api.GET('/api/v1/memory/chunks', { params: { query } })
+  const { data } = await session.raw.GET('/api/v1/memory/chunks', { params: { query } })
   chunks.value = data ?? null
   error.value = data ? null : 'The memory could not be loaded.'
 }
 
 onMounted(async () => {
-  const { data } = await session.api.GET('/api/v1/memory/projects')
+  const { data } = await session.raw.GET('/api/v1/memory/projects')
   projects.value = data ?? []
   await load()
 })

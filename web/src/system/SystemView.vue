@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import HealthChecks from './HealthChecks.vue'
 import { loadHealth, type HealthReport } from './health'
 
-const session = useApi()
+const session = useApiSession()
 const info = ref<Schemas['SystemInfo'] | null>(null)
 const report = ref<HealthReport | null>(null)
 const error = ref<string | null>(null)
 
 onMounted(async () => {
   try {
-    const [system, healthReport] = await Promise.all([session.api.GET('/api/v1/system'), loadHealth(session)])
+    const [system, healthReport] = await Promise.all([session.raw.GET('/api/v1/system'), loadHealth(session)])
     info.value = system.data ?? null
-    report.value = healthReport
+    report.value = healthReport.data ?? null
   } catch {
     error.value = 'The system information could not be loaded.'
   }

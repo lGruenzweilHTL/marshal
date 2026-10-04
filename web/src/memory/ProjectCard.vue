@@ -2,7 +2,7 @@
 import { reactive, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { problemMessage } from '../api/problem'
 import { formatDateTime } from '../format'
 import { aliasStatus } from './memoryLabels'
@@ -10,7 +10,7 @@ import { aliasStatus } from './memoryLabels'
 const props = defineProps<{ project: Schemas['ProjectView'] }>()
 const emit = defineEmits<{ changed: [] }>()
 
-const session = useApi()
+const session = useApiSession()
 const edit = reactive({ name: props.project.name, description: props.project.description })
 const alias = ref('')
 const editing = ref(false)
@@ -24,7 +24,7 @@ watch(
 )
 
 async function save() {
-  const { data, error: problem } = await session.api.PUT('/api/v1/memory/projects/{id}', { ...path(), body: { name: edit.name, description: edit.description } })
+  const { data, error: problem } = await session.raw.PUT('/api/v1/memory/projects/{id}', { ...path(), body: { name: edit.name, description: edit.description } })
   error.value = data ? null : problemMessage(problem, 'The project could not be saved.')
   if (data) {
     editing.value = false
@@ -34,13 +34,13 @@ async function save() {
 
 async function remove() {
   if (!window.confirm(`Delete the project "${props.project.name}"? Its memory stays and shows up in the audit.`)) return
-  const { response } = await session.api.DELETE('/api/v1/memory/projects/{id}', path())
+  const { response } = await session.raw.DELETE('/api/v1/memory/projects/{id}', path())
   error.value = response.ok ? null : 'The project could not be deleted.'
   if (response.ok) emit('changed')
 }
 
 async function addAlias() {
-  const { response, error: problem } = await session.api.POST('/api/v1/memory/projects/{id}/aliases', { ...path(), body: { phrase: alias.value } })
+  const { response, error: problem } = await session.raw.POST('/api/v1/memory/projects/{id}/aliases', { ...path(), body: { phrase: alias.value } })
   error.value = response.ok ? null : problemMessage(problem, 'The alias could not be added.')
   if (response.ok) {
     alias.value = ''
@@ -49,7 +49,7 @@ async function addAlias() {
 }
 
 async function setStatus(aliasId: string, status: Schemas['ProjectAliasStatus']) {
-  const { response } = await session.api.PUT('/api/v1/memory/projects/{id}/aliases/{aliasId}', {
+  const { response } = await session.raw.PUT('/api/v1/memory/projects/{id}/aliases/{aliasId}', {
     params: { path: { id: props.project.id, aliasId } },
     body: { status },
   })
@@ -58,7 +58,7 @@ async function setStatus(aliasId: string, status: Schemas['ProjectAliasStatus'])
 }
 
 async function removeAlias(aliasId: string) {
-  const { response } = await session.api.DELETE('/api/v1/memory/projects/{id}/aliases/{aliasId}', { params: { path: { id: props.project.id, aliasId } } })
+  const { response } = await session.raw.DELETE('/api/v1/memory/projects/{id}/aliases/{aliasId}', { params: { path: { id: props.project.id, aliasId } } })
   error.value = response.ok ? null : 'The alias could not be removed.'
   emit('changed')
 }
@@ -68,7 +68,7 @@ async function toggleFeedback() {
     feedback.value = null
     return
   }
-  const { data } = await session.api.GET('/api/v1/memory/projects/{id}/feedback', path())
+  const { data } = await session.raw.GET('/api/v1/memory/projects/{id}/feedback', path())
   feedback.value = data ?? []
 }
 </script>

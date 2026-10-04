@@ -2,15 +2,15 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { useLiveEvent } from '../live/liveEvents'
 import { formatEta, formatPercent, formatTemperature } from '../printers/printerFormat'
 
-const session = useApi()
+const session = useApiSession()
 const printers = ref<Schemas['PrinterSummary'][]>([])
 
 onMounted(async () => {
-  const { data } = await session.api.GET('/api/v1/printers')
+  const { data } = await session.raw.GET('/api/v1/printers')
   printers.value = data ?? []
 })
 

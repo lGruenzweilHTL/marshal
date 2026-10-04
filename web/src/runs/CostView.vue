@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { formatCost } from '../format'
 
-const session = useApi()
+const session = useApiSession()
 const report = ref<Schemas['CostReport'] | null>(null)
 const error = ref<string | null>(null)
 const range = reactive({ from: '', to: '' })
@@ -13,7 +13,7 @@ const range = reactive({ from: '', to: '' })
 const tiers = computed(() => Object.keys(report.value?.byTier ?? {}).sort())
 
 async function load() {
-  const { data, error: problem } = await session.api.GET('/api/v1/cost', {
+  const { data, error: problem } = await session.raw.GET('/api/v1/cost', {
     params: { query: { from: range.from || undefined, to: range.to || undefined } },
   })
   if (!data) {

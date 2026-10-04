@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { problemMessage } from '../api/problem'
 import ProjectCard from './ProjectCard.vue'
 
-const session = useApi()
+const session = useApiSession()
 const projects = ref<Schemas['ProjectView'][] | null>(null)
 const error = ref<string | null>(null)
 const draft = reactive({ name: '', description: '' })
 
 async function load() {
-  const { data } = await session.api.GET('/api/v1/memory/projects')
+  const { data } = await session.raw.GET('/api/v1/memory/projects')
   projects.value = data ?? null
   error.value = data ? null : 'The projects could not be loaded.'
 }
 
 async function create() {
-  const { data, error: problem } = await session.api.POST('/api/v1/memory/projects', { body: { name: draft.name, description: draft.description } })
+  const { data, error: problem } = await session.raw.POST('/api/v1/memory/projects', { body: { name: draft.name, description: draft.description } })
   if (!data) {
     error.value = problemMessage(problem, 'The project could not be created.')
     return

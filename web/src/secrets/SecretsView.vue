@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { problemMessage } from '../api/problem'
 import { formatDateTime } from '../format'
 import { useUserSession } from '../session'
 
 type Secret = Schemas['SecretItem']
 
-const session = useApi()
+const session = useApiSession()
 const user = useUserSession()
 const overview = ref<Schemas['SecretOverview'] | null>(null)
 const error = ref<string | null>(null)
@@ -20,7 +20,7 @@ const nameInput = ref<HTMLInputElement | null>(null)
 const isAdmin = computed(() => user.current.value?.roles.includes('admin') === true)
 
 async function load() {
-  const { data } = await session.api.GET('/api/v1/me/secrets')
+  const { data } = await session.raw.GET('/api/v1/me/secrets')
   if (data) overview.value = data
   else error.value = 'The secrets could not be loaded.'
 }
@@ -36,8 +36,8 @@ async function save() {
   const body = { value: value.value }
   const { response, error: problem } =
     scope.value === 'instance'
-      ? await session.api.PUT('/api/v1/secrets/instance/{name}', { params: { path: { name: name.value } }, body })
-      : await session.api.PUT('/api/v1/me/secrets/{name}', { params: { path: { name: name.value } }, body })
+      ? await session.raw.PUT('/api/v1/secrets/instance/{name}', { params: { path: { name: name.value } }, body })
+      : await session.raw.PUT('/api/v1/me/secrets/{name}', { params: { path: { name: name.value } }, body })
   value.value = ''
   if (!response.ok) {
     error.value = problemMessage(problem, 'The secret could not be stored.')
@@ -52,7 +52,7 @@ async function remove(secret: Secret) {
   if (!window.confirm(`Delete the secret "${secret.name}"? Integrations using it stop working.`)) return
   const path = { params: { path: { name: secret.name } } }
   const { response } =
-    secret.scope === 'instance' ? await session.api.DELETE('/api/v1/secrets/instance/{name}', path) : await session.api.DELETE('/api/v1/me/secrets/{name}', path)
+    secret.scope === 'instance' ? await session.raw.DELETE('/api/v1/secrets/instance/{name}', path) : await session.raw.DELETE('/api/v1/me/secrets/{name}', path)
   if (!response.ok) error.value = 'The secret could not be deleted.'
   await load()
 }

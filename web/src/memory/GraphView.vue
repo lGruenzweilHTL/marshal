@@ -2,11 +2,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Schemas } from '../api/client'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { forceLayout } from './forceLayout'
 import { chunkTypes, typeColors } from './memoryLabels'
 
-const session = useApi()
+const session = useApiSession()
 const router = useRouter()
 const graph = ref<Schemas['MemoryGraph'] | null>(null)
 const error = ref<string | null>(null)
@@ -27,7 +27,7 @@ const drawing = computed(() => {
 })
 
 onMounted(async () => {
-  const { data } = await session.api.GET('/api/v1/memory/graph')
+  const { data } = await session.raw.GET('/api/v1/memory/graph')
   graph.value = data ?? null
   error.value = data ? null : 'The graph could not be loaded.'
 })

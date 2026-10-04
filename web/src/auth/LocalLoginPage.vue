@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { useApi } from '../api/inject'
+import { useApiSession } from '../api/inject'
 import { useUserSession } from '../session'
 import { usePasskeys } from './passkeys'
 import { returnUrl } from './returnUrl'
 
-const session = useApi()
+const session = useApiSession()
 const user = useUserSession()
 const passkeys = usePasskeys()
 const route = useRoute()
@@ -25,7 +25,7 @@ async function passwordLogin() {
   busy.value = true
   error.value = null
   try {
-    const { response } = await session.api.POST('/api/v1/auth/local/login', { body: { userName: userName.value, password: password.value } })
+    const { response } = await session.raw.POST('/api/v1/auth/local/login', { body: { userName: userName.value, password: password.value } })
     if (response.ok) await signedIn()
     else error.value = response.status === 401 ? 'Wrong user name or password.' : 'Sign-in failed. Try again later.'
   } finally {
@@ -37,10 +37,10 @@ async function passkeyLogin() {
   busy.value = true
   error.value = null
   try {
-    const options = await session.api.POST('/api/v1/auth/local/passkey/options', { body: { userName: userName.value || null }, parseAs: 'text' })
+    const options = await session.raw.POST('/api/v1/auth/local/passkey/options', { body: { userName: userName.value || null }, parseAs: 'text' })
     if (!options.data) throw new Error('options')
     const credentialJson = await passkeys.get(options.data)
-    const { response } = await session.api.POST('/api/v1/auth/local/passkey', { body: { credentialJson } })
+    const { response } = await session.raw.POST('/api/v1/auth/local/passkey', { body: { credentialJson } })
     if (response.ok) await signedIn()
     else error.value = 'The passkey was not accepted.'
   } catch {
