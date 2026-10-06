@@ -7,7 +7,7 @@ Marshal is a self-hosted AI agent for Home Assistant. Talk to it through any Ass
 > **Status:** Marshal is in early development. All planned features are implemented and tested, but there is no release yet: you build the image yourself, and things may still change without notice.
 
 <!-- Screenshot: hero image — voice satellite + web dashboard -->
-![Marshal dashboard](docs/images/placeholder-dashboard.png)
+![Marshal dashboard](docs/images/dashboard.png)
 
 ---
 
@@ -29,7 +29,7 @@ Voice assistants are either locked into someone else's cloud or limited to switc
 Ask how your print is going, start the next job, or check a camera snapshot. Marshal can watch a print for you, pause it when something looks wrong, and tell you the moment it's finished.
 
 <!-- Screenshot: printer page -->
-![Printer page](docs/images/placeholder-printer.png)
+![Printer page](docs/images/printer.png)
 
 ### ☀️ Brief you every morning
 Walk into the kitchen and hear what matters today: your calendar, important mail, the news you actually care about, and what happened overnight. Want the details? Just ask, or open the full version on your phone.
@@ -47,7 +47,7 @@ Marshal works with your Home Assistant devices and knows which room you're talki
 Tell Marshal something once and it will remember it. It keeps track of your projects and recognizes what you're talking about, even when you don't say the name. You can see and edit everything it remembers.
 
 <!-- Screenshot: memory graph -->
-![Memory view](docs/images/placeholder-memory.png)
+![Memory view](docs/images/memory.png)
 
 ### ⏱️ Work in the background
 "Remind me about the filament order when I get home." "Ask me tomorrow if the fan is working." "Look into this and tell me tonight." Marshal schedules its own follow-ups and delivers results at the right moment, without waking you at night.
@@ -71,7 +71,7 @@ Marshal comes with its own web app, built for desktop and phone:
 - **Follow** your printer live
 
 <!-- Screenshot: web chat + approvals on mobile -->
-![Mobile approvals](docs/images/placeholder-mobile.png)
+![Mobile approvals](docs/images/mobile.png)
 
 ---
 

@@ -64,7 +64,6 @@ async function decide(approve: boolean) {
     <div class="top">
       <div class="meta">
         <span class="tool"><AppIcon :icon="Zap" :size="14" :stroke="2" />{{ approval.tool }}</span>
-        <span class="spacer" />
         <span v-if="state === 'pending'" class="ttl" :class="{ low: fraction < 0.25 }">
           <span class="ttl-text"><span class="num ttl-clock" data-test="ttl">{{ clock }}</span><span class="ttl-label">{{ t('inbox.ticket.left') }}</span></span>
           <svg width="34" height="34" viewBox="0 0 36 36" aria-hidden="true">
@@ -148,6 +147,7 @@ async function decide(approve: boolean) {
 }
 .meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }
@@ -161,13 +161,13 @@ async function decide(approve: boolean) {
   background: var(--accent-soft);
   color: var(--accent-text);
   font: 500 13px/1 var(--font-mono);
+  /* A narrow ticket moves the timer to the next line before the tool name breaks. */
+  max-width: 100%;
   overflow-wrap: anywhere;
-}
-.spacer {
-  flex-grow: 1;
 }
 .ttl {
   display: flex;
+  margin-left: auto;
   align-items: center;
   gap: var(--space-2);
   --ttl: var(--accent-text);

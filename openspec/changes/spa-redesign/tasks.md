@@ -87,6 +87,6 @@
 
 ## 14. Integration
 
-- [ ] 14.1 Run the full .NET and web test suites (`dotnet test`, `npm test`, `npm run build`). Verify all pass, including the architecture test from 2.5 without `todo`.
-- [ ] 14.2 Walk every page in preview mode in both languages, both themes and all scenarios at phone and desktop width against the design canvas. Verify no page is blank in any scenario.
-- [ ] 14.3 Replace the `docs/images/placeholder-*.png` files with screenshots from preview mode and update `README.md`. Verify the README shows the new screenshots.
+- [x] 14.1 Run the full .NET and web test suites (`dotnet test`, `npm test`, `npm run build`). Verify all pass, including the architecture test from 2.5 without `todo`.
+- [x] 14.2 Walk every page in preview mode in both languages, both themes and all scenarios at phone and desktop width against the design canvas. Verify no page is blank in any scenario.
+- [x] 14.3 Replace the `docs/images/placeholder-*.png` files with screenshots from preview mode and update `README.md`. Verify the README shows the new screenshots.
