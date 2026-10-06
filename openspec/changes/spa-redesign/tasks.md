@@ -30,7 +30,7 @@
 ## 5. Installable app
 
 - [x] 5.1 Add `vite-plugin-pwa` (package index), manifest with placeholder icons, precache of assets only, network-only navigations with a static offline page. Write a test on the generated service worker: no route matches `/api/` or `/health`, and `index.html` is not precached. Verify it passes.
-- [ ] 5.2 Run the built app behind the host under a non-root base path. Verify the app installs, opens standalone, loads under the base path, and shows the offline page without a connection.
+- [x] 5.2 Run the built app behind the host under a non-root base path. Verify the app installs, opens standalone, loads under the base path, and shows the offline page without a connection.
 
 ## 6. Design canvas
 
