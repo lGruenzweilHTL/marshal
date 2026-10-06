@@ -13,7 +13,8 @@ components every view is built from.
 ## Updating the tokens
 
 `tokens.json` is an export of the "Marshal" design system (https://claude.ai/artifact/DXfMfWe5jKksRwqjNjEFAJ),
-extended with the logo and sign-in panel colours and dark shadow values that the design system keeps on the canvas.
+extended with app-only tokens: the logo colours (`logo-*`), the sign-in panel (`panel*`, `constellation-*`),
+`mem-event` and the dark shadow values. The same steps are on the canvas page Foundations › Token export.
 
 1. Download `project/tokens.json` from the design system and merge it into `tokens.json` (keep the extra tokens).
 2. Run `npm run gen:tokens`; it rewrites `tokens.css`. Never edit `tokens.css` by hand.

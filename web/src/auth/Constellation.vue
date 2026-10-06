@@ -3,7 +3,7 @@ import { onBeforeUnmount, onMounted, shallowRef } from 'vue'
 
 /**
  * The sign-in panel's backdrop: points drifting slowly, lines joining near neighbours. Decorative only; it stands still
- * when the user prefers reduced motion. Colours come from the `--panel-*` tokens.
+ * when the user prefers reduced motion. Colours come from the `--panel*` and `--constellation-*` tokens.
  */
 const props = withDefaults(defineProps<{ count?: number; reach?: number; speed?: number }>(), { count: 110, reach: 140, speed: 0.35 })
 
@@ -90,22 +90,22 @@ onBeforeUnmount(() => cancelAnimationFrame(handle))
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: radial-gradient(120% 90% at 70% 35%, var(--panel-glow) 0%, var(--panel-bg) 60%);
+  background: radial-gradient(120% 90% at 70% 35%, var(--panel-glow) 0%, var(--panel) 60%);
 }
 line {
-  stroke: var(--panel-node);
+  stroke: var(--constellation-node);
   stroke-width: 1;
 }
 line.hot {
-  stroke: var(--panel-accent);
+  stroke: var(--constellation-accent);
 }
 circle {
-  fill: var(--panel-node);
+  fill: var(--constellation-node);
 }
 circle.accent {
-  fill: var(--panel-accent);
+  fill: var(--constellation-accent);
 }
 circle.info {
-  fill: var(--panel-info);
+  fill: var(--constellation-info);
 }
 </style>

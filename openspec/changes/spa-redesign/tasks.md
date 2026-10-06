@@ -44,7 +44,7 @@
 ## 7. Specs and tasks after the checkpoint
 
 - [x] 7.1 Add delta specs for the view capabilities the approved IA changes (`web-chat`, `memory-view`, `background-views`, `config-view`, `run-insights`, `approval-queue`, `printer`, `user-preferences` as needed). Verify `openspec validate spa-redesign --strict` passes.
-- [ ] 7.2 Export the design tokens to `web/src/ui/tokens.css` and record the export steps in the design canvas foundations page. Verify both themes render from the tokens in preview mode.
+- [x] 7.2 Export the design tokens to `web/src/ui/tokens.css` and record the export steps in the design canvas foundations page. Verify both themes render from the tokens in preview mode.
 - [x] 7.3 Insert the build groups between this group and Integration: the shell and component library first, then one group per area of the approved IA, each with test-first tasks for its views (layouts, i18n text, all `useLoad` / `useSubmit` states). Verify `openspec validate spa-redesign --strict` passes.
 
 ## 8. Shell and component library

@@ -56,7 +56,7 @@ const { t } = useI18n()
   flex-direction: column;
   padding: 56px;
   overflow: hidden;
-  background: var(--panel-bg);
+  background: var(--panel);
   color: var(--panel-ink);
 }
 .tagline {
