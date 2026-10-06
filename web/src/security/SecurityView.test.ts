@@ -25,15 +25,21 @@ function server(providers = [{ name: 'local', type: 'local', displayName: 'Local
 
 const passkeys: Passkeys = { supported: () => true, get: async () => '{}', create: async () => '{"id":"new-key"}' }
 
-async function mountSecurity(fake: FakeServer) {
-  const mounted = await mountOptions(fake, '/security')
-  const wrapper = mount(SecurityView, { global: { ...mounted.options.global, provide: { ...mounted.options.global.provide, [passkeysKey as symbol]: passkeys } } })
+async function mountSecurity(fake: FakeServer, language: 'en' | 'de' = 'en') {
+  const mounted = await mountOptions(fake, '/security', { language })
+  const wrapper = mount(SecurityView, {
+    attachTo: document.body,
+    global: { ...mounted.options.global, provide: { ...mounted.options.global.provide, [passkeysKey as symbol]: passkeys } },
+  })
   await flushPromises()
   return wrapper
 }
 
 describe('SecurityView', () => {
-  afterEach(() => vi.restoreAllMocks())
+  afterEach(() => {
+    vi.restoreAllMocks()
+    document.body.innerHTML = ''
+  })
 
   it('lists tokens; only active standard tokens can be revoked', async () => {
     const wrapper = await mountSecurity(server())
@@ -78,12 +84,15 @@ describe('SecurityView', () => {
     expect(new Date(expiresAt).getTime()).toBe(new Date(2026, 11, 31, 23, 59, 59).getTime())
   })
 
-  it('revokes a token after confirmation', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('revokes a token only after confirming in a dialog', async () => {
     const fake = server().on('DELETE', '/api/v1/me/tokens/t-1', 204)
     const wrapper = await mountSecurity(fake)
 
     await wrapper.get('[data-token="t-1"] [data-test="revoke"]').trigger('click')
+    await flushPromises()
+    expect(fake.count('DELETE', '/api/v1/me/tokens/t-1')).toBe(0)
+
+    ;(document.body.querySelector('[data-test="confirm-revoke"]') as HTMLButtonElement).click()
     await flushPromises()
 
     expect(fake.count('DELETE', '/api/v1/me/tokens/t-1')).toBe(1)
@@ -102,6 +111,19 @@ describe('SecurityView', () => {
 
     expect(JSON.parse(fake.request('POST', '/api/v1/auth/local/passkeys')!.body)).toEqual({ credentialJson: '{"id":"new-key"}', name: 'Phone' })
     expect(wrapper.find('[data-test="passkey-added"]').exists()).toBe(true)
+  })
+
+  it('links to the secrets section', async () => {
+    const wrapper = await mountSecurity(server())
+
+    expect(wrapper.get('nav a[href="/security/secrets"]').text()).toContain('Secrets')
+  })
+
+  it('speaks German', async () => {
+    const wrapper = await mountSecurity(server(), 'de')
+
+    expect(wrapper.get('h1').text()).toBe('Sicherheit')
+    expect(wrapper.get('[data-token="t-2"]').text()).toContain('widerrufen')
   })
 
   it('hides passkeys without a local provider', async () => {

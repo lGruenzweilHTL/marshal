@@ -18,14 +18,17 @@ function server(user = me) {
 }
 
 async function mountSecrets(fake: FakeServer) {
-  const { options } = await mountOptions(fake, '/secrets')
-  const wrapper = mount(SecretsView, options)
+  const { options } = await mountOptions(fake, '/security/secrets')
+  const wrapper = mount(SecretsView, { ...options, attachTo: document.body })
   await flushPromises()
   return wrapper
 }
 
 describe('SecretsView', () => {
-  afterEach(() => vi.restoreAllMocks())
+  afterEach(() => {
+    vi.restoreAllMocks()
+    document.body.innerHTML = ''
+  })
 
   it('lists secrets with scope, source and update time, never a value', async () => {
     const wrapper = await mountSecrets(server())
@@ -43,6 +46,7 @@ describe('SecretsView', () => {
 
     const flagged = wrapper.get('[data-unresolved="freshrss_api"]')
     expect(flagged.text()).toContain('marshal.yaml: feeds.apiKeySecret')
+    expect(wrapper.get('[data-test="unresolved"]').text()).toContain('1 secret is referenced but has no value')
   })
 
   it('stores a user secret write-only and clears the value field', async () => {
@@ -79,14 +83,24 @@ describe('SecretsView', () => {
     expect(wrapper.find('select[name="secretScope"]').exists()).toBe(false)
   })
 
-  it('deletes a secret after confirmation', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('deletes a secret only after confirming in a dialog', async () => {
     const fake = server().on('DELETE', '/api/v1/me/secrets/freshrss', 204)
     const wrapper = await mountSecrets(fake)
 
     await wrapper.get('[data-secret="user/freshrss"] [data-test="delete"]').trigger('click')
     await flushPromises()
+    expect(fake.count('DELETE', '/api/v1/me/secrets/freshrss')).toBe(0)
+
+    ;(document.body.querySelector('[data-test="confirm-delete"]') as HTMLButtonElement).click()
+    await flushPromises()
 
     expect(fake.count('DELETE', '/api/v1/me/secrets/freshrss')).toBe(1)
+  })
+
+  it('shows the security tabs with the number of missing secrets', async () => {
+    const wrapper = await mountSecrets(server())
+
+    expect(wrapper.get('nav a[href="/security/secrets"]').text()).toContain('1')
+    expect(wrapper.get('h1').text()).toBe('Security')
   })
 })

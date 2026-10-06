@@ -33,21 +33,24 @@ function server(list: unknown[] = accounts) {
     .on('GET', '/api/v1/mail/oauth/providers', 200, providers)
 }
 
-async function mountAccounts(fake: FakeServer, path = '/mail/accounts') {
-  const { options } = await mountOptions(fake, path)
-  const wrapper = mount(MailAccountsView, options)
+async function mountAccounts(fake: FakeServer, path = '/mail/accounts', language?: 'en' | 'de') {
+  const { options } = await mountOptions(fake, path, language ? { language } : undefined)
+  const wrapper = mount(MailAccountsView, { ...options, attachTo: document.body })
   await flushPromises()
   return wrapper
 }
 
 describe('MailAccountsView', () => {
-  afterEach(() => vi.restoreAllMocks())
+  afterEach(() => {
+    vi.restoreAllMocks()
+    document.body.innerHTML = ''
+  })
 
   it('lists accounts with alias, sign-in method and server, never a credential', async () => {
     const wrapper = await mountAccounts(server())
 
     const row = wrapper.get('[data-account="gmail"]')
-    expect(row.text()).toContain('Google (OAuth)')
+    expect(row.text()).toContain('Google')
     expect(row.text()).toContain('imap.gmail.com')
     expect(row.text()).toContain('lukas@gmail.com')
   })
@@ -113,20 +116,45 @@ describe('MailAccountsView', () => {
 
   it('reports the result of the OAuth callback', async () => {
     const connected = await mountAccounts(server(), '/mail/accounts?connected=gmail')
-    expect(connected.get('[role="status"]').text()).toContain('gmail')
+    expect(connected.get('[data-test="callback"]').text()).toContain('gmail')
+    connected.unmount()
 
     const failed = await mountAccounts(server(), '/mail/accounts?error=mail.oauth_state_invalid')
-    expect(failed.get('[role="alert"]').text()).toContain('expired')
+    expect(failed.get('[data-test="callback"]').attributes('role')).toBe('alert')
+    expect(failed.get('[data-test="callback"]').text()).toContain('expired')
   })
 
-  it('deletes an account after confirmation', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('deletes an account only after confirming in a dialog', async () => {
     const fake = server().on('DELETE', '/api/v1/mail/accounts/a1', 204)
     const wrapper = await mountAccounts(fake)
 
     await wrapper.get('[data-account="gmail"] [data-test="delete"]').trigger('click')
     await flushPromises()
+    expect(fake.count('DELETE', '/api/v1/mail/accounts/a1')).toBe(0)
+
+    ;(document.body.querySelector('[data-test="confirm-delete"]') as HTMLButtonElement).click()
+    await flushPromises()
 
     expect(fake.count('DELETE', '/api/v1/mail/accounts/a1')).toBe(1)
+    expect(fake.count('GET', '/api/v1/mail/accounts')).toBe(2)
+  })
+
+  it('says that Marshal never sends mail', async () => {
+    const wrapper = await mountAccounts(server())
+
+    expect(wrapper.get('[data-test="no-send"]').text()).toContain('never sends')
+  })
+
+  it('shows an empty state without accounts', async () => {
+    const wrapper = await mountAccounts(server([]))
+
+    expect(wrapper.text()).toContain('No mail accounts yet')
+  })
+
+  it('speaks German', async () => {
+    const wrapper = await mountAccounts(server(), '/mail/accounts', 'de')
+
+    expect(wrapper.get('h1').text()).toBe('E-Mail-Konten')
+    expect(wrapper.get('[data-test="no-send"]').text()).toContain('sendet nie')
   })
 })

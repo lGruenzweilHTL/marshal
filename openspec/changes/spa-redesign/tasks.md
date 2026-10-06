@@ -75,10 +75,10 @@
 
 ## 12. Connections and settings
 
-- [ ] 12.1 Write failing tests for Mail accounts. Rebuild it. Verify they pass.
-- [ ] 12.2 Write failing tests for Preferences (language switch without reload, time zone, quiet hours, appearance). Rebuild it. Verify they pass.
-- [ ] 12.3 Write failing tests for Security with tokens, passkeys and secrets (plaintext shown once, write-only secrets, unresolved references). Rebuild it; `/secrets` redirects to Security › Secrets. Verify they pass.
-- [ ] 12.4 Write failing tests for System (health, version, kill switch, link to Configuration for admins) and Configuration. Rebuild them. Verify they pass.
+- [x] 12.1 Write failing tests for Mail accounts. Rebuild it. Verify they pass.
+- [x] 12.2 Write failing tests for Preferences (language switch without reload, time zone, quiet hours, appearance). Rebuild it. Verify they pass.
+- [x] 12.3 Write failing tests for Security with tokens, passkeys and secrets (plaintext shown once, write-only secrets, unresolved references). Rebuild it; `/secrets` redirects to Security › Secrets. Verify they pass.
+- [x] 12.4 Write failing tests for System (health, version, kill switch, link to Configuration for admins) and Configuration. Rebuild them. Verify they pass.
 
 ## 13. Sign-in and app states
 

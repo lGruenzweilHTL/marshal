@@ -3,14 +3,14 @@ import { Check } from 'lucide-vue-next'
 import { useId } from 'vue'
 import AppIcon from './AppIcon.vue'
 
-defineProps<{ label: string; description?: string; mono?: boolean; disabled?: boolean; value?: string }>()
+defineProps<{ label: string; description?: string; mono?: boolean; disabled?: boolean; value?: string; name?: string }>()
 const model = defineModel<boolean | string[]>({ required: true })
 const id = useId()
 </script>
 
 <template>
   <label class="checkbox" :for="id" :class="{ disabled }">
-    <input :id="id" v-model="model" type="checkbox" :value="value" :disabled="disabled" />
+    <input :id="id" v-model="model" type="checkbox" :name="name" :value="value" :disabled="disabled" />
     <span class="box" aria-hidden="true"><AppIcon :icon="Check" :size="14" :stroke="2.5" /></span>
     <span class="text">
       <span :class="{ 't-mono': mono }">{{ label }}</span>

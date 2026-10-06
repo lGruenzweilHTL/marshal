@@ -81,12 +81,12 @@ const routes: RouteRecordRaw[] = [
         ],
       },
       // Connections and settings
-      { path: 'mail/accounts', name: 'mail-accounts', component: MailAccountsView, meta: { title: 'shell.nav.mail', nav: 'mail', legacy: true } },
-      { path: 'preferences', name: 'preferences', component: PreferencesView, meta: { title: 'shell.nav.preferences', nav: 'preferences', legacy: true } },
-      { path: 'security', name: 'security', component: SecurityView, meta: { title: 'shell.nav.security', nav: 'security', legacy: true } },
-      { path: 'security/secrets', name: 'secrets', component: SecretsView, meta: { title: 'shell.nav.security', nav: 'security', legacy: true } },
-      { path: 'system', name: 'system', component: SystemView, meta: { title: 'shell.nav.system', nav: 'system', legacy: true } },
-      { path: 'system/config', name: 'config', component: ConfigView, meta: { title: 'shell.nav.config', nav: 'config', legacy: true } },
+      { path: 'mail/accounts', name: 'mail-accounts', component: MailAccountsView, meta: { title: 'shell.nav.mail', nav: 'mail' } },
+      { path: 'preferences', name: 'preferences', component: PreferencesView, meta: { title: 'shell.nav.preferences', nav: 'preferences' } },
+      { path: 'security', name: 'security', component: SecurityView, meta: { title: 'shell.nav.security', nav: 'security' } },
+      { path: 'security/secrets', name: 'secrets', component: SecretsView, meta: { title: 'shell.nav.security', nav: 'security' } },
+      { path: 'system', name: 'system', component: SystemView, meta: { title: 'shell.nav.system', nav: 'system' } },
+      { path: 'system/config', name: 'config', component: ConfigView, meta: { title: 'shell.nav.config', nav: 'config' } },
       // Paths of the previous layout; push notifications already sent still link to some of them.
       { path: 'review/:id?', redirect: (to) => (to.params.id ? `/inbox/approvals/${String(to.params.id)}` : '/inbox') },
       { path: 'notifications', redirect: '/inbox' },

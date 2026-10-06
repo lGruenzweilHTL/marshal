@@ -1,5 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import PreferencesView from './PreferencesView.vue'
 import { FakeServer } from '../testing/fakeServer'
 import { me, mountOptions } from '../testing/mountApp'
@@ -17,10 +17,10 @@ function server() {
 }
 
 async function mountPreferences(fake: FakeServer) {
-  const { options } = await mountOptions(fake, '/preferences')
+  const { options, locale } = await mountOptions(fake, '/preferences')
   const wrapper = mount(PreferencesView, options)
   await flushPromises()
-  return wrapper
+  return Object.assign(wrapper, { locale })
 }
 
 function sent(fake: FakeServer) {
@@ -28,28 +28,60 @@ function sent(fake: FakeServer) {
 }
 
 describe('PreferencesView', () => {
-  it('saves a changed language with the rest unchanged', async () => {
+  afterEach(() => {
+    localStorage.clear()
+    delete document.documentElement.dataset.theme
+  })
+
+  it('saves a changed language and switches the interface without a reload', async () => {
     const fake = server().on('PUT', '/api/v1/me/preferences', 200, { ...stored, language: 'de' })
     const wrapper = await mountPreferences(fake)
 
-    expect((wrapper.get('input[name="timeZone"]').element as HTMLInputElement).value).toBe('Europe/Vienna')
-    await wrapper.get('select[name="language"]').setValue('de')
+    expect(wrapper.get('h1').text()).toBe('Preferences')
+    expect((wrapper.get('select[name="timeZone"]').element as HTMLSelectElement).value).toBe('Europe/Vienna')
+    await wrapper.get('[data-test="language"] [data-value="de"]').trigger('click')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
     expect(sent(fake)).toEqual({ ...stored, language: 'de' })
-    expect(wrapper.get('[role="status"]').text()).toContain('Saved')
+    expect(wrapper.locale.language.value).toBe('de')
+    expect(wrapper.get('h1').text()).toBe('Präferenzen')
+    expect(wrapper.find('[data-test="saved"]').exists()).toBe(true)
   })
 
-  it('shows the validation error for an unknown time zone', async () => {
-    const fake = server().on('PUT', '/api/v1/me/preferences', 400, { code: 'preferences.invalid', detail: "timeZone 'Mars/Base' is not a known IANA time zone." })
+  it('applies a changed time zone after saving', async () => {
+    const fake = server().on('PUT', '/api/v1/me/preferences', 200, { ...stored, timeZone: 'Asia/Tokyo' })
     const wrapper = await mountPreferences(fake)
 
-    await wrapper.get('input[name="timeZone"]').setValue('Mars/Base')
+    await wrapper.get('select[name="timeZone"]').setValue('Asia/Tokyo')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[role="alert"]').text()).toContain('Mars/Base')
+    expect(sent(fake).timeZone).toBe('Asia/Tokyo')
+    expect(wrapper.locale.timeZone.value).toBe('Asia/Tokyo')
+  })
+
+  it('shows the validation error and keeps the language', async () => {
+    const fake = server().on('PUT', '/api/v1/me/preferences', 400, { code: 'preferences.invalid', detail: "timeZone 'Asia/Tokyo' is not a known IANA time zone." })
+    const wrapper = await mountPreferences(fake)
+
+    await wrapper.get('[data-test="language"] [data-value="de"]').trigger('click')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.get('[role="alert"]').text()).toContain('IANA')
+    expect(wrapper.locale.language.value).toBe('en')
+  })
+
+  it('sets the appearance on this device only', async () => {
+    const fake = server()
+    const wrapper = await mountPreferences(fake)
+
+    await wrapper.get('[data-test="appearance"] [data-value="dark"]').trigger('click')
+
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(localStorage.getItem('marshal.appearance')).toBe('dark')
+    expect(fake.count('PUT', '/api/v1/me/preferences')).toBe(0)
   })
 
   it('edits quiet hours, push targets and do-not-disturb', async () => {
@@ -59,7 +91,7 @@ describe('PreferencesView', () => {
     await wrapper.get('[data-test="add-window"]').trigger('click')
     const windows = wrapper.findAll('[data-window]')
     expect(windows).toHaveLength(2)
-    await windows[1]!.get('select').setValue('monday')
+    await windows[1]!.get('select[name="day"]').setValue('monday')
     await windows[1]!.get('input[name="start"]').setValue('23:00')
     await windows[1]!.get('input[name="end"]').setValue('06:30')
     await wrapper.get('[data-window="0"] [data-test="remove-window"]').trigger('click')

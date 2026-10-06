@@ -1,40 +1,95 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import type { Schemas } from '../api/client'
-import { useApiSession } from '../api/inject'
-import HealthChecks from './HealthChecks.vue'
-import { loadHealth, type HealthReport } from './health'
+import { Bot, Database, FileCog, HeartPulse, House, KeyRound, Plug } from 'lucide-vue-next'
+import { computed, type Component } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useApi } from '../api/inject'
+import { useLoad } from '../api/useLoad'
+import { useUserSession } from '../session'
+import KillSwitch from '../tasks/KillSwitch.vue'
+import { Badge, Card, IconTile, KeyValueList, ListCard, ListRow, LoadBoundary, Page, PageHeader, Section, useDesktop, type Tone } from '../ui'
+import { loadHealth, type HealthCheck, type HealthReport } from './health'
 
-const session = useApiSession()
-const info = ref<Schemas['SystemInfo'] | null>(null)
-const report = ref<HealthReport | null>(null)
-const error = ref<string | null>(null)
+/** Health checks, version and API versions, the kill switch and (for admins) the way to the configuration. */
+const api = useApi()
+const user = useUserSession()
+const desktop = useDesktop()
+const { t, te } = useI18n()
 
-onMounted(async () => {
-  try {
-    const [system, healthReport] = await Promise.all([session.raw.GET('/api/v1/system'), loadHealth(session)])
-    info.value = system.data ?? null
-    report.value = healthReport.data ?? null
-  } catch {
-    error.value = 'The system information could not be loaded.'
-  }
-})
+const info = useLoad(() => api.call((client) => client.GET('/api/v1/system')), { isEmpty: () => false })
+const health = useLoad<HealthReport>(() => loadHealth(api), { isEmpty: () => false })
+const tasks = useLoad(() => api.call((client) => client.GET('/api/v1/tasks')), { isEmpty: () => false })
+const running = computed(() => (tasks.data.value ?? []).filter((task) => task.status === 'running').length)
+const isAdmin = computed(() => user.current.value?.roles.includes('admin') === true)
+
+const tones: Record<HealthCheck['status'], Tone> = { healthy: 'success', degraded: 'warning', unhealthy: 'danger' }
+const icons: Record<string, Component> = { database: Database, config: FileCog, secrets: KeyRound, mcp: Plug, memory: Bot, homeassistant: House }
+const checkName = (name: string) => (te(`system.checks.${name}`) ? t(`system.checks.${name}`) : name)
+const checkDetail = (check: HealthCheck) => [check.description, ...(check.warnings ?? [])].filter(Boolean).join(' · ') || undefined
+const about = (data: { version: string; supportedApiVersions: string[]; deprecatedApiVersions: string[] }) => [
+  { key: 'version', label: t('system.version'), value: data.version, mono: true },
+  { key: 'api-versions', label: t('system.api'), value: data.supportedApiVersions.join(', '), mono: true },
+  { key: 'deprecated', label: t('system.deprecated'), value: data.deprecatedApiVersions.join(', ') || t('system.none'), mono: data.deprecatedApiVersions.length > 0 },
+]
 </script>
 
 <template>
-  <section class="page">
-    <h1>System</h1>
-    <p v-if="error" role="alert" class="error">{{ error }}</p>
-    <dl v-if="info" class="facts">
-      <dt>Version</dt>
-      <dd data-test="version">{{ info.version }}</dd>
-      <dt>API versions</dt>
-      <dd data-test="api-versions">
-        {{ info.supportedApiVersions.join(', ') }}
-        <template v-if="info.deprecatedApiVersions.length"> (deprecated: {{ info.deprecatedApiVersions.join(', ') }})</template>
-      </dd>
-    </dl>
-    <h2>Health</h2>
-    <HealthChecks v-if="report" :report="report" details />
-  </section>
+  <Page width="wide">
+    <PageHeader :title="t('system.title')">
+      <template v-if="health.data.value" #actions>
+        <Badge :tone="tones[health.data.value.status]" dot :label="t(`system.status.${health.data.value.status}`)" data-test="overall" />
+      </template>
+    </PageHeader>
+
+    <div class="layout" :class="{ two: desktop }">
+      <div class="column">
+        <Section :title="t('system.health')">
+          <LoadBoundary :load="health">
+            <template #default="{ data }">
+              <ListCard :label="t('system.health')">
+                <ListRow v-for="(check, name) in data.checks" :key="name" :data-check="name" :title="checkName(String(name))" :subtitle="checkDetail(check)">
+                  <template #lead><IconTile :icon="icons[name] ?? HeartPulse" :tone="check.status === 'healthy' ? 'neutral' : tones[check.status]" /></template>
+                  <template #trail><Badge :tone="tones[check.status]" dot :label="t(`system.status.${check.status}`)" /></template>
+                </ListRow>
+              </ListCard>
+            </template>
+          </LoadBoundary>
+        </Section>
+
+        <Section :title="t('system.background')">
+          <KillSwitch :running="running" @changed="tasks.refresh()" />
+          <p class="t-body-s ink-3">{{ t('system.backgroundHint') }}</p>
+        </Section>
+      </div>
+
+      <div class="column">
+        <Card :title="t('system.about')">
+          <LoadBoundary :load="info">
+            <template #default="{ data }">
+              <KeyValueList :items="about(data)" />
+            </template>
+          </LoadBoundary>
+        </Card>
+        <ListCard v-if="isAdmin">
+          <ListRow to="/system/config" :title="t('system.configTitle')" :subtitle="t('system.configBody')">
+            <template #lead><IconTile :icon="FileCog" /></template>
+          </ListRow>
+        </ListCard>
+      </div>
+    </div>
+  </Page>
 </template>
+
+<style scoped>
+.layout,
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.layout.two {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--space-8);
+  align-items: start;
+}
+</style>

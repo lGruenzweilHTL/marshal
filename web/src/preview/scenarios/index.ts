@@ -65,7 +65,7 @@ export function createPreviewServer(scenario: ScenarioName, language: Language, 
       status: 'degraded',
       checks: {
         database: { status: 'healthy', description: null, warnings: null },
-        homeAssistant: { status: 'healthy', description: null, warnings: null },
+        homeassistant: { status: 'healthy', description: null, warnings: null },
         mcp: { status: 'degraded', description: 'notes-search is down.', warnings: ['notes-search: process exited with code 1'] },
       },
     })

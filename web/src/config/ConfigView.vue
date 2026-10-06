@@ -1,165 +1,247 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Schemas } from '../api/client'
-import { useApiSession } from '../api/inject'
+import { useApi } from '../api/inject'
+import { useLoad } from '../api/useLoad'
+import { Badge, Banner, Card, DataTable, LoadBoundary, Page, PageHeader, Section, useDesktop, type Tone } from '../ui'
 
-const session = useApiSession()
-const summary = ref<Schemas['ConfigSummary'] | null>(null)
-const error = ref<string | null>(null)
+/** Read-only view of `/config` and `marshal.yaml` for admins: what loaded, what was skipped and why. Secrets by name only. */
+type Summary = Schemas['ConfigSummary']
 
-const stateBadges: Record<Schemas['McpServerState'], string> = {
-  connected: 'healthy',
-  connecting: 'degraded',
-  down: 'unhealthy',
+const api = useApi()
+const desktop = useDesktop()
+const { t } = useI18n()
+
+const summary = useLoad<Summary>(() => api.call((client) => client.GET('/api/v1/config')), { isEmpty: () => false })
+const forbidden = computed(() => summary.error.value?.kind === 'problem' && summary.error.value.status === 403)
+
+const stateTones: Record<Schemas['McpServerState'], Tone> = { connected: 'success', connecting: 'warning', down: 'danger' }
+const tierTones: Record<string, Tone> = { safe: 'success', notify: 'info', confirm: 'warning', forbidden: 'danger' }
+
+const sections = ['models', 'mcp', 'risk', 'templates', 'skills', 'satellites'] as const
+function counts(data: Summary): Record<(typeof sections)[number], number> {
+  return {
+    models: data.models.length,
+    mcp: data.mcpServers.length,
+    risk: data.riskRules.length,
+    templates: data.templates.length,
+    skills: data.skills.length,
+    satellites: data.satellites.length,
+  }
 }
 
-onMounted(async () => {
-  const { data, response } = await session.raw.GET('/api/v1/config')
-  summary.value = data ?? null
-  error.value = data
-    ? null
-    : response.status === 403
-      ? 'The configuration view needs the admin scope.'
-      : 'The configuration could not be loaded.'
-})
+const column = (key: string, label: string, align?: 'left' | 'right') => ({ key, label: t(`system.config.columns.${label}`), align })
+const columns = computed(() => ({
+  models: [column('key', 'key'), column('tier', 'tier'), column('provider', 'provider'), column('model', 'model'), column('endpoint', 'endpoint'), column('apiKeySecret', 'apiKey'), column('contextLength', 'context', 'right')],
+  mcp: [column('id', 'server'), column('state', 'status'), column('toolCount', 'tools', 'right'), column('transport', 'transport'), column('target', 'target'), column('secrets', 'secrets'), column('untrusted', 'untrusted')],
+  risk: [column('index', 'number', 'right'), column('tool', 'tool'), column('match', 'match'), column('args', 'args'), column('tier', 'tier')],
+  templates: [column('name', 'name'), column('modelTier', 'tier'), column('tools', 'tools'), column('skills', 'skills'), column('maxSteps', 'maxSteps', 'right'), column('maxAdvisorCalls', 'advisor', 'right'), column('description', 'description')],
+  satellites: [column('id', 'satellite'), column('verbosity', 'verbosity'), column('denyTools', 'hidden'), column('denyConfirm', 'noConfirm'), column('notes', 'notes')],
+}))
 
-function conditions(values: Record<string, string[]>): string {
-  return Object.entries(values)
+const rules = (data: Summary) => data.riskRules.map((rule, index) => ({ ...rule, index }))
+const conditions = (values: Record<string, string[]>) =>
+  Object.entries(values)
     .map(([key, allowed]) => `${key}: ${allowed.join(' | ')}`)
-    .join(', ')
-}
-
-function list(values: string[] | null | undefined, empty = '–'): string {
-  return values && values.length ? values.join(', ') : empty
-}
+    .join(', ') || '—'
+const list = (values: string[] | null | undefined, empty = '—') => (values && values.length ? values.join(', ') : empty)
+const serverSecrets = (server: Schemas['McpServerSummary']) => list([...(server.authTokenSecret ? [server.authTokenSecret] : []), ...server.environmentSecrets])
 </script>
 
 <template>
-  <section class="page">
-    <h1>Configuration</h1>
-    <p class="muted">Read-only view of <code>/config</code> and <code>marshal.yaml</code>. Edit the files to change it; secrets appear by name only.</p>
-    <p v-if="error" role="alert" class="error">{{ error }}</p>
-    <template v-if="summary">
-      <template v-if="summary.errors.length">
-        <h2>Load errors</h2>
-        <ul class="plain">
-          <li v-for="entry in summary.errors" :key="entry.file" :data-error="entry.file" class="error">
-            <code>{{ entry.file }}</code>: {{ entry.message }}
-            <span class="muted">({{ entry.previousVersionActive ? 'previous version active' : 'skipped' }})</span>
-          </li>
-        </ul>
+  <Page width="wide">
+    <PageHeader :title="t('system.config.title')" :subtitle="t('system.config.subtitle')" back="/system" :back-label="t('system.config.back')">
+      <template v-if="desktop" #actions><Badge label="admin" /></template>
+    </PageHeader>
+
+    <LoadBoundary :load="summary" size="page" :error-title="forbidden ? t('system.config.forbidden') : undefined">
+      <template #default="{ data }">
+        <div class="layout" :class="{ two: desktop }">
+          <nav v-if="desktop" class="sections" :aria-label="t('system.config.sections')">
+            <a v-for="section in sections" :key="section" :href="`#${section}`" class="section-link">
+              <span>{{ t(`system.config.${section}`) }}</span>
+              <span class="num ink-3">{{ counts(data)[section] }}</span>
+            </a>
+          </nav>
+
+          <div class="body">
+            <Banner v-if="data.errors.length" :title="t('system.config.skipped', { count: data.errors.length }, data.errors.length)" data-test="skipped">
+              <ul class="errors">
+                <li v-for="entry in data.errors" :key="entry.file" :data-error="entry.file">
+                  <span class="t-mono-s">{{ entry.file }}</span>: {{ entry.message }}
+                  <span class="ink-2">({{ entry.previousVersionActive ? t('system.config.previousActive') : t('system.config.skippedFile') }})</span>
+                </li>
+              </ul>
+            </Banner>
+
+            <Section id="models" :title="t('system.config.models')" :count="data.models.length">
+              <Card flush>
+                <DataTable :columns="columns.models" :rows="data.models" :row-key="(model) => model.key" :label="t('system.config.models')" row-attribute="model">
+                  <template #cell-key="{ row }"><span class="t-mono-s">{{ row.key }}</span></template>
+                  <template #cell-tier="{ row }"><Badge v-if="row.tier" :tone="row.tier === 'advisor' ? 'accent' : 'info'" :label="row.tier" /><span v-else>—</span></template>
+                  <template #cell-model="{ row }">
+                    <span class="t-mono-s">{{ row.model }}</span>
+                    <span v-if="row.vision" class="ink-3"> ({{ t('system.config.vision') }})</span>
+                  </template>
+                  <template #cell-endpoint="{ row }"><span class="t-mono-s ink-2">{{ row.endpoint ?? '—' }}</span></template>
+                  <template #cell-apiKeySecret="{ row }"><span class="t-mono-s">{{ row.apiKeySecret ?? '—' }}</span></template>
+                  <template #cell-contextLength="{ row }"><span class="num">{{ row.contextLength }}</span></template>
+                </DataTable>
+              </Card>
+            </Section>
+
+            <Section id="mcp" :title="t('system.config.mcp')" :count="data.mcpServers.length">
+              <p v-if="!data.mcpServers.length" class="t-body-s ink-3">{{ t('system.config.empty.mcp') }}</p>
+              <Card v-else flush>
+                <DataTable :columns="columns.mcp" :rows="data.mcpServers" :row-key="(server) => server.id" :label="t('system.config.mcp')" row-attribute="server">
+                  <template #cell-id="{ row }">
+                    <span class="t-mono-s strong">{{ row.id }}</span>
+                    <span v-if="row.namespace !== row.id" class="ink-3"> ({{ row.namespace }}.*)</span>
+                  </template>
+                  <template #cell-state="{ row }">
+                    <Badge :tone="stateTones[row.state]" dot :label="t(`system.config.state.${row.state}`)" />
+                    <span v-if="row.error" class="error t-body-s ink-2">{{ row.error }}</span>
+                  </template>
+                  <template #cell-toolCount="{ row }"><span class="num">{{ row.toolCount }}</span></template>
+                  <template #cell-target="{ row }"><span class="t-mono-s ink-2">{{ row.target }}</span></template>
+                  <template #cell-secrets="{ row }"><span class="t-mono-s">{{ serverSecrets(row) }}</span></template>
+                  <template #cell-untrusted="{ row }">{{ row.untrusted ? t('system.config.yes') : t('system.config.no') }}</template>
+                </DataTable>
+              </Card>
+            </Section>
+
+            <Section id="risk" :title="t('system.config.risk')" :count="data.riskRules.length">
+              <p class="t-body-s ink-2">{{ t('system.config.riskHint') }}</p>
+              <Card flush>
+                <DataTable :columns="columns.risk" :rows="rules(data)" :row-key="(rule) => String(rule.index)" :label="t('system.config.risk')" row-attribute="rule">
+                  <template #cell-index="{ row }"><span class="num">{{ row.index + 1 }}</span></template>
+                  <template #cell-tool="{ row }"><span class="t-mono-s">{{ row.tool }}</span></template>
+                  <template #cell-match="{ row }"><span class="t-mono-s">{{ conditions(row.match) }}</span></template>
+                  <template #cell-args="{ row }"><span class="t-mono-s">{{ conditions(row.args) }}</span></template>
+                  <template #cell-tier="{ row }"><Badge v-if="row.tier" :tone="tierTones[row.tier] ?? 'neutral'" :label="row.tier" /><span v-else>—</span></template>
+                </DataTable>
+              </Card>
+            </Section>
+
+            <Section id="templates" :title="t('system.config.templates')" :count="data.templates.length">
+              <Card flush>
+                <DataTable :columns="columns.templates" :rows="data.templates" :row-key="(template) => template.name" :label="t('system.config.templates')" row-attribute="template">
+                  <template #cell-name="{ row }">
+                    <span class="t-mono-s strong">{{ row.name }}</span>
+                    <span v-if="row.builtIn" class="ink-3"> ({{ t('system.config.builtIn') }})</span>
+                  </template>
+                  <template #cell-modelTier="{ row }">{{ row.modelTier ?? t('system.config.byInput') }}</template>
+                  <template #cell-tools="{ row }"><span class="t-mono-s">{{ list(row.tools) }}</span></template>
+                  <template #cell-skills="{ row }">{{ row.skills === null ? t('system.config.all') : list(row.skills, t('system.config.noneList')) }}</template>
+                  <template #cell-maxSteps="{ row }"><span class="num">{{ row.maxSteps ?? t('system.config.default') }}</span></template>
+                  <template #cell-maxAdvisorCalls="{ row }"><span class="num">{{ row.maxAdvisorCalls ?? t('system.config.default') }}</span></template>
+                </DataTable>
+              </Card>
+            </Section>
+
+            <Section id="skills" :title="t('system.config.skills')" :count="data.skills.length">
+              <p v-if="!data.skills.length" class="t-body-s ink-3">{{ t('system.config.empty.skills') }}</p>
+              <Card v-else flush>
+                <ul class="skills">
+                  <li v-for="skill in data.skills" :key="skill.name" :data-skill="skill.name">
+                    <span class="t-mono-s strong">{{ skill.name }}</span>
+                    <span>{{ skill.description }}</span>
+                    <span v-if="skill.files.length" class="t-body-s ink-3">{{ t('system.config.files', { files: skill.files.join(', ') }) }}</span>
+                  </li>
+                </ul>
+              </Card>
+            </Section>
+
+            <Section id="satellites" :title="t('system.config.satellites')" :count="data.satellites.length">
+              <p v-if="!data.satellites.length" class="t-body-s ink-3">{{ t('system.config.empty.satellites') }}</p>
+              <Card v-else flush>
+                <DataTable :columns="columns.satellites" :rows="data.satellites" :row-key="(satellite) => satellite.id" :label="t('system.config.satellites')" row-attribute="satellite">
+                  <template #cell-id="{ row }"><span class="t-mono-s">{{ row.id }}</span></template>
+                  <template #cell-denyTools="{ row }"><span class="t-mono-s">{{ list(row.denyTools) }}</span></template>
+                  <template #cell-denyConfirm="{ row }"><span class="t-mono-s">{{ list(row.denyConfirm) }}</span></template>
+                  <template #cell-notes="{ row }">{{ row.notes ?? '' }}</template>
+                </DataTable>
+              </Card>
+            </Section>
+          </div>
+        </div>
       </template>
-
-      <h2>Skills</h2>
-      <p v-if="!summary.skills.length" class="muted">No skills.</p>
-      <ul v-else class="plain">
-        <li v-for="skill in summary.skills" :key="skill.name" :data-skill="skill.name">
-          <strong>{{ skill.name }}</strong>: {{ skill.description }}
-          <span v-if="skill.files.length" class="muted"> (files: {{ skill.files.join(', ') }})</span>
-        </li>
-      </ul>
-
-      <h2>Agent templates</h2>
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr><th>Name</th><th>Tier</th><th>Tools</th><th>Skills</th><th>Max steps</th><th>Advisor calls</th><th>Description</th></tr>
-          </thead>
-          <tbody>
-            <tr v-for="template in summary.templates" :key="template.name" :data-template="template.name">
-              <td>{{ template.name }}<span v-if="template.builtIn" class="muted"> (built-in)</span></td>
-              <td>{{ template.modelTier ?? 'by input' }}</td>
-              <td>{{ list(template.tools) }}</td>
-              <td>{{ template.skills === null ? 'all' : list(template.skills, 'none') }}</td>
-              <td class="number">{{ template.maxSteps ?? 'default' }}</td>
-              <td class="number">{{ template.maxAdvisorCalls ?? 'default' }}</td>
-              <td>{{ template.description }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h2>MCP servers</h2>
-      <p v-if="!summary.mcpServers.length" class="muted">No MCP servers.</p>
-      <div v-else class="table-scroll">
-        <table>
-          <thead>
-            <tr><th>Server</th><th>Status</th><th>Tools</th><th>Transport</th><th>Target</th><th>Secrets</th><th>Untrusted</th></tr>
-          </thead>
-          <tbody>
-            <tr v-for="server in summary.mcpServers" :key="server.id" :data-server="server.id">
-              <td>{{ server.id }}<span v-if="server.namespace !== server.id" class="muted"> ({{ server.namespace }}.*)</span></td>
-              <td>
-                <span class="badge" :class="stateBadges[server.state]">{{ server.state }}</span>
-                <span v-if="server.error" class="muted"> {{ server.error }}</span>
-              </td>
-              <td class="number">{{ server.toolCount }}</td>
-              <td>{{ server.transport }}</td>
-              <td><code>{{ server.target }}</code></td>
-              <td>{{ list([...(server.authTokenSecret ? [server.authTokenSecret] : []), ...server.environmentSecrets]) }}</td>
-              <td>{{ server.untrusted ? 'yes' : 'no' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h2>Risk rules</h2>
-      <p class="muted">Evaluated in order; the first match wins.</p>
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr><th>#</th><th>Tool</th><th>Target</th><th>Arguments</th><th>Tier</th></tr>
-          </thead>
-          <tbody>
-            <tr v-for="(rule, index) in summary.riskRules" :key="index" :data-rule="index">
-              <td class="number">{{ index + 1 }}</td>
-              <td><code>{{ rule.tool }}</code></td>
-              <td>{{ conditions(rule.match) || '–' }}</td>
-              <td>{{ conditions(rule.args) || '–' }}</td>
-              <td>{{ rule.tier }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h2>Models</h2>
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr><th>Key</th><th>Tier</th><th>Provider</th><th>Model</th><th>Endpoint</th><th>API key secret</th><th>Context</th></tr>
-          </thead>
-          <tbody>
-            <tr v-for="model in summary.models" :key="model.key" :data-model="model.key">
-              <td>{{ model.key }}</td>
-              <td>{{ model.tier }}</td>
-              <td>{{ model.provider }}</td>
-              <td>{{ model.model }}<span v-if="model.vision" class="muted"> (vision)</span></td>
-              <td>{{ model.endpoint ?? '–' }}</td>
-              <td>{{ model.apiKeySecret ?? '–' }}</td>
-              <td class="number">{{ model.contextLength }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h2>Satellites</h2>
-      <p v-if="!summary.satellites.length" class="muted">No satellite profiles.</p>
-      <div v-else class="table-scroll">
-        <table>
-          <thead>
-            <tr><th>Satellite</th><th>Verbosity</th><th>Hidden tools</th><th>No confirmation</th><th>Notes</th></tr>
-          </thead>
-          <tbody>
-            <tr v-for="satellite in summary.satellites" :key="satellite.id" :data-satellite="satellite.id">
-              <td>{{ satellite.id }}</td>
-              <td>{{ satellite.verbosity }}</td>
-              <td>{{ list(satellite.denyTools) }}</td>
-              <td>{{ list(satellite.denyConfirm) }}</td>
-              <td>{{ satellite.notes ?? '' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </template>
-  </section>
+    </LoadBoundary>
+  </Page>
 </template>
+
+<style scoped>
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.layout.two {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: var(--space-8);
+  align-items: start;
+}
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-width: 0;
+}
+.sections {
+  position: sticky;
+  top: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.section-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--ink-2);
+  font: var(--text-body-s);
+  text-decoration: none;
+}
+.section-link:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+.errors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  overflow-wrap: anywhere;
+}
+.strong {
+  font-weight: 600;
+}
+.error {
+  display: block;
+  margin-top: var(--space-1);
+}
+.skills {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.skills li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.skills li:first-child {
+  border-top: 0;
+}
+</style>

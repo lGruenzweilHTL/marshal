@@ -469,10 +469,10 @@ export const normal = {
   ],
   '/api/v1/mail/accounts': [
     { id: id(13, 1), alias: 'private', provider: 'imap', strategy: 'password', host: 'imap.example.com', port: 993, security: 'tls', userName: 'lukas@example.com', draftsFolder: 'Drafts', createdAt: at(-80 * 1440) },
-    { id: id(13, 2), alias: 'work', provider: 'gmail', strategy: 'oauth', host: 'imap.gmail.com', port: 993, security: 'tls', userName: 'lukas@work.example', draftsFolder: '[Gmail]/Drafts', createdAt: at(-20 * 1440) },
+    { id: id(13, 2), alias: 'work', provider: 'imap', strategy: 'oauth_google', host: 'imap.gmail.com', port: 993, security: 'tls', userName: 'lukas@work.example', draftsFolder: '[Gmail]/Drafts', createdAt: at(-20 * 1440) },
   ],
   '/api/v1/mail/oauth/providers': [
-    { name: 'gmail', configured: true },
+    { name: 'google', configured: true },
     { name: 'microsoft', configured: false },
   ],
   '/api/v1/me/tokens': [

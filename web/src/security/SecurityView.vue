@@ -1,196 +1,261 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { Ban, Copy, Fingerprint, KeyRound, Plus } from 'lucide-vue-next'
+import { computed, reactive, shallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Schemas } from '../api/client'
-import { useApiSession } from '../api/inject'
-import { problemMessage } from '../api/problem'
+import { useApi } from '../api/inject'
+import { useLoad } from '../api/useLoad'
+import { useSubmit } from '../api/useSubmit'
 import { usePasskeys } from '../auth/passkeys'
-import { formatDateTime } from '../format'
+import { useFormat } from '../i18n/locale'
 import { useUserSession } from '../session'
+import { AppButton, Badge, Banner, Card, Checkbox, CodeBlock, Dialog, ErrorBanner, Field, IconTile, ListCard, ListRow, LoadBoundary, Page, PageHeader, Section, useDesktop, type Tone } from '../ui'
+import SecurityTabs from './SecurityTabs.vue'
 
+/** API tokens (the plaintext is shown once, right after creating) and, with local sign-in, passkeys. */
 type Token = Schemas['ApiTokenResponse']
 
-const session = useApiSession()
+const api = useApi()
 const user = useUserSession()
 const passkeys = usePasskeys()
-const tokens = ref<Token[]>([])
-const error = ref<string | null>(null)
-const tokenName = ref('')
-const scopes = ref<string[]>([])
-const expiresOn = ref('')
-const created = ref<string | null>(null)
-const localLogin = ref(false)
-const passkeyName = ref('')
-const passkeyAdded = ref(false)
-const passkeyError = ref<string | null>(null)
+const desktop = useDesktop()
+const format = useFormat()
+const { t } = useI18n()
 
-async function loadTokens() {
-  const { data } = await session.raw.GET('/api/v1/me/tokens')
-  if (data) tokens.value = data
-  else error.value = 'The tokens could not be loaded.'
-}
+const tokens = useLoad(() => api.call((client) => client.GET('/api/v1/me/tokens')), { isEmpty: () => false })
+const providers = useLoad(() => api.call((client) => client.GET('/api/v1/auth/providers')))
+const localLogin = computed(() => providers.data.value?.some((provider) => provider.type === 'local') === true && passkeys.supported())
+const ownScopes = computed(() => user.current.value?.scopes ?? [])
+
+const draft = reactive({ name: '', scopes: [] as string[], expiresOn: '' })
+const plaintext = shallowRef<string | null>(null)
+const copied = shallowRef(false)
 
 /** Expiry at the end of the chosen local day. */
 function expiry(): string | null {
-  if (!expiresOn.value) return null
-  const [year, month, day] = expiresOn.value.split('-').map(Number) as [number, number, number]
+  if (!draft.expiresOn) return null
+  const [year, month, day] = draft.expiresOn.split('-').map(Number) as [number, number, number]
   return new Date(year, month - 1, day, 23, 59, 59).toISOString()
 }
 
-async function createToken() {
-  error.value = null
-  const { data, error: problem } = await session.raw.POST('/api/v1/me/tokens', {
-    body: { name: tokenName.value, scopes: scopes.value, expiresAt: expiry(), kind: null },
-  })
-  if (!data) {
-    error.value = problemMessage(problem, 'The token could not be created.')
-    return
+const create = useSubmit(async () => {
+  const result = await api.call((client) => client.POST('/api/v1/me/tokens', { body: { name: draft.name, scopes: draft.scopes, expiresAt: expiry(), kind: null } }))
+  if (result.data) {
+    plaintext.value = result.data.token
+    copied.value = false
+    Object.assign(draft, { name: '', scopes: [], expiresOn: '' })
+    tokens.refresh()
   }
-  created.value = data.token
-  tokenName.value = ''
-  scopes.value = []
-  expiresOn.value = ''
-  await loadTokens()
+  return result
+})
+
+async function copy() {
+  if (!plaintext.value) return
+  await navigator.clipboard?.writeText(plaintext.value)
+  copied.value = true
 }
 
-async function revoke(token: Token) {
-  if (!window.confirm(`Revoke the token "${token.name}"? Clients using it stop working immediately.`)) return
-  const { response } = await session.raw.DELETE('/api/v1/me/tokens/{id}', { params: { path: { id: token.id } } })
-  if (!response.ok) error.value = 'The token could not be revoked.'
-  await loadTokens()
-}
+const revoking = shallowRef<Token | null>(null)
+const revoke = useSubmit(async () => {
+  const token = revoking.value!
+  const result = await api.call((client) => client.DELETE('/api/v1/me/tokens/{id}', { params: { path: { id: token.id } } }))
+  if (!result.error) {
+    revoking.value = null
+    tokens.refresh()
+  }
+  return result
+})
 
-async function copyToken() {
-  if (created.value) await navigator.clipboard?.writeText(created.value)
+const day = 86_400_000
+function status(token: Token): { tone: Tone; label: string } {
+  if (token.revokedAt) return { tone: 'neutral', label: t('security.tokens.status.revoked') }
+  if (token.readOnly) return { tone: 'neutral', label: t('security.tokens.status.readOnly') }
+  const left = token.expiresAt ? Math.ceil((new Date(token.expiresAt).getTime() - Date.now()) / day) : null
+  if (left !== null && left <= 14) return { tone: 'warning', label: t('security.tokens.status.expiresSoon', { days: left }, left) }
+  return { tone: 'success', label: t('security.tokens.status.active') }
 }
+const dates = (token: Token) =>
+  [t('security.tokens.created', { date: format.value.date(token.createdAt) }), token.expiresAt ? t('security.tokens.expires', { date: format.value.date(token.expiresAt) }) : t('security.tokens.never')].join(' · ')
 
-async function addPasskey() {
+const passkeyName = shallowRef('')
+const passkeyAdded = shallowRef(false)
+const passkeyFailed = shallowRef(false)
+const addPasskey = useSubmit(async () => {
   passkeyAdded.value = false
-  passkeyError.value = null
+  passkeyFailed.value = false
+  const options = await api.call((client) => client.POST('/api/v1/auth/local/passkeys/creation-options', { parseAs: 'text' }))
+  if (options.error) return options
+  let credentialJson: string
   try {
-    const options = await session.raw.POST('/api/v1/auth/local/passkeys/creation-options', { parseAs: 'text' })
-    if (!options.data) throw new Error('options')
-    const credentialJson = await passkeys.create(options.data)
-    const { response, error: problem } = await session.raw.POST('/api/v1/auth/local/passkeys', {
-      body: { credentialJson, name: passkeyName.value || null },
-    })
-    if (!response.ok) {
-      passkeyError.value = problemMessage(problem, 'The passkey was not accepted.')
-      return
-    }
+    credentialJson = await passkeys.create(options.data as string)
+  } catch {
+    passkeyFailed.value = true
+    return { data: undefined }
+  }
+  const result = await api.call((client) => client.POST('/api/v1/auth/local/passkeys', { body: { credentialJson, name: passkeyName.value || null } }))
+  if (!result.error) {
     passkeyAdded.value = true
     passkeyName.value = ''
-  } catch {
-    passkeyError.value = 'Adding the passkey was cancelled or failed.'
   }
-}
-
-onMounted(async () => {
-  const [, providers] = await Promise.all([loadTokens(), session.raw.GET('/api/v1/auth/providers')])
-  localLogin.value = providers.data?.some((provider) => provider.type === 'local') === true
+  return result
 })
 </script>
 
 <template>
-  <section class="page">
-    <h1>Security</h1>
-    <p v-if="error" role="alert" class="error">{{ error }}</p>
+  <Page>
+    <PageHeader :title="t('security.title')" :subtitle="desktop ? t('security.subtitle') : undefined" />
+    <SecurityTabs />
 
-    <h2>API tokens</h2>
-    <p class="muted">Tokens let Home Assistant and scripts call Marshal. A token can only get scopes you have yourself.</p>
-    <div v-if="created" data-test="new-token" class="new-token" role="status">
-      <p><strong>Copy the token now.</strong> It is shown only once.</p>
-      <code>{{ created }}</code>
-      <div class="actions">
-        <button type="button" @click="copyToken">Copy</button>
-        <button type="button" data-test="dismiss-token" @click="created = null">Done</button>
-      </div>
-    </div>
-    <ul class="plain cards">
-      <li v-for="token in tokens" :key="token.id" :data-token="token.id" class="card">
-        <strong>{{ token.name }}</strong>
-        <span v-if="token.revokedAt" class="badge unhealthy">revoked</span>
-        <span v-else-if="token.readOnly" class="badge degraded">read-only</span>
-        <div class="muted">{{ token.scopes.join(', ') }}</div>
-        <div class="muted">
-          created {{ formatDateTime(token.createdAt) }}<template v-if="token.expiresAt"> · expires {{ formatDateTime(token.expiresAt) }}</template>
+    <Section :title="t('security.tokens.title')">
+      <p class="t-body-s ink-2">{{ t('security.tokens.intro') }}</p>
+
+      <Banner v-if="plaintext" tone="success" :title="t('security.tokens.plaintextTitle')" data-test="new-token">
+        <div class="plaintext">
+          <CodeBlock :code="plaintext" :label="t('security.tokens.title')" />
+          <div class="buttons">
+            <AppButton size="sm" :icon="Copy" @click="copy">{{ copied ? t('security.tokens.copied') : t('security.tokens.copy') }}</AppButton>
+            <AppButton size="sm" variant="ghost" data-test="dismiss-token" @click="plaintext = null">{{ t('security.tokens.done') }}</AppButton>
+          </div>
         </div>
-        <button v-if="!token.revokedAt && !token.readOnly" type="button" data-test="revoke" @click="revoke(token)">Revoke</button>
-      </li>
-    </ul>
-    <form class="stack" data-test="create-token" @submit.prevent="createToken">
-      <h3>New token</h3>
-      <label>Name <input v-model="tokenName" name="tokenName" required maxlength="100" /></label>
-      <fieldset>
-        <legend>Scopes</legend>
-        <label v-for="scope in user.current.value?.scopes ?? []" :key="scope" class="check">
-          <input v-model="scopes" type="checkbox" name="scope" :value="scope" /> {{ scope }}
-        </label>
-      </fieldset>
-      <label>Expires on (optional) <input v-model="expiresOn" name="expiresAt" type="date" /></label>
-      <button type="submit" :disabled="!tokenName || scopes.length === 0">Create token</button>
-    </form>
+      </Banner>
 
-    <template v-if="localLogin && passkeys.supported()">
-      <h2>Passkeys</h2>
-      <form class="stack" data-test="add-passkey" @submit.prevent="addPasskey">
-        <label>Name (optional) <input v-model="passkeyName" name="passkeyName" placeholder="e.g. Phone" /></label>
-        <button type="submit">Add a passkey</button>
-      </form>
-      <p v-if="passkeyAdded" data-test="passkey-added" role="status">Passkey added. You can use it to sign in.</p>
-      <p v-if="passkeyError" role="alert" class="error">{{ passkeyError }}</p>
-    </template>
-  </section>
+      <LoadBoundary :load="tokens">
+        <template #default="{ data }">
+          <p v-if="!data.length" class="t-body-s ink-3">{{ t('security.tokens.empty') }}</p>
+          <ListCard v-else :label="t('security.tokens.title')">
+            <ListRow v-for="token in data" :key="token.id" :data-token="token.id" :class="{ revoked: !!token.revokedAt }">
+              <template #lead><IconTile :icon="KeyRound" :tone="status(token).tone" /></template>
+              <template #title>
+                <span class="token-name">{{ token.name }}</span>
+                <Badge :tone="status(token).tone" :label="status(token).label" />
+              </template>
+              <template #subtitle>
+                <span class="t-mono-s scopes">{{ token.scopes.join(', ') }}</span>
+                <span class="dates">{{ dates(token) }}</span>
+              </template>
+              <template #trail>
+                <AppButton
+                  v-if="!token.revokedAt && !token.readOnly"
+                  size="sm"
+                  variant="ghost"
+                  :icon="Ban"
+                  :icon-only="!desktop"
+                  :label="t('security.tokens.revoke')"
+                  data-test="revoke"
+                  @click="revoking = token"
+                >
+                  {{ t('security.tokens.revoke') }}
+                </AppButton>
+              </template>
+            </ListRow>
+          </ListCard>
+        </template>
+      </LoadBoundary>
+
+      <Card :title="t('security.tokens.newTitle')">
+        <form class="form" data-test="create-token" @submit.prevent="create.submit()">
+          <Field v-model="draft.name" name="tokenName" :label="t('security.tokens.name')" :placeholder="t('security.tokens.namePlaceholder')" required />
+          <fieldset class="scopes-field">
+            <legend class="t-label">{{ t('security.tokens.scopes') }}</legend>
+            <span class="t-body-s ink-3">{{ t('security.tokens.scopesHint') }}</span>
+            <div class="scope-grid" :class="{ two: desktop }">
+              <Checkbox v-for="scope in ownScopes" :key="scope" v-model="draft.scopes" name="scope" :value="scope" :label="scope" mono />
+            </div>
+          </fieldset>
+          <Field v-model="draft.expiresOn" kind="date" name="expiresAt" :label="t('security.tokens.expiresOn')" :hint="t('security.tokens.expiresHint')" />
+          <ErrorBanner v-if="create.error.value" :error="create.error.value" />
+          <div>
+            <AppButton type="submit" variant="primary" :icon="KeyRound" :disabled="!draft.name || !draft.scopes.length" :loading="create.busy.value">
+              {{ t('security.tokens.create') }}
+            </AppButton>
+          </div>
+        </form>
+      </Card>
+    </Section>
+
+    <Section v-if="localLogin" :title="t('security.passkeys.title')">
+      <Card>
+        <div class="passkey-head">
+          <IconTile :icon="Fingerprint" />
+          <p class="t-body-s ink-2">{{ t('security.passkeys.intro') }}</p>
+        </div>
+        <form class="add-passkey" data-test="add-passkey" @submit.prevent="addPasskey.submit()">
+          <Field v-model="passkeyName" name="passkeyName" :label="t('security.passkeys.name')" :placeholder="t('security.passkeys.namePlaceholder')" />
+          <AppButton type="submit" :icon="Plus" :loading="addPasskey.busy.value">{{ t('security.passkeys.add') }}</AppButton>
+        </form>
+        <Banner v-if="passkeyAdded" tone="success" :title="t('security.passkeys.added')" data-test="passkey-added" />
+        <Banner v-if="passkeyFailed" :title="t('security.passkeys.failed')" />
+        <ErrorBanner v-if="addPasskey.error.value" :error="addPasskey.error.value" />
+      </Card>
+    </Section>
+
+    <Dialog :open="!!revoking" :title="t('security.tokens.revokeTitle', { name: revoking?.name ?? '' })" :description="t('security.tokens.revokeBody')" @close="revoking = null">
+      <ErrorBanner v-if="revoke.error.value" :error="revoke.error.value" />
+      <template #actions>
+        <AppButton @click="revoking = null">{{ t('actions.cancel') }}</AppButton>
+        <AppButton variant="danger" data-test="confirm-revoke" :loading="revoke.busy.value" @click="revoke.submit()">{{ t('security.tokens.revoke') }}</AppButton>
+      </template>
+    </Dialog>
+  </Page>
 </template>
 
 <style scoped>
-.cards {
+.form {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: var(--space-4);
 }
-
-.card {
-  padding: 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+.plaintext {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  overflow-wrap: anywhere;
 }
-
-.card button {
-  margin-top: 0.5rem;
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
-
-.new-token {
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-  border: 2px solid var(--accent);
-  border-radius: 8px;
+.token-name {
+  margin-right: var(--space-2);
+  font-weight: 600;
 }
-
-.new-token code {
+.revoked .token-name {
+  color: var(--ink-3);
+}
+.scopes,
+.dates {
   display: block;
   overflow-wrap: anywhere;
 }
-
-.actions {
+.scopes-field {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
-
-fieldset {
-  border: 1px solid var(--border);
-  border-radius: 8px;
+.scope-grid {
+  display: grid;
+  column-gap: var(--space-4);
 }
-
-.check {
+.scope-grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.passkey-head {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-3);
 }
-
-.check input {
-  width: auto;
-  min-height: auto;
+.add-passkey {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+.add-passkey > :first-child {
+  flex: 1 1 220px;
 }
 </style>

@@ -1,0 +1,71 @@
+import type { Catalog } from '../i18n/catalog'
+
+export const en = {
+  title: 'Preferences',
+  subtitle: 'How Marshal talks to you and when it stays quiet.',
+  save: 'Save',
+  saved: 'Saved.',
+  region: {
+    title: 'Language and region',
+    language: 'Language',
+    timeZone: 'Time zone',
+    timeZoneHint: 'Dates, times and schedules use this zone.',
+    appearance: 'Appearance',
+    appearanceHint: 'Stored on this device.',
+    appearances: { system: 'System', light: 'Light', dark: 'Dark' },
+  },
+  quiet: {
+    title: 'Quiet hours',
+    intro: 'Marshal holds back non-critical notifications in these windows. A window may run past midnight.',
+    day: 'Day',
+    from: 'From',
+    to: 'To',
+    remove: 'Remove window',
+    add: 'Add window',
+    none: 'No quiet hours. Notifications arrive at any time.',
+    days: { monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday', thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday' },
+  },
+  notifications: {
+    title: 'Notifications',
+    person: 'Home Assistant person',
+    push: 'Push targets',
+    pushHint: 'One per line. Critical alerts go to all of them.',
+    dnd: 'Do not disturb until',
+    dndEnd: 'End do-not-disturb',
+  },
+}
+
+export const de: Catalog<typeof en> = {
+  title: 'Präferenzen',
+  subtitle: 'Wie Marshal mit dir spricht und wann es still bleibt.',
+  save: 'Speichern',
+  saved: 'Gespeichert.',
+  region: {
+    title: 'Sprache und Region',
+    language: 'Sprache',
+    timeZone: 'Zeitzone',
+    timeZoneHint: 'Daten, Uhrzeiten und Zeitpläne nutzen diese Zone.',
+    appearance: 'Darstellung',
+    appearanceHint: 'Auf diesem Gerät gespeichert.',
+    appearances: { system: 'System', light: 'Hell', dark: 'Dunkel' },
+  },
+  quiet: {
+    title: 'Ruhezeiten',
+    intro: 'Marshal hält in diesen Zeitfenstern unkritische Benachrichtigungen zurück. Ein Fenster darf über Mitternacht gehen.',
+    day: 'Tag',
+    from: 'Von',
+    to: 'Bis',
+    remove: 'Fenster entfernen',
+    add: 'Fenster hinzufügen',
+    none: 'Keine Ruhezeiten. Benachrichtigungen kommen jederzeit.',
+    days: { monday: 'Montag', tuesday: 'Dienstag', wednesday: 'Mittwoch', thursday: 'Donnerstag', friday: 'Freitag', saturday: 'Samstag', sunday: 'Sonntag' },
+  },
+  notifications: {
+    title: 'Benachrichtigungen',
+    person: 'Home-Assistant-Person',
+    push: 'Push-Ziele',
+    pushHint: 'Eines pro Zeile. Kritische Meldungen gehen an alle.',
+    dnd: 'Nicht stören bis',
+    dndEnd: 'Nicht stören beenden',
+  },
+}

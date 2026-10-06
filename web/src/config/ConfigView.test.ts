@@ -38,9 +38,9 @@ const summary = {
   satellites: [{ id: 'assist_satellite.kids_room', verbosity: 'short', notes: null, denyTools: ['mail.*'], denyConfirm: [] }],
 }
 
-async function mountConfig(status = 200, body: unknown = summary) {
+async function mountConfig(status = 200, body: unknown = summary, language: 'en' | 'de' = 'en') {
   const fake = new FakeServer().on('GET', '/api/v1/me', 200, admin).on('GET', '/api/v1/config', status, body)
-  const { options } = await mountOptions(fake, '/config')
+  const { options } = await mountOptions(fake, '/system/config', { language })
   const wrapper = mount(ConfigView, options)
   await flushPromises()
   return wrapper
@@ -82,5 +82,20 @@ describe('ConfigView', () => {
     const wrapper = await mountConfig(403, { status: 403 })
 
     expect(wrapper.get('[role="alert"]').text()).toContain('admin')
+  })
+
+  it('links back to System and to each section', async () => {
+    const wrapper = await mountConfig()
+
+    expect(wrapper.get('[data-test="back"]').attributes('href')).toBe('/system')
+    expect(wrapper.get('[data-test="skipped"]').text()).toContain('2 files were skipped')
+    for (const section of ['models', 'mcp', 'risk', 'templates', 'skills', 'satellites']) expect(wrapper.find(`#${section}`).exists()).toBe(true)
+  })
+
+  it('speaks German', async () => {
+    const wrapper = await mountConfig(200, summary, 'de')
+
+    expect(wrapper.get('h1').text()).toBe('Konfiguration')
+    expect(wrapper.get('[data-error="risk.yaml"]').text()).toContain('vorherige Version aktiv')
   })
 })
