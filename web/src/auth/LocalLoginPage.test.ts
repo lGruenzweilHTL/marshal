@@ -53,7 +53,7 @@ describe('LocalLoginPage', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[role="alert"]').text()).toContain('Wrong user name or password')
+    expect(wrapper.get('[role="alert"]').text()).toContain('User name or password is wrong')
     expect(router.currentRoute.value.path).toBe('/login/local')
   })
 

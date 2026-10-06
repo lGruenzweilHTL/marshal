@@ -1,5 +1,6 @@
 import type { Catalog } from './catalog'
 import * as common from './common'
+import * as auth from '../auth/messages'
 import * as chat from '../chat/messages'
 import * as home from '../home/messages'
 import * as inbox from '../inbox/messages'
@@ -31,6 +32,7 @@ export const en = {
   preferences: preferences.en,
   security: security.en,
   system: system.en,
+  auth: auth.en,
 }
 
 export const de: Catalog<typeof en> = {
@@ -47,6 +49,7 @@ export const de: Catalog<typeof en> = {
   preferences: preferences.de,
   security: security.de,
   system: system.de,
+  auth: auth.de,
 }
 
 export type MessageSchema = typeof en

@@ -13,7 +13,6 @@ import { createToasts, toastKey } from './ui/toast'
 import './ui/tokens.css'
 import './ui/fonts.css'
 import './ui/base.css'
-import './styles.css'
 
 export interface StartOptions {
   /** The API's fetch (preview mode passes its fake API). */

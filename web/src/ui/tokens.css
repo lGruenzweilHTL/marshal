@@ -47,6 +47,10 @@
   --constellation-node: #D5DADE;
   --constellation-accent: #FF8A3D;
   --constellation-info: #82AEFF;
+  --panel-bg: #0E1012;
+  --panel-node: #D5DADE;
+  --panel-accent: #FF8A3D;
+  --panel-info: #82AEFF;
   --shadow-1: 0 1px 2px rgba(16,20,24,0.06), 0 0 0 1px rgba(16,20,24,0.04);
   --shadow-2: 0 4px 12px rgba(16,20,24,0.08), 0 1px 3px rgba(16,20,24,0.06);
   --shadow-3: 0 18px 48px rgba(16,20,24,0.18), 0 4px 12px rgba(16,20,24,0.08);
@@ -99,6 +103,10 @@
   --constellation-node: #D5DADE;
   --constellation-accent: #FF8A3D;
   --constellation-info: #82AEFF;
+  --panel-bg: #0E1012;
+  --panel-node: #D5DADE;
+  --panel-accent: #FF8A3D;
+  --panel-info: #82AEFF;
   --shadow-1: 0 1px 2px rgba(0,0,0,0.5);
   --shadow-2: 0 6px 18px rgba(0,0,0,0.55);
   --shadow-3: 0 22px 56px rgba(0,0,0,0.7);
@@ -152,6 +160,10 @@
     --constellation-node: #D5DADE;
     --constellation-accent: #FF8A3D;
     --constellation-info: #82AEFF;
+    --panel-bg: #0E1012;
+    --panel-node: #D5DADE;
+    --panel-accent: #FF8A3D;
+    --panel-info: #82AEFF;
     --shadow-1: 0 1px 2px rgba(0,0,0,0.5);
     --shadow-2: 0 6px 18px rgba(0,0,0,0.55);
     --shadow-3: 0 22px 56px rgba(0,0,0,0.7);

@@ -49,4 +49,30 @@ describe('LoginPage', () => {
 
     expect(wrapper.get('[role="alert"]').text()).toContain('no access')
   })
+
+  it('says that the session expired', async () => {
+    const { options } = await mountOptions(server(), '/login?reason=expired&returnUrl=%2Ftasks')
+    const wrapper = mount(LoginPage, options)
+    await flushPromises()
+
+    expect(wrapper.get('[data-test="expired"]').text()).toContain('session expired')
+  })
+
+  it('speaks the browser language before sign-in', async () => {
+    const { options } = await mountOptions(server(), '/login', { language: 'de' })
+    const wrapper = mount(LoginPage, options)
+    await flushPromises()
+
+    expect(wrapper.get('h1').text()).toBe('Anmelden')
+    expect(wrapper.get('a[data-provider="authentik"]').text()).toContain('Mit Authentik anmelden')
+  })
+
+  it('shows an error when the providers cannot be loaded', async () => {
+    const fake = server().on('GET', '/api/v1/auth/providers', 500, { status: 500 })
+    const { options } = await mountOptions(fake, '/login')
+    const wrapper = mount(LoginPage, options)
+    await flushPromises()
+
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+  })
 })

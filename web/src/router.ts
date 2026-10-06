@@ -39,8 +39,6 @@ declare module 'vue-router' {
     title?: string
     /** Navigation destination the page belongs to (`layout/navigation.ts`). */
     nav?: string
-    /** Not rebuilt on the design system yet: rendered inside `.legacy` with the old styles (removed by task 13.2). */
-    legacy?: boolean
   }
 }
 

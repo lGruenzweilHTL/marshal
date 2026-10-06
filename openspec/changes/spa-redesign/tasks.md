@@ -82,8 +82,8 @@
 
 ## 13. Sign-in and app states
 
-- [ ] 13.1 Write failing tests for Login (providers, `reason=expired` message, German before sign-in), local login and Setup (HTTPS problem shown, values kept). Rebuild them on the desktop constellation panel and the phone layout. Verify they pass.
-- [ ] 13.2 Rebuild the full-page `/me` failure, not-found and offline pages on the design system. Delete `styles.css` and every old global class. Verify `npm run build` passes and the architecture test from 2.5 passes without `todo`.
+- [x] 13.1 Write failing tests for Login (providers, `reason=expired` message, German before sign-in), local login and Setup (HTTPS problem shown, values kept). Rebuild them on the desktop constellation panel and the phone layout. Verify they pass.
+- [x] 13.2 Rebuild the full-page `/me` failure, not-found and offline pages on the design system. Delete `styles.css` and every old global class. Verify `npm run build` passes and the architecture test from 2.5 passes without `todo`.
 
 ## 14. Integration
 

@@ -99,7 +99,7 @@ async function logout() {
         <AppButton variant="ghost" size="sm" icon-only :icon="LogOut" :label="t('actions.signOut')" data-test="logout" @click="logout" />
       </template>
     </SideNav>
-    <main class="main" :class="{ legacy: route.meta.legacy }">
+    <main class="main">
       <RouterView />
     </main>
     <template v-if="!desktop">

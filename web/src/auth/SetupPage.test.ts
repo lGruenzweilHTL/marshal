@@ -13,6 +13,7 @@ describe('SetupPage', () => {
     await wrapper.get('input[name="userName"]').setValue('lukas')
     await wrapper.get('input[name="displayName"]').setValue('Lukas')
     await wrapper.get('input[name="password"]').setValue('correct horse battery staple')
+    await wrapper.get('input[name="repeat"]').setValue('correct horse battery staple')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
@@ -33,9 +34,43 @@ describe('SetupPage', () => {
 
     await wrapper.get('input[name="userName"]').setValue('lukas')
     await wrapper.get('input[name="password"]').setValue('short')
+    await wrapper.get('input[name="repeat"]').setValue('short')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
     expect(wrapper.get('[role="alert"]').text()).toContain('at least 12 characters')
+  })
+
+  it('shows the HTTPS problem in German and keeps the values', async () => {
+    const server = new FakeServer()
+      .antiforgery('t')
+      .on('POST', '/api/v1/auth/local/setup', 400, { code: 'auth.https_required', detail: 'HTTPS is required.' })
+    const { options } = await mountOptions(server, '/setup', { language: 'de' })
+    const wrapper = mount(SetupPage, options)
+
+    await wrapper.get('input[name="userName"]').setValue('lukas')
+    await wrapper.get('input[name="password"]').setValue('correct horse battery staple')
+    await wrapper.get('input[name="repeat"]').setValue('correct horse battery staple')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.get('[role="alert"]').text()).toContain('HTTPS geöffnet')
+    expect((wrapper.get('input[name="userName"]').element as HTMLInputElement).value).toBe('lukas')
+    expect((wrapper.get('input[name="password"]').element as HTMLInputElement).value).toBe('correct horse battery staple')
+  })
+
+  it('does not send mismatched passwords', async () => {
+    const server = new FakeServer().antiforgery('t')
+    const { options } = await mountOptions(server, '/setup')
+    const wrapper = mount(SetupPage, options)
+
+    await wrapper.get('input[name="userName"]').setValue('lukas')
+    await wrapper.get('input[name="password"]').setValue('correct horse battery staple')
+    await wrapper.get('input[name="repeat"]').setValue('correct horse battery stapler')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(server.count('POST', '/api/v1/auth/local/setup')).toBe(0)
+    expect(wrapper.text()).toContain('Passwords do not match')
   })
 })

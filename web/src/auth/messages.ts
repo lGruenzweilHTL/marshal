@@ -1,0 +1,71 @@
+import type { Catalog } from '../i18n/catalog'
+
+export const en = {
+  tagline: 'Your home, your printer and your inbox, on your own server.',
+  login: {
+    title: 'Sign in',
+    intro: 'Choose how you sign in to Marshal.',
+    with: 'Sign in with {provider}',
+    expired: 'Your session expired. Sign in again to continue.',
+    denied: 'Your account has no access to Marshal. Ask the administrator to add you to a Marshal group.',
+    setup: 'First start?',
+    setupLink: 'Create the first account',
+  },
+  local: {
+    title: 'Sign in',
+    intro: 'Use a passkey or your password.',
+    passkey: 'Sign in with a passkey',
+    passkeyFailed: 'Passkey sign-in was cancelled or failed.',
+    or: 'or',
+    userName: 'User name',
+    password: 'Password',
+    submit: 'Sign in',
+    other: 'Other sign-in options',
+  },
+  setup: {
+    title: 'Create the first account',
+    intro: 'This account becomes the admin. You can add a passkey right after.',
+    displayName: 'Display name',
+    userName: 'User name',
+    password: 'Password',
+    passwordHint: 'At least 12 characters.',
+    repeat: 'Repeat password',
+    mismatch: 'Passwords do not match.',
+    submit: 'Create account',
+  },
+}
+
+export const de: Catalog<typeof en> = {
+  tagline: 'Dein Zuhause, dein Drucker und dein Postfach, auf deinem eigenen Server.',
+  login: {
+    title: 'Anmelden',
+    intro: 'Wähle, wie du dich bei Marshal anmeldest.',
+    with: 'Mit {provider} anmelden',
+    expired: 'Deine Sitzung ist abgelaufen. Melde dich erneut an, um weiterzumachen.',
+    denied: 'Dein Konto hat keinen Zugang zu Marshal. Bitte die Administration, dich einer Marshal-Gruppe hinzuzufügen.',
+    setup: 'Erster Start?',
+    setupLink: 'Erstes Konto anlegen',
+  },
+  local: {
+    title: 'Anmelden',
+    intro: 'Mit Passkey oder Passwort.',
+    passkey: 'Mit Passkey anmelden',
+    passkeyFailed: 'Die Anmeldung mit Passkey wurde abgebrochen oder ist fehlgeschlagen.',
+    or: 'oder',
+    userName: 'Benutzername',
+    password: 'Passwort',
+    submit: 'Anmelden',
+    other: 'Andere Anmeldemöglichkeiten',
+  },
+  setup: {
+    title: 'Erstes Konto anlegen',
+    intro: 'Dieses Konto wird Admin. Einen Passkey kannst du gleich danach hinzufügen.',
+    displayName: 'Anzeigename',
+    userName: 'Benutzername',
+    password: 'Passwort',
+    passwordHint: 'Mindestens 12 Zeichen.',
+    repeat: 'Passwort wiederholen',
+    mismatch: 'Die Passwörter stimmen nicht überein.',
+    submit: 'Konto anlegen',
+  },
+}

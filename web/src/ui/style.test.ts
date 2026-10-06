@@ -11,17 +11,13 @@ function files(dir: string): string[] {
   })
 }
 
-/** Style blocks of rebuilt code: everything except the legacy styles.css and views not yet on the design system. */
+/** Style blocks of the app: every component and stylesheet except the generated tokens.css. */
 function styles(): { file: string; css: string }[] {
   return files(src)
-    .filter((path) => path.endsWith('.vue') || (path.endsWith('.css') && !path.endsWith('tokens.css') && !path.endsWith('styles.css')))
+    .filter((path) => path.endsWith('.vue') || (path.endsWith('.css') && !path.endsWith('tokens.css')))
     .map((path) => ({ file: relative(src, path).replaceAll('\\', '/'), text: readFileSync(path, 'utf8') }))
-    .filter(({ file }) => !notRebuiltYet.some((folder) => file.startsWith(folder)))
     .map(({ file, text }) => ({ file, css: file.endsWith('.vue') ? [...text.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((match) => match[1]).join('\n') : text }))
 }
-
-/** Areas still on the old styles; each is removed from this list when its group is rebuilt (empty after task 13.2). */
-const notRebuiltYet: string[] = []
 
 describe('design system', () => {
   it('has no literal colours or font families outside tokens.css', () => {
