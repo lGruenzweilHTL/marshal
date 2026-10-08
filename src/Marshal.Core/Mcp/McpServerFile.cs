@@ -25,6 +25,9 @@ public sealed class McpServerFile
 
     public bool Untrusted { get; set; }
 
+    /// <summary>Globs on reported tool names whose output is third-party content.</summary>
+    public List<string> UntrustedTools { get; set; } = [];
+
     /// <summary>A <c>variable</c> filled from a <c>secret</c> name.</summary>
     public sealed class EnvironmentSecret
     {

@@ -42,7 +42,7 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
         _logger = loggers.CreateLogger<McpToolSource>();
         _reconnect = reconnect;
         _time = time;
-        _state = new State(McpServerState.Connecting, null, []);
+        _state = new State(McpServerState.Connecting, null, [], []);
     }
 
     /// <summary>The server id.</summary>
@@ -59,7 +59,7 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
         get
         {
             State state = _state;
-            return new McpServerStatus(_server.Id, state.ServerState, state.Error, state.Tools.Length);
+            return new McpServerStatus(_server.Id, state.ServerState, state.Error, state.Tools.Length) { Warnings = state.Warnings };
         }
     }
 
@@ -174,7 +174,7 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
             }
         }
 
-        _state = new State(McpServerState.Down, "Stopped", []);
+        _state = new State(McpServerState.Down, "Stopped", [], []);
         _firstAttempt.TrySetResult();
     }
 
@@ -207,7 +207,7 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
         try
         {
             connection.Client = await McpClient.CreateAsync(_transports.Create(settings.Value), options, _loggers, stop);
-            _state = new State(McpServerState.Connected, null, await ListAsync(connection.Client, stop));
+            _state = Connected(await ListAsync(connection.Client, stop));
             _connection = connection;
             LogConnected(_server.Id, _state.Tools.Length);
             return connection;
@@ -225,7 +225,7 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
         {
             ImmutableArray<ITool> tools = await ListAsync(connection.Client, stop);
             if (_connection == connection)
-                _state = new State(McpServerState.Connected, null, tools);
+                _state = Connected(tools);
         }
         catch (Exception exception) when (!stop.IsCancellationRequested)
         {
@@ -239,6 +239,21 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
         return [.. listed.Select(tool => (ITool)new McpTool(this, Describe(tool.ProtocolTool), tool.ProtocolTool.Name))];
     }
 
+    // A glob that matches no reported tool is likely a typo or a renamed tool: its tools would be trusted silently.
+    private State Connected(ImmutableArray<ITool> tools)
+    {
+        string[] names = [.. tools.OfType<McpTool>().Select(tool => tool.Name)];
+        ImmutableArray<string> warnings = [.. _server.UntrustedTools
+            .Where(glob => !names.Any(name => ToolGlob.Matches(glob, name)))
+            .Select(glob => $"untrustedTools entry '{glob}' matches no tool of MCP server {_server.Id}.")];
+        foreach (string warning in warnings)
+            LogWarning(_server.Id, warning);
+
+        return new State(McpServerState.Connected, null, tools, warnings);
+    }
+
+    private bool IsUntrusted(string name) => _server.Untrusted || _server.UntrustedTools.Any(glob => ToolGlob.Matches(glob, name));
+
     private ToolDescriptor Describe(Tool tool)
     {
         if (string.IsNullOrWhiteSpace(tool.Name))
@@ -250,19 +265,22 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
             Description = tool.Description ?? tool.Title ?? string.Empty,
             ParametersSchema = tool.InputSchema,
             DefaultTier = RiskTier.Confirm,
-            UntrustedOutput = _server.Untrusted,
-            TaintKind = _server.Untrusted ? $"mcp:{_server.Id}" : null,
+            UntrustedOutput = IsUntrusted(tool.Name),
+            TaintKind = IsUntrusted(tool.Name) ? $"mcp:{_server.Id}" : null,
         };
     }
 
     private void SetDown(string reason)
     {
-        _state = new State(McpServerState.Down, reason, []);
+        _state = new State(McpServerState.Down, reason, [], []);
         LogDown(_server.Id, reason);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "MCP server {Server} connected with {Count} tools")]
     private partial void LogConnected(string server, int count);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "MCP server {Server}: {Warning}")]
+    private partial void LogWarning(string server, string warning);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "MCP server {Server} is down: {Reason}")]
     private partial void LogDown(string server, string reason);
@@ -270,7 +288,7 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
     [LoggerMessage(Level = LogLevel.Warning, Message = "Call of tool {Tool} on MCP server {Server} failed")]
     private partial void LogCallFailed(string server, string tool, Exception exception);
 
-    private sealed record State(McpServerState ServerState, string? Error, ImmutableArray<ITool> Tools);
+    private sealed record State(McpServerState ServerState, string? Error, ImmutableArray<ITool> Tools, ImmutableArray<string> Warnings);
 
     private sealed class Connection : IAsyncDisposable
     {

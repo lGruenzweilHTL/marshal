@@ -48,7 +48,7 @@ public sealed class ConfigApiTests : IAsyncLifetime
         Directory.CreateDirectory(Path.Combine(config, "templates"));
         await File.WriteAllTextAsync(Path.Combine(config, "templates", "rss-scorer.md"), "---\nname: rss-scorer\ndescription: Scores feed items.\nmodelTier: fast\ntools: [\"rss.*\"]\n---\nScore items.\n", Ct);
         Directory.CreateDirectory(Path.Combine(config, "mcp"));
-        await File.WriteAllTextAsync(Path.Combine(config, "mcp", "tools.yaml"), "id: tools\ntransport: http\nurl: http://127.0.0.1:1/mcp\nauthTokenSecret: tools_token\n", Ct);
+        await File.WriteAllTextAsync(Path.Combine(config, "mcp", "tools.yaml"), "id: tools\ntransport: http\nurl: http://127.0.0.1:1/mcp\nauthTokenSecret: tools_token\nuntrustedTools: [todo__get_items]\n", Ct);
     }
 
     public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
@@ -74,6 +74,8 @@ public sealed class ConfigApiTests : IAsyncLifetime
         Assert.Equal(("tools", "http://127.0.0.1:1/mcp", "tools_token"), (server.GetProperty("id").GetString(), server.GetProperty("target").GetString(), server.GetProperty("authTokenSecret").GetString()));
         Assert.NotEqual("connected", server.GetProperty("state").GetString());
         Assert.Equal(0, server.GetProperty("toolCount").GetInt32());
+        Assert.Equal(["todo__get_items"], server.GetProperty("untrustedTools").EnumerateArray().Select(glob => glob.GetString()));
+        Assert.Empty(server.GetProperty("warnings").EnumerateArray());
         JsonElement rule = Assert.Single(root.GetProperty("riskRules").EnumerateArray());
         Assert.Equal(("ha.*", "confirm"), (rule.GetProperty("tool").GetString(), rule.GetProperty("tier").GetString()));
         Assert.Equal(["lock"], rule.GetProperty("match").GetProperty("domain").EnumerateArray().Select(value => value.GetString()));

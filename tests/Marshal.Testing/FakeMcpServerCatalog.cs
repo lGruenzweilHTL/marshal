@@ -25,13 +25,14 @@ public sealed class FakeMcpServerCatalog : IMcpServerCatalog
     public IReadOnlyList<ConfigFileError> Errors { get; set; } = [];
 
     /// <summary>A stdio server definition.</summary>
-    public static McpServerDefinition Server(string id, string? toolPrefix = null, bool untrusted = false) => new()
+    public static McpServerDefinition Server(string id, string? toolPrefix = null, bool untrusted = false, IReadOnlyList<string>? untrustedTools = null) => new()
     {
         Id = id,
         Namespace = toolPrefix ?? id,
         Transport = McpTransportKind.Stdio,
         Command = "fake",
         Untrusted = untrusted,
+        UntrustedTools = untrustedTools ?? [],
         File = $"{id}.yaml",
     };
 

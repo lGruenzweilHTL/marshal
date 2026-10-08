@@ -34,6 +34,12 @@ public sealed record McpServerDefinition
     /// <summary>Tool output is third-party content: results taint the run with source <c>mcp:&lt;id&gt;</c>.</summary>
     public bool Untrusted { get; init; }
 
+    /// <summary>
+    /// Globs on the tool names the server reports; matching tools taint the run like an untrusted server's (e.g. a
+    /// to-do read tool of an otherwise trusted server). Empty with <see cref="Untrusted"/>.
+    /// </summary>
+    public IReadOnlyList<string> UntrustedTools { get; init; } = [];
+
     /// <summary>File the server was loaded from.</summary>
     public required string File { get; init; }
 }

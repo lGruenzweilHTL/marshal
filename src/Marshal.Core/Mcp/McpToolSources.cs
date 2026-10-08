@@ -93,7 +93,8 @@ public sealed partial class McpToolSources : IToolSourceProvider, IAsyncDisposab
         && a.AuthTokenSecret == b.AuthTokenSecret
         && a.EnvironmentSecrets.Count == b.EnvironmentSecrets.Count
         && a.EnvironmentSecrets.All(pair => b.EnvironmentSecrets.TryGetValue(pair.Key, out SecretName secret) && secret == pair.Value)
-        && a.Untrusted == b.Untrusted;
+        && a.Untrusted == b.Untrusted
+        && a.UntrustedTools.SequenceEqual(b.UntrustedTools, StringComparer.Ordinal);
 
     private void OnCatalogChanged()
     {

@@ -1613,6 +1613,10 @@ export interface components {
             toolCount: number;
             /** @description Config file, relative to `/config/mcp`. */
             file: string;
+            /** @description Globs on reported tool names whose output taints the run (with `Untrusted` false). */
+            untrustedTools: string[];
+            /** @description Problems that leave the server usable, e.g. an `untrustedTools` glob that matches no tool. */
+            warnings: string[];
         };
         MemoryAuditReport: {
             stale: components["schemas"]["MemoryChunk"][];

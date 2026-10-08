@@ -3671,7 +3671,9 @@
           "state",
           "error",
           "toolCount",
-          "file"
+          "file",
+          "untrustedTools",
+          "warnings"
         ],
         "type": "object",
         "properties": {
@@ -3728,6 +3730,20 @@
           "file": {
             "type": "string",
             "description": "Config file, relative to \u0060/config/mcp\u0060."
+          },
+          "untrustedTools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Globs on reported tool names whose output taints the run (with \u0060Untrusted\u0060 false)."
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Problems that leave the server usable, e.g. an \u0060untrustedTools\u0060 glob that matches no tool."
           }
         },
         "description": "A configured MCP server."

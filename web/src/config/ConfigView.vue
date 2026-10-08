@@ -46,6 +46,13 @@ const conditions = (values: Record<string, string[]>) =>
     .map(([key, allowed]) => `${key}: ${allowed.join(' | ')}`)
     .join(', ') || '—'
 const list = (values: string[] | null | undefined, empty = '—') => (values && values.length ? values.join(', ') : empty)
+// Whole server, some tools (globs on hover) or none.
+const untrustedLabel = (server: Schemas['McpServerSummary']) =>
+  server.untrusted
+    ? t('system.config.all')
+    : server.untrustedTools.length
+      ? t('system.config.some', { count: server.untrustedTools.length })
+      : t('system.config.no')
 const serverSecrets = (server: Schemas['McpServerSummary']) => list([...(server.authTokenSecret ? [server.authTokenSecret] : []), ...server.environmentSecrets])
 </script>
 
@@ -102,11 +109,14 @@ const serverSecrets = (server: Schemas['McpServerSummary']) => list([...(server.
                   <template #cell-state="{ row }">
                     <Badge :tone="stateTones[row.state]" dot :label="t(`system.config.state.${row.state}`)" />
                     <span v-if="row.error" class="error t-body-s ink-2">{{ row.error }}</span>
+                    <span v-for="warning in row.warnings" :key="warning" class="warning t-body-s ink-2">{{ warning }}</span>
                   </template>
                   <template #cell-toolCount="{ row }"><span class="num">{{ row.toolCount }}</span></template>
                   <template #cell-target="{ row }"><span class="t-mono-s ink-2">{{ row.target }}</span></template>
                   <template #cell-secrets="{ row }"><span class="t-mono-s">{{ serverSecrets(row) }}</span></template>
-                  <template #cell-untrusted="{ row }">{{ row.untrusted ? t('system.config.yes') : t('system.config.no') }}</template>
+                  <template #cell-untrusted="{ row }">
+                    <span class="untrusted" :title="row.untrustedTools.length ? row.untrustedTools.join(', ') : undefined">{{ untrustedLabel(row) }}</span>
+                  </template>
                 </DataTable>
               </Card>
             </Section>
@@ -223,7 +233,8 @@ const serverSecrets = (server: Schemas['McpServerSummary']) => list([...(server.
 .strong {
   font-weight: 600;
 }
-.error {
+.error,
+.warning {
   display: block;
   margin-top: var(--space-1);
 }

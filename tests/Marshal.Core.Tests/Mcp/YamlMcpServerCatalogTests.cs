@@ -48,6 +48,33 @@ public sealed class YamlMcpServerCatalogTests : IDisposable
         Assert.Equal("search_key", search.EnvironmentSecrets["SEARCH_API_KEY"].Value);
     }
 
+    [Fact]
+    public void Load_UntrustedTools_ParsedAndEmptyByDefault()
+    {
+        Write("ha.yaml", "id: ha\ntransport: http\nurl: http://ha/api/mcp\nuntrustedTools: [todo__get_items, \"*get_items\"]\n");
+        Write("other.yaml", "id: other\ntransport: http\nurl: http://other/mcp\n");
+
+        using YamlMcpServerCatalog catalog = Load();
+
+        Assert.Empty(catalog.Errors);
+        Assert.Equal(["todo__get_items", "*get_items"], catalog.Servers.Single(server => server.Id == "ha").UntrustedTools);
+        Assert.Empty(catalog.Servers.Single(server => server.Id == "other").UntrustedTools);
+    }
+
+    [Fact]
+    public void Load_UntrustedWithUntrustedTools_RejectedNamingBothKeys()
+    {
+        Write("bad.yaml", "id: ha\ntransport: http\nurl: http://ha/api/mcp\nuntrusted: true\nuntrustedTools: [todo__get_items]\n");
+        Write("good.yaml", "id: good\ntransport: http\nurl: http://good/mcp\n");
+
+        using YamlMcpServerCatalog catalog = Load();
+
+        Assert.Equal(["good"], catalog.Servers.Select(server => server.Id));
+        ConfigFileError error = Assert.Single(catalog.Errors);
+        Assert.Contains("untrusted:", error.Message, StringComparison.Ordinal);
+        Assert.Contains("untrustedTools", error.Message, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("id: home_assistant\ntransport: http\nurl: http://ha/api/mcp\n", "home_assistant")]
     [InlineData("id: ha\ntoolPrefix: Home\ntransport: http\nurl: http://ha/api/mcp\n", "Home")]
@@ -58,6 +85,7 @@ public sealed class YamlMcpServerCatalogTests : IDisposable
     [InlineData("id: ha\ntransport: sse\nurl: http://ha/api/mcp\n", "transport")]
     [InlineData("id: ha\ntransport: http\nurl: http://ha/api/mcp\nauthTokenSecret: Bad Name\n", "authTokenSecret")]
     [InlineData("id: ha\ntransport: http\nurl: http://ha/api/mcp\nunknownKey: 1\n", "unknownKey")]
+    [InlineData("id: ha\ntransport: http\nurl: http://ha/api/mcp\nuntrustedTools: [\" \"]\n", "untrustedTools")]
     public void Load_InvalidServer_RejectedWithErrorOthersLoad(string yaml, string named)
     {
         Write("bad.yaml", yaml);

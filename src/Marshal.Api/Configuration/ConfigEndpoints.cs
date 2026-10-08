@@ -81,7 +81,9 @@ internal static class ConfigEndpoints
         status?.State ?? McpServerState.Connecting,
         status?.Error,
         status?.ToolCount ?? 0,
-        server.File);
+        server.File,
+        server.UntrustedTools,
+        status?.Warnings ?? []);
 }
 
 /// <summary>Read-only summary of the loaded <c>/config</c>.</summary>
@@ -137,9 +139,11 @@ public sealed record TemplateSummary(
 /// <param name="Error">Last connection error, if any.</param>
 /// <param name="ToolCount">Tools offered while connected.</param>
 /// <param name="File">Config file, relative to <c>/config/mcp</c>.</param>
+/// <param name="UntrustedTools">Globs on reported tool names whose output taints the run (with <paramref name="Untrusted"/> false).</param>
+/// <param name="Warnings">Problems that leave the server usable, e.g. an <c>untrustedTools</c> glob that matches no tool.</param>
 public sealed record McpServerSummary(
     string Id, string Namespace, string Transport, string Target, bool Untrusted, string? AuthTokenSecret, IReadOnlyList<string> EnvironmentSecrets,
-    McpServerState State, string? Error, int ToolCount, string File);
+    McpServerState State, string? Error, int ToolCount, string File, IReadOnlyList<string> UntrustedTools, IReadOnlyList<string> Warnings);
 
 /// <summary>An active risk rule.</summary>
 /// <param name="Tool">Tool id glob.</param>

@@ -222,6 +222,11 @@ public sealed partial class YamlMcpServerCatalog : IMcpServerCatalog, IDisposabl
         if (ReservedNamespaces.All.Contains(ns) || !ToolId.IsValidNamespace(ns))
             return Invalid($"namespace '{ns}' is reserved for built-in tools; set another id or toolPrefix.");
 
+        if (raw.Untrusted && raw.UntrustedTools.Count > 0)
+            return Invalid("untrusted: true already marks every tool; remove untrustedTools or set untrusted: false.");
+        if (raw.UntrustedTools.Any(string.IsNullOrWhiteSpace))
+            return Invalid("untrustedTools entries must not be empty.");
+
         SecretName? authToken = null;
         if (raw.AuthTokenSecret is not null)
         {
@@ -246,6 +251,7 @@ public sealed partial class YamlMcpServerCatalog : IMcpServerCatalog, IDisposabl
             AuthTokenSecret = authToken,
             EnvironmentSecrets = environment,
             Untrusted = raw.Untrusted,
+            UntrustedTools = [.. raw.UntrustedTools],
             File = file,
         };
 

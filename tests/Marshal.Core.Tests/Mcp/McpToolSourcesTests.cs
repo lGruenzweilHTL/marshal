@@ -76,6 +76,22 @@ public sealed class McpToolSourcesTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Reload_UntrustedToolsChanged_NextToolsMarkedByTheNewList()
+    {
+        AddServer("search", "query");
+        McpToolSources sources = await StartAsync();
+        Assert.False(McpToolSources.SameDefinition(_catalog.Definitions[0], _catalog.Definitions[0] with { UntrustedTools = ["query"] }));
+
+        _catalog.Definitions[0] = _catalog.Definitions[0] with { UntrustedTools = ["query"] };
+        _catalog.Changed();
+
+        await EventuallyAsync(async () =>
+            sources.Statuses.Single().State == McpServerState.Connected
+            && ((IToolSourceProvider)sources).Sources.Single() is McpToolSource source
+            && (await source.GetToolsAsync(Ct)).Single().Descriptor.UntrustedOutput);
+    }
+
+    [Fact]
     public async Task Reload_UnchangedContent_KeepsConnection()
     {
         AddServer("search", "query");

@@ -362,8 +362,8 @@ const configSummary: Schemas['ConfigSummary'] = {
     { name: 'briefing', description: 'Morning briefing task.', modelTier: 'standard', tools: ['calendar.*', 'mail.search', 'printer.status'], skills: ['home'], maxSteps: 12, maxAdvisorCalls: 0, builtIn: false },
   ],
   mcpServers: [
-    { id: 'home-assistant', namespace: 'ha', transport: 'streamableHttp', target: 'http://homeassistant.local:8123/mcp_server/sse', untrusted: false, authTokenSecret: 'ha_token', environmentSecrets: [], state: 'connected', error: null, toolCount: 23, file: 'mcp/home-assistant.yaml' },
-    { id: 'notes-search', namespace: 'notes', transport: 'stdio', target: 'notes-mcp', untrusted: true, authTokenSecret: null, environmentSecrets: ['notes_repo_token'], state: 'down', error: 'Process exited with code 1.', toolCount: 0, file: 'mcp/notes.yaml' },
+    { id: 'home-assistant', namespace: 'ha', transport: 'streamableHttp', target: 'http://homeassistant.local:8123/mcp_server/sse', untrusted: false, authTokenSecret: 'ha_token', environmentSecrets: [], state: 'connected', error: null, toolCount: 23, file: 'mcp/home-assistant.yaml', untrustedTools: ['todo__get_items'], warnings: [] },
+    { id: 'notes-search', namespace: 'notes', transport: 'stdio', target: 'notes-mcp', untrusted: true, authTokenSecret: null, environmentSecrets: ['notes_repo_token'], state: 'down', error: 'Process exited with code 1.', toolCount: 0, file: 'mcp/notes.yaml', untrustedTools: [], warnings: [] },
   ],
   riskRules: [
     { tool: 'ha.lock_*', match: {}, args: {}, tier: 'confirm' },

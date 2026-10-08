@@ -29,6 +29,38 @@ const summary = {
       error: 'Connection refused',
       toolCount: 0,
       file: 'ha.yaml',
+      untrustedTools: ['todo__get_items'],
+      warnings: ["untrustedTools entry 'todo__get_items' matches no tool of MCP server ha."],
+    },
+    {
+      id: 'search',
+      namespace: 'search',
+      transport: 'stdio',
+      target: 'npx search',
+      untrusted: true,
+      authTokenSecret: null,
+      environmentSecrets: [],
+      state: 'connected',
+      error: null,
+      toolCount: 2,
+      file: 'search.yaml',
+      untrustedTools: [],
+      warnings: [],
+    },
+    {
+      id: 'tools',
+      namespace: 'tools',
+      transport: 'http',
+      target: 'http://tools/mcp',
+      untrusted: false,
+      authTokenSecret: null,
+      environmentSecrets: [],
+      state: 'connected',
+      error: null,
+      toolCount: 1,
+      file: 'tools.yaml',
+      untrustedTools: [],
+      warnings: [],
     },
   ],
   riskRules: [{ tool: 'ha.*', match: { domain: ['lock'] }, args: {}, tier: 'confirm' }],
@@ -61,6 +93,26 @@ describe('ConfigView', () => {
     const model = wrapper.get('[data-model="claude"]').text()
     for (const part of ['anthropic', 'claude-opus-4-1', 'anthropic_key']) expect(model).toContain(part)
     expect(wrapper.get('[data-satellite="assist_satellite.kids_room"]').text()).toContain('mail.*')
+  })
+
+  it('shows which MCP tools are untrusted and server warnings', async () => {
+    const wrapper = await mountConfig()
+
+    const ha = wrapper.get('[data-server="ha"] .untrusted')
+    expect(ha.text()).toBe('some (1)')
+    expect(ha.attributes('title')).toBe('todo__get_items')
+    expect(wrapper.get('[data-server="search"] .untrusted').text()).toBe('all')
+    expect(wrapper.get('[data-server="tools"] .untrusted').text()).toBe('no')
+    expect(wrapper.get('[data-server="ha"] .warning').text()).toContain("'todo__get_items' matches no tool")
+    expect(wrapper.find('[data-server="tools"] .warning').exists()).toBe(false)
+  })
+
+  it('shows untrusted MCP tools in German', async () => {
+    const wrapper = await mountConfig(200, summary, 'de')
+
+    expect(wrapper.get('[data-server="ha"] .untrusted').text()).toBe('einige (1)')
+    expect(wrapper.get('[data-server="search"] .untrusted').text()).toBe('alle')
+    expect(wrapper.get('[data-server="tools"] .untrusted').text()).toBe('nein')
   })
 
   it('shows failed loads and whether the previous version stays active', async () => {

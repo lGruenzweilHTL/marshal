@@ -5,8 +5,8 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 namespace Marshal.Api.Health;
 
 /// <summary>
-/// MCP servers that are down or still connecting, and rejected server files, are warnings; Marshal keeps working
-/// without them.
+/// MCP servers that are down or still connecting, rejected server files and per-server warnings (e.g. an
+/// <c>untrustedTools</c> glob that matches no tool) are warnings; Marshal keeps working without them.
 /// </summary>
 internal sealed class McpHealthCheck(McpToolSources sources, IMcpServerCatalog catalog) : IHealthCheck
 {
@@ -16,6 +16,7 @@ internal sealed class McpHealthCheck(McpToolSources sources, IMcpServerCatalog c
         List<string> warnings =
         [
             .. statuses.Where(status => status.State != McpServerState.Connected).Select(Describe),
+            .. statuses.SelectMany(status => status.Warnings),
             .. catalog.Errors.Select(error => error.Message.StartsWith(error.File, StringComparison.Ordinal) ? $"mcp/{error.Message}" : $"mcp/{error.File}: {error.Message}"),
         ];
         int connected = statuses.Count(status => status.State == McpServerState.Connected);

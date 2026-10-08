@@ -2,10 +2,15 @@ using System.Text.Json;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Mcp;
 using Marshal.Abstractions.Tools;
+using Marshal.Abstractions.Execution;
+using Marshal.Core.Agent;
+using Marshal.Core.Context;
 using Marshal.Core.Mcp;
+using Marshal.Core.Tests.Agent;
 using Marshal.Core.Tools;
 using Marshal.Testing;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.AI;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 
@@ -100,6 +105,79 @@ public sealed class McpToolSourceTests : IAsyncDisposable
 
         Assert.True(tool.Descriptor.UntrustedOutput);
         Assert.Equal("mcp:websearch", tool.Descriptor.TaintKind);
+    }
+
+    [Theory]
+    [InlineData("todo__get_items")]
+    [InlineData("*get_items")]
+    public async Task Descriptor_UntrustedToolsGlob_OnlyMatchingToolsTaint(string glob)
+    {
+        _server.WithTool("todo__get_items").WithTool("intent__HassTurnOn");
+        McpToolSource source = await StartAsync(FakeMcpServerCatalog.Server("ha", untrustedTools: [glob]));
+
+        IReadOnlyList<ITool> tools = await source.GetToolsAsync(Ct);
+
+        ToolDescriptor read = tools.Single(tool => tool.Descriptor.Id.Name == "todo__get_items").Descriptor;
+        ToolDescriptor turnOn = tools.Single(tool => tool.Descriptor.Id.Name == "intent__HassTurnOn").Descriptor;
+        Assert.Equal((true, "mcp:ha"), (read.UntrustedOutput, read.TaintKind));
+        Assert.Equal((false, (string?)null), (turnOn.UntrustedOutput, turnOn.TaintKind));
+        Assert.Empty(source.Status.Warnings);
+    }
+
+    [Fact]
+    public async Task Descriptor_UntrustedServer_MarksEveryTool()
+    {
+        _server.WithTool("todo__get_items").WithTool("intent__HassTurnOn");
+        McpToolSource source = await StartAsync(FakeMcpServerCatalog.Server("ha", untrusted: true));
+
+        Assert.All(await source.GetToolsAsync(Ct), tool => Assert.True(tool.Descriptor.UntrustedOutput));
+    }
+
+    [Fact]
+    public async Task UntrustedToolsGlobMatchingNothing_ServerUpWithWarning()
+    {
+        _server.WithTool("todo__get_items");
+        McpToolSource source = await StartAsync(FakeMcpServerCatalog.Server("ha", untrustedTools: ["todo__get_itemz"]));
+
+        Assert.Equal(McpServerState.Connected, source.Status.State);
+        Assert.False(Assert.Single(await source.GetToolsAsync(Ct)).Descriptor.UntrustedOutput);
+        Assert.Contains("todo__get_itemz", Assert.Single(source.Status.Warnings), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Loop_UntrustedToolResultTaintsWithServerAndIsWrapped()
+    {
+        LoopHarness harness = await HaLoopAsync();
+        harness.Model.ThenToolCall("ha_todo__get_items", new { name = "Shopping" }).ThenText("Milk and eggs.");
+        MarshalExecutionContext context = TestExecutionContext.Text();
+
+        await harness.Runner.RunAsync(new AgentRunRequest { Context = context, UserText = "What is on the shopping list?" }, Ct);
+
+        Assert.True(context.Taint.IsTainted);
+        string result = Assert.Single(harness.Model.Requests[1].Messages.SelectMany(message => message.Contents).OfType<FunctionResultContent>()).Result!.ToString()!;
+        Assert.StartsWith(UntrustedContent.OpenTag, result, StringComparison.Ordinal);
+        Assert.Equal("mcp:ha", Assert.Single(harness.Recorder.OnlyRun.Completion!.TaintSources).Kind);
+    }
+
+    [Fact]
+    public async Task Loop_TrustedToolOfTheSameServerDoesNotTaint()
+    {
+        LoopHarness harness = await HaLoopAsync();
+        harness.Model.ThenToolCall("ha_intent__HassTurnOn", new { name = "Kitchen light" }).ThenText("Done.");
+        MarshalExecutionContext context = TestExecutionContext.Text();
+
+        await harness.Runner.RunAsync(new AgentRunRequest { Context = context, UserText = "Turn on the kitchen light." }, Ct);
+
+        Assert.False(context.Taint.IsTainted);
+        Assert.Empty(harness.Recorder.OnlyRun.Completion!.TaintSources);
+    }
+
+    private async Task<LoopHarness> HaLoopAsync()
+    {
+        _server.WithTool("todo__get_items").WithTool("intent__HassTurnOn");
+        McpToolSource source = await StartAsync(FakeMcpServerCatalog.Server("ha", untrustedTools: ["todo__get_items"]));
+        ITool[] tools = [.. await source.GetToolsAsync(Ct)];
+        return await LoopHarness.CreateAsync("risk:\n  - match: { tool: \"ha.*\" }\n    tier: safe\n", tools: tools);
     }
 
     [Fact]

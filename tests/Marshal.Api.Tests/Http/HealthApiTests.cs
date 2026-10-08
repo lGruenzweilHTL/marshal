@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Marshal.Abstractions.Mcp;
 using Marshal.Api.Health;
+using Marshal.Core.Mcp;
 using Marshal.Core.Secrets;
 using Marshal.Data;
 using Marshal.Testing;
@@ -62,6 +64,30 @@ public sealed class HealthApiTests
         string[] warnings = [.. mcp.GetProperty("warnings").EnumerateArray().Select(warning => warning.GetString()!)];
         Assert.Contains(warnings, warning => warning.StartsWith("MCP server search is down", StringComparison.Ordinal));
         Assert.Contains(warnings, warning => warning.StartsWith("mcp/bad.yaml: ", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Health_UntrustedToolsGlobMatchingNothing_WarningNamesTheGlob()
+    {
+        await using var server = new FakeMcpServer();
+        server.WithTool("todo__get_items");
+        using var factory = new MarshalApiFactory();
+        factory.TestServices = services => services.AddSingleton<IMcpTransportFactory>(new FakeTransports(server));
+        Directory.CreateDirectory(Path.Combine(factory.ConfigDirectory, "mcp"));
+        await File.WriteAllTextAsync(Path.Combine(factory.ConfigDirectory, "mcp", "ha.yaml"), "id: ha\ntransport: http\nurl: http://ha/api/mcp\nuntrustedTools: [todo__get_itemz]\n", Ct);
+
+        HttpResponseMessage response = await factory.CreateClient().GetAsync("/health", Ct);
+
+        JsonElement mcp = (await response.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("checks").GetProperty("mcp");
+        Assert.Equal("degraded", mcp.GetProperty("status").GetString());
+        Assert.Contains("1 of 1 servers connected", mcp.GetProperty("description").GetString(), StringComparison.Ordinal);
+        string warning = Assert.Single(mcp.GetProperty("warnings").EnumerateArray()).GetString()!;
+        Assert.Contains("todo__get_itemz", warning, StringComparison.Ordinal);
+    }
+
+    private sealed class FakeTransports(FakeMcpServer server) : IMcpTransportFactory
+    {
+        public ModelContextProtocol.Client.IClientTransport Create(McpConnectionSettings settings) => server.CreateTransport();
     }
 
     [Fact]
