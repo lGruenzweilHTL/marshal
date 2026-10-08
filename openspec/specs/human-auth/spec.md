@@ -22,11 +22,15 @@ For `oidc`, the backend SHALL act as confidential client using authorization cod
 - **THEN** the page loads authenticated
 
 ### Requirement: Antiforgery
-All state-changing endpoints called with a cookie principal SHALL require a valid antiforgery token and SHALL NOT be reachable with GET.
+All state-changing endpoints called with a cookie principal SHALL require a valid antiforgery token and SHALL NOT be reachable with GET. Browser sessions and their antiforgery tokens SHALL require HTTPS; a token request or a state-changing browser request over plain HTTP SHALL fail with the `auth.https_required` problem.
 
 #### Scenario: Missing antiforgery token
 - **WHEN** a cookie-authenticated POST arrives without an antiforgery token
 - **THEN** the response is 400 and nothing changes
+
+#### Scenario: Token requested over plain HTTP
+- **WHEN** `GET /api/v1/auth/antiforgery` arrives over plain HTTP (no TLS and no trusted forwarded `https` scheme)
+- **THEN** the response is 400 ProblemDetails with code `auth.https_required`, not a server error
 
 ### Requirement: One Identity user store
 All human users SHALL be ASP.NET Core Identity users whose key is exposed everywhere else as `OwnerId`. OIDC logins SHALL be stored as external logins (provider + subject) and matched by subject, never by email. The same user MAY have an OIDC login and local credentials (break-glass access).
@@ -71,4 +75,3 @@ OIDC users SHALL get roles from group claims via configured mappings (e.g. `mars
 #### Scenario: Anonymous call
 - **WHEN** `/api/v1/me` is called without a session
 - **THEN** the response is 401
-

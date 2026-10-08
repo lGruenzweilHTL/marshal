@@ -11,23 +11,30 @@ The web UI SHALL list tasks and watches with status, trigger, next run, budget u
 - **THEN** the next run uses the new goal and an audit event is written
 
 ### Requirement: Review queue
-The review queue SHALL show pending approvals (frozen action, reasons, expiry, approve / reject) and coding proposals (diff, merge / reject). Approve, reject and merge SHALL be audited user actions.
+The Inbox SHALL be the one destination for everything that waits for the user: pending approvals (frozen action, reasons, expiry, approve / reject), coding proposals (diff, merge / reject) and notifications. Approvals and proposals SHALL be listed before notifications, and the navigation badge SHALL count pending approvals, open proposals and unread critical notifications. An approval opened from a push deep link SHALL land on a focused approval screen. Approve, reject and merge SHALL be audited user actions.
 
 #### Scenario: Approve on the phone
 - **WHEN** the user opens an approval from a push deep link on a phone and approves
 - **THEN** the frozen action executes and the task resumes
 
+#### Scenario: One place for waiting items
+- **WHEN** one approval, one proposal and two notifications exist
+- **THEN** the Inbox lists the approval and the proposal first, then the notifications, and the Inbox badge counts the items that need the user
+
 ### Requirement: Notification history view
-The UI SHALL list notifications with content, priority, channel, outcome and reason, filterable by outcome.
+The Inbox SHALL list notifications with content, priority, channel, outcome and reason, filterable by outcome. A notification opened from a push deep link SHALL open that item in the Inbox.
 
 #### Scenario: Filter held
 - **WHEN** the user filters by `held`
 - **THEN** only notifications held by quiet hours are listed
 
 ### Requirement: Dashboard widgets
-The dashboard SHALL add widgets for running tasks and next scheduled runs, pending approvals with quick actions, recent notifications, and the kill switch.
+Home SHALL be ordered by what needs the user: pending approvals with approve / reject first, then printer alerts, then running tasks with the next scheduled runs, then recent notifications. The kill switch SHALL be shown on Home while background tasks run and SHALL always be available in the system view.
 
 #### Scenario: Pending approval widget
 - **WHEN** an approval is pending
-- **THEN** the dashboard shows it with approve / reject buttons
+- **THEN** Home shows it at the top with approve / reject buttons
 
+#### Scenario: Kill switch only while tasks run
+- **WHEN** no background task runs
+- **THEN** Home shows no kill switch and the system view still offers it
