@@ -24,8 +24,8 @@ Dependencies first, then size: cheap Home Assistant wins, then the artifact and 
 | # | Proposed change | Feature | Depends on | Size |
 |---|---|---|---|---|
 | 1 | `location-reminders` | Reminders on zone entry | existing event bus + task triggers | S |
-| 2 | `ha-lists-energy` | HA todo lists | HA MCP (verify existing tools) | S |
-| 3 | `ha-lists-energy` | HA energy statistics | HA websocket client | S |
+| 2 | `mcp-untrusted-tools` | HA todo lists (HA's MCP tools; per-tool taint for shared lists) | HA MCP | S |
+| 3 | `ha-energy` | HA energy statistics | HA websocket client | S |
 | 4 | `artifacts` | Artifact store + web viewer | — | M |
 | 5 | `display-surfaces` | Show artifacts on the TV nearest the satellite | 4 | M |
 | 5b | `artifact-3d-render` | Headless 3D renderer (turntable + still) | 4, 5 | M–L |
@@ -35,7 +35,9 @@ Dependencies first, then size: cheap Home Assistant wins, then the artifact and 
 | 9 | `proxmox` | Proxmox read-only + events | 8 | S–M |
 | 10 | `github` | GitHub read-only (fine-grained PAT) | 4 | M |
 
-Items 2 and 3 share the HA client work and can be one change or two.
+Items 2 and 3 were split: HA's MCP server already exposes to-do tools, so item 2 only needs per-tool untrusted marking (`mcp-untrusted-tools`); item 3 is `ha-energy`.
+
+Wave 1 (items 1, 2, 3, 4, 8) is proposed in `openspec/changes/`.
 
 ## 1–3. Home Assistant quick wins
 

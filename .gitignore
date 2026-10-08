@@ -20,7 +20,7 @@ coverage*.xml
 coverage*.info
 *.coverage
 *.coveragexml
-artifacts/
+/artifacts/
 BenchmarkDotNet.Artifacts/
 *.nupkg
 *.snupkg
