@@ -286,8 +286,8 @@ internal sealed partial class BackgroundTaskScheduler(
         return null;
     }
 
-    // Recurring triggers (cron, event) wait for their next occurrence, which starts a new activation with a fresh
-    // budget; one-shot triggers are done.
+    // Recurring triggers (cron, event without once) wait for their next occurrence, which starts a new activation with
+    // a fresh budget; one-shot triggers and once-watches are done.
     private async Task<TaskRecord> RearmAsync(TaskRecord task, DateTimeOffset now, CancellationToken cancellationToken) => task.Trigger.Kind switch
     {
         TaskTriggerKind.Cron => task with
@@ -296,7 +296,7 @@ internal sealed partial class BackgroundTaskScheduler(
             NextRunAt = TaskTriggers.NextRun(task.Trigger, now, await profiles.TimeZoneAsync(task.OwnerId, cancellationToken)),
             Spent = TaskSpend.Zero,
         },
-        TaskTriggerKind.Event => task with { Status = AgentTaskStatus.Waiting, NextRunAt = null, Spent = TaskSpend.Zero },
+        TaskTriggerKind.Event when !task.Trigger.Once => task with { Status = AgentTaskStatus.Waiting, NextRunAt = null, Spent = TaskSpend.Zero },
         _ => task with { Status = AgentTaskStatus.Done, NextRunAt = null },
     };
 

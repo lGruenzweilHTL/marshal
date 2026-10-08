@@ -109,6 +109,19 @@ public sealed class TasksApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Detail_TriggerOnceForOnceWatchesOnly()
+    {
+        TaskRecord watch = await CreateAsync(_user, new NewTask { Goal = "Buy wall plugs.", Trigger = TaskTrigger.Event("""{"source":"ha","entity":"person.alice","to":"Hornbach"}""", once: true) });
+        TaskRecord cron = await CreateAsync(_user, new NewTask { Goal = "Briefing.", Trigger = TaskTrigger.Cron("0 6 * * *") });
+
+        JsonElement watchDetail = await _browser.GetFromJsonAsync<JsonElement>($"/api/v1/tasks/{watch.Id}", Ct);
+        JsonElement cronDetail = await _browser.GetFromJsonAsync<JsonElement>($"/api/v1/tasks/{cron.Id}", Ct);
+
+        Assert.True(watchDetail.GetProperty("task").GetProperty("trigger").GetProperty("once").GetBoolean());
+        Assert.False(cronDetail.GetProperty("task").GetProperty("trigger").GetProperty("once").GetBoolean());
+    }
+
+    [Fact]
     public async Task EditGoal_NextRunUsesItAndIsAudited()
     {
         TaskRecord task = await CreateAsync(_user, new NewTask { Goal = "Morning briefing.", Name = "briefing", Trigger = TaskTrigger.Cron("0 6 * * *") });

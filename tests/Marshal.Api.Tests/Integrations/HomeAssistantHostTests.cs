@@ -51,6 +51,8 @@ public sealed class HomeAssistantHostTests
         Assert.Equal("token", services.GetRequiredService<Microsoft.Extensions.Options.IOptions<HomeAssistantOptions>>().Value.Token);
         ToolSnapshot tools = await services.GetRequiredService<IToolRegistry>().RefreshAsync(Ct);
         Assert.NotNull(tools.FindById(new ToolId("timers", "start")));
+        Assert.NotNull(tools.FindById(new ToolId("places", "find")));
+        Assert.NotNull(tools.FindById(new ToolId("places", "create_here")));
 
         using var health = JsonDocument.Parse(await client.GetStringAsync("/health", Ct));
         Assert.Equal("degraded", health.RootElement.GetProperty("checks").GetProperty("homeassistant").GetProperty("status").GetString());
@@ -64,6 +66,8 @@ public sealed class HomeAssistantHostTests
 
         ToolSnapshot tools = await factory.Services.GetRequiredService<IToolRegistry>().RefreshAsync(Ct);
         Assert.Null(tools.FindById(new ToolId("timers", "start")));
+        Assert.Null(tools.FindById(new ToolId("places", "find")));
+        Assert.Null(tools.FindById(new ToolId("places", "create_here")));
         Assert.Null(factory.Services.GetRequiredService<IHomeAssistantCache>().Current);
         using var health = JsonDocument.Parse(await client.GetStringAsync("/health", Ct));
         Assert.Equal("healthy", health.RootElement.GetProperty("checks").GetProperty("homeassistant").GetProperty("status").GetString());

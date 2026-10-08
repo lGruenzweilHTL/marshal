@@ -48,6 +48,7 @@ public sealed class ToolRegistryTests
     [InlineData("printer")]
     [InlineData("calendar")]
     [InlineData("notes")]
+    [InlineData("places")]
     public async Task Refresh_ExternalSourceInReservedNamespace_RejectedOthersKeepWorking(string ns)
     {
         ToolRegistry registry = await RegistryAsync(

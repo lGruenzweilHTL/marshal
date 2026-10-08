@@ -90,7 +90,7 @@ export function taskItem(overrides: Partial<Schemas['TaskItem']> = {}): Schemas[
     kind: 'agent',
     status: 'waiting',
     statusReason: null,
-    trigger: { kind: 'cron', spec: '0 6 * * *' },
+    trigger: { kind: 'cron', spec: '0 6 * * *', once: false },
     nextRunAt: '2026-10-01T04:00:00Z',
     budget: { tokens: null, cost: 0.5, steps: null, wallTimeSeconds: null, runs: null },
     spent: { tokens: 1200, cost: 0.12, steps: 3, wallTimeSeconds: 20, runs: 1 },

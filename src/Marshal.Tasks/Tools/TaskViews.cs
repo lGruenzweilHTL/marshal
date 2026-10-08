@@ -16,6 +16,7 @@ internal static class TaskViews
         status = Name(task.Status),
         reason = task.StatusReason,
         trigger = Describe(task.Trigger),
+        once = Once(task.Trigger),
         nextRun = task.NextRunAt is { } next ? Local(next, zone) : null,
         resultAgeMinutes = task.ResultAt is { } at ? (int?)(now - at).TotalMinutes : null,
     };
@@ -28,6 +29,7 @@ internal static class TaskViews
         status = Name(task.Status),
         reason = task.StatusReason,
         trigger = Describe(task.Trigger),
+        once = Once(task.Trigger),
         nextRun = task.NextRunAt is { } next ? Local(next, zone) : null,
         notes = task.Notes,
         result = task.Result is { } result
@@ -38,6 +40,9 @@ internal static class TaskViews
 
     public static string Local(DateTimeOffset time, TimeZoneInfo zone) =>
         TimeZoneInfo.ConvertTime(time, zone).ToString("yyyy-MM-dd'T'HH:mm:sszzz", CultureInfo.InvariantCulture);
+
+    // Watches say whether they end after their first event; other triggers leave it out.
+    private static bool? Once(TaskTrigger trigger) => trigger.Kind == TaskTriggerKind.Event ? trigger.Once : null;
 
     private static string Name(AgentTaskStatus status) => status.ToString().ToLowerInvariant();
 

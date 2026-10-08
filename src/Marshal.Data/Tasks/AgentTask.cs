@@ -37,6 +37,9 @@ public sealed class AgentTask : IOwned, IVersioned
     /// <summary>Time (ISO 8601), cron expression, event filter JSON or task id, depending on the kind.</summary>
     public required string TriggerSpec { get; set; }
 
+    /// <summary>An <c>event</c> trigger that fires once and then ends instead of re-arming.</summary>
+    public bool TriggerOnce { get; set; }
+
     /// <summary>JSON payload of the trigger that made the task due, handed to the next run.</summary>
     public string? TriggerPayload { get; set; }
 

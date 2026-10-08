@@ -53,6 +53,27 @@ public sealed class EfTaskStoreTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Create_OnceWatch_KeepsOnceAndRecurringWatchReadsFalse()
+    {
+        TaskRecord once = (await Store().CreateAsync(New(null, TaskTrigger.Event("""{"source":"ha"}""", once: true)), Ct)).Value;
+        TaskRecord recurring = (await Store().CreateAsync(New(null, TaskTrigger.Event("""{"source":"ha"}""")), Ct)).Value;
+
+        Assert.True((await Store().GetAsync(once.Id, Ct)).Value.Trigger.Once);
+        Assert.False((await Store().GetAsync(recurring.Id, Ct)).Value.Trigger.Once);
+    }
+
+    [Fact]
+    public async Task Update_KeepsOnceAcrossStatusChanges()
+    {
+        TaskRecord once = (await Store().CreateAsync(New(null, TaskTrigger.Event("""{"source":"ha"}""", once: true)), Ct)).Value;
+
+        TaskRecord updated = (await Store().UpdateAsync(once with { Status = AgentTaskStatus.Waiting }, Ct)).Value;
+
+        Assert.True(updated.Trigger.Once);
+        Assert.True((await Store().GetAsync(once.Id, Ct)).Value.Trigger.Once);
+    }
+
+    [Fact]
     public async Task Create_AwaitsResume_WaitingWithoutRunTime()
     {
         TaskRecord task = (await Store().CreateAsync(New(null, TaskTrigger.Now()) with { AwaitsResume = true }, Ct)).Value;

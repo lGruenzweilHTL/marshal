@@ -8,7 +8,7 @@ export const en = {
   columns: { task: 'Task', trigger: 'Trigger', next: 'Next run', spent: 'Spent / budget', status: 'Status' },
   empty: { title: 'No tasks here', body: 'Ask Marshal to do something later or to watch for something, and the task shows up here.' },
   noMatch: 'No task matches.',
-  trigger: { now: 'now', at: 'at', cron: 'cron', event: 'watch', after: 'after' },
+  trigger: { now: 'now', at: 'at', cron: 'cron', event: 'watch', after: 'after', once: 'once' },
   unlimited: 'no budget',
   detail: {
     since: 'since {time}',
@@ -67,7 +67,7 @@ export const de: Catalog<typeof en> = {
   columns: { task: 'Aufgabe', trigger: 'Auslöser', next: 'Nächster Lauf', spent: 'Verbraucht / Budget', status: 'Status' },
   empty: { title: 'Hier sind keine Aufgaben', body: 'Bitte Marshal, etwas später zu erledigen oder auf etwas zu achten, dann erscheint die Aufgabe hier.' },
   noMatch: 'Keine Aufgabe passt.',
-  trigger: { now: 'jetzt', at: 'um', cron: 'cron', event: 'beobachtet', after: 'nach' },
+  trigger: { now: 'jetzt', at: 'um', cron: 'cron', event: 'beobachtet', after: 'nach', once: 'einmalig' },
   unlimited: 'kein Budget',
   detail: {
     since: 'seit {time}',

@@ -63,11 +63,12 @@ internal static class TaskTools
               "inMinutes":{"type":"integer","minimum":1},
               "notes":{"type":"string","description":"The task notes for the next run (replace the current notes)."}},"additionalProperties":false}
             """, ScheduleWakeupAsync) { Persists = true, Available = InTaskRunAsync },
-        new TaskTool(context, "watch", "Watches for an event (e.g. a person coming home) and then runs a goal.", $$"""
+        new TaskTool(context, "watch", "Watches for an event (e.g. a person coming home) and then runs a goal. For a place, call places_find first and filter on the user's person entity with to (arriving) or from (leaving); use once for a one-off reminder.", $$"""
             {"type":"object","properties":{
               "filter":{"type":"object","description":"Event filter: source (ha, printer, mail, ...), optional type, entity glob and payload conditions such as to: home.","properties":{"source":{"type":"string"} },"required":["source"]},
               "goal":{"type":"string"},
               "name":{"type":"string"},
+              "once":{"type":"boolean","description":"Fire on the first matching event only, then end (one-off reminders)."},
               "deliver":{{DeliverSchema}},
               "{{OverrideArgument}}":{{OverrideSchema}}},"required":["filter","goal"],"additionalProperties":false}
             """, WatchAsync) { Persists = true, Confirming = true, Available = CanStartAsync },
@@ -119,9 +120,16 @@ internal static class TaskTools
             return TaskErrors.Invalid("goal is required.");
         if (!arguments.TryGetProperty("filter", out JsonElement filter) || filter.ValueKind != JsonValueKind.Object || TaskArguments.Text(filter, "source") is null)
             return TaskErrors.Invalid("filter must be an object with a source.");
+        bool once = false;
+        if (arguments.TryGetProperty("once", out JsonElement onceArgument) && onceArgument.ValueKind != JsonValueKind.Null)
+        {
+            if (onceArgument.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                return TaskErrors.Invalid("once must be true or false.");
+            once = onceArgument.GetBoolean();
+        }
 
         TimeZoneInfo zone = await context.Profiles.TimeZoneAsync(invocation.Context.OwnerId, ct);
-        return await CreateTaskAsync(context, invocation, zone, goal, TaskTrigger.Event(filter.GetRawText()), ct);
+        return await CreateTaskAsync(context, invocation, zone, goal, TaskTrigger.Event(filter.GetRawText(), once), ct);
     }
 
     private static async Task<Result<ToolOutput>> CreateTaskAsync(TaskToolContext context, ToolInvocation invocation, TimeZoneInfo zone, string goal, TaskTrigger trigger, CancellationToken ct)

@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Marshal.Integrations.HomeAssistant.Tests" />
+    <InternalsVisibleTo Include="Marshal.Tasks.Tests" />
   </ItemGroup>
 
 </Project>

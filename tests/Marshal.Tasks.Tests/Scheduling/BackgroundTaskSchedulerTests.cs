@@ -285,6 +285,37 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task OnceWatch_DoneRunEndsDoneAndNeverFiresAgain()
+    {
+        TaskRecord watch = await CreateAsync(New(TaskTrigger.Event("""{"source":"ha"}""", once: true)));
+        await StartAsync();
+
+        await FireAsync(watch.Id);
+        await WaitForAsync(() => StatusAsync(watch.Id, AgentTaskStatus.Done));
+        TaskRecord done = await GetAsync(watch.Id);
+        Assert.Null(done.NextRunAt);
+
+        using (_accessor.Use(Text(OwnerA)))
+            Assert.DoesNotContain(await Store().GetWatchesAsync(Ct), w => w.Id == watch.Id);
+        Assert.Single(_runner.Runs);
+    }
+
+    [Fact]
+    public async Task RecurringWatch_DoneRunWaitsForTheNextEvent()
+    {
+        TaskRecord watch = await CreateAsync(New(TaskTrigger.Event("""{"source":"ha"}""")));
+        await StartAsync();
+
+        await FireAsync(watch.Id);
+        await WaitForAsync(() => Task.FromResult(_runner.Finished == 1));
+        await WaitForAsync(() => StatusAsync(watch.Id, AgentTaskStatus.Waiting));
+
+        Assert.Null((await GetAsync(watch.Id)).NextRunAt);
+        using (_accessor.Use(Text(OwnerA)))
+            Assert.Contains(await Store().GetWatchesAsync(Ct), w => w.Id == watch.Id);
+    }
+
+    [Fact]
     public async Task CancelRun_StopsTheRunAndKeepsTheCancelledStatus()
     {
         _runner.Gate();
@@ -345,6 +376,18 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
     {
         using (_accessor.Use(Text(OwnerA)))
             return (await Store().CreateAsync(task, Ct)).Value;
+    }
+
+    // Makes a watch due the way the trigger matcher does when an event matches.
+    private async Task FireAsync(TaskId id)
+    {
+        using (_accessor.Use(Text(OwnerA)))
+        {
+            TaskRecord task = (await Store().GetAsync(id, Ct)).Value;
+            await Store().UpdateAsync(task with { Status = AgentTaskStatus.Pending, NextRunAt = _time.GetUtcNow() }, Ct);
+        }
+
+        _signals.Wake();
     }
 
     private async Task<TaskRecord> GetAsync(TaskId id)

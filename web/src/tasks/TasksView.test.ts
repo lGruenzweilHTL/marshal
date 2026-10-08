@@ -13,7 +13,7 @@ const tasks = [
     name: null,
     goal: 'Tell me when Alice is home.',
     status: 'pending',
-    trigger: { kind: 'event', spec: '{"source":"ha","entity":"person.alice","to":"home"}' },
+    trigger: { kind: 'event', spec: '{"source":"ha","entity":"person.alice","to":"home"}', once: false },
     nextRunAt: null,
     budget: { tokens: null, cost: null, steps: null, wallTimeSeconds: null, runs: null },
     resultSpeech: null,

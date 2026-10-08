@@ -5,9 +5,10 @@ namespace Marshal.Abstractions.Tasks;
 /// <summary>
 /// What makes a task due. <paramref name="Spec"/> depends on the kind: empty (<c>now</c>), a UTC ISO 8601 time
 /// (<c>at</c>), a five-field cron expression evaluated in the owner's time zone (<c>cron</c>), an event filter JSON
-/// object (<c>event</c>) or a task id (<c>after</c>).
+/// object (<c>event</c>) or a task id (<c>after</c>). <paramref name="Once"/> only applies to <c>event</c>: the watch fires
+/// on its first matching event and then ends instead of waiting for the next one.
 /// </summary>
-public sealed record TaskTrigger(TaskTriggerKind Kind, string Spec)
+public sealed record TaskTrigger(TaskTriggerKind Kind, string Spec, bool Once = false)
 {
     public static TaskTrigger Now() => new(TaskTriggerKind.Now, "");
 
@@ -16,7 +17,7 @@ public sealed record TaskTrigger(TaskTriggerKind Kind, string Spec)
 
     public static TaskTrigger Cron(string expression) => new(TaskTriggerKind.Cron, expression.Trim());
 
-    public static TaskTrigger Event(string filterJson) => new(TaskTriggerKind.Event, filterJson);
+    public static TaskTrigger Event(string filterJson, bool once = false) => new(TaskTriggerKind.Event, filterJson, once);
 
     public static TaskTrigger After(TaskId task) => new(TaskTriggerKind.After, task.ToString());
 }

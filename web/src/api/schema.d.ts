@@ -2320,6 +2320,8 @@ export interface components {
         TaskTrigger: {
             kind: components["schemas"]["TaskTriggerKind"];
             spec: string;
+            /** @default false */
+            once: boolean;
         };
         /** @enum {unknown} */
         TaskTriggerKind: "now" | "at" | "cron" | "event" | "after";

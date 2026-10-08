@@ -112,6 +112,21 @@ public sealed class DatabaseInitializerTests : IDisposable
         Assert.Equal("OWNER", owner.NormalizedUserName);
     }
 
+    [Fact]
+    public async Task Initialize_ExistingTasks_TriggerOnceDefaultsToFalse()
+    {
+        await InitializeAsync();
+
+        await using var connection = new SqliteConnection($"Data Source={DatabasePath}");
+        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        await using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = "SELECT \"notnull\", dflt_value FROM pragma_table_info('agent_tasks') WHERE name = 'trigger_once'";
+        await using SqliteDataReader reader = await command.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(await reader.ReadAsync(TestContext.Current.CancellationToken));
+        Assert.Equal((1L, "0"), (reader.GetInt64(0), reader.GetString(1)));
+    }
+
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();

@@ -7,6 +7,6 @@ public static class ReservedNamespaces
 {
     public static IReadOnlySet<string> All { get; } = new HashSet<string>(StringComparer.Ordinal)
     {
-        "agent", "memory", "tasks", "notifications", "timers", "mail", "rss", "printer", "calendar", "notes",
+        "agent", "memory", "tasks", "notifications", "timers", "mail", "rss", "printer", "calendar", "notes", "places",
     };
 }

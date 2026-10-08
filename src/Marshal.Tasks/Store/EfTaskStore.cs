@@ -86,6 +86,7 @@ public sealed partial class EfTaskStore(
             OriginSatelliteId = originSatellite,
             TriggerKind = task.Trigger.Kind,
             TriggerSpec = task.Trigger.Spec,
+            TriggerOnce = task.Trigger.Once,
             Status = task.AwaitsResume ? AgentTaskStatus.Waiting : AgentTaskStatus.Pending,
             NextRunAt = task.AwaitsResume ? null : TaskTriggers.NextRun(task.Trigger, now, await profiles.TimeZoneAsync(owner, cancellationToken)),
             Notes = task.Notes,
@@ -155,7 +156,7 @@ public sealed partial class EfTaskStore(
             return TaskErrors.NotFound(task.Id.ToString());
 
         // An unchanged trigger is not re-validated, so a stricter configuration never blocks status updates.
-        bool triggerChanged = task.Trigger != new TaskTrigger(row.TriggerKind, row.TriggerSpec);
+        bool triggerChanged = task.Trigger != new TaskTrigger(row.TriggerKind, row.TriggerSpec, row.TriggerOnce);
         Result valid = triggerChanged ? Validate(task.Goal, task.Trigger, budget: null) : ValidateGoal(task.Goal);
         if (valid.IsFailure)
             return valid.Error;
@@ -176,6 +177,7 @@ public sealed partial class EfTaskStore(
         row.Template = task.Template;
         row.TriggerKind = task.Trigger.Kind;
         row.TriggerSpec = task.Trigger.Spec;
+        row.TriggerOnce = task.Trigger.Once;
         row.TriggerPayload = task.TriggerPayload;
         row.Status = task.Status;
         row.StatusReason = task.StatusReason;
@@ -314,7 +316,7 @@ public sealed partial class EfTaskStore(
         Template = row.Template,
         ProjectId = row.ProjectId,
         OriginSatelliteId = row.OriginSatelliteId,
-        Trigger = new TaskTrigger(row.TriggerKind, row.TriggerSpec),
+        Trigger = new TaskTrigger(row.TriggerKind, row.TriggerSpec, row.TriggerOnce),
         TriggerPayload = row.TriggerPayload,
         Status = row.Status,
         StatusReason = row.StatusReason,

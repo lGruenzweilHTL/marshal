@@ -61,6 +61,7 @@ public static class HomeAssistantServiceCollectionExtensions
         }));
 
         services.AddSingleton<IToolSource, TimerToolSource>();
+        services.AddSingleton<IToolSource, PlacesToolSource>();
         services.AddSingleton<ICalendarProvider, HomeAssistantCalendarProvider>();
         services.AddSingleton<IToolSource, CalendarToolSource>();
         return services;

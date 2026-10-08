@@ -1271,6 +1271,10 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("trigger_kind");
 
+                    b.Property<bool>("TriggerOnce")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("trigger_once");
+
                     b.Property<string>("TriggerPayload")
                         .HasColumnType("TEXT")
                         .HasColumnName("trigger_payload");

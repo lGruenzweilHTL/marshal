@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Marshal.Testing\Marshal.Testing.csproj" />
     <ProjectReference Include="..\..\src\Marshal.Tasks\Marshal.Tasks.csproj" />
+    <ProjectReference Include="..\..\src\Marshal.Integrations.HomeAssistant\Marshal.Integrations.HomeAssistant.csproj" />
   </ItemGroup>
 
 </Project>

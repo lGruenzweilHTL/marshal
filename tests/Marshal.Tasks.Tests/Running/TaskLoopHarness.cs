@@ -61,12 +61,17 @@ internal sealed class TaskLoopHarness
     /// <summary>The context of the last run, as the agent loop saw it.</summary>
     public MarshalExecutionContext LastContext => Recorder.Runs[^1].Start.Context;
 
-    public static async Task<TaskLoopHarness> CreateAsync(SatelliteProfile? kitchen = null, params ITool[] tools)
+    public static Task<TaskLoopHarness> CreateAsync(SatelliteProfile? kitchen = null, params ITool[] tools) =>
+        CreateAsync(_ => Task.FromResult<IReadOnlyList<ITool>>(tools), kitchen);
+
+    /// <summary>A harness whose tools are built from it (e.g. tools that share its clock or execution context).</summary>
+    public static async Task<TaskLoopHarness> CreateAsync(Func<TaskLoopHarness, Task<IReadOnlyList<ITool>>> toolsFactory, SatelliteProfile? kitchen = null)
     {
         var harness = new TaskLoopHarness();
+        IReadOnlyList<ITool> tools = await toolsFactory(harness);
         harness.PendingActions = new InMemoryPendingActionStore(harness.Time);
         harness.Approvals = new RecordingApprovals(harness.PendingActions);
-        var registry = new ToolRegistry([new FakeToolSource("test", true, tools)]);
+        var registry = new ToolRegistry([new FakeToolSource("test", true, [.. tools])]);
         await registry.RefreshAsync(TestContext.Current.CancellationToken);
         var engine = new RuleBasedRiskEngine(new FixedMonitor<RiskRulesFile>(Rules("risk: []")), []);
         var satellites = new KitchenSatellites(kitchen ?? SatelliteProfile.Default);

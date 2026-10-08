@@ -346,6 +346,7 @@ package "Background Work" {
     origin_satellite_id : string  <<policy applies to all runs + children>>
     * trigger_kind : now | at | cron | event | after
     * trigger_spec : string  <<time, cron, event filter json or task id>>
+    * trigger_once : bool  <<event only: fire once, then done>>
     trigger_payload : json  <<handed to the next run>>
     * status : pending | running | waiting | done | failed | cancelled
     status_reason : string  <<e.g. budget_exceeded>>

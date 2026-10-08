@@ -179,6 +179,28 @@ public sealed class TaskToolsTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Watch_Once_CreatesAOnceWatchShownInListAndStatus()
+    {
+        await InvokeAsync("watch", new { filter = new { source = "ha", entity = "person.alice", to = "Hornbach" }, goal = "Remind me to buy wall plugs.", name = "plugs", once = true });
+
+        TaskRecord watch = (await Store().FindAsync("plugs", Ct)).Value;
+        Assert.Equal((TaskTriggerKind.Event, true), (watch.Trigger.Kind, watch.Trigger.Once));
+        using var status = JsonDocument.Parse((await InvokeAsync("status", new { task = "plugs" })).Value.Content);
+        Assert.True(status.RootElement.GetProperty("once").GetBoolean());
+        using var list = JsonDocument.Parse((await InvokeAsync("list", new { })).Value.Content);
+        Assert.True(Assert.Single(list.RootElement.EnumerateArray()).GetProperty("once").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Watch_OnceNotABoolean_ValidationErrorAndNoTask()
+    {
+        Result<ToolOutput> watched = await InvokeAsync("watch", new { filter = new { source = "ha" }, goal = "x", name = "plugs", once = "yes" });
+
+        Assert.Equal(ErrorType.Validation, watched.Error.Type);
+        Assert.True((await Store().FindAsync("plugs", Ct)).IsFailure);
+    }
+
+    [Fact]
     public async Task Watch_FilterWithoutSource_ValidationError()
     {
         Assert.Equal(ErrorType.Validation, (await InvokeAsync("watch", new { filter = new { entity = "person.alice" }, goal = "x" })).Error.Type);
