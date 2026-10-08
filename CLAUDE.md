@@ -55,6 +55,7 @@ src/                         .NET projects
   Marshal.Integrations.Mail/ mail providers (IMAP via MailKit) and credential sources, mail tools (never a send path)
   Marshal.Integrations.FreshRss/  FreshRSS Google Reader API client, full-text extraction, RSS tools
   Marshal.Integrations.Notes/  git-backed Markdown notes source, own hybrid notes index, notes tools
+  Marshal.Artifacts/         artifact store (files in /data/artifacts, per-owner quota), kind detection, artifacts tools
   Marshal.Data/              EF Core DbContext, migrations, owner-scoped query filters
   Marshal.ExecutorHost/      separate coding-sandbox service (own deployment and image, never in the main container,
                              never referenced by Marshal)
@@ -135,6 +136,8 @@ No mocking or assertion libraries — use hand-written fakes from `Marshal.Testi
 | `vite-plugin-pwa` | Web app manifest and Workbox service worker (app shell only, network-only navigations, static offline page) |
 | `@resvg/resvg-js` | Build-time rendering of the PWA icon PNGs from the logo SVGs (`web/scripts/appAssets.ts`) |
 | `markdown-it` | Chat markdown rendering with HTML disabled and a same-origin-only image rule (ships its own types) |
+| `three` (+ `@types/three`, dev) | 3D artifact viewer (STL and 3MF loaders, orbit controls); lazy chunk, never in the entry chunk |
+| `highlight.js` | Syntax highlighting in the code artifact viewer (core + registered languages); lazy chunk |
 | `vitest`, `@vue/test-utils`, `jsdom` | Component tests (`npm test`) against a hand-written fake API server (`src/testing/fakeServer.ts`) |
 
 **Python (`ha/`)**

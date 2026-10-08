@@ -28,6 +28,34 @@ public sealed class OwnershipTests
     }
 
     [Fact]
+    public async Task Artifacts_OtherOwnersRowInvisible()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        foreach (Abstractions.Identity.OwnerId owner in new[] { OwnerA, OwnerB })
+        {
+            await using MarshalDbContext seed = database.CreateContext(owner);
+            seed.Artifacts.Add(new Artifacts.StoredArtifact
+            {
+                Id = Abstractions.Artifacts.ArtifactId.New(),
+                OwnerId = owner,
+                Name = "bracket.stl",
+                Kind = Abstractions.Artifacts.ArtifactKind.Model3d,
+                MediaType = "model/stl",
+                Size = 84,
+                Sha256 = "00",
+                Source = Abstractions.Artifacts.ArtifactSource.Upload,
+                Tainted = false,
+                CreatedAt = _now,
+            });
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using MarshalDbContext context = database.CreateContext(OwnerA);
+        Artifacts.StoredArtifact artifact = Assert.Single(await context.Artifacts.ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(OwnerA, artifact.OwnerId);
+    }
+
+    [Fact]
     public async Task Query_WithoutExecutionContext_Throws()
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();

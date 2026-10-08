@@ -46,6 +46,20 @@ export class FakeServer {
     return this.requests.filter((request) => request.method === method && request.path === path).length
   }
 
+  /**
+   * Upload transport: reports half, then routes like {@link fetch}. The body is recorded as simple multipart text
+   * (`name="file"; filename="cube.stl"` and the content), since jsdom's FormData cannot go into a Node `Request`.
+   */
+  readonly upload = async (url: string, body: FormData, headers: Record<string, string>, onProgress: (fraction: number) => void): Promise<Response> => {
+    onProgress(0.5)
+    const parts: string[] = []
+    for (const [name, value] of body.entries()) {
+      parts.push(typeof value === 'string' ? `name="${name}"\n${value}` : `name="${name}"; filename="${value.name}"\n${await value.text()}`)
+    }
+    const { pathname, search } = new URL(url)
+    return this.dispatch({ method: 'POST', path: pathname, search, headers: new Headers(headers), body: parts.join('\n--\n') })
+  }
+
   readonly fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const request = input instanceof Request ? input : new Request(input, init)
     const url = new URL(request.url)
@@ -56,6 +70,10 @@ export class FakeServer {
       headers: request.headers,
       body: request.body ? await request.text() : '',
     }
+    return this.dispatch(recorded)
+  }
+
+  private dispatch(recorded: RecordedRequest): Response | Promise<Response> {
     this.requests.push(recorded)
     const key =
       this.routes.has(`${recorded.method} ${recorded.path}`) ? `${recorded.method} ${recorded.path}`

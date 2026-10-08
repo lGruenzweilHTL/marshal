@@ -5,7 +5,8 @@
 ' Update it in the same change that adds, removes or renames an entity,
 ' column or relationship, and re-render the SVG (see docs/diagrams/README.md).
 '
-' Status: BUILT — every entity exists in Marshal.Data (MailAccount is the StoredMailAccount class; the Identity
+' Status: BUILT — every entity exists in Marshal.Data (MailAccount is the StoredMailAccount class, Artifact the
+' StoredArtifact class; the Identity
 ' tables come from the Identity base context).
 
 !pragma layout smetana
@@ -449,6 +450,21 @@ package "Integrations & Secrets" {
     <<unique (owner_id, alias)>>
   }
 
+  entity Artifact <<artifacts>> {
+    * id : ArtifactId <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    * name : string  <<file name, content in /data/artifacts/<owner>/<id>>>
+    * kind : image | svg | video | model3d | code | diff | pdf | markdown | html | other
+    * media_type : string  <<detected, never declared>>
+    * size : long
+    * sha256 : string
+    * source : upload | executor | printer | mail
+    source_reference : string  <<task id, message ref or printer snapshot>>
+    * tainted : bool
+    * created_at : DateTimeOffset
+  }
+
   entity NoteIndexEntry <<note_index_entries>> {
     * id : Guid <<PK>>
     --
@@ -486,6 +502,7 @@ User ||--o{ AgentTask
 User ||--o{ Notification
 User ||--o{ Proposal
 User ||--o{ MailAccount
+User ||--o{ Artifact
 User |o--o{ Secret
 User ||--o{ AuditEvent
 User ||--o{ FollowUp

@@ -37,6 +37,7 @@ describe('formatter', () => {
     expect(de.percent(0.425)).toBe('42,5\u00a0%')
     expect(en.percent(0.425)).toBe('42.5%')
     expect(en.cost(0.5)).toBe('0.50')
+    expect([en.bytes(512), en.bytes(1536), de.bytes(5 * 1024 * 1024 * 1024)]).toEqual(['512 B', '1.5 KB', '5 GB'])
     expect(de.cost(0.01234)).toBe('0,0123')
   })
 })

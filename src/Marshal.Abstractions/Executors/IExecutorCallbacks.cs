@@ -1,3 +1,4 @@
+using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tokens;
 
 namespace Marshal.Abstractions.Executors;
@@ -12,4 +13,10 @@ public interface IExecutorCallbacks
     /// (forbidden) when <paramref name="token"/> is not that session's callback token.
     /// </summary>
     Task<Result> HandleAsync(Guid sessionId, ApiTokenId token, ExecutorReport report, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Checks that <paramref name="token"/> is the callback token of the running session <paramref name="sessionId"/>
+    /// before the session uploads an artifact; returns the session's task.
+    /// </summary>
+    Task<Result<TaskId>> AuthorizeUploadAsync(Guid sessionId, ApiTokenId token, CancellationToken cancellationToken);
 }

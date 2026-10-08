@@ -1,5 +1,6 @@
 import type { Catalog } from './catalog'
 import * as common from './common'
+import * as artifacts from '../artifacts/messages'
 import * as auth from '../auth/messages'
 import * as chat from '../chat/messages'
 import * as home from '../home/messages'
@@ -26,6 +27,7 @@ export const en = {
   home: home.en,
   runs: runs.en,
   tasks: tasks.en,
+  artifacts: artifacts.en,
   chat: chat.en,
   memory: memory.en,
   mail: mail.en,
@@ -43,6 +45,7 @@ export const de: Catalog<typeof en> = {
   home: home.de,
   runs: runs.de,
   tasks: tasks.de,
+  artifacts: artifacts.de,
   chat: chat.de,
   memory: memory.de,
   mail: mail.de,

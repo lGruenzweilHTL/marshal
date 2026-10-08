@@ -3,6 +3,7 @@ using Marshal.Abstractions;
 using Marshal.Abstractions.Mcp;
 using Marshal.Abstractions.Templates;
 using Marshal.Api.Configuration;
+using Marshal.Artifacts;
 using Marshal.Core.Configuration;
 using Marshal.Core.Guard;
 using Marshal.Core.Mcp;
@@ -12,6 +13,7 @@ using Marshal.Core.Skills;
 using Marshal.Core.Templates;
 using Marshal.Testing;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -57,6 +59,17 @@ public sealed class ExampleConfigTests
         Assert.Contains(models.Models.Values, model => model.Tier == Abstractions.Models.ModelTier.Standard);
         Assert.Equal("ollama", models.Embedding?.Provider);
         Assert.Equal("Europe/Vienna", configuration["instance:timeZone"]);
+    }
+
+    [Fact]
+    public void ExampleMarshalYaml_BindsArtifactOptions()
+    {
+        IConfiguration configuration = new ConfigurationBuilder().AddMarshalConfiguration(_directory, new Hashtable()).Build();
+        using ServiceProvider services = new ServiceCollection().AddMarshalArtifacts(configuration, _ => Path.GetTempPath()).BuildServiceProvider();
+
+        ArtifactOptions options = services.GetRequiredService<IOptions<ArtifactOptions>>().Value;
+
+        Assert.Equal((5120, 200, 15), (options.QuotaMb, options.MaxUploadMb, options.SignedLinkMinutes));
     }
 
     [Fact]

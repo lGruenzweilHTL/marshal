@@ -576,6 +576,107 @@
         }
       }
     },
+    "/api/v1/artifacts/{id}/content": {
+      "get": {
+        "tags": [
+          "Artifacts"
+        ],
+        "summary": "The artifact\u0027s content (session or token).",
+        "operationId": "GetArtifactContent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/artifacts/{id}/content/signed": {
+      "get": {
+        "tags": [
+          "Artifacts"
+        ],
+        "summary": "The artifact\u0027s content through a signed, expiring link; no sign-in.",
+        "operationId": "GetSignedArtifactContent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "signature",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/snapshots/{snapshot}/keep": {
+      "post": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Copies a printer snapshot into the artifact store, outside the snapshot retention.",
+        "operationId": "KeepPrinterSnapshot",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "snapshot",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/tokens": {
       "get": {
         "tags": [
@@ -2501,6 +2602,139 @@
           }
         }
       }
+    },
+    "/api/v1/artifacts": {
+      "get": {
+        "tags": [
+          "Artifacts"
+        ],
+        "summary": "The owner\u0027s artifacts, newest first, filtered by kind, source and name, with the quota usage.",
+        "operationId": "ListArtifacts",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "$ref": "#/components/schemas/ArtifactKind"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "$ref": "#/components/schemas/ArtifactSource"
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Artifacts"
+        ],
+        "summary": "Uploads one file (multipart field \u0027file\u0027), at most artifacts.maxUploadMb.",
+        "operationId": "UploadArtifact",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/IFormFile"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/artifacts/{id}": {
+      "get": {
+        "tags": [
+          "Artifacts"
+        ],
+        "summary": "",
+        "operationId": "GetArtifact",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Artifacts"
+        ],
+        "summary": "",
+        "operationId": "DeleteArtifact",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2712,6 +2946,119 @@
           }
         },
         "description": "A background approval in the review queue."
+      },
+      "ArtifactKind": {
+        "enum": [
+          "image",
+          "svg",
+          "video",
+          "model3d",
+          "code",
+          "diff",
+          "pdf",
+          "markdown",
+          "html",
+          "other"
+        ]
+      },
+      "ArtifactList": {
+        "required": [
+          "items",
+          "usedBytes",
+          "quotaBytes"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArtifactResponse"
+            },
+            "description": "Artifacts, newest first."
+          },
+          "usedBytes": {
+            "type": "integer",
+            "description": "Storage used.",
+            "format": "int64"
+          },
+          "quotaBytes": {
+            "type": "integer",
+            "description": "Storage allowed (\u0060artifacts.quotaMb\u0060).",
+            "format": "int64"
+          }
+        },
+        "description": "Artifacts with the owner\u0027s storage usage."
+      },
+      "ArtifactResponse": {
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "mediaType",
+          "size",
+          "source",
+          "sourceReference",
+          "tainted",
+          "createdAt",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Artifact id."
+          },
+          "name": {
+            "type": "string",
+            "description": "File name."
+          },
+          "kind": {
+            "description": "Detected kind; picks the viewer.",
+            "$ref": "#/components/schemas/ArtifactKind"
+          },
+          "mediaType": {
+            "type": "string",
+            "description": "Detected media type."
+          },
+          "size": {
+            "type": "integer",
+            "description": "Size in bytes.",
+            "format": "int64"
+          },
+          "source": {
+            "description": "Where it came from.",
+            "$ref": "#/components/schemas/ArtifactSource"
+          },
+          "sourceReference": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Task, message or printer snapshot it came from."
+          },
+          "tainted": {
+            "type": "boolean",
+            "description": "Content or name can carry third-party text."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When it was stored.",
+            "format": "date-time"
+          },
+          "url": {
+            "type": "string",
+            "description": "Content URL (session or token)."
+          }
+        },
+        "description": "An artifact."
+      },
+      "ArtifactSource": {
+        "enum": [
+          "upload",
+          "executor",
+          "printer",
+          "mail"
+        ]
       },
       "BabysitterCheck": {
         "required": [
@@ -3417,6 +3764,10 @@
             "format": "double"
           }
         }
+      },
+      "IFormFile": {
+        "type": "string",
+        "format": "binary"
       },
       "InputMode": {
         "enum": [
@@ -6270,6 +6621,12 @@
       "name": "Notifications"
     },
     {
+      "name": "Artifacts"
+    },
+    {
+      "name": "Printers"
+    },
+    {
       "name": "Tokens"
     },
     {
@@ -6280,9 +6637,6 @@
     },
     {
       "name": "Memory"
-    },
-    {
-      "name": "Printers"
     },
     {
       "name": "Mail"

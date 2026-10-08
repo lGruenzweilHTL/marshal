@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Marshal.Abstractions;
+using Marshal.Abstractions.Artifacts;
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Conversation;
 using Marshal.Abstractions.Execution;
@@ -66,7 +67,7 @@ public sealed partial class AgentRunner(
         using CancellationTokenSource latencyCap = request.LatencyCap is { } cap ? new CancellationTokenSource(cap, timeProvider) : new CancellationTokenSource();
         using CancellationTokenSource wallTime = request.Limits?.MaxDuration is { } duration ? new CancellationTokenSource(duration, timeProvider) : new CancellationTokenSource();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, latencyCap.Token, wallTime.Token);
-        var transcript = new Transcript();
+        var transcript = new Transcript(request.Events);
         LoopResult result;
         try
         {
@@ -84,7 +85,7 @@ public sealed partial class AgentRunner(
         }
 
         bool continueConversation = result.Pending is not null;
-        await RecordAsync(new RunStepRecord { Kind = RunStepKind.Reply, Content = result.Reply, ContinueConversation = continueConversation }, cancellationToken);
+        await RecordAsync(new RunStepRecord { Kind = RunStepKind.Reply, Content = result.Reply, ContinueConversation = continueConversation, Artifacts = transcript.Artifacts.Count == 0 ? null : [.. transcript.Artifacts] }, cancellationToken);
         if (!nested)
             await recorder.CompleteRunAsync(runId, new RunCompletion(result.Outcome, result.Reason, context.Taint.Sources), cancellationToken);
         LogRunCompleted(logger, runId.Value, result.Outcome, result.Reason);
@@ -132,7 +133,7 @@ public sealed partial class AgentRunner(
         if (request.UserText is not null)
             messages.Add(new ChatMessage(ChatRole.User, request.UserText));
         if (request.Confirmation is not null)
-            await AppendConfirmationAsync(request.Confirmation, context, messages, ct);
+            await AppendConfirmationAsync(request.Confirmation, context, messages, transcript, ct);
         transcript.Update(messages);
 
         if (request.FixedReply is not null)
@@ -174,7 +175,7 @@ public sealed partial class AgentRunner(
             var results = new List<AIContent>(calls.Count);
             foreach (FunctionCallContent call in calls)
             {
-                (string text, PendingActionRecord? frozen) = await HandleCallAsync(call, context, offered, pending, ct);
+                (string text, PendingActionRecord? frozen) = await HandleCallAsync(call, context, offered, pending, transcript, ct);
                 pending ??= frozen;
                 results.Add(new FunctionResultContent(call.CallId, text));
             }
@@ -246,7 +247,7 @@ public sealed partial class AgentRunner(
     }
 
     private async Task<(string Text, PendingActionRecord? Frozen)> HandleCallAsync(
-        FunctionCallContent call, MarshalExecutionContext context, IReadOnlySet<string> offered, PendingActionRecord? pending, CancellationToken ct)
+        FunctionCallContent call, MarshalExecutionContext context, IReadOnlySet<string> offered, PendingActionRecord? pending, Transcript transcript, CancellationToken ct)
     {
         JsonElement arguments = JsonSerializer.SerializeToElement(call.Arguments ?? new Dictionary<string, object?>(), _argumentJson);
         if (pending is not null)
@@ -287,25 +288,26 @@ public sealed partial class AgentRunner(
                 return (PendingText(frozen), frozen);
 
             default:
-                return (await ExecuteAsync(verdict.Tool!, call.Name, arguments, verdict, context, ct), null);
+                return (await ExecuteAsync(verdict.Tool!, call.Name, arguments, verdict, context, transcript, ct), null);
         }
     }
 
-    private async Task<string> ExecuteAsync(RegisteredTool tool, string modelName, JsonElement arguments, GuardVerdict verdict, MarshalExecutionContext context, CancellationToken ct)
+    private async Task<string> ExecuteAsync(RegisteredTool tool, string modelName, JsonElement arguments, GuardVerdict verdict, MarshalExecutionContext context, Transcript transcript, CancellationToken ct)
     {
         long started = timeProvider.GetTimestamp();
         Result<ToolOutput> result = await InvokeAsync(tool, arguments, context, ct);
         int duration = (int)timeProvider.GetElapsedTime(started).TotalMilliseconds;
-        return await CompleteToolCallAsync(tool, modelName, arguments, verdict.Tier, verdict.Decision, result, duration, context, ct);
+        return await CompleteToolCallAsync(tool, modelName, arguments, verdict.Tier, verdict.Decision, result, duration, context, transcript, ct);
     }
 
     private async Task<string> CompleteToolCallAsync(
-        RegisteredTool tool, string modelName, JsonElement arguments, RiskTier? tier, GuardDecision decision, Result<ToolOutput> result, int duration, MarshalExecutionContext context, CancellationToken ct)
+        RegisteredTool tool, string modelName, JsonElement arguments, RiskTier? tier, GuardDecision decision, Result<ToolOutput> result, int duration, MarshalExecutionContext context, Transcript transcript, CancellationToken ct)
     {
         int step = await RecordToolStepAsync(tool, modelName, arguments, tier, decision, [], result.IsSuccess ? result.Value : null, result.IsFailure ? result.Error : null, duration, ct);
         if (result.IsFailure)
             return ErrorText(result.Error);
 
+        await transcript.ShowAsync(result.Value.Artifacts, ct);
         if (!tool.Descriptor.UntrustedOutput)
             return result.Value.Content;
 
@@ -329,7 +331,7 @@ public sealed partial class AgentRunner(
         }
     }
 
-    private async Task AppendConfirmationAsync(ConfirmationStep confirmation, MarshalExecutionContext context, List<ChatMessage> messages, CancellationToken ct)
+    private async Task AppendConfirmationAsync(ConfirmationStep confirmation, MarshalExecutionContext context, List<ChatMessage> messages, Transcript transcript, CancellationToken ct)
     {
         string modelName = confirmation.Tool?.ModelName ?? confirmation.Action.Tool.ToString();
         using var document = JsonDocument.Parse(confirmation.Action.ArgumentsJson);
@@ -352,7 +354,7 @@ public sealed partial class AgentRunner(
         }
         else
         {
-            text = await CompleteToolCallAsync(confirmation.Tool, modelName, arguments, RiskTier.Confirm, confirmation.Decision, result, 0, context, ct);
+            text = await CompleteToolCallAsync(confirmation.Tool, modelName, arguments, RiskTier.Confirm, confirmation.Decision, result, 0, context, transcript, ct);
         }
 
         messages.Add(new ChatMessage(ChatRole.Tool, [new FunctionResultContent(callId, text)]));
@@ -421,10 +423,23 @@ public sealed partial class AgentRunner(
 
     // The run's messages after the system prompt as of the last completed tool round: what a background
     // continuation resumes from (never a tool call without its result).
-    private sealed class Transcript
+    private sealed class Transcript(System.Threading.Channels.ChannelWriter<TurnEvent>? events)
     {
         public IReadOnlyList<ChatMessage> Messages { get; private set; } = [];
 
+        /// <summary>Artifacts the turn showed, kept with the reply.</summary>
+        public List<ArtifactRef> Artifacts { get; } = [];
+
         public void Update(List<ChatMessage> messages) => Messages = [.. messages.Skip(1)];
+
+        public async Task ShowAsync(IReadOnlyList<ArtifactRef>? artifacts, CancellationToken ct)
+        {
+            foreach (ArtifactRef artifact in artifacts ?? [])
+            {
+                Artifacts.Add(artifact);
+                if (events is not null)
+                    await events.WriteAsync(new ArtifactEvent(artifact), ct);
+            }
+        }
     }
 }

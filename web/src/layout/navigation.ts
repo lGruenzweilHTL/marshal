@@ -1,4 +1,4 @@
-import { Activity, BookOpen, ClipboardCheck, Cpu, FileCode2, FolderClosed, House, Inbox, LayoutGrid, Mail, MessageSquare, Printer, Share2, ShieldCheck, SlidersHorizontal, SquareCheckBig, Gauge } from 'lucide-vue-next'
+import { Activity, Files, BookOpen, ClipboardCheck, Cpu, FileCode2, FolderClosed, House, Inbox, LayoutGrid, Mail, MessageSquare, Printer, Share2, ShieldCheck, SlidersHorizontal, SquareCheckBig, Gauge } from 'lucide-vue-next'
 import type { Component } from 'vue'
 
 export type GroupId = 'act' | 'activity' | 'memory' | 'connections' | 'settings'
@@ -23,6 +23,7 @@ export const destinations: Destination[] = [
   { id: 'printer', group: 'act', icon: Printer, path: '/printers', tab: true },
   { id: 'tasks', group: 'activity', icon: SquareCheckBig, path: '/tasks' },
   { id: 'runs', group: 'activity', icon: Activity, path: '/runs' },
+  { id: 'artifacts', group: 'activity', icon: Files, path: '/artifacts' },
   { id: 'cost', group: 'activity', icon: Gauge, path: '/cost' },
   { id: 'chunks', group: 'memory', icon: BookOpen, path: '/memory' },
   { id: 'projects', group: 'memory', icon: FolderClosed, path: '/memory/projects' },

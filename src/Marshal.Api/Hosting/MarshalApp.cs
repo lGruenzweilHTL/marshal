@@ -1,5 +1,6 @@
 using System.Collections;
 using Marshal.Api.Approvals;
+using Marshal.Api.Artifacts;
 using Marshal.Api.Auth;
 using Marshal.Api.Configuration;
 using Marshal.Api.Conversation;
@@ -15,6 +16,7 @@ using Marshal.Api.Runs;
 using Marshal.Api.Security;
 using Marshal.Api.Tasks;
 using Marshal.Api.Versioning;
+using Marshal.Artifacts;
 using Marshal.Core;
 using Marshal.Core.Configuration;
 using Marshal.Data;
@@ -52,6 +54,7 @@ public static class MarshalApp
         builder.Services.AddMarshalMail(builder.Configuration);
         builder.Services.AddMarshalFreshRss(builder.Configuration);
         builder.Services.AddMarshalNotes(builder.Configuration, NotesDirectory);
+        builder.Services.AddMarshalArtifacts(builder.Configuration, ArtifactDirectory);
         builder.Services.AddMarshalTasks(builder.Configuration);
         builder.Services.AddMarshalData(builder.Configuration, ConnectionString);
         builder.Services.AddMarshalApi(builder.Configuration);
@@ -106,6 +109,7 @@ public static class MarshalApp
         v1.MapNotificationEndpoints();
         v1.MapProposalEndpoints();
         v1.MapExecutorCallbackEndpoints();
+        v1.MapArtifactEndpoints();
         app.MapMailOAuthCallback();
         app.MapSpaFallback();
         return app;
@@ -113,6 +117,9 @@ public static class MarshalApp
 
     internal static string SnapshotDirectory(IServiceProvider services) =>
         Path.Combine(services.GetRequiredService<IOptions<PathsOptions>>().Value.Data, "snapshots");
+
+    internal static string ArtifactDirectory(IServiceProvider services) =>
+        Path.Combine(services.GetRequiredService<IOptions<PathsOptions>>().Value.Data, "artifacts");
 
     internal static string NotesDirectory(IServiceProvider services) =>
         Path.Combine(services.GetRequiredService<IOptions<PathsOptions>>().Value.Data, "notes");

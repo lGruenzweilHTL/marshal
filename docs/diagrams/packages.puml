@@ -13,6 +13,7 @@
 ' Marshal.Integrations.HomeAssistant exists (extensibility), Marshal.Memory exists (memory),
 ' Marshal.Integrations.{Moonraker,Mail,FreshRss,Notes} exist (integrations),
 ' Marshal.Tasks and Marshal.ExecutorHost exist (background-work), including the companion push path.
+' Marshal.Artifacts exists (artifacts).
 ' External packages are drawn inside the project that references them
 ' (grey boxes, <<nuget>> / <<npm>> / <<pip>>).
 
@@ -53,6 +54,7 @@ package "Clients" {
     component "vue, vue-router,\nvite, typescript, vue-tsc" <<npm>>
     component "openapi-typescript\n+ openapi-fetch" <<npm>>
     component "markdown-it" <<npm>>
+    component "three, highlight.js\n(lazy viewer chunks)" <<npm>>
     component "vitest, @vue/test-utils,\njsdom" <<npm>>
   }
   component "HA companion app\n(actionable push)" as Companion
@@ -84,6 +86,10 @@ package "src/ (.NET 10)" {
   package "Marshal.Tasks" as Tasks {
     component "Scheduler, EventBus +\nTriggerMatcher, worker pool,\nexecutors, NotificationRouter" as TaskParts
     component "Cronos" <<nuget>>
+  }
+
+  package "Marshal.Artifacts" as Artifacts {
+    component "File artifact store + quota,\nkind detection, artifacts.* tools" as ArtifactParts
   }
 
   package "Marshal.Integrations.*" as Integrations {
@@ -128,6 +134,7 @@ Api --> Core
 Api --> Memory
 Api --> Tasks
 Api --> Integrations
+Api --> Artifacts
 Api --> Data
 Api --> Abstractions
 
@@ -140,6 +147,8 @@ Tasks --> Abstractions
 Tasks --> Data
 Integrations --> Abstractions
 Integrations --> Data
+Artifacts --> Abstractions
+Artifacts --> Data
 Data --> Abstractions
 
 Tasks ..> ExecutorHost : HTTP (scoped token)
@@ -154,6 +163,7 @@ Tests --> Data
 Tests --> Integrations
 Tests --> Memory
 Tests --> Tasks
+Tests --> Artifacts
 Tests ..> ExecutorHost
 
 note bottom of Abstractions

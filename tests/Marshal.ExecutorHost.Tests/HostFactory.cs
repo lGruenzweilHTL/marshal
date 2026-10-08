@@ -96,6 +96,9 @@ internal sealed class FakeSandbox : ISandboxRuntime
 
     public int ExitCode { get; set; }
 
+    /// <summary>Runs in the worktree before the result line (e.g. writes <c>.marshal/artifacts/</c>).</summary>
+    public Action<string>? Work { get; set; }
+
     public bool IsError { get; set; }
 
     public async Task<int> RunAsync(SandboxRun run, Func<string, CancellationToken, Task> onLine, CancellationToken cancellationToken)
@@ -104,6 +107,7 @@ internal sealed class FakeSandbox : ISandboxRuntime
         await onLine(JsonSerializer.Serialize(new { type = "system", subtype = "init" }), cancellationToken);
         await File.WriteAllTextAsync(Path.Combine(run.WorkDirectory, "feature.txt"), $"change for {run.Name}\n", cancellationToken);
         await onLine(JsonSerializer.Serialize(new { type = "assistant", message = new { content = new[] { new { type = "text", text = "Added feature.txt." } } } }), cancellationToken);
+        Work?.Invoke(run.WorkDirectory);
         if (Gate is { } gate)
             await gate.Task.WaitAsync(cancellationToken);
         await onLine(JsonSerializer.Serialize(new { type = "result", subtype = IsError ? "error_during_execution" : "success", is_error = IsError, result = "Added feature.txt with a note.", total_cost_usd = 0.12 }), cancellationToken);
@@ -115,10 +119,26 @@ internal sealed class RecordingCallbacks : ICallbackSender
 {
     public ConcurrentQueue<(Uri Url, string Token, ExecutorCallback Callback)> Sent { get; } = new();
 
+    public ConcurrentQueue<(Uri Url, string Token, string Name, byte[] Content)> Uploads { get; } = new();
+
+    /// <summary>Refusal reasons by file name, like Marshal's size or quota problems.</summary>
+    public Dictionary<string, string> Refusals { get; } = [];
+
     public Task SendAsync(Uri url, string token, ExecutorCallback callback, CancellationToken cancellationToken)
     {
         Sent.Enqueue((url, token, callback));
         return Task.CompletedTask;
+    }
+
+    public async Task<string?> UploadAsync(Uri url, string token, string name, Stream content, CancellationToken cancellationToken)
+    {
+        if (Refusals.TryGetValue(name, out string? reason))
+            return reason;
+
+        using var buffer = new MemoryStream();
+        await content.CopyToAsync(buffer, cancellationToken);
+        Uploads.Enqueue((url, token, name, buffer.ToArray()));
+        return null;
     }
 
     public async Task<ExecutorCallback> WaitForAsync(string type)

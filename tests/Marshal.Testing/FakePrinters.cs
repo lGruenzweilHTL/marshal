@@ -121,6 +121,9 @@ public sealed class FakeSnapshotSource : ISnapshotSource
         return Task.FromResult(Result.Success(new PrinterSnapshot(printer, "snap1", url, Jpeg, 1024, 768, DateTimeOffset.UnixEpoch)));
     }
 
+    /// <summary>Drops the captured snapshots, like retention pruning.</summary>
+    public void Prune() => Captures = 0;
+
     public Task<Result<byte[]>> OpenAsync(string printer, string id, CancellationToken cancellationToken) =>
         Task.FromResult(id == "snap1" && Captures > 0 ? Result.Success(Jpeg) : Result.Failure<byte[]>(PrinterErrors.SnapshotNotFound(id)));
 }

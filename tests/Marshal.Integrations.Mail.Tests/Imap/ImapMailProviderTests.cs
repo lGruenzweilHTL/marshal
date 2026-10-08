@@ -60,6 +60,30 @@ public sealed class ImapMailProviderTests(ImapServers servers)
     }
 
     [Fact]
+    public async Task ReadAttachment_ByNameOrPositionAndUnknownNamesTheAttachments()
+    {
+        MailAccount account = servers.Dovecot("private");
+        MimeMessage mail = Message("shop@example.com", "Your order", "", new DateTime(2026, 9, 2));
+        var body = new BodyBuilder { TextBody = "See attached." };
+        body.Attachments.Add("invoice.pdf", "%PDF-1.4 invoice"u8.ToArray(), new ContentType("application", "pdf"));
+        body.Attachments.Add("Photo.PNG", [0x89, 0x50, 0x4E, 0x47], new ContentType("image", "png"));
+        mail.Body = body.ToMessageBody();
+        await ImapServers.AppendAsync(account, mail);
+        ImapMailProvider provider = Provider();
+        string id = Assert.Single((await provider.SearchAsync(account, new MailQuery(), Ct)).Value).Id;
+
+        Result<MailAttachment> byName = await provider.ReadAttachmentAsync(account, id, "invoice.pdf", Ct);
+        Result<MailAttachment> byPosition = await provider.ReadAttachmentAsync(account, id, "2", Ct);
+        Result<MailAttachment> unknown = await provider.ReadAttachmentAsync(account, id, "contract.pdf", Ct);
+
+        Assert.Equal(("invoice.pdf", "Photo.PNG"), (byName.Value.Name, byPosition.Value.Name));
+        Assert.Equal("%PDF-1.4 invoice"u8.ToArray(), byName.Value.Content);
+        Assert.Equal([0x89, 0x50, 0x4E, 0x47], byPosition.Value.Content);
+        Assert.Equal("mail.attachment_not_found", unknown.Error.Code);
+        Assert.Contains("invoice.pdf, Photo.PNG", unknown.Error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ReadThread_RebuiltFromReferencesAcrossInboxAndSent()
     {
         MailAccount account = servers.Dovecot("private");

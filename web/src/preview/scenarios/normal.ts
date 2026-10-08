@@ -421,6 +421,27 @@ const files: Schemas['PrinterFile'][] = [
   { path: 'voron/stealthburner_main_body.gcode', modified: at(-20 * 1440), size: 8_902_114 },
 ]
 
+const artifactItem = (n: number, name: string, kind: Schemas['ArtifactKind'], mediaType: string, size: number, source: Schemas['ArtifactSource'], sourceReference: string | null, tainted: boolean, minutes: number) => ({
+  id: id(16, n),
+  name,
+  kind,
+  mediaType,
+  size,
+  source,
+  sourceReference,
+  tainted,
+  createdAt: at(minutes),
+  url: `/api/v1/artifacts/${id(16, n)}/content`,
+})
+
+const artifacts = [
+  artifactItem(1, 'printer-notes.md', 'markdown', 'text/markdown', 1_840, 'executor', `task:${ids.backupCheck}`, true, -35),
+  artifactItem(2, 'voron_2026-10-08.jpg', 'image', 'image/jpeg', 182_330, 'printer', 'printer:voron', false, -12),
+  artifactItem(3, 'filament_usage.py', 'code', 'text/x-python', 2_410, 'executor', `task:${ids.backupCheck}`, true, -90),
+  artifactItem(4, 'invoice-filament.pdf', 'pdf', 'application/pdf', 96_120, 'mail', 'mail:private', true, -26 * 60),
+  artifactItem(5, 'spool_holder.stl', 'model3d', 'model/stl', 412_884, 'upload', null, false, -3 * 1440),
+]
+
 export const normal = {
   '/api/v1/me': me,
   '/api/v1/me/preferences': preferences,
@@ -492,6 +513,8 @@ export const normal = {
     { name: 'ha_token', scope: 'instance', origin: 'database', updatedAt: at(-60 * 1440), readOnly: false },
     { name: 'moonraker_voron', scope: 'instance', origin: 'environment', updatedAt: null, readOnly: true },
   ],
+  '/api/v1/artifacts': { items: artifacts, usedBytes: 695_584, quotaBytes: 5 * 1024 * 1024 * 1024 },
+  '/api/v1/artifacts/{id}': artifacts[0]!,
   '/api/v1/memory/chunks': chunks,
   '/api/v1/memory/chunks/{id}': {
     chunk: chunks[2]!,

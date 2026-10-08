@@ -203,6 +203,33 @@ public sealed class PrinterApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task KeepSnapshot_UntaintedPrinterArtifactThatOutlivesTheSnapshot()
+    {
+        await _browser.PostAsync($"{Voron}/snapshots", null, Ct);
+
+        HttpResponseMessage kept = await _browser.PostAsync($"{Voron}/snapshots/snap1/keep", null, Ct);
+        _snapshots.Prune();
+
+        Assert.Equal(HttpStatusCode.Created, kept.StatusCode);
+        JsonElement artifact = await kept.Content.ReadFromJsonAsync<JsonElement>(Ct);
+        Assert.Equal(("printer", "image", false), (artifact.GetProperty("source").GetString(), artifact.GetProperty("kind").GetString(), artifact.GetProperty("tainted").GetBoolean()));
+        Assert.Equal("printer:voron/snapshot:snap1", artifact.GetProperty("sourceReference").GetString());
+        Assert.Equal(HttpStatusCode.NotFound, (await _browser.GetAsync($"{Voron}/snapshots/snap1", Ct)).StatusCode);
+        Assert.Equal(_snapshots.Jpeg, await _browser.GetByteArrayAsync(artifact.GetProperty("url").GetString(), Ct));
+        AuditEvent audit = await _factory.WithDatabaseAsync(_user, db => db.AuditEvents.SingleAsync(entry => entry.Action == "printer.snapshot_kept", Ct));
+        Assert.Equal("voron", audit.Target);
+    }
+
+    [Fact]
+    public async Task KeepSnapshot_UnknownSnapshot_NotFoundAndNothingStored()
+    {
+        HttpResponseMessage kept = await _browser.PostAsync($"{Voron}/snapshots/snap9/keep", null, Ct);
+
+        Assert.Equal(HttpStatusCode.NotFound, kept.StatusCode);
+        Assert.Empty((await _browser.GetFromJsonAsync<JsonElement>("/api/v1/artifacts", Ct)).GetProperty("items").EnumerateArray());
+    }
+
+    [Fact]
     public async Task SharedSnapshotLink_ReadableWithoutSignInOnlyForItsSnapshot()
     {
         await _browser.PostAsync($"{Voron}/snapshots", null, Ct);

@@ -145,6 +145,11 @@ notifications:
   followUpReplyWindow: "00:00:20"  # a voice turn this soon after a spoken question from the same satellite answers it
   # publicUrl: https://marshal.example.com/   # push notifications link into the web UI
 
+artifacts:                  # files in /data/artifacts: uploads, executor output, kept snapshots, saved attachments
+  quotaMb: 5120             # storage per user
+  maxUploadMb: 200          # largest single file
+  signedLinkMinutes: 15     # lifetime of signed content links (e.g. for a phone notification)
+
 # Coding sessions on the separate executor host (src/Marshal.ExecutorHost); tasks.run_executor is hidden until set.
 # executors:
 #   callbackBaseUrl: http://marshal:8080/     # Marshal as seen from the executor host

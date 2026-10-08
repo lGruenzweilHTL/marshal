@@ -8,6 +8,9 @@ namespace Marshal.ExecutorHost.Callbacks;
 public interface ICallbackSender
 {
     Task SendAsync(Uri url, string token, ExecutorCallback callback, CancellationToken cancellationToken);
+
+    /// <summary>Uploads one artifact file below the callback URL; null when stored, else the reason it was refused.</summary>
+    Task<string?> UploadAsync(Uri url, string token, string name, Stream content, CancellationToken cancellationToken);
 }
 
 /// <summary>A callback body.</summary>
@@ -31,4 +34,29 @@ public sealed class HttpCallbackSender(IHttpClientFactory clients) : ICallbackSe
         using HttpResponseMessage response = await clients.CreateClient(ClientName).SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
+
+    public async Task<string?> UploadAsync(Uri url, string token, string name, Stream content, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(url.AbsoluteUri.TrimEnd('/') + "/artifacts")) { Content = new StreamContent(content) };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        request.Headers.Add("X-Artifact-Name", Uri.EscapeDataString(name));
+        using HttpResponseMessage response = await clients.CreateClient(ClientName).SendAsync(request, cancellationToken);
+        if (response.IsSuccessStatusCode)
+            return null;
+
+        // Marshal answers refusals (size, quota) with a problem whose detail names the reason.
+        try
+        {
+            ProblemBody? problem = await response.Content.ReadFromJsonAsync<ProblemBody>(cancellationToken);
+            if (!string.IsNullOrWhiteSpace(problem?.Detail))
+                return problem.Detail;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+        }
+
+        return $"Marshal refused the upload ({(int)response.StatusCode}).";
+    }
+
+    private sealed record ProblemBody(string? Detail);
 }

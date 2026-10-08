@@ -109,6 +109,18 @@ public sealed partial class ExecutorService(
         return new StartedSession(sessionId, task.Id);
     }
 
+    public async Task<Result<TaskId>> AuthorizeUploadAsync(Guid sessionId, ApiTokenId token, CancellationToken cancellationToken)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        ExecutorSession? session = await db.ExecutorSessions.AsNoTracking().SingleOrDefaultAsync(row => row.Id == sessionId, cancellationToken);
+        if (session is null || session.CallbackTokenId != token)
+            return new Error("executor.wrong_session", "This callback token belongs to another session.", ErrorType.Forbidden);
+        if (session.Status is not (ExecutorSessionStatus.Starting or ExecutorSessionStatus.Running))
+            return new Error("executor.session_ended", "The session has ended.", ErrorType.Conflict);
+
+        return session.TaskId;
+    }
+
     public async Task<Result> HandleAsync(Guid sessionId, ApiTokenId token, ExecutorReport report, CancellationToken cancellationToken)
     {
         ExecutorSession? session;

@@ -90,6 +90,24 @@ describe('PrinterView', () => {
     expect(wrapper.get('[data-test="webcam"]').attributes('src')).toBe(`https://marshal.test${base}/webcam/stream`)
   })
 
+  it('keeps the shown snapshot as an artifact with a toast', async () => {
+    const fake = server()
+      .on('POST', `${base}/snapshots`, 200, { id: 'snap1', url: `${base}/snapshots/snap1`, width: 1024, height: 768, capturedAt: '2026-09-29T10:00:00Z' })
+      .on('POST', `${base}/snapshots/snap1/keep`, 201, { id: 'a1', name: 'voron-snap1.jpg', kind: 'image', mediaType: 'image/jpeg', size: 4, source: 'printer', sourceReference: 'printer:voron/snapshot:snap1', tainted: false, createdAt: '2026-09-29T10:00:01Z', url: '/api/v1/artifacts/a1/content' })
+    const { wrapper, toasts } = await mountPrinter(fake)
+    expect(wrapper.find('[data-test="keep"]').exists()).toBe(false)
+
+    await wrapper.findAll('button').find((button) => button.text() === 'Snapshot')!.trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-test="keep"]').trigger('click')
+    await flushPromises()
+
+    expect(fake.count('POST', `${base}/snapshots/snap1/keep`)).toBe(1)
+    expect(toasts.items.value.map((toast) => toast.message)).toEqual(['Snapshot kept in Artifacts.'])
+    expect(wrapper.get('[data-test="open-kept"]').attributes('href')).toBe('/artifacts/a1')
+    expect(wrapper.get('[data-test="keep"]').attributes('disabled')).toBeDefined()
+  })
+
   it('pauses immediately without a dialog', async () => {
     const fake = server().on('POST', `${base}/controls`, 200, { status: 'done', description: 'pause the print' })
     const { wrapper } = await mountPrinter(fake)

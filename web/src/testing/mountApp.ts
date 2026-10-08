@@ -16,7 +16,7 @@ export const me = { id: '0199aaaa-0000-7000-8000-000000000001', displayName: 'Lu
 
 /** Global mount options for a component under test: API session on the fake server, router at `path`, English by default. */
 export async function mountOptions(server: FakeServer, path: string, options: { language?: Language; timeZone?: string } = {}) {
-  const api: ApiSession = createApiSession({ baseUrl: 'https://marshal.test', fetch: server.fetch })
+  const api: ApiSession = createApiSession({ baseUrl: 'https://marshal.test', fetch: server.fetch, upload: server.upload })
   const user: UserSession = createUserSession(api)
   const i18n: AppI18n = createAppI18n()
   const locale: LocaleStore = createLocale(i18n, { languages: [options.language ?? 'en'], timeZone: options.timeZone ?? 'Europe/Vienna' })

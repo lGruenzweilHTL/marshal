@@ -7,7 +7,8 @@ import { useApi } from '../api/inject'
 import { AppButton, AppIcon, Banner, ErrorBanner, LoadState, Logo, Page, PageHeader, useDesktop } from '../ui'
 import { renderMarkdown } from './markdown'
 import { readEvents } from './sse'
-import type { TurnDelta, TurnFinal, TurnStatus } from './turnEvents'
+import ArtifactCard from '../artifacts/ArtifactCard.vue'
+import type { TurnArtifact, TurnDelta, TurnFinal, TurnStatus } from './turnEvents'
 
 interface Message {
   id: number
@@ -15,6 +16,8 @@ interface Message {
   text: string
   /** Status events of the turn ("Checking the printer…"), kept as the reply's steps. */
   steps: string[]
+  /** Artifacts the turn showed: images inline, every other kind as a card. */
+  artifacts: TurnArtifact[]
 }
 
 /**
@@ -58,8 +61,8 @@ async function send(text = draft.value.trim()) {
   error.value = null
   interrupted.value = false
   awaitingAnswer.value = false
-  messages.value.push({ id: nextId++, role: 'user', text, steps: [] })
-  const reply = reactive<Message>({ id: nextId++, role: 'assistant', text: '', steps: [] })
+  messages.value.push({ id: nextId++, role: 'user', text, steps: [], artifacts: [] })
+  const reply = reactive<Message>({ id: nextId++, role: 'assistant', text: '', steps: [], artifacts: [] })
   messages.value.push(reply)
   void scrollToEnd()
 
@@ -87,7 +90,8 @@ async function send(text = draft.value.trim()) {
         const step = (JSON.parse(payload) as TurnStatus).text
         live.value = step
         reply.steps.push(step)
-      } else if (event === 'final') {
+      } else if (event === 'artifact') reply.artifacts.push(JSON.parse(payload) as TurnArtifact)
+      else if (event === 'final') {
         const final = JSON.parse(payload) as TurnFinal
         reply.text = final.speech
         conversationId = final.conversationId
@@ -137,6 +141,7 @@ onBeforeUnmount(() => running?.abort())
             <!-- eslint-disable-next-line vue/no-v-html -- rendered with HTML disabled and same-origin images only -->
             <div v-if="message.text" class="markdown" v-html="renderMarkdown(message.text)"></div>
             <span v-else-if="busy && message === messages[messages.length - 1]" class="thinking">{{ t('chat.thinking') }}</span>
+            <ArtifactCard v-for="artifact in message.artifacts" :key="artifact.id" :artifact="artifact" />
           </div>
         </template>
       </li>

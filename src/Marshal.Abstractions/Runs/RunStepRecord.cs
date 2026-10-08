@@ -45,6 +45,9 @@ public sealed record RunStepRecord
     /// <summary>Reference stored instead of the content for sensitive tools (message id, path).</summary>
     public string? Reference { get; init; }
 
+    /// <summary>Artifacts the turn showed (reply steps only), so a reopened session can render them again.</summary>
+    public IReadOnlyList<Artifacts.ArtifactRef>? Artifacts { get; init; }
+
     /// <summary>True when the tool is flagged sensitive; the content is then never stored.</summary>
     public bool Sensitive { get; init; }
 

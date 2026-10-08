@@ -34,7 +34,7 @@ describe('AppShell', () => {
 
     expect(wrapper.findAll('.group-label').map((label) => label.text())).toEqual(['Act', 'Activity', 'Memory', 'Connections', 'Settings'])
     expect(wrapper.findAll('[data-test^=nav-]').map((link) => link.text().replace(/\d+$/, ''))).toEqual([
-      'Home', 'Chat', 'Inbox', 'Printer', 'Tasks', 'Runs', 'Cost', 'Chunks', 'Projects', 'Map', 'Audit', 'Mail accounts', 'Preferences', 'Security', 'System',
+      'Home', 'Chat', 'Inbox', 'Printer', 'Tasks', 'Runs', 'Artifacts', 'Cost', 'Chunks', 'Projects', 'Map', 'Audit', 'Mail accounts', 'Preferences', 'Security', 'System',
     ])
     expect(wrapper.get('[data-test=nav-tasks]').attributes('aria-current')).toBe('page')
     expect(wrapper.find('.tabbar').exists()).toBe(false)

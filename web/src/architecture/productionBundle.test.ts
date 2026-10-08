@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 const web = join(__dirname, '..', '..')
 let outDir = ''
 let modules: string[] = []
+let entryModules: string[] = []
 
 describe('production build', () => {
   beforeAll(async () => {
@@ -15,10 +16,12 @@ describe('production build', () => {
     const output = (await build({ root: web, configFile: join(web, 'vite.config.ts'), mode: 'production', logLevel: 'silent', build: { outDir, emptyOutDir: true } })) as
       | Rollup.RollupOutput
       | Rollup.RollupOutput[]
-    modules = [output]
+    const chunks = [output]
       .flat()
       .flatMap((bundle) => bundle.output)
-      .flatMap((item) => (item.type === 'chunk' ? item.moduleIds : []))
+      .flatMap((item) => (item.type === 'chunk' ? [item] : []))
+    modules = chunks.flatMap((chunk) => chunk.moduleIds)
+    entryModules = chunks.filter((chunk) => chunk.isEntry).flatMap((chunk) => chunk.moduleIds)
   }, 180_000)
 
   afterAll(() => rmSync(outDir, { recursive: true, force: true }))
@@ -27,6 +30,14 @@ describe('production build', () => {
     const posix = modules.map((id) => id.replaceAll('\\', '/'))
     expect(posix.length).toBeGreaterThan(50)
     expect(posix.filter((id) => id.includes('/src/preview/') || id.includes('/src/testing/'))).toEqual([])
+  })
+
+  it('keeps three.js and highlight.js out of the entry chunk (lazy viewer chunks)', () => {
+    const posix = entryModules.map((id) => id.replaceAll('\\', '/'))
+    expect(posix.length).toBeGreaterThan(10)
+    expect(posix.filter((id) => id.includes('/node_modules/three/') || id.includes('/node_modules/highlight.js/'))).toEqual([])
+    expect(modules.some((id) => id.replaceAll('\\', '/').includes('/node_modules/three/'))).toBe(true)
+    expect(modules.some((id) => id.replaceAll('\\', '/').includes('/node_modules/highlight.js/'))).toBe(true)
   })
 
   describe('service worker', () => {

@@ -19,6 +19,12 @@ public interface IMailProvider
     /// <summary>The message's conversation, oldest first.</summary>
     Task<Result<IReadOnlyList<MailMessage>>> ReadThreadAsync(MailAccount account, string messageId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Fetches one attachment, named as in <see cref="MailMessage.Attachments"/> (case-insensitive) or by its 1-based
+    /// position there; <c>mail.attachment_not_found</c> naming the message's attachments otherwise.
+    /// </summary>
+    Task<Result<MailAttachment>> ReadAttachmentAsync(MailAccount account, string messageId, string attachment, CancellationToken cancellationToken);
+
     Task<Result<IReadOnlyList<MailFolder>>> ListFoldersAsync(MailAccount account, CancellationToken cancellationToken);
 
     /// <summary>Labels (only with <see cref="MailCapabilities.Labels"/>).</summary>
@@ -101,3 +107,8 @@ public sealed record MailFolder(string Name, string? SpecialUse);
 /// <param name="Body">Plain-text body.</param>
 /// <param name="ReplyTo">Id of the message this draft answers (sets In-Reply-To and References).</param>
 public sealed record MailDraft(IReadOnlyList<string> To, string Subject, string Body, string? ReplyTo = null);
+
+/// <summary>A fetched attachment.</summary>
+/// <param name="Name">File name as listed in <see cref="MailMessage.Attachments"/>.</param>
+/// <param name="Content">Decoded content.</param>
+public sealed record MailAttachment(string Name, byte[] Content);

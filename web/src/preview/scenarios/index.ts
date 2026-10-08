@@ -25,9 +25,13 @@ function emptied(path: string, body: unknown): unknown {
   if (path === '/api/v1/me/secrets') return { secrets: [], unresolved: [] }
   if (path === '/api/v1/memory/graph') return { nodes: [], edges: [] }
   if (path === '/api/v1/memory/audit') return { stale: [], contradictions: [], orphans: [], danglingEdges: [] }
+  if (path === '/api/v1/artifacts') return { ...(body as object), items: [], usedBytes: 0 }
   if (path === '/api/v1/cost') return { ...(body as object), days: [], total: 0, byTier: {}, advisor: 0 }
   return body
 }
+
+/** Content of the sample Markdown artifact (every artifact id serves it). */
+const artifactText = '# Voron notes\n\n- Run `QUAD_GANTRY_LEVEL`, then `BED_MESH_CALIBRATE`.\n- PETG: 240 °C hotend, 80 °C bed.\n'
 
 let trace = 0
 const problem = () => json(500, { title: 'server.unexpected', code: 'server.unexpected', detail: 'Something went wrong on the server.', traceId: `00-preview${String(++trace).padStart(4, '0')}-01` })
@@ -69,6 +73,11 @@ export function createPreviewServer(scenario: ScenarioName, language: Language, 
         mcp: { status: 'degraded', description: 'notes-search is down.', warnings: ['notes-search: process exited with code 1'] },
       },
     })
+  })
+  server.handle('GET', '/api/v1/artifacts/{id}/content', () => {
+    if (scenario === 'failing') return problem()
+    if (scenario === 'offline') throw new TypeError('Failed to fetch')
+    return new Response(artifactText, { status: 200, headers: { 'Content-Type': 'text/markdown; charset=utf-8' } })
   })
   server.handle('POST', '/api/v1/conversation/turns', () => {
     if (scenario === 'failing') return problem()

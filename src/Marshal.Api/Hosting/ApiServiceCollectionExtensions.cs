@@ -36,6 +36,8 @@ public static class ApiServiceCollectionExtensions
 
         services.AddSingleton<ApiSnapshotLinks>();
         services.AddSingleton<ISnapshotLinks>(provider => provider.GetRequiredService<ApiSnapshotLinks>());
+        services.AddSingleton<Artifacts.ApiArtifactLinks>();
+        services.AddSingleton<Abstractions.Artifacts.IArtifactLinks>(provider => provider.GetRequiredService<Artifacts.ApiArtifactLinks>());
         services.AddSingleton<PrinterControlConfirmations>();
         services.AddSingleton<MailOAuthFlows>();
         services.AddSingleton(new LiveTopic(PrinterLiveEvents.Topic));

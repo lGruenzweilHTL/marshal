@@ -3,6 +3,8 @@ import LocalLoginPage from './auth/LocalLoginPage.vue'
 import LoginPage from './auth/LoginPage.vue'
 import SetupPage from './auth/SetupPage.vue'
 import AppShell from './layout/AppShell.vue'
+import ArtifactView from './artifacts/ArtifactView.vue'
+import ArtifactsView from './artifacts/ArtifactsView.vue'
 import ChatView from './chat/ChatView.vue'
 import ConfigView from './config/ConfigView.vue'
 import HomeView from './home/HomeView.vue'
@@ -64,6 +66,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'tasks/:id', name: 'task', component: TaskDetailView, meta: { title: 'shell.nav.tasks', nav: 'tasks' } },
       { path: 'runs', name: 'runs', component: RunsView, meta: { title: 'shell.nav.runs', nav: 'runs' } },
       { path: 'runs/:id', name: 'run', component: RunDetailView, meta: { title: 'shell.nav.runs', nav: 'runs' } },
+      { path: 'artifacts', name: 'artifacts', component: ArtifactsView, meta: { title: 'shell.nav.artifacts', nav: 'artifacts' } },
+      { path: 'artifacts/:id', name: 'artifact', component: ArtifactView, meta: { title: 'shell.nav.artifacts', nav: 'artifacts' } },
       { path: 'cost', name: 'cost', component: CostView, meta: { title: 'shell.nav.cost', nav: 'cost' } },
       // Memory
       {

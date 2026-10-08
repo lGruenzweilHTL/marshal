@@ -170,3 +170,20 @@ export function proposal(overrides: Partial<Schemas['ProposalRecord']> = {}): Sc
     ...overrides,
   }
 }
+
+/** An artifact (`ArtifactResponse`): a tainted STL from a coding session unless overridden. */
+export function artifact(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'a1',
+    name: 'bracket.stl',
+    kind: 'model3d',
+    mediaType: 'model/stl',
+    size: 1536,
+    source: 'executor',
+    sourceReference: 'task:t1',
+    tainted: true,
+    createdAt: '2026-10-08T09:00:00Z',
+    url: '/api/v1/artifacts/a1/content',
+    ...overrides,
+  }
+}

@@ -65,6 +65,36 @@ public sealed class ImapMailProvider(IEnumerable<ICredentialSource> credentials)
             return await LoadAsync(folder, uid, messageId, cancellationToken);
         }, cancellationToken);
 
+    // Only the body structure and the one part are fetched, not the whole message.
+    public Task<Result<MailAttachment>> ReadAttachmentAsync(MailAccount account, string messageId, string attachment, CancellationToken cancellationToken) =>
+        WithClientAsync<MailAttachment>(account, async client =>
+        {
+            Result<(IMailFolder Folder, UniqueId Uid)> located = await LocateAsync(client, messageId, FolderAccess.ReadOnly, cancellationToken);
+            if (located.IsFailure)
+                return located.Error;
+
+            (IMailFolder folder, UniqueId uid) = located.Value;
+            IList<IMessageSummary> fetched = await folder.FetchAsync([uid], MessageSummaryItems.UniqueId | MessageSummaryItems.BodyStructure, cancellationToken);
+            if (fetched.Count == 0)
+                return MailErrors.MessageNotFound(messageId);
+
+            List<BodyPartBasic> parts = [.. fetched[0].Attachments];
+            List<string> names = [.. parts.Select(part => part is BodyPartMessage ? "attached message" : part.FileName ?? "attachment")];
+            int index = int.TryParse(attachment, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int position) && position >= 1 && position <= parts.Count
+                ? position - 1
+                : names.FindIndex(name => string.Equals(name, attachment.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (index < 0)
+                return MailErrors.AttachmentNotFound(attachment, names);
+
+            MimeEntity entity = await folder.GetBodyPartAsync(uid, parts[index], cancellationToken);
+            using var content = new MemoryStream();
+            if (entity is MimePart { Content: { } decoded })
+                await decoded.DecodeToAsync(content, cancellationToken);
+            else if (entity is MessagePart { Message: { } message })
+                await message.WriteToAsync(content, cancellationToken);
+            return new MailAttachment(names[index], content.ToArray());
+        }, cancellationToken);
+
     public Task<Result<IReadOnlyList<MailMessage>>> ReadThreadAsync(MailAccount account, string messageId, CancellationToken cancellationToken) =>
         WithClientAsync<IReadOnlyList<MailMessage>>(account, async client =>
         {

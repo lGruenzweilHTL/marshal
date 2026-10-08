@@ -58,6 +58,19 @@ export interface NotificationPayload {
   createdAt: string
 }
 
+/** `artifact.created` on topic `artifacts`: the stored artifact (`ArtifactRecord`). */
+export interface ArtifactCreatedPayload {
+  id: string
+  name: string
+  kind: Schemas['ArtifactKind']
+  source: Schemas['ArtifactSource']
+}
+
+/** `artifact.deleted` on topic `artifacts`. */
+export interface ArtifactDeletedPayload {
+  id: string
+}
+
 /** Event type → payload. Later changes add their topics' events here. */
 export interface LiveEventMap {
   'run.started': RunStartedPayload
@@ -66,6 +79,8 @@ export interface LiveEventMap {
   'task.changed': TaskChangedPayload
   'notification.created': NotificationPayload
   'notification.updated': NotificationPayload
+  'artifact.created': ArtifactCreatedPayload
+  'artifact.deleted': ArtifactDeletedPayload
 }
 
 export type LiveEventType = keyof LiveEventMap

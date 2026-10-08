@@ -1,3 +1,5 @@
+using Marshal.Abstractions.Artifacts;
+
 namespace Marshal.Api.Conversation;
 
 /// <summary>A reply text chunk (<c>delta</c> event).</summary>
@@ -5,6 +7,13 @@ public sealed record TurnDelta(string Text);
 
 /// <summary>A progress message (<c>status</c> event).</summary>
 public sealed record TurnStatus(string Text);
+
+/// <summary>An artifact the turn shows (<c>artifact</c> event).</summary>
+/// <param name="Id">Artifact id.</param>
+/// <param name="Name">File name.</param>
+/// <param name="Kind">Kind; picks inline image or card.</param>
+/// <param name="Url">Content URL.</param>
+public sealed record TurnArtifact(string Id, string Name, ArtifactKind Kind, string Url);
 
 /// <summary>The last event of a turn (<c>final</c> event).</summary>
 /// <param name="Speech">Full reply text.</param>

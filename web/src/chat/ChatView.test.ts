@@ -180,4 +180,26 @@ describe('ChatView', () => {
 
     expect(wrapper.get('[role="alert"]').text()).toContain('The session was not found.')
   })
+
+  it('shows image artifacts inline and other kinds as cards that open the viewer', async () => {
+    const server = new FakeServer().handle('POST', turns, () =>
+      eventStream([
+        sse('artifact', { id: 'a1', name: 'first-layer.jpg', kind: 'image', url: 'https://elsewhere.example/a1' }),
+        sse('artifact', { id: 'a2', name: 'bracket.stl', kind: 'model3d', url: '/api/v1/artifacts/a2/content' }),
+        final('Here they are.'),
+      ]),
+    )
+    const wrapper = await mountChat(server)
+
+    await send(wrapper, 'show me')
+    await flushPromises()
+
+    const reply = wrapper.findAll('[data-role="assistant"]').at(-1)!
+    expect(reply.get('[data-test="artifact-image"] img').attributes('src')).toBe('https://marshal.test/api/v1/artifacts/a1/content')
+    const card = reply.get('[data-test="artifact-card"]')
+    expect(card.attributes('data-kind')).toBe('model3d')
+    expect(card.text()).toContain('bracket.stl')
+    expect(card.text()).toContain('3D model')
+    expect(card.attributes('href')).toBe('/artifacts/a2')
+  })
 })

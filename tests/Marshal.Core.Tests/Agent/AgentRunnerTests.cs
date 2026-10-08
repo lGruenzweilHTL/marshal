@@ -1,3 +1,4 @@
+using Marshal.Abstractions.Artifacts;
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Conversation;
 using Marshal.Abstractions.Execution;
@@ -165,6 +166,24 @@ public sealed class AgentRunnerTests
         Assert.Empty(tool.Invocations);
         Assert.Contains("tool.unknown", ToolResults(harness.Model.Requests[1]).Single(), StringComparison.Ordinal);
         Assert.Equal(GuardDecision.Denied, harness.Recorder.OnlyRun.Steps[2].GuardDecision);
+    }
+
+    [Fact]
+    public async Task Run_ToolShowsArtifacts_EventPerRefAndKeptWithTheReply()
+    {
+        var model = new ArtifactRef(ArtifactId.New(), "bracket.stl", ArtifactKind.Model3d, "/api/v1/artifacts/1/content");
+        var image = new ArtifactRef(ArtifactId.New(), "print.jpg", ArtifactKind.Image, "/api/v1/artifacts/2/content");
+        FakeTool show = FakeTool.Safe("artifacts.show").Returns(_ => new ToolOutput("Shown.") { Artifacts = [model, image] });
+        LoopHarness harness = await LoopHarness.CreateAsync(tools: show);
+        harness.Model.ThenToolCall("artifacts_show").ThenText("Here it is.");
+
+        await harness.Runner.RunAsync(Request("show me the bracket") with { Events = harness.Events.Writer }, Ct);
+
+        List<TurnEvent> events = await harness.DrainEventsAsync();
+        Assert.Equal([model, image], events.OfType<ArtifactEvent>().Select(shown => shown.Artifact));
+        Assert.True(events.IndexOf(events.OfType<ArtifactEvent>().Last()) < events.FindLastIndex(turnEvent => turnEvent is DeltaEvent));
+        RunStepRecord reply = harness.Recorder.OnlyRun.Steps.Single(step => step.Kind == RunStepKind.Reply);
+        Assert.Equal([model, image], reply.Artifacts!);
     }
 
     [Fact]

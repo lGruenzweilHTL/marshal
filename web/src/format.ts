@@ -17,6 +17,8 @@ export interface Formatter {
   percent(fraction: number): string
   /** A cost in the configured price unit, 2–4 decimals, no currency (the API has none). */
   cost(value: number): string
+  /** A file size: `512 B`, `12.3 KB`, `4.5 MB`, `1.2 GB` (binary units). */
+  bytes(value: number): string
 }
 
 const units: [Intl.RelativeTimeFormatUnit, number][] = [
@@ -63,6 +65,11 @@ export function createFormatter(language: Language, timeZone: string, now: () =>
     number: (value) => number.format(value),
     percent: (fraction) => percent.format(fraction),
     cost: (value) => cost.format(value),
+    bytes(value) {
+      const scale = (['B', 'KB', 'MB', 'GB', 'TB'] as const).findLastIndex((_, index) => value >= 1024 ** index)
+      const unit = (['B', 'KB', 'MB', 'GB', 'TB'] as const)[Math.max(0, scale)]
+      return `${scale <= 0 ? number.format(value) : decimal.format(value / 1024 ** scale)} ${unit}`
+    },
   }
 }
 

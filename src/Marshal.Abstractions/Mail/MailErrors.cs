@@ -18,6 +18,11 @@ public static class MailErrors
 
     public static Error MessageNotFound(string id) => new("mail.message_not_found", $"There is no message '{id}'.", ErrorType.NotFound);
 
+    public static Error AttachmentNotFound(string attachment, IReadOnlyList<string> attachments) =>
+        new("mail.attachment_not_found", attachments.Count == 0
+            ? $"The message has no attachments, so there is no '{attachment}'."
+            : $"The message has no attachment '{attachment}'. Its attachments: {string.Join(", ", attachments)}.", ErrorType.NotFound);
+
     public static Error DraftsFolderMissing(string alias) =>
         new("mail.drafts_folder_missing", $"Mail account '{alias}' has no folder marked as drafts; name one in the account settings.", ErrorType.Failure);
 

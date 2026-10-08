@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Marshal.Abstractions;
+using Marshal.Abstractions.Artifacts;
 using Marshal.Abstractions.Mail;
 using Marshal.Abstractions.Tools;
 using Marshal.Integrations.Mail.Tools;
@@ -11,18 +12,19 @@ public sealed class MailToolsTests
 {
     private readonly FakeMailAccountStore _accounts = new();
     private readonly FakeMailProvider _provider = new();
+    private readonly FakeArtifactStore _artifacts = new();
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     [Fact]
-    public async Task Tools_OnlyReadingAndDrafting()
+    public async Task Tools_OnlyReadingDraftingAndSavingAttachments()
     {
         IReadOnlyList<ITool> tools = await ToolsAsync();
 
         Assert.Equal(
-            ["mail.create_draft", "mail.list_folders", "mail.list_labels", "mail.read_message", "mail.read_thread", "mail.search", "mail.update_draft"],
+            ["mail.create_draft", "mail.list_folders", "mail.list_labels", "mail.read_message", "mail.read_thread", "mail.save_attachment", "mail.search", "mail.update_draft"],
             tools.Select(tool => tool.Descriptor.Id.ToString()).Order());
-        Assert.All(tools, tool => Assert.Equal(RiskTier.Safe, tool.Descriptor.DefaultTier));
+        Assert.All(tools.Where(tool => tool.Descriptor.Id.Name != "save_attachment"), tool => Assert.Equal(RiskTier.Safe, tool.Descriptor.DefaultTier));
         Assert.DoesNotContain(tools, tool => tool.Descriptor.Id.Name.Contains("send", StringComparison.Ordinal)
             || tool.Descriptor.Id.Name.Contains("delete", StringComparison.Ordinal)
             || tool.Descriptor.Id.Name.Contains("move", StringComparison.Ordinal));
@@ -175,8 +177,48 @@ public sealed class MailToolsTests
         Assert.True(await tools.Single(tool => tool.Descriptor.Id.Name == "search").IsAvailableAsync(TestExecutionContext.Text(), Ct));
         Assert.False(await tools.Single(tool => tool.Descriptor.Id.Name == "list_labels").IsAvailableAsync(TestExecutionContext.Text(), Ct));
 
-        IReadOnlyList<ITool> withLabels = await new MailToolSource(_accounts, [new FakeMailProvider(MailCapabilities.Labels)]).GetToolsAsync(Ct);
+        IReadOnlyList<ITool> withLabels = await new MailToolSource(_accounts, [new FakeMailProvider(MailCapabilities.Labels)], _artifacts).GetToolsAsync(Ct);
         Assert.True(await withLabels.Single(tool => tool.Descriptor.Id.Name == "list_labels").IsAvailableAsync(TestExecutionContext.Text(), Ct));
+    }
+
+    [Fact]
+    public async Task SaveAttachment_ConfirmTierPersistsSensitiveAndHiddenWithoutAccounts()
+    {
+        ITool tool = (await ToolsAsync()).Single(tool => tool.Descriptor.Id.Name == "save_attachment");
+
+        Assert.Equal((RiskTier.Confirm, true, true), (tool.Descriptor.DefaultTier, tool.Descriptor.Persists, tool.Descriptor.Sensitive));
+        Assert.False(await tool.IsAvailableAsync(TestExecutionContext.Text(), Ct));
+        _accounts.Add("private");
+        Assert.True(await tool.IsAvailableAsync(TestExecutionContext.Text(), Ct));
+        Assert.Contains("plan.pdf", tool.Summarize(JsonSerializer.SerializeToElement(new { message = "private:m1", attachment = "plan.pdf" }), "en"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SaveAttachment_StoresATaintedMailArtifactWithTheMessageReference()
+    {
+        _accounts.Add("private");
+        _provider.Add("private", "m1", "Plan", "See attached.");
+
+        ToolOutput output = (await InvokeAsync("save_attachment", new { message = "private:m1", attachment = "1" })).Value;
+
+        ArtifactRecord saved = Assert.Single(_artifacts.Artifacts).Record;
+        Assert.Equal(("plan.pdf", ArtifactKind.Pdf, ArtifactSource.Mail, true, "mail:private:m1"), (saved.Name, saved.Kind, saved.Source, saved.Tainted, saved.SourceReference));
+        Assert.Equal("%PDF-1.7 plan"u8.ToArray(), _artifacts.Artifacts[0].Content);
+        Assert.Contains(saved.Id.ToString(), output.Content, StringComparison.Ordinal);
+        Assert.Equal(("private", "m1", "1"), Assert.Single(_provider.AttachmentReads));
+    }
+
+    [Fact]
+    public async Task SaveAttachment_UnknownAttachment_FailsNamingTheAttachmentsAndStoresNothing()
+    {
+        _accounts.Add("private");
+        _provider.Add("private", "m1", "Plan", "See attached.");
+
+        Error error = (await InvokeAsync("save_attachment", new { message = "private:m1", attachment = "contract.pdf" })).Error;
+
+        Assert.Equal("mail.attachment_not_found", error.Code);
+        Assert.Contains("plan.pdf", error.Message, StringComparison.Ordinal);
+        Assert.Empty(_artifacts.Artifacts);
     }
 
     [Fact]
@@ -189,7 +231,7 @@ public sealed class MailToolsTests
         Assert.Contains("Entwürfe", output.Content, StringComparison.Ordinal);
     }
 
-    private Task<IReadOnlyList<ITool>> ToolsAsync() => new MailToolSource(_accounts, [_provider]).GetToolsAsync(Ct);
+    private Task<IReadOnlyList<ITool>> ToolsAsync() => new MailToolSource(_accounts, [_provider], _artifacts).GetToolsAsync(Ct);
 
     private async Task<Result<ToolOutput>> InvokeAsync(string name, object arguments)
     {

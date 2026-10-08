@@ -30,6 +30,11 @@ export interface Api {
   call<T>(request: (client: ApiClient) => Promise<FetchResult<T>>): Promise<ApiResult<T>>
   /** Root URL of the app and API (no trailing slash), for links the browser follows itself. */
   baseUrl: string
+  /**
+   * Posts a multipart form (file uploads) with the antiforgery token and reports upload progress (0 to 1).
+   * @example await api.upload<Schemas['ArtifactResponse']>('/api/v1/artifacts', form, (fraction) => (progress.value = fraction))
+   */
+  upload<T>(path: string, body: FormData, onProgress?: (fraction: number) => void): Promise<ApiResult<T>>
   /** Plain GET against the app root, for unversioned endpoints outside the OpenAPI document (`/health`). Any status is data. */
   fetch(path: string): Promise<ApiResult<Response>>
   /** Antiforgery token for a form the browser posts itself (fetched once, cached until reset). */
@@ -48,9 +53,30 @@ export interface ApiSession extends Api {
   raw: ApiClient
 }
 
-export function createApiSession(options: { baseUrl?: string; fetch?: typeof globalThis.fetch } = {}): ApiSession {
+/** Sends an upload and reports progress; `fetch` has no upload progress, so the browser transport uses XMLHttpRequest. */
+export type UploadTransport = (url: string, body: FormData, headers: Record<string, string>, onProgress: (fraction: number) => void) => Promise<Response>
+
+export const xhrUpload: UploadTransport = (url, body, headers, onProgress) =>
+  new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest()
+    request.open('POST', url)
+    request.withCredentials = true
+    for (const [name, value] of Object.entries(headers)) request.setRequestHeader(name, value)
+    request.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && event.total > 0) onProgress(event.loaded / event.total)
+    })
+    request.addEventListener('load', () =>
+      resolve(new Response(request.status === 204 ? null : request.responseText, { status: request.status, headers: { 'Content-Type': request.getResponseHeader('Content-Type') ?? 'application/json' } })),
+    )
+    request.addEventListener('error', () => reject(new TypeError('Failed to fetch')))
+    request.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+    request.send(body)
+  })
+
+export function createApiSession(options: { baseUrl?: string; fetch?: typeof globalThis.fetch; upload?: UploadTransport } = {}): ApiSession {
   const baseUrl = options.baseUrl ?? appBaseUrl()
   const doFetch = options.fetch ?? ((input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init))
+  const doUpload = options.upload ?? xhrUpload
   let token: Promise<string> | null = null
   let unauthorized: (() => void) | null = null
 
@@ -89,6 +115,16 @@ export function createApiSession(options: { baseUrl?: string; fetch?: typeof glo
         const { data, error, response } = await request(raw)
         if (!response.ok) return failed(fromResponse(response.status, error))
         return { data: data as T }
+      } catch (cause) {
+        return failed(fromThrown(cause))
+      }
+    },
+    async upload<T>(path: string, body: FormData, onProgress?: (fraction: number) => void): Promise<ApiResult<T>> {
+      try {
+        const response = await doUpload(`${baseUrl}${path}`, body, { 'X-XSRF-TOKEN': await antiforgery() }, (fraction) => onProgress?.(fraction))
+        if (!response.ok) return failed(fromResponse(response.status, await problemBody(response)))
+        onProgress?.(1)
+        return { data: (await response.json()) as T }
       } catch (cause) {
         return failed(fromThrown(cause))
       }

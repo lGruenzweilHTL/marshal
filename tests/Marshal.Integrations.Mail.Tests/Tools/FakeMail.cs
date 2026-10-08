@@ -81,6 +81,25 @@ internal sealed class FakeMailProvider(MailCapabilities capabilities = MailCapab
         return Task.FromResult(Result.Success($"draft-{Drafts.Count}"));
     }
 
+    public List<(string Alias, string MessageId, string Attachment)> AttachmentReads { get; } = [];
+
+    /// <summary>Attachment content by name; every message lists <c>plan.pdf</c>.</summary>
+    public Dictionary<string, byte[]> AttachmentContent { get; } = new(StringComparer.Ordinal) { ["plan.pdf"] = "%PDF-1.7 plan"u8.ToArray() };
+
+    public Task<Result<MailAttachment>> ReadAttachmentAsync(MailAccount account, string messageId, string attachment, CancellationToken cancellationToken)
+    {
+        AttachmentReads.Add((account.Alias, messageId, attachment));
+        if ((Messages.GetValueOrDefault(account.Alias) ?? []).FirstOrDefault(message => message.Id == messageId) is not { } message)
+            return Task.FromResult(Result.Failure<MailAttachment>(MailErrors.MessageNotFound(messageId)));
+
+        string? name = int.TryParse(attachment, out int position) && position >= 1 && position <= message.Attachments.Count
+            ? message.Attachments[position - 1]
+            : message.Attachments.FirstOrDefault(listed => string.Equals(listed, attachment, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(name is not null && AttachmentContent.TryGetValue(name, out byte[]? content)
+            ? Result.Success(new MailAttachment(name, content))
+            : Result.Failure<MailAttachment>(MailErrors.AttachmentNotFound(attachment, message.Attachments)));
+    }
+
     public Task<Result<string>> UpdateDraftAsync(MailAccount account, string draftId, MailDraft draft, CancellationToken cancellationToken)
     {
         Drafts.Add((account.Alias, draft, draftId));

@@ -53,6 +53,9 @@ export const en = {
   webcamAlt: 'Webcam stream of {printer}',
   snapshot: 'Snapshot',
   snapshotAlt: 'Webcam snapshot of {printer}',
+  keep: 'Keep',
+  kept: 'Snapshot kept in Artifacts.',
+  openKept: 'Open',
   babysitter: {
     title: 'Babysitter',
     watching: 'Watching this print.',
@@ -116,6 +119,9 @@ export const de: Catalog<typeof en> = {
   webcamAlt: 'Webcam-Stream von {printer}',
   snapshot: 'Schnappschuss',
   snapshotAlt: 'Webcam-Schnappschuss von {printer}',
+  keep: 'Behalten',
+  kept: 'Schnappschuss in Artefakten behalten.',
+  openKept: 'Öffnen',
   babysitter: {
     title: 'Babysitter',
     watching: 'Beobachtet diesen Druck.',

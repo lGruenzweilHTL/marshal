@@ -17,6 +17,66 @@ namespace Marshal.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
+            modelBuilder.Entity("Marshal.Data.Artifacts.StoredArtifact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("MediaType")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("media_type");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("sha256");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("size");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("source");
+
+                    b.Property<string>("SourceReference")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("source_reference");
+
+                    b.Property<bool>("Tainted")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("tainted");
+
+                    b.HasKey("Id")
+                        .HasName("pk_artifacts");
+
+                    b.HasIndex("OwnerId", "CreatedAt")
+                        .HasDatabaseName("ix_artifacts_owner_id_created_at");
+
+                    b.ToTable("artifacts", (string)null);
+                });
+
             modelBuilder.Entity("Marshal.Data.Audit.AuditEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1726,6 +1786,16 @@ namespace Marshal.Data.Migrations
                         .HasName("pk_user_tokens");
 
                     b.ToTable("user_tokens", (string)null);
+                });
+
+            modelBuilder.Entity("Marshal.Data.Artifacts.StoredArtifact", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_artifacts_users_owner_id");
                 });
 
             modelBuilder.Entity("Marshal.Data.Audit.AuditEvent", b =>

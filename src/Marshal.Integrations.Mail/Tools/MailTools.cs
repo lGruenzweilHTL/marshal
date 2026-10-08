@@ -4,6 +4,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
 using Marshal.Abstractions;
+using Marshal.Abstractions.Artifacts;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Mail;
 using Marshal.Abstractions.Tools;
@@ -14,7 +15,7 @@ namespace Marshal.Integrations.Mail.Tools;
 /// Model-facing mail tools. Message ids are <c>alias:providerId</c>, so reading and replying always hit the account
 /// the message came from. Tools returning mail content are untrusted (taint source <c>mail</c>) and sensitive (the
 /// run record keeps only the message references). Drafting is safe and never escalated: the user reviews and sends
-/// drafts in their own mail client.
+/// drafts in their own mail client. Saving an attachment always asks first and stores it as a tainted artifact.
 /// </summary>
 internal static class MailTools
 {
@@ -24,9 +25,9 @@ internal static class MailTools
     // Non-ASCII stays readable for the model (folder names like "Entwürfe").
     private static readonly JsonSerializerOptions _json = new(JsonSerializerDefaults.Web) { Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) };
 
-    public static IReadOnlyList<ITool> Create(IMailAccountStore accounts, IReadOnlyList<IMailProvider> providers)
+    public static IReadOnlyList<ITool> Create(IMailAccountStore accounts, IReadOnlyList<IMailProvider> providers, IArtifactStore artifacts)
     {
-        var context = new MailToolContext(accounts, providers);
+        var context = new MailToolContext(accounts, providers, artifacts);
         return
         [
             new MailTool(context, "search", "Searches mail. Without account it searches every account; results carry the account alias and a message id.", """
@@ -67,6 +68,12 @@ internal static class MailTools
                   "replyTo":{"type":"string","description":"Id of the message this answers."}},
                  "required":["id","to","subject","body"]}
                 """, untrusted: false, UpdateDraftAsync),
+            new MailTool(context, "save_attachment", "Saves one attachment of a message as an artifact the user can open in the web UI. Returns the artifact's id.", """
+                {"type":"object","properties":{
+                  "message":{"type":"string","description":"Message id from mail_search."},
+                  "attachment":{"type":"string","description":"Attachment name as listed by mail_read_message, or its position (1 = first)."}},
+                 "required":["message","attachment"]}
+                """, untrusted: false, SaveAttachmentAsync, saves: true),
         ];
     }
 
@@ -219,6 +226,28 @@ internal static class MailTools
         return updated.Map(newId => new ToolOutput($"Draft updated; its id is now {Id(account, newId)}. It was not sent."));
     }
 
+    private static async Task<Result<ToolOutput>> SaveAttachmentAsync(MailToolContext context, JsonElement arguments, CancellationToken ct)
+    {
+        if (Text(arguments, "attachment") is not { } attachment)
+            return Invalid("message and attachment are required.");
+
+        Result<(MailAccount Account, string ProviderId)> id = await context.ParseIdAsync(Text(arguments, "message"), ct);
+        if (id.IsFailure)
+            return id.Error;
+
+        MailAccount account = id.Value.Account;
+        Result<MailAttachment> fetched = await context.Provider(account).ReadAttachmentAsync(account, id.Value.ProviderId, attachment, ct);
+        if (fetched.IsFailure)
+            return fetched.Error;
+
+        using var content = new MemoryStream(fetched.Value.Content, writable: false);
+        Result<ArtifactRecord> saved = await context.Artifacts.CreateAsync(
+            new ArtifactDraft(fetched.Value.Name, ArtifactSource.Mail, $"mail:{Id(account, id.Value.ProviderId)}", Tainted: true), content, ct);
+        return saved.Map(artifact => new ToolOutput(
+            JsonSerializer.Serialize(new { id = artifact.Id.ToString(), artifact.Name, kind = JsonNamingPolicy.CamelCase.ConvertName(artifact.Kind.ToString()), artifact.Size }, _json),
+            artifact.Id.ToString()));
+    }
+
     private static Result<MailDraft> Draft(JsonElement arguments, string? replyTo)
     {
         string[] to = arguments.TryGetProperty("to", out JsonElement recipients) && recipients.ValueKind == JsonValueKind.Array
@@ -266,9 +295,11 @@ internal static class MailTools
 
     private static Error Invalid(string message) => new("mail.invalid_arguments", message, ErrorType.Validation);
 
-    private sealed class MailToolContext(IMailAccountStore accounts, IReadOnlyList<IMailProvider> providers)
+    private sealed class MailToolContext(IMailAccountStore accounts, IReadOnlyList<IMailProvider> providers, IArtifactStore artifacts)
     {
         public IMailAccountStore Accounts => accounts;
+
+        public IArtifactStore Artifacts => artifacts;
 
         public IReadOnlyList<IMailProvider> Providers => providers;
 
@@ -309,18 +340,27 @@ internal static class MailTools
         string schema,
         bool untrusted,
         Func<MailToolContext, JsonElement, CancellationToken, Task<Result<ToolOutput>>> run,
-        MailCapabilities requires = MailCapabilities.None) : ITool
+        MailCapabilities requires = MailCapabilities.None,
+        bool saves = false) : ITool
     {
+        // Saving keeps third-party content: always confirmed, and the record keeps only references.
         public ToolDescriptor Descriptor { get; } = new()
         {
             Id = new ToolId("mail", name),
             Description = description,
             ParametersSchema = JsonDocument.Parse(schema).RootElement.Clone(),
-            DefaultTier = RiskTier.Safe,
+            DefaultTier = saves ? RiskTier.Confirm : RiskTier.Safe,
             UntrustedOutput = untrusted,
             TaintKind = untrusted ? Taint : null,
-            Sensitive = untrusted,
+            Persists = saves,
+            Sensitive = untrusted || saves,
         };
+
+        public string Summarize(JsonElement arguments, string language) => saves
+            ? (language.StartsWith("de", StringComparison.OrdinalIgnoreCase)
+                ? $"Anhang \"{Text(arguments, "attachment")}\" der Nachricht {Text(arguments, "message")} speichern"
+                : $"Save attachment \"{Text(arguments, "attachment")}\" of message {Text(arguments, "message")}")
+            : $"{Descriptor.Id} {arguments.GetRawText()}";
 
         public async ValueTask<bool> IsAvailableAsync(MarshalExecutionContext executionContext, CancellationToken cancellationToken)
         {

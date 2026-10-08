@@ -68,6 +68,7 @@ internal static partial class ConversationEndpoints
             {
                 DeltaEvent delta => new SseItem<object>(new TurnDelta(delta.Text), "delta"),
                 StatusEvent status => new SseItem<object>(new TurnStatus(status.Text), "status"),
+                ArtifactEvent shown => new SseItem<object>(new TurnArtifact(shown.Artifact.Id.ToString(), shown.Artifact.Name, shown.Artifact.Kind, shown.Artifact.Url), "artifact"),
                 _ => throw new InvalidOperationException($"Unknown turn event {turnEvent.GetType().Name}."),
             };
         }

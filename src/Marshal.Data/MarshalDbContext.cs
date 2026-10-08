@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Marshal.Abstractions.Artifacts;
 using Marshal.Abstractions.Audit;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Executors;
@@ -12,6 +13,7 @@ using Marshal.Abstractions.Sessions;
 using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tokens;
 using Marshal.Abstractions.Tools;
+using Marshal.Data.Artifacts;
 using Marshal.Data.Audit;
 using Marshal.Data.Auth;
 using Marshal.Data.Conversations;
@@ -84,6 +86,8 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
 
     public DbSet<FollowUp> FollowUps => Set<FollowUp>();
 
+    public DbSet<StoredArtifact> Artifacts => Set<StoredArtifact>();
+
     /// <summary>The current owner. Throws when there is no execution context (fail closed).</summary>
     internal OwnerId CurrentOwnerId =>
         executionContext.Current?.OwnerId
@@ -119,6 +123,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         configurationBuilder.Properties<ApiTokenId>().HaveConversion<GuidIdConverter<ApiTokenId>>();
         configurationBuilder.Properties<ProjectId>().HaveConversion<GuidIdConverter<ProjectId>>();
         configurationBuilder.Properties<MailAccountId>().HaveConversion<GuidIdConverter<MailAccountId>>();
+        configurationBuilder.Properties<ArtifactId>().HaveConversion<GuidIdConverter<ArtifactId>>();
         configurationBuilder.Properties<TaskId>().HaveConversion<GuidIdConverter<TaskId>>();
         configurationBuilder.Properties<ChunkId>().HaveConversion<ChunkIdConverter>();
 
@@ -150,6 +155,8 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         configurationBuilder.Properties<ProposalStatus>().HaveConversion<SnakeCaseEnumConverter<ProposalStatus>>();
         configurationBuilder.Properties<NotificationPriority>().HaveConversion<SnakeCaseEnumConverter<NotificationPriority>>();
         configurationBuilder.Properties<NotificationOutcome>().HaveConversion<SnakeCaseEnumConverter<NotificationOutcome>>();
+        configurationBuilder.Properties<ArtifactKind>().HaveConversion<SnakeCaseEnumConverter<ArtifactKind>>();
+        configurationBuilder.Properties<ArtifactSource>().HaveConversion<SnakeCaseEnumConverter<ArtifactSource>>();
 
         // SQLite cannot compare or order DateTimeOffset / decimal values natively; binary and REAL storage keeps
         // range queries and sums on the server.
@@ -282,6 +289,15 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             project.HasIndex(entity => new { entity.OwnerId, entity.Name });
             project.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
             OwnerFilter(project);
+        });
+
+        builder.Entity<StoredArtifact>(artifact =>
+        {
+            artifact.ToTable("artifacts");
+            artifact.HasKey(entity => entity.Id);
+            artifact.HasIndex(entity => new { entity.OwnerId, entity.CreatedAt });
+            artifact.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            OwnerFilter(artifact);
         });
 
         builder.Entity<StoredMailAccount>(account =>

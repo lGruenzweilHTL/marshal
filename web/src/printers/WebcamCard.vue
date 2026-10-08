@@ -1,22 +1,43 @@
 <script setup lang="ts">
-import { Camera, VideoOff } from 'lucide-vue-next'
+import { Bookmark, Camera, VideoOff } from 'lucide-vue-next'
 import { computed, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useApi } from '../api/inject'
 import { useSubmit } from '../api/useSubmit'
-import { AppButton, AppIcon, Card, ErrorBanner } from '../ui'
+import { AppButton, AppIcon, Card, ErrorBanner, useToasts } from '../ui'
 
-/** The webcam stream through Marshal (never straight from the printer) and an on-demand snapshot. */
+/**
+ * The webcam stream through Marshal (never straight from the printer) and an on-demand snapshot, which "Keep" copies
+ * into the artifact store (outside the snapshot retention).
+ */
 const props = defineProps<{ printer: string }>()
 const api = useApi()
 const { t } = useI18n()
 const stream = computed(() => `${api.baseUrl}/api/v1/printers/${encodeURIComponent(props.printer)}/webcam/stream`)
 const snapshotUrl = shallowRef<string | null>(null)
+const snapshotId = shallowRef<string | null>(null)
+const keptId = shallowRef<string | null>(null)
+const toasts = useToasts()
 const broken = shallowRef(false)
 
 const snapshot = useSubmit(async () => {
   const result = await api.call((client) => client.POST('/api/v1/printers/{printer}/snapshots', { params: { path: { printer: props.printer } } }))
-  if (result.data) snapshotUrl.value = result.data.url
+  if (result.data) {
+    snapshotUrl.value = result.data.url
+    snapshotId.value = result.data.id
+    keptId.value = null
+  }
+  return result
+})
+
+const keep = useSubmit(async () => {
+  const result = await api.call((client) =>
+    client.POST('/api/v1/printers/{printer}/snapshots/{snapshot}/keep', { params: { path: { printer: props.printer, snapshot: snapshotId.value! } } }),
+  )
+  if (result.data) {
+    keptId.value = result.data.id
+    toasts.show(t('printers.kept'))
+  }
   return result
 })
 </script>
@@ -33,7 +54,15 @@ const snapshot = useSubmit(async () => {
       <AppButton size="sm" :icon="Camera" :loading="snapshot.busy.value" @click="snapshot.submit()">{{ t('printers.snapshot') }}</AppButton>
     </div>
     <ErrorBanner v-if="snapshot.error.value" :error="snapshot.error.value" />
-    <img v-if="snapshotUrl" class="frame" :src="snapshotUrl" :alt="t('printers.snapshotAlt', { printer })" />
+    <template v-if="snapshotUrl">
+      <img class="frame" :src="snapshotUrl" :alt="t('printers.snapshotAlt', { printer })" />
+      <div class="foot">
+        <AppButton v-if="keptId" size="sm" variant="ghost" :to="{ name: 'artifact', params: { id: keptId } }" data-test="open-kept">{{ t('printers.openKept') }}</AppButton>
+        <span v-else />
+        <AppButton size="sm" :icon="Bookmark" data-test="keep" :disabled="!!keptId" :loading="keep.busy.value" @click="keep.submit()">{{ t('printers.keep') }}</AppButton>
+      </div>
+      <ErrorBanner v-if="keep.error.value" :error="keep.error.value" />
+    </template>
   </Card>
 </template>
 

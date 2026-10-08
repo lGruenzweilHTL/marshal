@@ -1,12 +1,13 @@
+using Marshal.Abstractions.Artifacts;
 using Marshal.Abstractions.Mail;
 using Marshal.Abstractions.Tools;
 
 namespace Marshal.Integrations.Mail.Tools;
 
-/// <summary>The <c>mail.*</c> tools (a built-in source). They read and draft; nothing sends, deletes or moves mail.</summary>
-public sealed class MailToolSource(IMailAccountStore accounts, IEnumerable<IMailProvider> providers) : IToolSource
+/// <summary>The <c>mail.*</c> tools (a built-in source). They read, draft and save attachments; nothing sends, deletes or moves mail.</summary>
+public sealed class MailToolSource(IMailAccountStore accounts, IEnumerable<IMailProvider> providers, IArtifactStore artifacts) : IToolSource
 {
-    private readonly IReadOnlyList<ITool> _tools = MailTools.Create(accounts, [.. providers]);
+    private readonly IReadOnlyList<ITool> _tools = MailTools.Create(accounts, [.. providers], artifacts);
 
     public string Name => "mail";
 

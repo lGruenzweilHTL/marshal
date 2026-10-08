@@ -12,7 +12,9 @@ namespace Marshal.ExecutorHost.Sessions;
 /// Coding sessions: each gets its own worktree on branch <c>marshal/&lt;id&gt;</c>, runs Claude Code in the sandbox and
 /// reports to Marshal's callback URL (only below <see cref="ExecutorHostOptions.MarshalUrl"/>) with the session's
 /// token: <c>progress</c> for the model's text, then <c>completed</c> (branch, diff, summary; the branch stays for
-/// review), <c>failed</c> or <c>cancelled</c> (branch deleted). The worktree is removed at the end.
+/// review), <c>failed</c> or <c>cancelled</c> (branch deleted). Before <c>completed</c> or <c>failed</c>, each regular
+/// file under <c>.marshal/artifacts/</c> is uploaded to Marshal; symbolic links, paths leaving the folder and refused
+/// uploads are named in the callback's message. The worktree is removed at the end.
 /// </summary>
 public sealed partial class SessionManager(
     ISandboxRuntime sandbox,
@@ -22,6 +24,8 @@ public sealed partial class SessionManager(
     ILogger<SessionManager> logger) : IAsyncDisposable
 {
     private const int MaxProgressLength = 500;
+
+    private const string ArtifactFolder = ".marshal/artifacts";
 
     private static readonly TimeSpan ShutdownWait = TimeSpan.FromSeconds(30);
 
@@ -190,6 +194,12 @@ public sealed partial class SessionManager(
 
     private async Task FinishAsync(Session session, ExecutorCallback callback, bool keepBranch)
     {
+        if (callback.Type is "completed" or "failed" && await UploadArtifactsAsync(session) is { Count: > 0 } skipped)
+        {
+            string notes = $"Artifacts not uploaded: {string.Join("; ", skipped)}";
+            callback = callback with { Message = callback.Message is null ? notes : $"{callback.Message}\n{notes}" };
+        }
+
         try
         {
             await worktrees.RemoveAsync(session.Repository, session.Path, session.Branch, deleteBranch: !keepBranch, CancellationToken.None);
@@ -203,6 +213,57 @@ public sealed partial class SessionManager(
         _running.TryRemove(session.Id, out _);
         await PostAsync(session, callback, CancellationToken.None);
         LogFinished(session.Id, callback.Type);
+    }
+
+    // Walks the folder without following links; returns what was skipped, each with its reason.
+    private async Task<List<string>> UploadArtifactsAsync(Session session)
+    {
+        var skipped = new List<string>();
+        var folder = new DirectoryInfo(Path.Combine(session.Path, ArtifactFolder));
+        if (!folder.Exists)
+            return skipped;
+        if (folder.LinkTarget is not null)
+        {
+            skipped.Add($"{ArtifactFolder}: symbolic link");
+            return skipped;
+        }
+
+        string root = Path.GetFullPath(folder.FullName) + Path.DirectorySeparatorChar;
+        var pending = new Stack<DirectoryInfo>([folder]);
+        while (pending.TryPop(out DirectoryInfo? directory))
+        {
+            foreach (FileSystemInfo entry in directory.EnumerateFileSystemInfos())
+            {
+                string relative = Path.GetRelativePath(folder.FullName, entry.FullName);
+                if (entry.LinkTarget is not null)
+                    skipped.Add($"{relative}: symbolic link");
+                else if (!Path.GetFullPath(entry.FullName).StartsWith(root, StringComparison.Ordinal))
+                    skipped.Add($"{relative}: outside {ArtifactFolder}");
+                else if (entry is DirectoryInfo child)
+                    pending.Push(child);
+                else if (entry is FileInfo file && (file.Attributes & (FileAttributes.Device | FileAttributes.ReparsePoint)) == 0)
+                    await UploadAsync(session, file, relative, skipped);
+                else
+                    skipped.Add($"{relative}: not a regular file");
+            }
+        }
+
+        return skipped;
+    }
+
+    private async Task UploadAsync(Session session, FileInfo file, string relative, List<string> skipped)
+    {
+        try
+        {
+            await using FileStream content = file.OpenRead();
+            if (await callbacks.UploadAsync(session.Callback, session.CallbackToken, file.Name, content, CancellationToken.None) is { } reason)
+                skipped.Add($"{relative}: {reason}");
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or IOException or UnauthorizedAccessException)
+        {
+            LogUploadFailed(session.Id, exception);
+            skipped.Add($"{relative}: upload failed");
+        }
     }
 
     private async Task PostAsync(Session session, ExecutorCallback callback, CancellationToken cancellationToken)
@@ -257,6 +318,9 @@ public sealed partial class SessionManager(
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Posting the {Type} callback of session {SessionId} failed")]
     private partial void LogCallbackFailed(string sessionId, string type, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Uploading an artifact of session {SessionId} failed")]
+    private partial void LogUploadFailed(string sessionId, Exception exception);
 
     private sealed record Session(string Id, string Repository, string Path, string Branch, string BaseCommit, Uri Callback, string CallbackToken);
 
