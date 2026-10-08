@@ -1,0 +1,82 @@
+## Purpose
+
+An owner-scoped store for files Marshal produces or receives (models, code, images, documents), with stable ids, links and model tools to point at them.
+
+## ADDED Requirements
+
+### Requirement: Artifact store
+Each artifact SHALL be stored as a file under the data directory (`/data/artifacts/<owner>/`) with one database row holding owner, id, name, kind, media type, size, SHA-256, source (`upload`, `executor`, `printer`, `mail`), source reference, `tainted` flag and creation time. All access SHALL go through owner-scoped queries; another owner's artifact SHALL behave as not found. Deleting an artifact SHALL remove its row and its file.
+
+#### Scenario: Other owner's artifact
+- **WHEN** owner A requests an artifact id that belongs to owner B
+- **THEN** the response is 404
+
+#### Scenario: Delete
+- **WHEN** the user deletes an artifact
+- **THEN** its row and its file are gone and its links return 404
+
+### Requirement: Artifact kinds
+The kind SHALL be one of `image` (PNG, JPEG, GIF, WebP), `svg`, `video` (MP4, WebM), `model3d` (STL, 3MF), `code` (known source file extensions), `diff` (`.diff`, `.patch`), `pdf`, `markdown`, `html` or `other`. The kind and media type SHALL be detected from the file extension and the file's leading bytes; a declared media type alone SHALL NOT decide the kind. A file whose content does not match its extension's kind SHALL be stored as `other`.
+
+#### Scenario: Disguised HTML
+- **WHEN** a file named `photo.png` contains HTML
+- **THEN** it is stored as kind `other`
+
+#### Scenario: STL model
+- **WHEN** a file `bracket.stl` with STL content is uploaded
+- **THEN** it is stored as kind `model3d` with media type `model/stl`
+
+### Requirement: Quota
+Each owner SHALL have a storage quota (default 5 GB, `artifacts.quotaMb`). A write that would exceed it SHALL fail with an error naming the quota and the current usage, and SHALL store nothing. Artifacts SHALL be kept until the user deletes them.
+
+#### Scenario: Over quota
+- **WHEN** an owner has used 4.9 GB of 5 GB and uploads a 200 MB file
+- **THEN** the upload fails with a quota error and nothing is stored
+
+### Requirement: Artifact ingest
+Artifacts SHALL be created only through these paths: web upload (`POST /api/v1/artifacts`, multipart, at most `artifacts.maxUploadMb` per file, default 200); executor uploads with the session's callback token; keeping a printer snapshot; `mail.save_attachment`. Artifacts from executors and mail SHALL be marked tainted; uploads and printer snapshots SHALL NOT.
+
+#### Scenario: Upload
+- **WHEN** the user uploads `notes.md`
+- **THEN** an artifact of kind `markdown`, source `upload`, not tainted, is created and appears on the live-update topic `artifacts`
+
+#### Scenario: Oversized upload
+- **WHEN** the user uploads a 300 MB file with the default limit
+- **THEN** the response is 413 and nothing is stored
+
+### Requirement: Artifact links
+The content of an artifact SHALL be available at a URL on Marshal's origin that requires the owner's session or token. Marshal SHALL also issue signed links that need no sign-in, are bound to one artifact, and expire after `artifacts.signedLinkMinutes` (default 15). An expired, altered or foreign signature SHALL get 404.
+
+#### Scenario: Signed link within lifetime
+- **WHEN** a signed link issued 10 minutes ago is requested without a session
+- **THEN** the content is returned
+
+#### Scenario: Expired signed link
+- **WHEN** a signed link issued 16 minutes ago is requested
+- **THEN** the response is 404
+
+### Requirement: Safe serving
+Every content response SHALL carry `X-Content-Type-Options: nosniff` and the detected media type. Content of kind `html` and `svg` SHALL be served with `Content-Security-Policy: sandbox` that allows no scripts, forms, popups or same-origin access, and that allows framing only by Marshal's own origin. Content of kind `other` SHALL be served with `Content-Disposition: attachment`.
+
+#### Scenario: Script in an HTML mockup
+- **WHEN** an HTML artifact contains a `<script>` and is opened directly or in the viewer
+- **THEN** the browser does not run the script
+
+#### Scenario: Unknown file
+- **WHEN** an artifact of kind `other` is opened
+- **THEN** the browser downloads it instead of rendering it
+
+### Requirement: Artifact tools
+The system SHALL provide `artifacts.list(kind?, source?, query?)` (safe; output untrusted, because names can come from mail or executor output; at most 50 newest matches with id, name, kind, source, size and creation time) and `artifacts.show(id)` (safe; visible only in web turns). `artifacts.show` SHALL emit an `artifact` event on the turn stream with the artifact's id, name, kind and content URL, and fail with not found for an unknown or foreign id.
+
+#### Scenario: Show in a web turn
+- **WHEN** a web chat turn calls `artifacts_show` for a 3D model
+- **THEN** the turn stream carries an `artifact` event for it and the chat shows a card that opens the 3D viewer
+
+#### Scenario: Voice turn
+- **WHEN** a voice turn's tool list is built
+- **THEN** `artifacts_show` is not in it and `artifacts_list` is
+
+#### Scenario: Listing taints
+- **WHEN** a run calls `artifacts_list`
+- **THEN** the run is tainted with source `artifact`
