@@ -55,4 +55,7 @@ public sealed record HaSnapshot
 
     /// <summary>HA's configured IANA time zone.</summary>
     public string? TimeZone { get; init; }
+
+    /// <summary>HA's configured currency (ISO 4217, e.g. <c>EUR</c>), used for energy costs.</summary>
+    public string? Currency { get; init; }
 }

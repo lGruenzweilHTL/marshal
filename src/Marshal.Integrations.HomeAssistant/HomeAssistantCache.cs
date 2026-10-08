@@ -167,7 +167,8 @@ public sealed partial class HomeAssistantCache(
             : await connection.CommandAsync("config/entity_registry/get_entries", new JsonObject { ["entity_ids"] = ids }, cancellationToken);
 
         string? timeZone = config.ValueKind == JsonValueKind.Object && config.TryGetProperty("time_zone", out JsonElement zone) ? zone.GetString() : null;
-        return new HaSnapshotBuilder.Registries(areas, floors, devices, entities, exposed, entries, timeZone);
+        string? currency = config.ValueKind == JsonValueKind.Object && config.TryGetProperty("currency", out JsonElement money) && money.ValueKind == JsonValueKind.String ? money.GetString() : null;
+        return new HaSnapshotBuilder.Registries(areas, floors, devices, entities, exposed, entries, timeZone, currency);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Home Assistant cache loaded: {Entities} entities, {States} states")]

@@ -1,0 +1,7 @@
+{
+  "cost_sensors": {
+    "sensor.grid_export": "sensor.grid_export_compensation",
+    "sensor.gas_meter": "sensor.gas_meter_cost"
+  },
+  "solar_forecast_domains": []
+}

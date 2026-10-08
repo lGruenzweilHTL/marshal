@@ -34,7 +34,8 @@ internal sealed class FixtureCache : IHomeAssistantCache
             results["config/entity_registry/list"],
             results["homeassistant/expose_entity/list"],
             results["config/entity_registry/get_entries"],
-            results["get_config"].GetProperty("time_zone").GetString());
+            results["get_config"].GetProperty("time_zone").GetString(),
+            results["get_config"].TryGetProperty("currency", out JsonElement currency) ? currency.GetString() : null);
         return HaSnapshotBuilder.Build(registries, HaSnapshotBuilder.States(results["get_states"]));
     }
 }

@@ -50,7 +50,7 @@ src/                         .NET projects
   Marshal.Tasks/             durable tasks, scheduler + worker pool, event bus, trigger matcher, deliveries,
                              notifications, approval queue, follow-ups, executors, system jobs
   Marshal.Integrations.HomeAssistant/  HA REST + websocket client, registry and state cache, target resolver,
-                             area context, timer and places (zone) tools, time zone source
+                             area context, timer, places (zone) and energy tools, time zone source
   Marshal.Integrations.Moonraker/  printers: Moonraker REST + websocket state cache, snapshots, inspection, printer tools
   Marshal.Integrations.Mail/ mail providers (IMAP via MailKit) and credential sources, mail tools (never a send path)
   Marshal.Integrations.FreshRss/  FreshRSS Google Reader API client, full-text extraction, RSS tools

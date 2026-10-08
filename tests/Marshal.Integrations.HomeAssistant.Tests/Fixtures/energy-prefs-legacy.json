@@ -1,0 +1,27 @@
+{
+  "energy_sources": [
+    {
+      "type": "grid",
+      "flow_from": [
+        { "stat_energy_from": "sensor.grid_import", "stat_cost": "sensor.grid_import_cost", "entity_energy_price": null, "number_energy_price": null }
+      ],
+      "flow_to": [
+        { "stat_energy_to": "sensor.grid_export", "stat_compensation": null, "entity_energy_price": null, "number_energy_price": 0.08 }
+      ],
+      "cost_adjustment_day": 0.0
+    },
+    { "type": "solar", "stat_energy_from": "sensor.solar_production", "config_entry_solar_forecast": null },
+    { "type": "battery", "stat_energy_from": "sensor.battery_discharge", "stat_energy_to": "sensor.battery_charge" },
+    { "type": "gas", "stat_energy_from": "sensor.gas_meter", "stat_cost": null, "entity_energy_price": null, "number_energy_price": 1.1 },
+    { "type": "water", "stat_energy_from": "sensor.water_meter", "stat_cost": null, "entity_energy_price": null, "number_energy_price": null }
+  ],
+  "device_consumption": [
+    { "stat_consumption": "sensor.heat_pump_energy", "name": "Heat pump" },
+    { "stat_consumption": "sensor.heat_pump_compressor_energy", "name": "Compressor", "included_in_stat": "sensor.heat_pump_energy" },
+    { "stat_consumption": "sensor.washing_machine_energy" },
+    { "stat_consumption": "sensor.dryer_energy", "name": "Dryer" },
+    { "stat_consumption": "sensor.dishwasher_energy", "name": "Dishwasher" },
+    { "stat_consumption": "sensor.fridge_energy", "name": "Fridge" },
+    { "stat_consumption": "sensor.oven_energy", "name": "Oven" }
+  ]
+}

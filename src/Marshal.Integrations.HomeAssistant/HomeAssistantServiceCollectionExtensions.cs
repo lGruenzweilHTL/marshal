@@ -7,6 +7,7 @@ using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Satellites;
 using Marshal.Abstractions.Tools;
 using Marshal.Integrations.HomeAssistant.Calendar;
+using Marshal.Integrations.HomeAssistant.Energy;
 using Marshal.Integrations.HomeAssistant.Notifications;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,6 +63,7 @@ public static class HomeAssistantServiceCollectionExtensions
 
         services.AddSingleton<IToolSource, TimerToolSource>();
         services.AddSingleton<IToolSource, PlacesToolSource>();
+        services.AddSingleton<IToolSource, EnergyToolSource>();
         services.AddSingleton<ICalendarProvider, HomeAssistantCalendarProvider>();
         services.AddSingleton<IToolSource, CalendarToolSource>();
         return services;

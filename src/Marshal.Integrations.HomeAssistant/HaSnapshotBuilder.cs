@@ -10,7 +10,7 @@ namespace Marshal.Integrations.HomeAssistant;
 internal static class HaSnapshotBuilder
 {
     /// <summary>The raw registry results of one load.</summary>
-    public sealed record Registries(JsonElement Areas, JsonElement Floors, JsonElement Devices, JsonElement Entities, JsonElement Exposed, JsonElement Entries, string? TimeZone);
+    public sealed record Registries(JsonElement Areas, JsonElement Floors, JsonElement Devices, JsonElement Entities, JsonElement Exposed, JsonElement Entries, string? TimeZone, string? Currency = null);
 
     public static ImmutableDictionary<string, HaState> States(JsonElement states) =>
         states.EnumerateArray().Select(State).OfType<HaState>().ToImmutableDictionary(state => state.EntityId, StringComparer.Ordinal);
@@ -60,6 +60,7 @@ internal static class HaSnapshotBuilder
             Entities = entities.ToImmutable(),
             States = states,
             TimeZone = registries.TimeZone,
+            Currency = registries.Currency,
         };
     }
 
