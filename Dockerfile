@@ -5,6 +5,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY global.json Directory.Build.props Directory.Build.targets Directory.Packages.props .editorconfig ./
 COPY src/ src/
+# The code highlighter's language definitions are shared with the SPA; Marshal.Artifacts embeds them.
+COPY web/src/artifacts/highlighting/languages.json web/src/artifacts/highlighting/
 RUN dotnet publish src/Marshal.Api/Marshal.Api.csproj --configuration Release --output /app
 RUN MARSHAL__Paths__Config=/tmp/marshal/config MARSHAL__Paths__Data=/tmp/marshal/data \
     /app/marshal --export-openapi /openapi/v1.json

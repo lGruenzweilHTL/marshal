@@ -55,7 +55,7 @@ package "Clients" {
     component "vue, vue-router,\nvite, typescript, vue-tsc" <<npm>>
     component "openapi-typescript\n+ openapi-fetch" <<npm>>
     component "markdown-it" <<npm>>
-    component "three, highlight.js\n(lazy viewer chunks)" <<npm>>
+    component "three\n(lazy viewer chunk)" <<npm>>
     component "vitest, @vue/test-utils,\njsdom" <<npm>>
   }
   component "HA companion app\n(actionable push)" as Companion

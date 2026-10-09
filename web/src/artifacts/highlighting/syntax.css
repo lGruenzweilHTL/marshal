@@ -1,0 +1,16 @@
+/* Token colors of the code highlighter (theme tokens --syntax-*); shared by the code, diff and Markdown viewers. */
+.tok-keyword { color: var(--syntax-keyword); }
+.tok-type { color: var(--syntax-type); }
+.tok-function { color: var(--syntax-function); }
+.tok-string { color: var(--syntax-string); }
+.tok-number { color: var(--syntax-number); }
+.tok-literal { color: var(--syntax-literal); }
+.tok-comment { color: var(--syntax-comment); font-style: italic; }
+.tok-property { color: var(--syntax-property); }
+.tok-meta { color: var(--syntax-meta); }
+.tok-tag { color: var(--syntax-tag); }
+.tok-variable { color: var(--syntax-variable); }
+.tok-bracket-1 { color: var(--syntax-bracket-1); }
+.tok-bracket-2 { color: var(--syntax-bracket-2); }
+.tok-bracket-3 { color: var(--syntax-bracket-3); }
+.tok-bracket-unmatched { color: var(--syntax-bracket-unmatched); text-decoration: underline wavy; }

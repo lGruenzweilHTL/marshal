@@ -32,12 +32,13 @@ describe('production build', () => {
     expect(posix.filter((id) => id.includes('/src/preview/') || id.includes('/src/testing/'))).toEqual([])
   })
 
-  it('keeps three.js and highlight.js out of the entry chunk (lazy viewer chunks)', () => {
+  it('keeps three.js and the code highlighter out of the entry chunk (lazy viewer chunks)', () => {
     const posix = entryModules.map((id) => id.replaceAll('\\', '/'))
+    const lazy = (id: string) => id.includes('/node_modules/three/') || id.includes('/src/artifacts/highlighting/')
     expect(posix.length).toBeGreaterThan(10)
-    expect(posix.filter((id) => id.includes('/node_modules/three/') || id.includes('/node_modules/highlight.js/'))).toEqual([])
+    expect(posix.filter(lazy)).toEqual([])
     expect(modules.some((id) => id.replaceAll('\\', '/').includes('/node_modules/three/'))).toBe(true)
-    expect(modules.some((id) => id.replaceAll('\\', '/').includes('/node_modules/highlight.js/'))).toBe(true)
+    expect(modules.some((id) => id.replaceAll('\\', '/').includes('/src/artifacts/highlighting/highlighter.ts'))).toBe(true)
   })
 
   describe('service worker', () => {

@@ -45,6 +45,13 @@ export const en = {
     load: 'Load model',
     failed: 'The model could not be loaded.',
   },
+  code: {
+    plain: 'Plain text',
+    lines: '{count} lines | {count} line | {count} lines',
+    wrap: 'Wrap',
+    copy: 'Copy',
+    copied: 'Copied',
+  },
   externalImage: 'External image: {url}',
 }
 
@@ -92,6 +99,13 @@ export const de: Catalog<typeof en> = {
     large: 'Dieses Modell ist {size} groß. Das Laden kann dauern.',
     load: 'Modell laden',
     failed: 'Das Modell konnte nicht geladen werden.',
+  },
+  code: {
+    plain: 'Nur Text',
+    lines: '{count} Zeilen | {count} Zeile | {count} Zeilen',
+    wrap: 'Umbrechen',
+    copy: 'Kopieren',
+    copied: 'Kopiert',
   },
   externalImage: 'Externes Bild: {url}',
 }

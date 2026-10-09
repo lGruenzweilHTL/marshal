@@ -15,6 +15,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Parity cases shared with the web highlighter's tests. -->
+    <Content Include="..\..\web\src\artifacts\highlighting\cases.json" Link="Highlighting\cases.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The web theme, whose dark syntax colors the display pages must use. -->
+    <Content Include="..\..\web\src\ui\tokens.css" Link="Highlighting\tokens.css" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Marshal.Testing\Marshal.Testing.csproj" />
     <ProjectReference Include="..\..\src\Marshal.Artifacts\Marshal.Artifacts.csproj" />
   </ItemGroup>

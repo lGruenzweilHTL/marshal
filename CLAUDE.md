@@ -60,7 +60,8 @@ src/                         .NET projects
   Marshal.Integrations.GitHub/  read-only GitHub REST client for allowlisted repos (fine-grained PAT), repos tools
                              (diffs and failed-job logs as artifacts)
   Marshal.Artifacts/         artifact store (files in /data/artifacts, per-owner quota), kind detection, media renditions
-                             for displays, artifacts tools
+                             for displays, code highlighter (languages.json and parity cases shared with web/src/artifacts/
+                             highlighting/), artifacts tools
   Marshal.Data/              EF Core DbContext, migrations, owner-scoped query filters
   Marshal.ExecutorHost/      separate coding-sandbox service (own deployment and image, never in the main container,
                              never referenced by Marshal)
@@ -142,7 +143,6 @@ No mocking or assertion libraries — use hand-written fakes from `Marshal.Testi
 | `@resvg/resvg-js` | Build-time rendering of the PWA icon PNGs from the logo SVGs (`web/scripts/appAssets.ts`) |
 | `markdown-it` | Chat markdown rendering with HTML disabled and a same-origin-only image rule (ships its own types) |
 | `three` (+ `@types/three`, dev) | 3D artifact viewer (STL and 3MF loaders, orbit controls); lazy chunk, never in the entry chunk |
-| `highlight.js` | Syntax highlighting in the code artifact viewer (core + registered languages); lazy chunk |
 | `vitest`, `@vue/test-utils`, `jsdom` | Component tests (`npm test`) against a hand-written fake API server (`src/testing/fakeServer.ts`) |
 
 **Python (`ha/`)**

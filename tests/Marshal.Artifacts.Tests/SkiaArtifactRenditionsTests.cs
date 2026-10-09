@@ -2,6 +2,7 @@ using System.Text;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Artifacts;
 using Marshal.Abstractions.Displays;
+using Marshal.Artifacts.Highlighting;
 using Marshal.Testing;
 using SkiaSharp;
 
@@ -69,7 +70,7 @@ public sealed class SkiaArtifactRenditionsTests
     [Fact]
     public void Layout_SecondPageStartsAtLine41()
     {
-        IReadOnlyList<SkiaArtifactRenditions.Row> rows = SkiaArtifactRenditions.Layout(Encoding.UTF8.GetString(Lines(130)), diff: false, truncated: false, columns: 120);
+        IReadOnlyList<SkiaArtifactRenditions.Row> rows = Layout(Encoding.UTF8.GetString(Lines(130)), ArtifactKind.Code, "build.log", columns: 120);
 
         Assert.Equal(130, rows.Count);
         Assert.Equal(41, rows[SkiaArtifactRenditions.RowsPerPage].Line);
@@ -79,7 +80,7 @@ public sealed class SkiaArtifactRenditionsTests
     [Fact]
     public void Layout_WrapsLongLinesAndExpandsTabs()
     {
-        IReadOnlyList<SkiaArtifactRenditions.Row> rows = SkiaArtifactRenditions.Layout("\t" + new string('a', 20) + "\nshort\n", diff: false, truncated: false, columns: 10);
+        IReadOnlyList<SkiaArtifactRenditions.Row> rows = Layout("\t" + new string('a', 20) + "\nshort\n", ArtifactKind.Code, "build.log", columns: 10);
 
         Assert.Equal([1, null, null, 2], rows.Select(row => row.Line));
         Assert.Equal("    aaaaaa", rows[0].Text);
@@ -87,53 +88,93 @@ public sealed class SkiaArtifactRenditionsTests
     }
 
     [Fact]
-    public void Layout_DiffColors()
+    public void Layout_DiffRowsAndHighlightedCode()
     {
-        IReadOnlyList<SkiaArtifactRenditions.Row> rows = SkiaArtifactRenditions.Layout("--- a/x\n+++ b/x\n@@ -1 +1 @@\n-old\n+new\n same", diff: true, truncated: false, columns: 80);
+        IReadOnlyList<SkiaArtifactRenditions.Row> rows = Layout("--- a/x.cs\n+++ b/x.cs\n@@ -1 +1 @@\n-old\n+var x = 1;\n same", ArtifactKind.Diff, "fix.diff");
 
         Assert.Equal(
-            [SkiaArtifactRenditions.RowStyle.Plain, SkiaArtifactRenditions.RowStyle.Plain, SkiaArtifactRenditions.RowStyle.Hunk,
+            [SkiaArtifactRenditions.RowStyle.Note, SkiaArtifactRenditions.RowStyle.Note, SkiaArtifactRenditions.RowStyle.Hunk,
              SkiaArtifactRenditions.RowStyle.Removed, SkiaArtifactRenditions.RowStyle.Added, SkiaArtifactRenditions.RowStyle.Plain],
             rows.Select(row => row.Style));
+        Assert.Contains(new CodeSpan(1, 3, CodeToken.Keyword), rows[4].Spans);
+        Assert.All(rows, row => Assert.Equal(0, row.Guides));
     }
 
     [Fact]
     public void Layout_CodeSpansSplitAtWraps()
     {
-        IReadOnlyList<SkiaArtifactRenditions.Row> rows = SkiaArtifactRenditions.Layout(
-            "var abcdefgh = 1\n", diff: false, truncated: false, columns: 10, CodeHighlighter.LanguageOf("Program.cs"));
+        IReadOnlyList<SkiaArtifactRenditions.Row> rows = Layout("var abcdefgh = 1\n", ArtifactKind.Code, "Program.cs", columns: 10);
 
-        Assert.Equal([new(0, 3, CodeHighlighter.CodeToken.Keyword)], rows[0].Spans);
-        Assert.Equal([new(5, 1, CodeHighlighter.CodeToken.Number)], rows[1].Spans);
+        Assert.Equal([new(0, 3, CodeToken.Keyword)], rows[0].Spans);
+        Assert.Equal([new(5, 1, CodeToken.Number)], rows[1].Spans);
     }
 
     [Fact]
-    public void Layout_WithoutLanguage_NoSpans()
+    public void Layout_GuidesOnFirstRowOfALine()
     {
-        IReadOnlyList<SkiaArtifactRenditions.Row> rows = SkiaArtifactRenditions.Layout("var x = 1\n", diff: false, truncated: false, columns: 80);
+        IReadOnlyList<SkiaArtifactRenditions.Row> rows = Layout("a:\n  b: " + new string('x', 20) + "\n", ArtifactKind.Code, "config.yaml", columns: 10);
 
-        Assert.Empty(rows[0].Spans);
+        Assert.Equal([0, 1, 0, 0], rows.Select(row => row.Guides));
+        Assert.Equal(2, rows[1].GuideUnit);
     }
 
     [Theory]
-    [InlineData("Program.cs", true)]
-    [InlineData("build.log", false)]
-    [InlineData("notes.md", false)]
-    public async Task Open_CodePage_DrawsKeywordColor(string name, bool highlighted)
+    [InlineData("build.log")]
+    [InlineData("notes.md")]
+    public void Layout_PlainTextAndMarkdown_NoGuides(string name)
     {
-        string text = string.Concat(Enumerable.Repeat("public sealed class Program { }\n", 30));
+        IReadOnlyList<SkiaArtifactRenditions.Row> rows = Layout("a\n    b\n", name.EndsWith(".md", StringComparison.Ordinal) ? ArtifactKind.Markdown : ArtifactKind.Code, name);
+
+        Assert.All(rows, row => Assert.Equal(0, row.Guides));
+    }
+
+    [Fact]
+    public void Layout_Markdown_Highlighted()
+    {
+        IReadOnlyList<SkiaArtifactRenditions.Row> rows = Layout("# Title\n", ArtifactKind.Markdown, "notes.md");
+
+        Assert.Equal([new(0, 7, CodeToken.Keyword)], rows[0].Spans);
+    }
+
+    [Theory]
+    [InlineData("Program.cs", "keyword", true)]
+    [InlineData("Program.cs", "type", true)]
+    [InlineData("build.log", "keyword", false)]
+    public async Task Open_CodePage_DrawsTokenColors(string name, string token, bool drawn)
+    {
+        string text = string.Concat(Enumerable.Repeat("public sealed class Program\n{\n    void Run() { }\n}\n", 8));
         ArtifactRecord artifact = await AddAsync(name, Encoding.UTF8.GetBytes(text));
 
         using SKBitmap bitmap = Decode((await Renditions.OpenAsync(artifact.Id, 1, Ct)).Value);
 
-        bool keywordPixel = bitmap.Pixels.Any(pixel => pixel == SkiaArtifactRenditions.KeywordColor);
-        Assert.Equal(highlighted, keywordPixel);
+        Assert.Equal(drawn, bitmap.Pixels.Contains(SyntaxPalette.Dark[CodeTokens.Parse(token)]));
+    }
+
+    [Fact]
+    public async Task Open_CodePage_DrawsIndentGuides()
+    {
+        ArtifactRecord artifact = await AddAsync("Program.cs", "class A\n{\n    int x;\n}\n"u8.ToArray());
+
+        using SKBitmap bitmap = Decode((await Renditions.OpenAsync(artifact.Id, 1, Ct)).Value);
+
+        Assert.Contains(SyntaxPalette.Guide, bitmap.Pixels);
+    }
+
+    [Fact]
+    public async Task Open_DiffPage_DrawsRowBackgroundAndHighlights()
+    {
+        ArtifactRecord artifact = await AddAsync("fix.diff", "+++ b/src/App.cs\n@@ -1 +1 @@\n+var x = 1;\n"u8.ToArray());
+
+        using SKBitmap bitmap = Decode((await Renditions.OpenAsync(artifact.Id, 1, Ct)).Value);
+
+        Assert.Contains(new SKColor(0x1f, 0x33, 0x26), bitmap.Pixels);
+        Assert.Contains(SyntaxPalette.Dark[CodeToken.Keyword], bitmap.Pixels);
     }
 
     [Fact]
     public void Layout_Truncated_AddsNote()
     {
-        IReadOnlyList<SkiaArtifactRenditions.Row> rows = SkiaArtifactRenditions.Layout("a\n", diff: false, truncated: true, columns: 80);
+        IReadOnlyList<SkiaArtifactRenditions.Row> rows = SkiaArtifactRenditions.Layout("a\n", ArtifactKind.Code, "build.log", truncated: true, columns: 80);
 
         Assert.Equal(2, rows.Count);
         Assert.Contains("cut after 2 MB", rows[1].Text, StringComparison.Ordinal);
@@ -197,6 +238,9 @@ public sealed class SkiaArtifactRenditionsTests
 
         Assert.Equal("artifacts.no_rendition", opened.Error.Code);
     }
+
+    private static IReadOnlyList<SkiaArtifactRenditions.Row> Layout(string text, ArtifactKind kind, string name, int columns = 80) =>
+        SkiaArtifactRenditions.Layout(text, kind, name, truncated: false, columns);
 
     private async Task<ArtifactRecord> AddAsync(string name, byte[] content) =>
         (await _store.CreateAsync(new ArtifactDraft(name, ArtifactSource.Upload), new MemoryStream(content), Ct)).Value;

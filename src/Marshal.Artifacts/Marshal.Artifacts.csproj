@@ -15,6 +15,8 @@
   <ItemGroup>
     <!-- JetBrains Mono (SIL OFL 1.1, Fonts/OFL.txt) for text renditions; the container has no system fonts. -->
     <EmbeddedResource Include="Fonts\JetBrainsMono-Regular.ttf" LogicalName="Marshal.Artifacts.Fonts.JetBrainsMono-Regular.ttf" />
+    <!-- Highlighter language definitions, shared with the web viewer (the Dockerfile's build stage copies this file). -->
+    <EmbeddedResource Include="..\..\web\src\artifacts\highlighting\languages.json" LogicalName="Marshal.Artifacts.Highlighting.languages.json" Link="Highlighting\languages.json" />
   </ItemGroup>
 
   <ItemGroup>

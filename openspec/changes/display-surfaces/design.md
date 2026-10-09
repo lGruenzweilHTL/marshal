@@ -81,7 +81,7 @@ Alternative: reuse `SignedContent` with a longer TTL. Rejected: query strings an
 
 - `image`: JPEG/PNG streamed from the stored file; GIF/WebP decoded with SkiaSharp (first frame) and encoded as PNG.
 - `video`: MP4 streamed as stored. WebM has no rendition (most TVs reject it).
-- `code`, `diff`, `markdown`: text decoded as UTF-8 (invalid bytes replaced), tabs to 4 spaces, long lines wrapped at the column that fits 1920 px, split into pages of 40 rows (readable on a TV from the couch); drawn with SkiaSharp at 1920×1080 on a dark background with a header line (`name — page n/m`). Diff lines starting with `+`/`-` (not `+++`/`---`) are green/red. Code is highlighted by a small tokenizer in `Marshal.Artifacts` (`CodeHighlighter`): the language comes from the extension (same map as the web viewer's `highlight.ts`), each language family defines keywords, line and block comment markers and string quotes, and the tokenizer carries an open block comment to the next line. Three color groups match the web viewer's dark theme: keywords (`#FFA061`), strings and numbers (`#55C98F`), comments (dim). Alternative: a TextMate grammar engine (TextMateSharp) or ColorCode. Rejected: grammars and an Oniguruma native dependency for a TV page are out of proportion; a page needs coarse colors, not exact scopes. Markdown is shown as source text (no rendering).
+- `code`, `diff`, `markdown`: text decoded as UTF-8 (invalid bytes replaced), tabs to 4 spaces, long lines wrapped at the column that fits 1920 px, split into pages of 40 rows (readable on a TV from the couch); drawn with SkiaSharp at 1920×1080 on a dark background with a header line (`name — page n/m`). Diff rows starting with `+`/`-` (not `+++`/`---`) get a green/red background and a colored marker. Markdown is shown as source text (no rendering). All three are highlighted by `CodeHighlighter` (section 6).
 - Font: JetBrains Mono (OFL, already the web UI's monospace font) as an embedded TTF resource in `Marshal.Artifacts`, loaded with `SKTypeface.FromStream`, because the NoDependencies native asset has no fontconfig and the slim container has no fonts.
 - Page count for text kinds requires reading and wrapping the file; `Describe` is called once per show and once per page request, which is fine for text artifacts (they are small; files over 2 MB of text are cut at 2 MB with a final "truncated" line).
 
@@ -102,6 +102,46 @@ assist_satellite.living_room:
 ```
 
 Validation at startup (configuration stage): display names, `media_player.` prefix, base URL absolute http(s), base URL present when surfaces exist. Satellite `display` references are validated with `satellites.yaml` (startup and hot reload; a broken profile on reload keeps the previous profiles, like today).
+
+### 6. Code highlighting (C# and TypeScript)
+
+One tokenizer, written twice: `Marshal.Artifacts/Highlighting/` (C#, display pages) and `web/src/artifacts/highlighting/` (TypeScript, web viewer, replacing highlight.js). Both read the same `languages.json` and both test suites run the same `cases.json`, so the two cannot drift silently.
+
+**Why not a library.** TextMateSharp (VS Code grammars) needs the native Oniguruma library and grammar files, and on the web side the matching engine (Shiki) is large; highlight.js has no C# counterpart. Two libraries would color the same file differently on the TV and in the browser. A data-driven heuristic tokenizer is a few hundred lines per side and is enough for reading code.
+
+**Shared files.** `web/src/artifacts/highlighting/languages.json` (definitions) and `cases.json` (parity cases) live in the web tree, because the web build stage copies only `web/`. `Marshal.Artifacts.csproj` embeds `languages.json` through a linked `EmbeddedResource`; the Dockerfile's .NET build stage copies that one file. `Marshal.Artifacts.Tests` links `cases.json` as content.
+
+**Language definition** (fields; all optional except `id`):
+
+| Field | Meaning |
+|---|---|
+| `name`, `extensions`, `names`, `aliases` | display name (web toolbar), file extensions, exact file names (lower case), fence and `lang` aliases |
+| `keywords`, `literals`, `types` | word lists; `ignoreCase` for SQL, PHP, PowerShell, Dockerfile |
+| `functionKeywords`, `typeKeywords` | the next name is a `function` / `type` |
+| `lineComments`, `blocks` (`open`, `close`, `token`) | comments and multi-line strings |
+| `quotes`, `stringPrefixes`, `verbatimPrefixes` | string delimiters; prefixes like `@`/`$` (C#), `f`/`r`/`b` (Python) join the string; verbatim prefixes disable backslash escapes |
+| `loose` | quotes and line comments start only after a word boundary or space (YAML `Marshal's`, Bash `${#x}`) |
+| `pascalTypes` | capitalized names with a lowercase letter are types |
+| `calls` | `name(` is a function (default true) |
+| `brackets`, `guides` | bracket pair colors (default true) and indent guides (default true) |
+| `metaLines` (`prefix`, `suffix`) | a line starting (and ending) with these is `meta`: `#include`, `#region`, `#[derive]`, `[Fact]` |
+| `annotations` | `@Name` is `meta` |
+| `variables` | `$name` / `${…}` is a `variable` |
+| `keys` | `json`/`yaml`: a string or name before `:` is a `property`; `ini`: a name before `=` is a `property` and `[section]` a `type` |
+| `mode` | `xml` (tags, attributes, `<?…?>`, entities, embedded `<script>`/`<style>`), `css` (selectors as `tag`, properties, `#hex` as `number`, `@rules` as `meta`), `markdown`, `gcode` (`G1`/`M104` as `keyword`) |
+| `embedded` | xml mode: `script` → `javascript`, `style` → `css`, or the language named by the tag's `lang` attribute (`ts`, `scss`) |
+
+**Tokenizer.** `highlight(language, lines)` returns per line a sorted list of `[start, length, token]`. State carried between lines: open block (comment or string), open XML tag, embedded language with its own state, Markdown fence language with its own state, bracket stack. A pending definition keyword (`class`, `def`) applies to the next name on the same line only. Per position, first match wins: open block close → meta line → block open → line comment → string (with prefix) → variable → annotation → CSS selector / hex color → number → word (CSS selector / key / keyword / literal / pending definition / call / built-in type / PascalCase type) → bracket. A PascalCase name is not a type after `.` or before `(`, `{`, `=` or `;`. Words never cross into another class; numbers start only at a word boundary.
+
+**Indent guides.** `indentGuides(lines)` → unit and guide count per line, computed after tab expansion. Web: a CSS background gradient per line (`--guides`, `--unit` custom properties set from Vue, no inline HTML), so no extra DOM and no style attributes in highlighted HTML. TV: 1 px lines in the gutter color at each guide column on a line's first row.
+
+**Diffs.** `highlightDiff(text)` → rows (`meta`, `hunk`, `added`, `removed`, `context`) with spans offset by one for the marker. Language per file from `+++ b/<path>`, falling back to `diff --git a/x b/<path>`; two states (old side: removed + context, new side: added + context) so a block comment opened in removed lines does not leak into added lines. The inbox's proposal diff view stays unchanged (entry chunk); the artifact viewer gets a lazy `DiffViewer`.
+
+**Markdown.** The tokenizer has a `markdown` mode for display pages. In the web viewer, Markdown is rendered (not shown as source); a lazy `MarkdownViewer` builds a markdown-it renderer with the same rules as chat (shared factory in `chat/markdown.ts`) plus a `highlight` callback using the tokenizer for fenced blocks. Chat keeps its renderer without highlighting so the highlighter stays out of the entry chunk.
+
+**Colors.** `--syntax-<token>` variables in `web/src/ui/tokens.css` for light and dark; the display pages use the dark values from a C# table, and a .NET test parses `tokens.css` and compares.
+
+**Web code viewer.** Toolbar: language name, line count, wrap toggle (`localStorage`, wrapped in try/catch, default off), copy (Clipboard API, success state for 2 s). Lines are table rows with `id="L<n>"`; clicking a number replaces the route hash (`#L5`, shift: `#L5-L9`); selected rows get a highlight background; on load the first selected row scrolls into view.
 
 ## Risks / Trade-offs
 

@@ -1,0 +1,72 @@
+{
+  "$comment": "Parity cases for the code highlighter, run by web (highlighter.test.ts) and .NET (CodeHighlighterTests). Spans: [start, length, token] per line.",
+  "languages": [
+    ["Program.cs", "csharp"],
+    ["App.vue", "xml"],
+    ["Dockerfile", "dockerfile"],
+    ["Containerfile", "dockerfile"],
+    ["build.gradle.kts", "kotlin"],
+    ["src/main.rs", "rust"],
+    ["README.md", "markdown"],
+    ["part.gcode", "gcode"],
+    ["notes.txt", null],
+    ["Makefile", null]
+  ],
+  "aliases": [
+    ["ts", "typescript"],
+    ["shell", "bash"],
+    ["c#", "csharp"],
+    ["py", "python"],
+    ["yml", "yaml"],
+    ["unknown", null]
+  ],
+  "highlight": [
+    {"name": "C#: keyword, string and comment", "file": "Program.cs", "lines": ["var name = \"Marshal\"; // greeting"], "spans": [[[0, 3, "keyword"], [11, 9, "string"], [22, 11, "comment"]]]},
+    {"name": "C#: call, PascalCase type, new and brackets", "file": "Program.cs", "lines": ["Console.WriteLine(new Greeter());"], "spans": [[[0, 7, "type"], [8, 9, "function"], [17, 1, "bracket-1"], [18, 3, "keyword"], [22, 7, "type"], [29, 1, "bracket-2"], [30, 1, "bracket-2"], [31, 1, "bracket-1"]]]},
+    {"name": "C#: meta lines and string prefixes", "file": "Program.cs", "lines": ["#region Setup", "    [Fact]", "var p = @\"C:\\temp\\\";", "var s = $\"x{y}\";"], "spans": [[[0, 13, "meta"]], [[4, 6, "meta"]], [[0, 3, "keyword"], [8, 11, "string"]], [[0, 3, "keyword"], [8, 7, "string"]]]},
+    {"name": "C#: PascalCase property names are not types", "file": "Program.cs", "lines": ["public IArtifactRenditions Renditions => renditions;", "Name = Value;"], "spans": [[[0, 6, "keyword"], [7, 19, "type"]], []]},
+    {"name": "C#: unmatched bracket", "file": "Program.cs", "lines": ["x = (1]"], "spans": [[[4, 1, "bracket-1"], [5, 1, "number"], [6, 1, "bracket-unmatched"]]]},
+    {"name": "C#: escaped quote and unterminated string", "file": "Program.cs", "lines": ["s = \"a\\\"b\" + c", "x = \"abc", "y"], "spans": [[[4, 6, "string"]], [[4, 4, "string"]], []]},
+    {"name": "TypeScript: keyword and number", "file": "app.ts", "lines": ["let x2 = 42;"], "spans": [[[0, 3, "keyword"], [9, 2, "number"]]]},
+    {"name": "TypeScript: block comment across lines", "file": "app.ts", "lines": ["a /* one", "two", "end */ b"], "spans": [[[2, 6, "comment"]], [[0, 3, "comment"]], [[0, 6, "comment"]]]},
+    {"name": "TypeScript: template literal across lines", "file": "app.ts", "lines": ["a = `x", "y`"], "spans": [[[4, 2, "string"]], [[0, 2, "string"]]]},
+    {"name": "TypeScript: nested brackets", "file": "app.ts", "lines": ["f(a[0], { b: 1 })"], "spans": [[[0, 1, "function"], [1, 1, "bracket-1"], [3, 1, "bracket-2"], [4, 1, "number"], [5, 1, "bracket-2"], [8, 1, "bracket-2"], [13, 1, "number"], [15, 1, "bracket-2"], [16, 1, "bracket-1"]]]},
+    {"name": "TypeScript: decorator, built-in type, literal, function definition, open bracket across lines", "file": "app.ts", "lines": ["@Input() value?: string = undefined;", "function greet(name: string): void {", "}"], "spans": [[[0, 6, "meta"], [6, 1, "bracket-1"], [7, 1, "bracket-1"], [17, 6, "type"], [26, 9, "literal"]], [[0, 8, "keyword"], [9, 5, "function"], [14, 1, "bracket-1"], [21, 6, "type"], [27, 1, "bracket-1"], [30, 4, "keyword"], [35, 1, "bracket-1"]], [[0, 1, "bracket-1"]]]},
+    {"name": "Python: decorator, class, def, f-string, comment, docstring, literal", "file": "tool.py", "lines": ["@dataclass", "class Point(Base):", "    def greet(self, name):", "        return f\"Hi {name}\"  # greet", "    \"\"\"Doc", "    more\"\"\"", "x = None"], "spans": [[[0, 10, "meta"]], [[0, 5, "keyword"], [6, 5, "type"], [11, 1, "bracket-1"], [12, 4, "type"], [16, 1, "bracket-1"]], [[4, 3, "keyword"], [8, 5, "function"], [13, 1, "bracket-1"], [14, 4, "keyword"], [24, 1, "bracket-1"]], [[8, 6, "keyword"], [15, 12, "string"], [29, 7, "comment"]], [[4, 6, "string"]], [[0, 11, "string"]], [[4, 4, "literal"]]]},
+    {"name": "YAML: document marker, keys, loose quotes, comments, flow list", "file": "marshal.yaml", "lines": ["---", "name: Marshal's agent # hi", "  enabled: true", "  - url: \"http://x\"  # note", "  ha-url: http://ha.local:8123", "  list: [1, 2]"], "spans": [[[0, 3, "meta"]], [[0, 4, "property"], [22, 4, "comment"]], [[2, 7, "property"], [11, 4, "literal"]], [[4, 3, "property"], [9, 10, "string"], [21, 6, "comment"]], [[2, 6, "property"], [26, 4, "number"]], [[2, 4, "property"], [8, 1, "bracket-1"], [9, 1, "number"], [12, 1, "number"], [13, 1, "bracket-1"]]]},
+    {"name": "JSON: keys, strings, literals, numbers", "file": "package.json", "lines": ["{\"name\": \"x\", \"on\": true, \"n\": -1.5}"], "spans": [[[0, 1, "bracket-1"], [1, 6, "property"], [9, 3, "string"], [14, 4, "property"], [20, 4, "literal"], [26, 3, "property"], [32, 3, "number"], [35, 1, "bracket-1"]]]},
+    {"name": "INI/TOML: section, keys, comment", "file": "config.toml", "lines": ["[server]", "port = 8080 ; main", "name = \"x\"", "debug = true"], "spans": [[[0, 8, "type"]], [[0, 4, "property"], [7, 4, "number"], [12, 6, "comment"]], [[0, 4, "property"], [7, 3, "string"]], [[0, 5, "property"], [8, 4, "literal"]]]},
+    {"name": "Bash: shebang, variables, function", "file": "run.sh", "lines": ["#!/bin/bash", "echo \"$HOME\" ${#x} $1", "deploy() {", "}"], "spans": [[[0, 11, "comment"]], [[0, 4, "keyword"], [5, 7, "string"], [13, 5, "variable"], [19, 2, "variable"]], [[0, 6, "function"], [6, 1, "bracket-1"], [7, 1, "bracket-1"], [9, 1, "bracket-1"]], [[0, 1, "bracket-1"]]]},
+    {"name": "Dockerfile: keywords ignore case, variables", "file": "Dockerfile", "lines": ["FROM alpine AS build", "RUN echo $X"], "spans": [[[0, 4, "keyword"], [12, 2, "keyword"]], [[0, 3, "keyword"], [9, 2, "variable"]]]},
+    {"name": "SQL: keywords ignore case, call, comment", "file": "query.sql", "lines": ["select count(*) FROM t -- all"], "spans": [[[0, 6, "keyword"], [7, 5, "function"], [12, 1, "bracket-1"], [14, 1, "bracket-1"], [16, 4, "keyword"], [23, 6, "comment"]]]},
+    {"name": "G-code: commands, numbers, comments", "file": "part.gcode", "lines": ["G1 X10.5 ; move", "M104 S200 (heat)"], "spans": [[[0, 2, "keyword"], [4, 4, "number"], [9, 6, "comment"]], [[0, 4, "keyword"], [6, 3, "number"], [10, 6, "comment"]]]},
+    {"name": "Vue: tags, attributes, entities, embedded TypeScript, comment", "file": "App.vue", "lines": ["<template>", "  <div :class=\"x\" @click=\"go\">Hi &amp; bye</div>", "</template>", "<script setup lang=\"ts\">", "const n: number = 1 // c", "</script>", "<!-- note -->"], "spans": [[[1, 8, "tag"]], [[3, 3, "tag"], [8, 5, "property"], [14, 3, "string"], [19, 5, "property"], [25, 4, "string"], [33, 5, "literal"], [44, 3, "tag"]], [[2, 8, "tag"]], [[1, 6, "tag"], [8, 5, "property"], [14, 4, "property"], [19, 4, "string"]], [[0, 5, "keyword"], [9, 6, "type"], [18, 1, "number"], [20, 4, "comment"]], [[2, 6, "tag"]], [[0, 13, "comment"]]]},
+    {"name": "XML: declaration and attributes", "file": "Marshal.csproj", "lines": ["<?xml version=\"1.0\"?>", "<Project Sdk=\"X\">"], "spans": [[[0, 21, "meta"]], [[1, 7, "tag"], [9, 3, "property"], [13, 3, "string"]]]},
+    {"name": "CSS: selectors, properties, hex color, call, units, at-rule", "file": "site.css", "lines": [".card:hover, a {", "  color: #fff;", "  margin: 0 calc(1px + 2em);", "}", "@import \"a.css\";"], "spans": [[[0, 5, "tag"], [5, 6, "tag"], [13, 1, "tag"], [15, 1, "bracket-1"]], [[2, 5, "property"], [9, 4, "number"]], [[2, 6, "property"], [10, 1, "number"], [12, 4, "function"], [16, 1, "bracket-2"], [17, 3, "number"], [23, 3, "number"], [26, 1, "bracket-2"]], [[0, 1, "bracket-1"]], [[0, 7, "meta"], [8, 7, "string"]]]},
+    {"name": "SCSS: variable and line comment", "file": "site.scss", "lines": ["$gap: 4px; // s"], "spans": [[[0, 4, "variable"], [6, 3, "number"], [11, 4, "comment"]]]},
+    {"name": "Rust: attribute, fn, PascalCase types, macro call", "file": "main.rs", "lines": ["#[derive(Debug)]", "pub fn main() -> Result<(), String> {", "    println!(\"{}\", 1u32);", "}"], "spans": [[[0, 16, "meta"]], [[0, 3, "keyword"], [4, 2, "keyword"], [7, 4, "function"], [11, 1, "bracket-1"], [12, 1, "bracket-1"], [17, 6, "type"], [24, 1, "bracket-1"], [25, 1, "bracket-1"], [28, 6, "type"], [36, 1, "bracket-1"]], [[4, 8, "function"], [12, 1, "bracket-2"], [13, 4, "string"], [19, 4, "number"], [23, 1, "bracket-2"]], [[0, 1, "bracket-1"]]]},
+    {"name": "Go: receiver clears the definition, built-in type", "file": "server.go", "lines": ["func (s *Server) Run() error {", "}"], "spans": [[[0, 4, "keyword"], [5, 1, "bracket-1"], [15, 1, "bracket-1"], [17, 3, "function"], [20, 1, "bracket-1"], [21, 1, "bracket-1"], [23, 5, "type"], [29, 1, "bracket-1"]], [[0, 1, "bracket-1"]]]},
+    {"name": "Markdown: heading, list, inline code, link, quote, fence, rule, ordered list", "file": "README.md", "lines": ["# Title", "- item with `code` and [link](http://x)", "> quote", "```python", "def run():", "```", "---", "1. first"], "spans": [[[0, 7, "keyword"]], [[0, 1, "meta"], [12, 6, "string"], [30, 8, "property"]], [[0, 7, "comment"]], [[0, 9, "meta"]], [[0, 3, "keyword"], [4, 3, "function"], [7, 1, "bracket-1"], [8, 1, "bracket-1"]], [[0, 3, "meta"]], [[0, 3, "meta"]], [[0, 2, "meta"]]]},
+    {"name": "PHP: open tag, variable, new", "file": "index.php", "lines": ["<?php", "$x = new Foo();"], "spans": [[[0, 5, "meta"]], [[0, 2, "variable"], [5, 3, "keyword"], [9, 3, "type"], [12, 1, "bracket-1"], [13, 1, "bracket-1"]]]},
+    {"name": "Java: annotation, type, method", "file": "App.java", "lines": ["@Override public String toString() {", "}"], "spans": [[[0, 9, "meta"], [10, 6, "keyword"], [17, 6, "type"], [24, 8, "function"], [32, 1, "bracket-1"], [33, 1, "bracket-1"], [35, 1, "bracket-1"]], [[0, 1, "bracket-1"]]]},
+    {"name": "Kotlin: fun and calls", "file": "Main.kt", "lines": ["fun main() = println(\"hi\")"], "spans": [[[0, 3, "keyword"], [4, 4, "function"], [8, 1, "bracket-1"], [9, 1, "bracket-1"], [13, 7, "function"], [20, 1, "bracket-1"], [21, 4, "string"], [25, 1, "bracket-1"]]]},
+    {"name": "C: include and built-in types", "file": "main.c", "lines": ["#include <stdio.h>", "int main(void) { return 0; }"], "spans": [[[0, 18, "meta"]], [[0, 3, "type"], [4, 4, "function"], [8, 1, "bracket-1"], [9, 4, "type"], [13, 1, "bracket-1"], [15, 1, "bracket-1"], [17, 6, "keyword"], [24, 1, "number"], [27, 1, "bracket-1"]]]},
+    {"name": "OpenSCAD: module, calls, special variable", "file": "box.scad", "lines": ["module box(size = 10) { cube($fn); }"], "spans": [[[0, 6, "keyword"], [7, 3, "function"], [10, 1, "bracket-1"], [18, 2, "number"], [20, 1, "bracket-1"], [22, 1, "bracket-1"], [24, 4, "function"], [28, 1, "bracket-2"], [29, 3, "variable"], [32, 1, "bracket-2"], [35, 1, "bracket-1"]]]},
+    {"name": "PowerShell: function with dash, param, variable", "file": "deploy.ps1", "lines": ["function Get-Data { param($Path) }"], "spans": [[[0, 8, "keyword"], [9, 8, "function"], [18, 1, "bracket-1"], [20, 5, "keyword"], [25, 1, "bracket-2"], [26, 5, "variable"], [31, 1, "bracket-2"], [33, 1, "bracket-1"]]]},
+    {"name": "Ruby: def and comment", "file": "app.rb", "lines": ["def hello # hi"], "spans": [[[0, 3, "keyword"], [4, 5, "function"], [10, 4, "comment"]]]},
+    {"name": "Swift: attribute and func", "file": "View.swift", "lines": ["@objc func tap() {}"], "spans": [[[0, 5, "meta"], [6, 4, "keyword"], [11, 3, "function"], [14, 1, "bracket-1"], [15, 1, "bracket-1"], [17, 1, "bracket-1"], [18, 1, "bracket-1"]]]},
+    {"name": "C++: built-in type in template, nullptr", "file": "main.cpp", "lines": ["std::vector<int> v = nullptr;"], "spans": [[[12, 3, "type"], [21, 7, "literal"]]]}
+  ],
+  "guides": [
+    {"name": "Two-space YAML", "lines": ["a:", "  b:", "    c: 1"], "unit": 2, "guides": [0, 1, 2]},
+    {"name": "Blank line takes the smaller neighbor", "lines": ["class A {", "    void F()", "    {", "        x();", "", "    }", "}"], "unit": 4, "guides": [0, 1, 1, 2, 1, 1, 0]},
+    {"name": "No indent steps", "lines": ["a", "b"], "unit": 4, "guides": [0, 0]},
+    {"name": "Tab counts four", "lines": ["x", "\ty"], "unit": 4, "guides": [0, 1]},
+    {"name": "Three-space indent", "lines": ["a", "   b"], "unit": 3, "guides": [0, 1]}
+  ],
+  "diff": [
+    {"name": "Highlighted change in a C# file", "lines": ["diff --git a/src/App.cs b/src/App.cs", "index 1..2 100644", "--- a/src/App.cs", "+++ b/src/App.cs", "@@ -1,2 +1,2 @@", " // start", "-int x = 1;", "+var x = 2;", "\\ No newline at end of file"], "rows": [{"kind": "meta", "spans": []}, {"kind": "meta", "spans": []}, {"kind": "meta", "spans": []}, {"kind": "meta", "spans": []}, {"kind": "hunk", "spans": []}, {"kind": "context", "spans": [[1, 8, "comment"]]}, {"kind": "removed", "spans": [[1, 3, "type"], [9, 1, "number"]]}, {"kind": "added", "spans": [[1, 3, "keyword"], [9, 1, "number"]]}, {"kind": "meta", "spans": []}]},
+    {"name": "Unknown language shows only diff kinds", "lines": ["--- a/notes.txt", "+++ b/notes.txt", "@@ -1 +1 @@", "-old", "+new"], "rows": [{"kind": "meta", "spans": []}, {"kind": "meta", "spans": []}, {"kind": "hunk", "spans": []}, {"kind": "removed", "spans": []}, {"kind": "added", "spans": []}]},
+    {"name": "Old and new side keep separate states", "lines": ["+++ b/a.ts", "@@ -1,2 +1,2 @@", "-/* open", "+let x = 1"], "rows": [{"kind": "meta", "spans": []}, {"kind": "hunk", "spans": []}, {"kind": "removed", "spans": [[1, 7, "comment"]]}, {"kind": "added", "spans": [[1, 3, "keyword"], [9, 1, "number"]]}]}
+  ]
+}

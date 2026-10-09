@@ -12,7 +12,7 @@
 - [x] 2.1 Write failing tests for `IArtifactRenditions.Describe` per kind (JPEG/PNG as is, GIF/WebP → PNG, MP4 as is, WebM/model3d/svg/pdf/html/other → `artifacts.no_rendition`, text kinds → page count of 40-row pages incl. wrapping)
 - [x] 2.2 Embed JetBrains Mono TTF in `Marshal.Artifacts`, add SkiaSharp references, implement `SkiaArtifactRenditions` (image conversion, text pages with header and diff colors, 2 MB text cap); verify tests from 2.1 plus page rendering tests (1920×1080 PNG, page 2 of a 130-line file starts at line 41)
 - [x] 2.3 Update `docs/diagrams/packages.puml` (SkiaSharp from `Marshal.Artifacts`) and re-render the SVG; update the CLAUDE.md package index row for SkiaSharp; verify the SVG renders
-- [x] 2.4 Write failing tests for code highlighting on TV pages (keyword, string, number and comment spans for `.cs`; a block comment spanning lines; `#` comments for `.py`; `.txt` and unknown extensions plain; spans split correctly when a line wraps); implement `CodeHighlighter` and draw the spans in `SkiaArtifactRenditions`; verify with `dotnet test --project tests/Marshal.Artifacts.Tests`
+- [x] 2.4 Write failing tests for code highlighting on TV pages; implement a first `CodeHighlighter` and draw its spans in `SkiaArtifactRenditions` (superseded by section 6)
 
 ## 3. Display links and endpoint
 
@@ -30,3 +30,14 @@
 ## 5. Integration checks
 
 - [x] 5.1 Run the full .NET test suite and `openspec validate display-surfaces --strict`; both pass
+
+## 6. Code highlighting
+
+- [x] 6.1 Write `web/src/artifacts/highlighting/languages.json` (all languages from the spec) and `cases.json` (every token class, rule and language family, brackets, guides, diffs, Markdown fences)
+- [x] 6.2 C#: replace `CodeHighlighter` with `Marshal.Artifacts/Highlighting/` (definition loader from the embedded `languages.json`, tokenizer, indent guides, diff highlighting); link `languages.json` as embedded resource and `cases.json` into the tests; failing parity tests first; verify with `dotnet test --project tests/Marshal.Artifacts.Tests`
+- [x] 6.3 C#: draw token colors, bracket colors, indent guides and diff row backgrounds in `SkiaArtifactRenditions`; palette test against `web/src/ui/tokens.css`; render tests for keyword, type and diff background colors
+- [x] 6.4 Web: TypeScript tokenizer, indent guides and diff highlighting in `web/src/artifacts/highlighting/` running `cases.json` in vitest; remove highlight.js (package, viewer, bundle test, CLAUDE.md package index)
+- [x] 6.5 Web: `--syntax-*` tokens (light, dark), code viewer with toolbar (language, line count, wrap toggle, copy), indent guides and line links; lazy `DiffViewer` and `MarkdownViewer` with highlighting (markdown-it factory shared with chat); i18n (en, de); component tests
+- [x] 6.6 Dockerfile: copy `languages.json` into the .NET build stage; verify `docker build` gets past `dotnet publish` (or the publish command with the same file set)
+- [x] 6.7 Run Artifacts and Api display tests, `npm test`, `npm run build` and `openspec validate display-surfaces --strict`
+

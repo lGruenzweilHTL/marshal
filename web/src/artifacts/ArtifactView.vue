@@ -5,14 +5,14 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useApi } from '../api/inject'
 import { useLoad } from '../api/useLoad'
-import { renderMarkdown } from '../chat/markdown'
 import { useFormat } from '../i18n/locale'
-import DiffView from '../inbox/DiffView.vue'
 import { AppButton, Badge, Banner, Card, KeyValueList, LoadBoundary, Page, PageHeader, Spinner } from '../ui'
 import type { Artifact } from './artifactKinds'
 
-// three.js and highlight.js load only when an artifact needs them.
+// three.js and the highlighter load only when an artifact needs them.
 const CodeViewer = defineAsyncComponent(() => import('./viewers/CodeViewer.vue'))
+const DiffViewer = defineAsyncComponent(() => import('./viewers/DiffViewer.vue'))
+const MarkdownViewer = defineAsyncComponent(() => import('./viewers/MarkdownViewer.vue'))
 const ModelViewer = defineAsyncComponent(() => import('./viewers/ModelViewer.vue'))
 
 /**
@@ -78,9 +78,8 @@ const details = (item: Artifact) => [
           <template v-else-if="textKinds.has(data.kind)">
             <Spinner v-if="text === null" />
             <CodeViewer v-else-if="data.kind === 'code'" :name="data.name" :text="text" />
-            <DiffView v-else-if="data.kind === 'diff'" :diff="text" />
-            <!-- eslint-disable-next-line vue/no-v-html -- rendered with HTML disabled and same-origin images only -->
-            <Card v-else><div class="markdown" data-test="markdown" v-html="renderMarkdown(text)"></div></Card>
+            <DiffViewer v-else-if="data.kind === 'diff'" :diff="text" />
+            <Card v-else><MarkdownViewer :text="text" /></Card>
           </template>
           <Card v-else data-test="no-preview"><p class="ink-2">{{ t('artifacts.noPreview') }}</p></Card>
         </div>
@@ -112,8 +111,5 @@ const details = (item: Artifact) => [
   /* Pages render on the browser's light canvas, as they would standalone, in both themes. */
   color-scheme: light;
   background: Canvas;
-}
-.markdown :deep(a) {
-  color: var(--accent-text);
 }
 </style>
