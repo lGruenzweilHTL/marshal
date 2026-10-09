@@ -2,7 +2,9 @@
 
 ## Purpose
 3D printers through Moonraker: configuration, the live state cache, tools with risk tiers, snapshots with inspection, and the printer page.
+
 ## Requirements
+
 ### Requirement: Printer configuration
 Printers SHALL be configured as `printers: [{ name, url, apiKeySecret }]`. Printer tools SHALL take an optional `printer` argument that defaults to the only configured printer; with several printers and no argument, the tool SHALL return an error listing the names.
 
@@ -58,3 +60,9 @@ The web UI SHALL show live printer status from the state cache (via the live-upd
 - **WHEN** the printer page shows the webcam
 - **THEN** the browser loads it from Marshal's origin, not from the printer's address
 
+### Requirement: Keeping snapshots
+The printer page SHALL offer a "Keep" action on the shown snapshot that copies it into the artifact store as an `image` artifact with source `printer`, the printer name and snapshot time as source reference, not tainted. Kept artifacts SHALL NOT be affected by the snapshot store's retention.
+
+#### Scenario: Keep a snapshot
+- **WHEN** the user clicks "Keep" on a snapshot of printer `voron`
+- **THEN** an image artifact with source `printer` exists and survives the pruning of the original snapshot

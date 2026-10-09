@@ -2,7 +2,9 @@
 
 ## Purpose
 The public conversation API: versioning, the turn endpoint with streaming, the latency cap, moving turns to the background and follow-up replies.
+
 ## Requirements
+
 ### Requirement: Versioned public API
 The public API SHALL be versioned by URL segment (`/api/v{version}`) with `Asp.Versioning.Http`. Versions SHALL be declared once in code (`ApiVersions.V1`) and never read from configuration. Endpoint files SHALL contain no version literals. Each version SHALL have its own OpenAPI document (`/openapi/v1.json`). JSON SHALL be camelCase.
 
@@ -33,7 +35,7 @@ The public API SHALL be versioned by URL segment (`/api/v{version}`) with `Asp.V
 - **THEN** the response is an SSE stream ending in a final event
 
 ### Requirement: Streaming response
-The response SHALL be `text/event-stream` with `delta` events (text chunks), optional `status` events, and one final event `{ speech, continueConversation, conversationId }`. `conversationId` SHALL echo the client's id for token clients. `continueConversation` SHALL be true when Marshal asks the user something (confirmation, clarification).
+The response SHALL be `text/event-stream` with `delta` events (text chunks), optional `status` events, optional `artifact` events (`{ id, name, kind, url }`, one per artifact the turn shows), and one final event `{ speech, continueConversation, conversationId }`. `conversationId` SHALL echo the client's id for token clients. `continueConversation` SHALL be true when Marshal asks the user something (confirmation, clarification).
 
 #### Scenario: Confirmation question keeps listening
 - **WHEN** the turn ends with a pending action
@@ -42,6 +44,10 @@ The response SHALL be `text/event-stream` with `delta` events (text chunks), opt
 #### Scenario: Id echo
 - **WHEN** a token client sends `conversationId = "01JABC"`
 - **THEN** the final event carries `conversationId = "01JABC"`, not Marshal's session id
+
+#### Scenario: Artifact shown
+- **WHEN** a web turn calls `artifacts_show` for artifact `a1`
+- **THEN** the stream carries an `artifact` event with `a1`'s id, name, kind and content URL before the final event
 
 ### Requirement: Latency cap
 The system SHALL enforce a hard latency cap per turn (default ~8 s for voice, ~60 s for text, configurable). Reaching the cap SHALL speak a short "working on it, I'll tell you when done" reply, end the turn, and continue the run as a background task owned by the same user. The original run SHALL be recorded with outcome `backgrounded`, and the task SHALL deliver its result by voice to the originating satellite (voice turns) or to the web UI (text turns).
@@ -95,4 +101,3 @@ A turn's `followupRef` SHALL be resolved as defined in `voice-followup`.
 #### Scenario: Valid reference
 - **WHEN** a turn carries a valid `followupRef` for a pending action
 - **THEN** the reply enters the confirmation flow of that action
-
