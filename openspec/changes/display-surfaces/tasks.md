@@ -12,6 +12,7 @@
 - [x] 2.1 Write failing tests for `IArtifactRenditions.Describe` per kind (JPEG/PNG as is, GIF/WebP → PNG, MP4 as is, WebM/model3d/svg/pdf/html/other → `artifacts.no_rendition`, text kinds → page count of 40-row pages incl. wrapping)
 - [x] 2.2 Embed JetBrains Mono TTF in `Marshal.Artifacts`, add SkiaSharp references, implement `SkiaArtifactRenditions` (image conversion, text pages with header and diff colors, 2 MB text cap); verify tests from 2.1 plus page rendering tests (1920×1080 PNG, page 2 of a 130-line file starts at line 41)
 - [x] 2.3 Update `docs/diagrams/packages.puml` (SkiaSharp from `Marshal.Artifacts`) and re-render the SVG; update the CLAUDE.md package index row for SkiaSharp; verify the SVG renders
+- [x] 2.4 Write failing tests for code highlighting on TV pages (keyword, string, number and comment spans for `.cs`; a block comment spanning lines; `#` comments for `.py`; `.txt` and unknown extensions plain; spans split correctly when a line wraps); implement `CodeHighlighter` and draw the spans in `SkiaArtifactRenditions`; verify with `dotnet test --project tests/Marshal.Artifacts.Tests`
 
 ## 3. Display links and endpoint
 

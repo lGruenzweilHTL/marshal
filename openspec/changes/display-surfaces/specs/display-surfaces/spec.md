@@ -25,13 +25,25 @@ Displays SHALL be configured in `marshal.yaml` as `displays.surfaces`, a map fro
 Each artifact kind SHALL have at most one media rendition that a media renderer can play:
 - `image`: JPEG and PNG as stored; GIF and WebP converted to PNG (first frame);
 - `video`: MP4 as stored;
-- `code`, `diff`, `markdown`: the text rendered as PNG pages of at most 40 lines of monospace text on a dark background, 1920×1080 pixels, with the artifact name and page number in a header; in `diff`, added lines green and removed lines red; lines longer than the page wraps;
+- `code`, `diff`, `markdown`: the text rendered as PNG pages of at most 40 lines of monospace text on a dark background, 1920×1080 pixels, with the artifact name and page number in a header; in `code`, syntax highlighting by the file extension (the languages the web code viewer highlights) with keywords, strings and numbers, and comments in distinct colors, and an unknown extension as plain text; in `diff`, added lines green and removed lines red; lines longer than the page wraps;
 - every other kind and WebM video: no rendition.
 A rendition SHALL be produced from the stored file only; renditions SHALL NOT be stored as artifacts.
 
 #### Scenario: Code pages
 - **WHEN** a 130-line `.cs` artifact is rendered
 - **THEN** it has 4 PNG pages, the second one showing lines 41 to 80
+
+#### Scenario: Highlighted code
+- **WHEN** a `.cs` artifact containing `var name = "Marshal"; // greeting` is rendered
+- **THEN** `var` is drawn in the keyword color, `"Marshal"` in the string color and `// greeting` in the comment color
+
+#### Scenario: Comment across lines
+- **WHEN** a `.ts` artifact has a `/* … */` comment spanning three lines
+- **THEN** all three lines are drawn in the comment color
+
+#### Scenario: Unknown extension stays plain
+- **WHEN** a `.txt` artifact containing `if "x"` is rendered
+- **THEN** the whole line is drawn in the plain text color
 
 #### Scenario: No rendition for a 3D model
 - **WHEN** the rendition of a `model3d` artifact is requested

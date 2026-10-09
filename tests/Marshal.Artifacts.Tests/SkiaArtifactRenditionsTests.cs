@@ -98,6 +98,39 @@ public sealed class SkiaArtifactRenditionsTests
     }
 
     [Fact]
+    public void Layout_CodeSpansSplitAtWraps()
+    {
+        IReadOnlyList<SkiaArtifactRenditions.Row> rows = SkiaArtifactRenditions.Layout(
+            "var abcdefgh = 1\n", diff: false, truncated: false, columns: 10, CodeHighlighter.LanguageOf("Program.cs"));
+
+        Assert.Equal([new(0, 3, CodeHighlighter.CodeToken.Keyword)], rows[0].Spans);
+        Assert.Equal([new(5, 1, CodeHighlighter.CodeToken.Number)], rows[1].Spans);
+    }
+
+    [Fact]
+    public void Layout_WithoutLanguage_NoSpans()
+    {
+        IReadOnlyList<SkiaArtifactRenditions.Row> rows = SkiaArtifactRenditions.Layout("var x = 1\n", diff: false, truncated: false, columns: 80);
+
+        Assert.Empty(rows[0].Spans);
+    }
+
+    [Theory]
+    [InlineData("Program.cs", true)]
+    [InlineData("build.log", false)]
+    [InlineData("notes.md", false)]
+    public async Task Open_CodePage_DrawsKeywordColor(string name, bool highlighted)
+    {
+        string text = string.Concat(Enumerable.Repeat("public sealed class Program { }\n", 30));
+        ArtifactRecord artifact = await AddAsync(name, Encoding.UTF8.GetBytes(text));
+
+        using SKBitmap bitmap = Decode((await Renditions.OpenAsync(artifact.Id, 1, Ct)).Value);
+
+        bool keywordPixel = bitmap.Pixels.Any(pixel => pixel == SkiaArtifactRenditions.KeywordColor);
+        Assert.Equal(highlighted, keywordPixel);
+    }
+
+    [Fact]
     public void Layout_Truncated_AddsNote()
     {
         IReadOnlyList<SkiaArtifactRenditions.Row> rows = SkiaArtifactRenditions.Layout("a\n", diff: false, truncated: true, columns: 80);
