@@ -12,4 +12,7 @@ public sealed class SatelliteEntry
     public List<string> DenyTools { get; set; } = [];
 
     public List<string> DenyConfirm { get; set; } = [];
+
+    /// <summary>Name of the display in the satellite's room (<c>displays.surfaces</c>).</summary>
+    public string? Display { get; set; }
 }

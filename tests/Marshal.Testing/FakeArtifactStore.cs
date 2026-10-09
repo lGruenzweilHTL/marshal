@@ -22,6 +22,14 @@ public sealed class FakeArtifactStore : IArtifactStore
         {
             ".pdf" => (ArtifactKind.Pdf, "application/pdf"),
             ".png" => (ArtifactKind.Image, "image/png"),
+            ".jpg" => (ArtifactKind.Image, "image/jpeg"),
+            ".gif" => (ArtifactKind.Image, "image/gif"),
+            ".webp" => (ArtifactKind.Image, "image/webp"),
+            ".mp4" => (ArtifactKind.Video, "video/mp4"),
+            ".webm" => (ArtifactKind.Video, "video/webm"),
+            ".svg" => (ArtifactKind.Svg, "image/svg+xml"),
+            ".cs" or ".log" => (ArtifactKind.Code, "text/plain; charset=utf-8"),
+            ".diff" => (ArtifactKind.Diff, "text/x-diff; charset=utf-8"),
             ".stl" => (ArtifactKind.Model3d, "model/stl"),
             ".md" => (ArtifactKind.Markdown, "text/markdown; charset=utf-8"),
             _ => (ArtifactKind.Other, "application/octet-stream"),
@@ -41,6 +49,9 @@ public sealed class FakeArtifactStore : IArtifactStore
 
     public Task<IReadOnlyList<ArtifactRecord>> ListAsync(ArtifactQuery query, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<ArtifactRecord>>([.. Artifacts.Select(entry => entry.Record).Reverse().Take(query.Limit)]);
+
+    public Task<ArtifactRecord?> FindBySourceAsync(ArtifactSource source, string reference, CancellationToken cancellationToken) =>
+        Task.FromResult(Artifacts.Select(entry => entry.Record).LastOrDefault(record => record.Source == source && record.SourceReference == reference));
 
     public Task<Result> DeleteAsync(ArtifactId id, CancellationToken cancellationToken) =>
         Task.FromResult(Artifacts.RemoveAll(entry => entry.Record.Id == id) > 0 ? Result.Success() : Result.Failure(NotFound(id)));

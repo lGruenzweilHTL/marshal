@@ -81,7 +81,7 @@ Alternative: reuse `SignedContent` with a longer TTL. Rejected: query strings an
 
 - `image`: JPEG/PNG streamed from the stored file; GIF/WebP decoded with SkiaSharp (first frame) and encoded as PNG.
 - `video`: MP4 streamed as stored. WebM has no rendition (most TVs reject it).
-- `code`, `diff`, `markdown`: text decoded as UTF-8 (invalid bytes replaced), tabs to 4 spaces, long lines wrapped at the column that fits 1920 px, split into pages of 60 lines; drawn with SkiaSharp at 1920×1080 on a dark background with a header line (`name — page n/m`). Diff lines starting with `+`/`-` (not `+++`/`---`) are green/red. Markdown is shown as source text (no rendering).
+- `code`, `diff`, `markdown`: text decoded as UTF-8 (invalid bytes replaced), tabs to 4 spaces, long lines wrapped at the column that fits 1920 px, split into pages of 40 rows (readable on a TV from the couch); drawn with SkiaSharp at 1920×1080 on a dark background with a header line (`name — page n/m`). Diff lines starting with `+`/`-` (not `+++`/`---`) are green/red. Markdown is shown as source text (no rendering).
 - Font: JetBrains Mono (OFL, already the web UI's monospace font) as an embedded TTF resource in `Marshal.Artifacts`, loaded with `SKTypeface.FromStream`, because the NoDependencies native asset has no fontconfig and the slim container has no fonts.
 - Page count for text kinds requires reading and wrapping the file; `Describe` is called once per show and once per page request, which is fine for text artifacts (they are small; files over 2 MB of text are cut at 2 MB with a final "truncated" line).
 

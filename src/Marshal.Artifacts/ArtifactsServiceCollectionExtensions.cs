@@ -8,7 +8,8 @@ namespace Marshal.Artifacts;
 
 /// <summary>
 /// Registers the artifact store (<c>artifacts</c> in <c>marshal.yaml</c>) in the artifact directory
-/// (<c>/data/artifacts</c>) and the <c>artifacts.*</c> tools. The host provides <see cref="IArtifactLinks"/>.
+/// (<c>/data/artifacts</c>) and the <c>artifacts.*</c> tools. The host provides <see cref="IArtifactLinks"/>,
+/// <see cref="IDisplayLinks"/> and <see cref="Abstractions.Displays.IDisplayDirectory"/>; Home Assistant the display player.
 /// </summary>
 public static class ArtifactsServiceCollectionExtensions
 {
@@ -23,6 +24,8 @@ public static class ArtifactsServiceCollectionExtensions
         services.AddSingleton(provider => new ArtifactDirectory(artifactDirectory(provider)));
         services.AddSingleton<IArtifactKindDetector, ArtifactKindDetector>();
         services.AddSingleton<IArtifactStore, FileArtifactStore>();
+        services.AddSingleton<IArtifactRenditions, SkiaArtifactRenditions>();
+        services.AddSingleton<ArtifactDisplays>();
         services.AddSingleton<IToolSource, ArtifactToolSource>();
         services.AddSingleton(new LiveTopic(FileArtifactStore.Topic));
         return services;

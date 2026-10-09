@@ -25,13 +25,13 @@ Displays SHALL be configured in `marshal.yaml` as `displays.surfaces`, a map fro
 Each artifact kind SHALL have at most one media rendition that a media renderer can play:
 - `image`: JPEG and PNG as stored; GIF and WebP converted to PNG (first frame);
 - `video`: MP4 as stored;
-- `code`, `diff`, `markdown`: the text rendered as PNG pages of at most 60 lines of monospace text on a dark background, 1920×1080 pixels, with the artifact name and page number in a header; in `diff`, added lines green and removed lines red; lines longer than the page wraps;
+- `code`, `diff`, `markdown`: the text rendered as PNG pages of at most 40 lines of monospace text on a dark background, 1920×1080 pixels, with the artifact name and page number in a header; in `diff`, added lines green and removed lines red; lines longer than the page wraps;
 - every other kind and WebM video: no rendition.
 A rendition SHALL be produced from the stored file only; renditions SHALL NOT be stored as artifacts.
 
 #### Scenario: Code pages
 - **WHEN** a 130-line `.cs` artifact is rendered
-- **THEN** it has 3 PNG pages, the second one showing lines 61 to 120
+- **THEN** it has 4 PNG pages, the second one showing lines 41 to 80
 
 #### Scenario: No rendition for a 3D model
 - **WHEN** the rendition of a `model3d` artifact is requested
@@ -53,7 +53,7 @@ Display links SHALL be absolute URLs under the media base URL, require no sign-i
 - **THEN** the response is 404
 
 ### Requirement: Playing on a display
-Showing an artifact on a display SHALL call Home Assistant's `media_player.play_media` for the display's entity with a display link as content id and the content type `image` or `video`. A failure from Home Assistant SHALL be returned to the model as `display.failed` naming the display; an unavailable Home Assistant SHALL fail with `ha.unavailable`.
+Showing an artifact on a display SHALL call Home Assistant's `media_player.play_media` for the display's entity with a display link as content id and the content type `image` or `video`. A failure from Home Assistant SHALL be returned to the model as `display.failed` naming the display; an unreachable Home Assistant SHALL fail with `ha.unreachable`.
 
 #### Scenario: Image on the TV
 - **WHEN** a JPEG artifact is shown on display `living_tv` with entity `media_player.living_room_tv`

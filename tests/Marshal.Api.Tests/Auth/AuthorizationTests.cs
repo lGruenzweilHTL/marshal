@@ -50,9 +50,9 @@ public sealed class AuthorizationTests : IAsyncLifetime
     {
         IWebhookIngest ingest = _factory.Services.GetRequiredService<IWebhookIngest>();
 
-        Assert.Contains("uptime-kuma", ingest.Sources);
+        Assert.Equal(["proxmox", "uptime-kuma"], ingest.Sources.Order(StringComparer.Ordinal));
         Assert.All(ingest.Sources, source => Assert.Contains(ApiScopes.Hooks(source), ApiScopes.All));
-        Assert.Equal("hooks:uptime-kuma", ApiScopes.HooksUptimeKuma);
+        Assert.Equal(("hooks:uptime-kuma", "hooks:proxmox"), (ApiScopes.HooksUptimeKuma, ApiScopes.HooksProxmox));
     }
 
     [Fact]
@@ -79,6 +79,8 @@ public sealed class AuthorizationTests : IAsyncLifetime
     [InlineData("admin", ApiScopes.Admin, true)]
     [InlineData("admin", ApiScopes.HooksUptimeKuma, true)]
     [InlineData("user", ApiScopes.HooksUptimeKuma, false)]
+    [InlineData("admin", ApiScopes.HooksProxmox, true)]
+    [InlineData("user", ApiScopes.HooksProxmox, false)]
     public async Task CookieAndTokenPrincipals_GoThroughTheSameScopePolicies(string role, string policy, bool allowed)
     {
         IAuthorizationService authorization = _factory.Services.GetRequiredService<IAuthorizationService>();

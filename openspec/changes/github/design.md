@@ -24,11 +24,11 @@ See proposal.md (Why) and the explore discussion (option B). Facts about the Git
 
 ### 1. Project and interfaces
 
-New project `Marshal.Integrations.GitHub` (references `Marshal.Abstractions`), registered by `Marshal.Api` when `github` is configured with at least one repo.
+New project `Marshal.Integrations.GitHub` (references `Marshal.Abstractions`), registered by `Marshal.Api`; its tool source offers no tools without repos. Tools use the capability namespace `repos` (tool-registry: built-in namespaces name capabilities, never providers), reserved by this change. The token is read from `ISecretStore` per request.
 
 | Interface | Project | v1 implementation | Purpose |
 |---|---|---|---|
-| `IGitHubClient` | GitHub integration | `GitHubRestClient` (named `HttpClient`, resilience handler) | typed reads per endpoint above; `Result<T>` with `github.not_found` / `github.unavailable` |
+| `IGitHubClient` | GitHub integration | `GitHubRestClient` (named `HttpClient`, resilience handler) | typed reads per endpoint above; `Result<T>` with `repos.not_found` / `repos.unavailable` |
 | `IArtifactStore.FindBySourceAsync(source, reference)` | Abstractions (existing interface, new member) | `FileArtifactStore` | owner-scoped lookup for dedup |
 
 `GitHubRepo(Id, Owner, Name)` comes only from options; the client takes a `GitHubRepo`, never strings from the model.
@@ -41,12 +41,12 @@ Alternative: GitHub's MCP server (option A in the explore notes). Rejected: no s
 
 | Tool | Tier | Untrusted output | Hidden when |
 |---|---|---|---|
-| `github.prs(repo, state?)` | safe | yes (`github`) | `github` not configured or no repos |
-| `github.pr(repo, number)` | safe | yes | same |
-| `github.issues(repo, state?, query?)` | safe | yes | same |
-| `github.issue(repo, number)` | safe | yes | same |
-| `github.runs(repo, branch?)` | safe | yes | same |
-| `github.run_log(repo, runId)` | safe | yes | same |
+| `repos.prs(repo, state?)` | safe | yes (`github`) | `github` not configured or no repos |
+| `repos.pr(repo, number)` | safe | yes | same |
+| `repos.issues(repo, state?, query?)` | safe | yes | same |
+| `repos.issue(repo, number)` | safe | yes | same |
+| `repos.runs(repo, branch?)` | safe | yes | same |
+| `repos.run_log(repo, runId)` | safe | yes | same |
 
 All outputs are untrusted with taint kind `github`: PR/issue text and comments come from other people, run titles are commit messages, logs are produced by code under review. Tools stay visible while GitHub is unreachable.
 
@@ -56,8 +56,8 @@ Storing diffs and logs is a side effect of safe tools. It is not escalated in ta
 
 ### 3. Artifacts and dedup
 
-- `github.pr`: reference `<id>/pr/<n>@<head sha>`, name `<id>-pr-<n>.diff`.
-- `github.run_log`: per failed job, reference `<id>/job/<job id>`, name `<id>-run-<run id>-<job name slug>.log`. Job logs never change after completion, so the job id alone is a stable key.
+- `repos.pr`: reference `<id>/pr/<n>@<head sha>`, name `<id>-pr-<n>.diff`.
+- `repos.run_log`: per failed job, reference `<id>/job/<job id>`, name `<id>-run-<run id>-<job name slug>.log`. Job logs never change after completion, so the job id alone is a stable key.
 - Before downloading, look up `FindBySourceAsync(GitHub, reference)`; on a hit, return the id without downloading. On `artifacts.quota_exceeded` / `artifacts.too_large`, return the summary with `"diffStored": false` (or per job `"logStored": false`) and the reason.
 - Log tail: the last 50 lines of the downloaded log, with GitHub's timestamp prefixes (`2026-10-09T12:00:00.0000000Z `) removed to save tokens. The file in the artifact store keeps them.
 - Failed steps: `steps[]` with `conclusion == "failure"`.
@@ -82,5 +82,5 @@ Validation in the configuration stage: id pattern, `owner/name` pattern (`^[A-Za
 ## Risks / Trade-offs
 
 - [Prompt injection through PR/issue text or logs] → All outputs untrusted and tainting; no write tools exist, and later memory/task writes in the run are escalated to confirm by the existing taint rules.
-- [Token lifetime: fine-grained PATs expire] → A 401 surfaces as `github.unavailable` with "token rejected or expired"; the secret is replaced in the secret store without restart (secret lookup per request).
+- [Token lifetime: fine-grained PATs expire] → A 401 surfaces as `repos.unavailable` with "token rejected or expired"; the secret is replaced in the secret store without restart (secret lookup per request).
 - [Huge logs] → The log stream is read once with a rolling 50-line tail, so the tail is always returned; storing fails with `artifacts.too_large` above `artifacts.maxUploadMb` and the result says the log was not stored.

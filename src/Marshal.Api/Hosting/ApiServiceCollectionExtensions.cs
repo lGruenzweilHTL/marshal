@@ -40,6 +40,9 @@ public static class ApiServiceCollectionExtensions
         services.AddSingleton<ISnapshotLinks>(provider => provider.GetRequiredService<ApiSnapshotLinks>());
         services.AddSingleton<Artifacts.ApiArtifactLinks>();
         services.AddSingleton<Abstractions.Artifacts.IArtifactLinks>(provider => provider.GetRequiredService<Artifacts.ApiArtifactLinks>());
+        services.AddSingleton<Displays.ApiDisplayLinks>();
+        services.AddSingleton<Abstractions.Artifacts.IDisplayLinks>(provider => provider.GetRequiredService<Displays.ApiDisplayLinks>());
+        services.AddSingleton<IValidateOptions<Core.Displays.DisplayOptions>, Displays.DisplayBaseUrlValidator>();
         services.AddSingleton<PrinterControlConfirmations>();
         services.AddSingleton<MailOAuthFlows>();
         services.AddSingleton(new LiveTopic(PrinterLiveEvents.Topic));

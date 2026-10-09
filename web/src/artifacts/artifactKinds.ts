@@ -7,7 +7,7 @@ export type ArtifactKind = Schemas['ArtifactKind']
 export type ArtifactSource = Schemas['ArtifactSource']
 
 export const kinds: ArtifactKind[] = ['image', 'svg', 'video', 'model3d', 'code', 'diff', 'pdf', 'markdown', 'html', 'other']
-export const sources: ArtifactSource[] = ['upload', 'executor', 'printer', 'mail']
+export const sources: ArtifactSource[] = ['upload', 'executor', 'printer', 'mail', 'github']
 
 export const kindIcons: Record<ArtifactKind, Component> = {
   image: Image,

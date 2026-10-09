@@ -17,6 +17,8 @@ public sealed class YamlSatelliteContextProviderTests
             verbosity: short
             denyConfirm: [printer.*, calendar.*]
             denyTools: [mail.*]
+          assist_satellite.living_room:
+            display: living_tv
         """;
 
     [Fact]
@@ -71,6 +73,28 @@ public sealed class YamlSatelliteContextProviderTests
         string? text = await contributor.ContributeAsync(new ContextRequest(TestExecutionContext.Text(), "x"), Ct);
 
         Assert.Null(text);
+    }
+
+    [Fact]
+    public void GetProfile_Display_IsRead()
+    {
+        Assert.Equal("living_tv", Provider(Yaml).GetProfile("assist_satellite.living_room").Display);
+        Assert.Null(Provider(Yaml).GetProfile("assist_satellite.kitchen").Display);
+    }
+
+    [Fact]
+    public void Validate_KnownDisplay_Succeeds()
+    {
+        Assert.True(SatellitesFile.Validate(Parse(Yaml), ["living_tv"]).IsSuccess);
+    }
+
+    [Fact]
+    public void Validate_UnknownDisplay_FailsNamingKey()
+    {
+        Abstractions.Result result = SatellitesFile.Validate(Parse(Yaml), ["office_tv"]);
+
+        Assert.StartsWith("satellites.assist_satellite.living_room.display ", result.Error.Message, StringComparison.Ordinal);
+        Assert.Contains("living_tv", result.Error.Message, StringComparison.Ordinal);
     }
 
     [Fact]

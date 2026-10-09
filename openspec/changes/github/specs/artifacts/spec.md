@@ -12,7 +12,7 @@ Each artifact SHALL be stored as a file under the data directory (`/data/artifac
 - **THEN** its row and its file are gone and its links return 404
 
 ### Requirement: Artifact ingest
-Artifacts SHALL be created only through these paths: web upload (`POST /api/v1/artifacts`, multipart, at most `artifacts.maxUploadMb` per file, default 200); executor uploads with the session's callback token; keeping a printer snapshot; `mail.save_attachment`; diffs and logs stored by the `github.pr` and `github.run_log` tools. Artifacts from executors, mail and GitHub SHALL be marked tainted; uploads and printer snapshots SHALL NOT.
+Artifacts SHALL be created only through these paths: web upload (`POST /api/v1/artifacts`, multipart, at most `artifacts.maxUploadMb` per file, default 200); executor uploads with the session's callback token; keeping a printer snapshot; `mail.save_attachment`; diffs and logs stored by the `repos.pr` and `repos.run_log` tools. Artifacts from executors, mail and GitHub SHALL be marked tainted; uploads and printer snapshots SHALL NOT.
 
 #### Scenario: Upload
 - **WHEN** the user uploads `notes.md`
@@ -23,5 +23,5 @@ Artifacts SHALL be created only through these paths: web upload (`POST /api/v1/a
 - **THEN** the response is 413 and nothing is stored
 
 #### Scenario: GitHub log
-- **WHEN** `github_run_log` stores a job's log
+- **WHEN** `repos_run_log` stores a job's log
 - **THEN** an artifact of kind `code`, source `github`, tainted, is created and appears on the live-update topic `artifacts`

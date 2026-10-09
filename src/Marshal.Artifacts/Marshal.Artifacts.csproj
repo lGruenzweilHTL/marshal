@@ -8,6 +8,13 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- JetBrains Mono (SIL OFL 1.1, Fonts/OFL.txt) for text renditions; the container has no system fonts. -->
+    <EmbeddedResource Include="Fonts\JetBrainsMono-Regular.ttf" LogicalName="Marshal.Artifacts.Fonts.JetBrainsMono-Regular.ttf" />
   </ItemGroup>
 
   <ItemGroup>

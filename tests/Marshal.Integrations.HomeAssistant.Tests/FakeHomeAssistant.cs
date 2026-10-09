@@ -34,6 +34,9 @@ internal sealed class FakeHomeAssistant : IAsyncDisposable
     /// <summary>REST requests received (path and body).</summary>
     public ConcurrentQueue<(string Path, JsonNode? Body)> RestRequests { get; } = new();
 
+    /// <summary>Services (<c>domain/service</c>) that answer 400, like HA does for a call the target cannot take.</summary>
+    public ConcurrentBag<string> FailingServices { get; } = [];
+
     /// <summary>Response body of <c>POST /api/intent/handle</c>.</summary>
     public JsonNode IntentResponse { get; set; } = JsonNode.Parse("""{"response_type":"action_done","speech":{}}""")!;
 
@@ -78,7 +81,10 @@ internal sealed class FakeHomeAssistant : IAsyncDisposable
             return fake.CalendarEvents.TryGetValue(entity, out JsonArray? events) ? fake.Rest(context, null, events) : Results.NotFound();
         });
         app.MapPost("/api/services/{**service}", async (string service, HttpContext context) =>
-            await fake.Rest(context, await JsonNode.ParseAsync(context.Request.Body), new JsonArray()).ExecuteAsync(context));
+        {
+            IResult result = fake.Rest(context, await JsonNode.ParseAsync(context.Request.Body), new JsonArray());
+            await (fake.FailingServices.Contains(service) ? Results.BadRequest() : result).ExecuteAsync(context);
+        });
         await app.StartAsync();
         return fake;
     }

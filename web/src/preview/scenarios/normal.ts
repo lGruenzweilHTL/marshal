@@ -470,6 +470,7 @@ export const normal = {
       { source: 'mail', connected: true, webhook: false, lastReceivedAt: null },
       { source: 'printer', connected: true, webhook: false, lastReceivedAt: null },
       { source: 'uptime-kuma', connected: true, webhook: true, lastReceivedAt: at(-18) },
+      { source: 'proxmox', connected: true, webhook: true, lastReceivedAt: at(-600) },
     ],
   },
   '/api/v1/config': configSummary,

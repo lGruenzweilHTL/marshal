@@ -46,6 +46,9 @@ public enum ArtifactSource
 
     /// <summary>A saved mail attachment (tainted).</summary>
     Mail,
+
+    /// <summary>A pull request diff or CI log from a <c>repos.*</c> tool (tainted); stored and serialized as <c>github</c>.</summary>
+    Github,
 }
 
 /// <summary>A stored artifact.</summary>
@@ -57,7 +60,7 @@ public enum ArtifactSource
 /// <param name="Size">Size in bytes.</param>
 /// <param name="Sha256">Lowercase hex SHA-256 of the content.</param>
 /// <param name="Source">Where it came from.</param>
-/// <param name="SourceReference">Task id, message reference or printer snapshot, depending on the source.</param>
+/// <param name="SourceReference">Task id, message reference, printer snapshot or repository item, depending on the source.</param>
 /// <param name="Tainted">Content or name can carry third-party text (executor output, mail).</param>
 /// <param name="CreatedAt">When it was stored.</param>
 public sealed record ArtifactRecord(

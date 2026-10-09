@@ -35,6 +35,6 @@ internal static partial class ConfigurationErrors
     }
 
     // A lowercase dotted or indexed path: embedding.model, printers[0].apiKeySecret, printers[].name.
-    [GeneratedRegex(@"^[a-z][A-Za-z0-9]*(\[\d*\])?(\.[A-Za-z][A-Za-z0-9]*(\[\d*\])?)*$")]
+    [GeneratedRegex(@"^[a-z][A-Za-z0-9]*(\[\d*\])?(\.[A-Za-z][A-Za-z0-9_]*(\[\d*\])?)*$")]
     private static partial Regex KeyPath();
 }

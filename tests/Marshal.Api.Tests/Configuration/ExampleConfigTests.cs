@@ -5,6 +5,7 @@ using Marshal.Abstractions.Templates;
 using Marshal.Api.Configuration;
 using Marshal.Artifacts;
 using Marshal.Core.Configuration;
+using Marshal.Core.Displays;
 using Marshal.Core.Guard;
 using Marshal.Core.Mcp;
 using Marshal.Core.Models;
@@ -74,6 +75,19 @@ public sealed class ExampleConfigTests
     }
 
     [Fact]
+    public void ExampleMarshalYaml_BindsValidDisplayOptions()
+    {
+        IConfiguration configuration = new ConfigurationBuilder().AddMarshalConfiguration(_directory, new Hashtable()).Build();
+        DisplayOptions options = configuration.GetSection("displays").Get<DisplayOptions>() ?? new();
+
+        ValidateOptionsResult result = new DisplayOptionsValidator().Validate(null, options);
+
+        Assert.True(result.Succeeded, result.FailureMessage);
+        Assert.Equal(240, options.LinkMinutes);
+        Assert.Empty(options.Surfaces);
+    }
+
+    [Fact]
     public void ExampleMarshalYaml_BindsWebhookOptions()
     {
         IConfiguration configuration = new ConfigurationBuilder().AddMarshalConfiguration(_directory, new Hashtable()).Build();
@@ -82,6 +96,8 @@ public sealed class ExampleConfigTests
 
         Assert.Equal((60, 60), (options.DebounceSeconds, options.RequestsPerMinute));
         Assert.Contains("hooks:uptime-kuma", File.ReadAllText(Path.Combine(_directory, "marshal.yaml")), StringComparison.Ordinal);
+        Assert.Contains("hooks:proxmox", File.ReadAllText(Path.Combine(_directory, "marshal.yaml")), StringComparison.Ordinal);
+        Assert.Contains("# github:", File.ReadAllText(Path.Combine(_directory, "marshal.yaml")), StringComparison.Ordinal);
     }
 
     [Fact]

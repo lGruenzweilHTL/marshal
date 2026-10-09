@@ -14,7 +14,7 @@ public sealed class YamlSatelliteContextProvider(IOptionsMonitor<SatellitesFile>
         if (satelliteId is null || !file.CurrentValue.Satellites.TryGetValue(satelliteId, out SatelliteEntry? entry))
             return SatelliteProfile.Default;
 
-        return new SatelliteProfile(entry.Verbosity, entry.Notes, entry.DenyTools, entry.DenyConfirm);
+        return new SatelliteProfile(entry.Verbosity, entry.Notes, entry.DenyTools, entry.DenyConfirm, entry.Display);
     }
 
     public async Task<SatelliteContext> GetContextAsync(MarshalExecutionContext context, CancellationToken cancellationToken)

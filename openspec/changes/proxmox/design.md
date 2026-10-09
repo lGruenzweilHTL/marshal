@@ -25,13 +25,13 @@ See proposal.md (Why). Facts about Proxmox VE (checked against the PVE API viewe
 
 ### 1. Project and interfaces
 
-New project `Marshal.Integrations.Proxmox` (references `Marshal.Abstractions` only), registered by `Marshal.Api` when `proxmox` is configured.
+New project `Marshal.Integrations.Proxmox` (references `Marshal.Abstractions` only), registered by `Marshal.Api`; its tool source offers no tools while `proxmox.url` is unset. Tools use the capability namespace `infra` (tool-registry: built-in namespaces name capabilities, never providers), reserved by this change.
 
 | Interface | v1 implementation | Purpose |
 |---|---|---|
-| `IProxmoxClient` | `ProxmoxRestClient` (named `HttpClient`, resilience handler) | `GetResourcesAsync()`, `GetTasksAsync()`; typed records, `Result<T>` with `proxmox.unavailable` |
+| `IProxmoxClient` | `ProxmoxRestClient` (named `HttpClient`, resilience handler) | `GetResourcesAsync()`, `GetTasksAsync()`; typed records, `Result<T>` with `infra.unavailable` |
 
-The tool source (`ProxmoxToolSource : IToolSource`, built-in, namespace `proxmox`) depends only on `IProxmoxClient`, so tool tests use a hand-written fake client; the REST client is tested against an in-process fake server (`Microsoft.AspNetCore.TestHost`) with recorded-shape JSON.
+The tool source (`ProxmoxToolSource : IToolSource`, built-in, namespace `infra`) depends only on `IProxmoxClient`, so tool tests use a hand-written fake client; the REST client is tested against an in-process fake server (`Microsoft.AspNetCore.TestHost`) with recorded-shape JSON.
 
 Alternative: a community Proxmox MCP server. Rejected in the roadmap discussion: it holds an infrastructure token in third-party code, its tool surface drifts, and tests would need the server.
 
@@ -39,14 +39,14 @@ Alternative: a community Proxmox MCP server. Rejected in the roadmap discussion:
 
 | Tool | Tier | Untrusted output | Hidden when |
 |---|---|---|---|
-| `proxmox.overview()` | safe | no | `proxmox` not configured |
-| `proxmox.guests(node?, status?)` | safe | no | same |
-| `proxmox.storage()` | safe | no | same |
-| `proxmox.tasks(failedOnly?, since?)` | safe | no | same |
+| `infra.overview()` | safe | no | `proxmox` not configured |
+| `infra.guests(node?, status?)` | safe | no | same |
+| `infra.storage()` | safe | no | same |
+| `infra.tasks(failedOnly?, since?)` | safe | no | same |
 
 Output is trusted: names, ids and statuses are set by the cluster's admin (the owner) or by PVE itself, and notes/descriptions are never returned. Task `status` texts are PVE-generated. Templates (`template: 1`) are excluded from guests. Sizes are returned in GB with one decimal, CPU and memory as percent.
 
-The tools stay visible while PVE is unreachable and fail with `proxmox.unavailable` on call, like other integrations.
+The tools stay visible while PVE is unreachable and fail with `infra.unavailable` on call, like other integrations.
 
 ### 3. Certificate pinning
 
@@ -82,7 +82,7 @@ proxmox:
   certificateFingerprint: "AB:CD:…"     # optional, for the self-signed default certificate
 ```
 
-Validation: `url` absolute https; `tokenId` matches `^[^@\s]+@[^!\s]+![A-Za-z0-9_.-]+$`; fingerprint is 64 hex digits after normalization; `tokenSecret` is a required secret when the section exists.
+Validation: `url` absolute https; `tokenId` matches `^[^@\s]+@[^!\s]+![A-Za-z0-9_.-]+$`; fingerprint is 64 hex digits after normalization; `tokenSecret` is a valid secret name. The token value is read from `ISecretStore` per request (like the executor host token), so replacing the secret needs no restart; a missing value fails the call with `infra.unavailable` naming the secret.
 
 ## Risks / Trade-offs
 

@@ -1,5 +1,6 @@
 using System.Collections;
 using Marshal.Abstractions.Context;
+using Marshal.Abstractions.Displays;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
@@ -15,6 +16,7 @@ using Marshal.Abstractions.Tools;
 using Marshal.Core.Agent;
 using Marshal.Core.Configuration;
 using Marshal.Core.Context;
+using Marshal.Core.Displays;
 using Marshal.Core.Conversation;
 using Marshal.Core.Execution;
 using Marshal.Core.Guard;
@@ -63,8 +65,13 @@ public static class CoreServiceCollectionExtensions
         // Hot-reloaded /config files; a failing first load fails startup.
         services.AddSingleton<IConfigSecretScanner, ConfigSecretScanner>();
         services.AddSingleton<IConfigWatcher>(provider => new ConfigDirectoryWatcher(provider.GetRequiredService<IOptions<PathsOptions>>().Value.Config));
+        services.AddOptions<DisplayOptions>().Bind(configuration.GetSection("displays")).ValidateOnStart();
+        services.AddSingleton<IValidateOptions<DisplayOptions>, DisplayOptionsValidator>();
+        services.AddSingleton<IDisplayDirectory, ConfiguredDisplayDirectory>();
         AddConfigFile<RiskRulesFile>(services, RiskFile, RiskRulesFile.Validate);
-        AddConfigFile<SatellitesFile>(services, SatellitesFileName, SatellitesFile.Validate);
+        // Display names straight from configuration: reading invalid DisplayOptions would throw before its errors are reported.
+        AddConfigFile<SatellitesFile>(services, SatellitesFileName, file =>
+            SatellitesFile.Validate(file, [.. configuration.GetSection("displays:surfaces").GetChildren().Select(display => display.Key)]));
 
         services.AddSingleton<IModelRouter, ConfiguredModelRouter>();
         services.AddSingleton<ICostCalculator, PriceTableCostCalculator>();

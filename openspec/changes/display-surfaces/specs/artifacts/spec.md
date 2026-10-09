@@ -17,7 +17,7 @@ The system SHALL provide `artifacts.list(kind?, source?, query?)` (safe; output 
 
 #### Scenario: Code on the TV
 - **WHEN** a satellite turn calls `artifacts_show` with `page: 2` for a 130-line code artifact
-- **THEN** page 2 of 3 plays on the satellite's display
+- **THEN** page 2 of 4 plays on the satellite's display
 
 #### Scenario: 3D model on a TV
 - **WHEN** a satellite turn calls `artifacts_show` for a `model3d` artifact

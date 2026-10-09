@@ -7,19 +7,20 @@ Marshal cannot answer "why did CI fail on marshal?", "what's in PR 42?" or "any 
 ## What Changes
 
 - New read-only GitHub integration with a fine-grained personal access token (`github.tokenSecret`) and a repo allowlist in config (`github.repos`: id → `owner/name`). Tools take a repo **id** from an enum of configured ids; other repos are invisible.
-- New tools, all safe: `github.prs`, `github.pr`, `github.issues`, `github.issue`, `github.runs`, `github.run_log`. Every tool's output is untrusted (titles, bodies, comments, commit messages and logs are written by other people or by code under review) and taints the run with source `github`.
-- `github.pr` stores the pull request's diff and `github.run_log` stores failed jobs' logs as tainted artifacts (source `github`, kinds `diff` and `code`) and returns only a summary plus the artifact id, so `artifacts.show` can open them. Repeated calls for the same commit reuse the artifact.
+- New tools in the capability namespace `repos` (built-in namespaces name capabilities, never providers), all safe: `repos.prs`, `repos.pr`, `repos.issues`, `repos.issue`, `repos.runs`, `repos.run_log`. Every tool's output is untrusted (titles, bodies, comments, commit messages and logs are written by other people or by code under review) and taints the run with source `github`.
+- `repos.pr` stores the pull request's diff and `repos.run_log` stores failed jobs' logs as tainted artifacts (source `github`, kinds `diff` and `code`) and returns only a summary plus the artifact id, so `artifacts.show` can open them. Repeated calls for the same commit reuse the artifact.
 - No write paths: no comments, reviews, merges, issue edits, workflow dispatch or reruns.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `github`: GitHub configuration, the read-only client, the `github.*` tools and their artifacts.
+- `github`: GitHub configuration, the read-only client, the `repos.*` tools and their artifacts.
 
 ### Modified Capabilities
 
 - `artifacts`: new artifact source `github` and its ingest path.
+- `tool-registry`: `repos` joins the reserved namespaces.
 
 ## Non-goals
 

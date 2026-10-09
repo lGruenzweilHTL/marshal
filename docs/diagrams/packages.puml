@@ -11,7 +11,8 @@
 ' Marshal.Api, Marshal.Testing and their test projects exist (core-agent),
 ' web/ exists (auth-web-shell), ha/ exists (ha-conversation-integration),
 ' Marshal.Integrations.HomeAssistant exists (extensibility), Marshal.Memory exists (memory),
-' Marshal.Integrations.{Moonraker,Mail,FreshRss,Notes} exist (integrations),
+' Marshal.Integrations.{Moonraker,Mail,FreshRss,Notes} exist (integrations), Marshal.Integrations.Proxmox (proxmox),
+' Marshal.Integrations.GitHub (github),
 ' Marshal.Tasks and Marshal.ExecutorHost exist (background-work), including the companion push path.
 ' Marshal.Artifacts exists (artifacts).
 ' External packages are drawn inside the project that references them
@@ -89,11 +90,12 @@ package "src/ (.NET 10)" {
   }
 
   package "Marshal.Artifacts" as Artifacts {
-    component "File artifact store + quota,\nkind detection, artifacts.* tools" as ArtifactParts
+    component "File artifact store + quota,\nkind detection, media renditions,\nartifacts.* tools" as ArtifactParts
+    component "SkiaSharp" as ArtifactSkia <<nuget>>
   }
 
   package "Marshal.Integrations.*" as Integrations {
-    component "HomeAssistant (REST, websocket,\nMCP, calendar v1), Moonraker,\nMail, FreshRss, Notes" as IntParts
+    component "HomeAssistant (REST, websocket,\nMCP, calendar v1, displays), Moonraker,\nMail, FreshRss, Notes, Proxmox,\nGitHub" as IntParts
     component "MailKit" <<nuget>>
     component "Google.Apis.Gmail.v1 (later)\nMicrosoft.Graph (later)" <<nuget>>
     component "SmartReader\n+ AngleSharp" <<nuget>>

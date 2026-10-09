@@ -28,7 +28,7 @@ export const en = {
     disconnected: 'not connected',
     lastWebhook: 'Last webhook {time}',
     noWebhook: 'No webhook received yet',
-    names: { ha: 'Home Assistant', printer: 'Printers', mail: 'Mail', executor: 'Executors', 'uptime-kuma': 'Uptime Kuma' },
+    names: { ha: 'Home Assistant', printer: 'Printers', mail: 'Mail', executor: 'Executors', 'uptime-kuma': 'Uptime Kuma', proxmox: 'Proxmox VE' },
   },
   config: {
     title: 'Configuration',
@@ -119,7 +119,7 @@ export const de: Catalog<typeof en> = {
     disconnected: 'nicht verbunden',
     lastWebhook: 'Letzter Webhook {time}',
     noWebhook: 'Noch kein Webhook empfangen',
-    names: { ha: 'Home Assistant', printer: 'Drucker', mail: 'Mail', executor: 'Executors', 'uptime-kuma': 'Uptime Kuma' },
+    names: { ha: 'Home Assistant', printer: 'Drucker', mail: 'Mail', executor: 'Executors', 'uptime-kuma': 'Uptime Kuma', proxmox: 'Proxmox VE' },
   },
   config: {
     title: 'Konfiguration',

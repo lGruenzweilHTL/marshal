@@ -10,10 +10,12 @@
     <ProjectReference Include="..\Marshal.Core\Marshal.Core.csproj" />
     <ProjectReference Include="..\Marshal.Data\Marshal.Data.csproj" />
     <ProjectReference Include="..\Marshal.Integrations.FreshRss\Marshal.Integrations.FreshRss.csproj" />
+    <ProjectReference Include="..\Marshal.Integrations.GitHub\Marshal.Integrations.GitHub.csproj" />
     <ProjectReference Include="..\Marshal.Integrations.HomeAssistant\Marshal.Integrations.HomeAssistant.csproj" />
     <ProjectReference Include="..\Marshal.Integrations.Mail\Marshal.Integrations.Mail.csproj" />
     <ProjectReference Include="..\Marshal.Integrations.Moonraker\Marshal.Integrations.Moonraker.csproj" />
     <ProjectReference Include="..\Marshal.Integrations.Notes\Marshal.Integrations.Notes.csproj" />
+    <ProjectReference Include="..\Marshal.Integrations.Proxmox\Marshal.Integrations.Proxmox.csproj" />
     <ProjectReference Include="..\Marshal.Memory\Marshal.Memory.csproj" />
     <ProjectReference Include="..\Marshal.Artifacts\Marshal.Artifacts.csproj" />
     <ProjectReference Include="..\Marshal.Tasks\Marshal.Tasks.csproj" />

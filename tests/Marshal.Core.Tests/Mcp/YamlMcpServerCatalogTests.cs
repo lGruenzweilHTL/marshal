@@ -102,6 +102,8 @@ public sealed class YamlMcpServerCatalogTests : IDisposable
     [Theory]
     [InlineData("id: mail\ntransport: http\nurl: http://m/mcp\n")]
     [InlineData("id: other\ntoolPrefix: timers\ntransport: http\nurl: http://m/mcp\n")]
+    [InlineData("id: infra\ntransport: http\nurl: http://m/mcp\n")]
+    [InlineData("id: repos\ntransport: http\nurl: http://m/mcp\n")]
     public void Load_ReservedNamespace_Rejected(string yaml)
     {
         Write("reserved.yaml", yaml);

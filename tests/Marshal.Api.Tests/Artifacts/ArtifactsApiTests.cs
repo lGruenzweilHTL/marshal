@@ -62,6 +62,21 @@ public sealed class ArtifactsApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task List_FiltersByLowercaseKindAndSource()
+    {
+        await UploadIdAsync("notes.md", "# Notes\n"u8.ToArray());
+        await UploadIdAsync("photo.png", _png);
+
+        JsonElement markdown = await _browser.GetFromJsonAsync<JsonElement>("/api/v1/artifacts?kind=markdown&source=upload", Ct);
+        JsonElement none = await _browser.GetFromJsonAsync<JsonElement>("/api/v1/artifacts?source=github", Ct);
+        HttpResponseMessage unknown = await _browser.GetAsync("/api/v1/artifacts?kind=sculpture", Ct);
+
+        Assert.Equal("notes.md", Assert.Single(markdown.GetProperty("items").EnumerateArray()).GetProperty("name").GetString());
+        Assert.Empty(none.GetProperty("items").EnumerateArray());
+        Assert.Equal(HttpStatusCode.BadRequest, unknown.StatusCode);
+    }
+
+    [Fact]
     public async Task Upload_OverTheLimit_413AndNothingStored()
     {
         HttpResponseMessage response = await UploadAsync("big.bin", new byte[(1024 * 1024) + 1]);

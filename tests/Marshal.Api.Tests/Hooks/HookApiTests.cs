@@ -68,10 +68,34 @@ public sealed class HookApiTests : IDisposable
     {
         HttpClient client = await _factory.ClientWithTokenAsync(ApiScopes.HooksUptimeKuma);
 
-        HttpResponseMessage response = await client.PostAsync("/api/v1/hooks/proxmox", Json("down"), Ct);
+        HttpResponseMessage response = await client.PostAsync("/api/v1/hooks/gitlab", Json("down"), Ct);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Empty(_events.Events);
+    }
+
+    [Fact]
+    public async Task Post_OtherSourcesScope_Returns403()
+    {
+        HttpClient client = await _factory.ClientWithTokenAsync(ApiScopes.HooksUptimeKuma);
+
+        HttpResponseMessage response = await client.PostAsync("/api/v1/hooks/proxmox", Json("down"), Ct);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Empty(_events.Events);
+    }
+
+    [Fact]
+    public async Task Post_ProxmoxBackupFailure_PublishesTrustedEvent()
+    {
+        HttpClient client = await _factory.ClientWithTokenAsync(ApiScopes.HooksProxmox);
+        const string body = """{"severity":"error","timestamp":1760000000,"fields":{"type":"vzdump","hostname":"pve1","job-id":"backup-nightly"}}""";
+
+        HttpResponseMessage response = await client.PostAsync("/api/v1/hooks/proxmox", new StringContent(body, Encoding.UTF8, "application/json"), Ct);
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        MarshalEvent @event = Assert.Single(_events.Events);
+        Assert.Equal(("proxmox", "backup.failed", "backup-nightly", true), (@event.Source, @event.Type, @event.Entity, @event.Trusted));
     }
 
     [Fact]

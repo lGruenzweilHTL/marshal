@@ -148,6 +148,34 @@ public sealed class FileArtifactStoreTests : IAsyncLifetime
         Assert.Single(results, result => result.IsFailure && result.Error.Code == "artifacts.quota_exceeded");
     }
 
+    [Fact]
+    public async Task FindBySource_NewestMatchOfTheOwner()
+    {
+        ArtifactRecord older = (await Store().CreateAsync(new ArtifactDraft("marshal-pr-42.diff", ArtifactSource.Github, "marshal/pr/42@abc", Tainted: true), new MemoryStream("+a\n"u8.ToArray()), Ct)).Value;
+        _time.Advance(TimeSpan.FromMinutes(1));
+        ArtifactRecord newer = (await Store().CreateAsync(new ArtifactDraft("marshal-pr-42.diff", ArtifactSource.Github, "marshal/pr/42@abc", Tainted: true), new MemoryStream("+b\n"u8.ToArray()), Ct)).Value;
+
+        ArtifactRecord? found = await Store().FindBySourceAsync(ArtifactSource.Github, "marshal/pr/42@abc", Ct);
+
+        Assert.Equal(newer.Id, found?.Id);
+        Assert.NotEqual(older.Id, newer.Id);
+        Assert.Equal((ArtifactSource.Github, true), (found!.Source, found.Tainted));
+        Assert.Null(await Store().FindBySourceAsync(ArtifactSource.Github, "marshal/pr/43@abc", Ct));
+        Assert.Null(await Store().FindBySourceAsync(ArtifactSource.Executor, "marshal/pr/42@abc", Ct));
+        _database.Accessor.Current = Text(OwnerB);
+        Assert.Null(await Store().FindBySourceAsync(ArtifactSource.Github, "marshal/pr/42@abc", Ct));
+    }
+
+    [Fact]
+    public async Task GithubSource_ListedBySource()
+    {
+        await Store().CreateAsync(new ArtifactDraft("homelab-run-7-build.log", ArtifactSource.Github, "homelab/job/7", Tainted: true), new MemoryStream("x\n"u8.ToArray()), Ct);
+
+        ArtifactRecord listed = Assert.Single(await Store().ListAsync(new ArtifactQuery(Source: ArtifactSource.Github), Ct));
+
+        Assert.Equal(ArtifactKind.Code, listed.Kind);
+    }
+
     private Task<Result<ArtifactRecord>> CreateAsync(string name, byte[] content, ArtifactSource source = ArtifactSource.Upload, bool tainted = false) =>
         Store().CreateAsync(new ArtifactDraft(name, source, Tainted: tainted), new MemoryStream(content), Ct);
 

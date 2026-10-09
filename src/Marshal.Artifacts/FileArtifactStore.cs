@@ -144,6 +144,16 @@ internal sealed class FileArtifactStore(
         return [.. found.Select(ToRecord)];
     }
 
+    public async Task<ArtifactRecord?> FindBySourceAsync(ArtifactSource source, string reference, CancellationToken cancellationToken)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        StoredArtifact? row = await db.Artifacts.AsNoTracking()
+            .Where(artifact => artifact.Source == source && artifact.SourceReference == reference)
+            .OrderByDescending(artifact => artifact.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+        return row is null ? null : ToRecord(row);
+    }
+
     public async Task<Result> DeleteAsync(ArtifactId id, CancellationToken cancellationToken)
     {
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);

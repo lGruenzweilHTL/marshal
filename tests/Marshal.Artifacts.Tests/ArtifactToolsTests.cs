@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Artifacts;
+using Marshal.Abstractions.Displays;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Tools;
 using Marshal.Testing;
@@ -14,6 +15,9 @@ namespace Marshal.Artifacts.Tests;
 public sealed class ArtifactToolsTests : IAsyncLifetime
 {
     private readonly string _directory = Directory.CreateTempSubdirectory("marshal-artifact-tools-").FullName;
+    private static readonly byte[] _png = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 13, 1, 2, 3, 4];
+
+    private readonly RecordingPlayer _player = new();
     private readonly FakeTimeProvider _time = new(new DateTimeOffset(2026, 10, 8, 10, 0, 0, TimeSpan.Zero));
     private TestDatabase _database = null!;
 
@@ -84,15 +88,89 @@ public sealed class ArtifactToolsTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Show_VisibleOnlyInWebTurns()
+    public async Task Show_VisibleInWebTurnsAndOnSatellitesWithDisplay()
     {
         ITool show = await ToolAsync("show");
 
         Assert.True(await show.IsAvailableAsync(Web(), Ct));
+        Assert.True(await show.IsAvailableAsync(LivingRoom, Ct));
+        Assert.False(await show.IsAvailableAsync(Voice(OwnerA, satelliteId: "assist_satellite.kitchen"), Ct));
         Assert.False(await show.IsAvailableAsync(Voice(OwnerA), Ct));
         Assert.False(await show.IsAvailableAsync(Text(OwnerA) with { Source = SessionSource.Task }, Ct));
         Assert.True(await (await ToolAsync("list")).IsAvailableAsync(Voice(OwnerA), Ct));
     }
+
+    [Fact]
+    public async Task Show_SatelliteWithDisplayButNoHomeAssistant_Hidden()
+    {
+        ITool show = (await new ArtifactToolSource(Store(), new FakeLinks(), Displays(withPlayer: false)).GetToolsAsync(Ct)).Single(tool => tool.Descriptor.Id.Name == "show");
+
+        Assert.False(await show.IsAvailableAsync(LivingRoom, Ct));
+    }
+
+    [Fact]
+    public async Task Show_OnSatellite_PlaysFirstPageOnItsDisplay()
+    {
+        ArtifactRecord photo = await CreateAsync("photo.png", _png);
+
+        Result<ToolOutput> shown = await InvokeAsync("show", new { id = photo.Id.ToString() }, LivingRoom);
+
+        Assert.Equal("Showing photo.png on the display living_tv, page 1 of 1.", shown.Value.Content);
+        Assert.Null(shown.Value.Artifacts);
+        (DisplaySurface display, string url, DisplayMediaType type) = Assert.Single(_player.Played);
+        Assert.Equal((new DisplaySurface("living_tv", "media_player.living_room_tv"), $"http://tv.test/{photo.Id}/1.png", DisplayMediaType.Image), (display, url, type));
+    }
+
+    [Fact]
+    public async Task Show_OnSatellite_SecondPageOfCode()
+    {
+        ArtifactRecord code = await CreateAsync("Program.cs", string.Concat(Enumerable.Range(1, 130).Select(line => $"line {line}\n")));
+
+        Result<ToolOutput> shown = await InvokeAsync("show", new { id = code.Id.ToString(), page = 2 }, LivingRoom);
+
+        Assert.Equal("Showing Program.cs on the display living_tv, page 2 of 4.", shown.Value.Content);
+        Assert.Equal($"http://tv.test/{code.Id}/2.png", Assert.Single(_player.Played).Url);
+    }
+
+    [Fact]
+    public async Task Show_OnSatellite_PageOutOfRange_Invalid()
+    {
+        ArtifactRecord photo = await CreateAsync("photo.png", _png);
+
+        Result<ToolOutput> shown = await InvokeAsync("show", new { id = photo.Id.ToString(), page = 2 }, LivingRoom);
+
+        Assert.Equal("artifacts.invalid_arguments", shown.Error.Code);
+        Assert.Empty(_player.Played);
+    }
+
+    [Fact]
+    public async Task Show_OnSatellite_ModelHasNoRendition()
+    {
+        ArtifactRecord model = await CreateAsync("bracket.stl", "solid b\n facet normal 0 0 1\n endfacet\nendsolid");
+
+        Result<ToolOutput> shown = await InvokeAsync("show", new { id = model.Id.ToString() }, LivingRoom);
+
+        Assert.Equal("artifacts.no_rendition", shown.Error.Code);
+        Assert.Empty(_player.Played);
+    }
+
+    [Fact]
+    public async Task Show_OnSatellite_UnknownId_NotFound()
+    {
+        Assert.Equal(ErrorType.NotFound, (await InvokeAsync("show", new { id = ArtifactId.New().ToString() }, LivingRoom)).Error.Type);
+        Assert.Empty(_player.Played);
+    }
+
+    [Fact]
+    public async Task Show_OnSatellite_PlayerFails_ErrorReturned()
+    {
+        ArtifactRecord photo = await CreateAsync("photo.png", _png);
+        _player.Failure = new Error("display.failed", "The display 'living_tv' did not accept the media.", ErrorType.Unavailable);
+
+        Assert.Equal("display.failed", (await InvokeAsync("show", new { id = photo.Id.ToString() }, LivingRoom)).Error.Code);
+    }
+
+    private static MarshalExecutionContext LivingRoom => Voice(OwnerA, satelliteId: "assist_satellite.living_room");
 
     private static MarshalExecutionContext Web(Abstractions.Identity.OwnerId? owner = null) => Text(owner ?? OwnerA) with { Source = SessionSource.Web };
 
@@ -103,13 +181,47 @@ public sealed class ArtifactToolsTests : IAsyncLifetime
         await (await ToolAsync(name)).InvokeAsync(new ToolInvocation(JsonSerializer.SerializeToElement(arguments), context), Ct);
 
     private async Task<ITool> ToolAsync(string name) =>
-        (await new ArtifactToolSource(Store(), new FakeLinks()).GetToolsAsync(Ct)).Single(tool => tool.Descriptor.Id.Name == name);
+        (await new ArtifactToolSource(Store(), new FakeLinks(), Displays(withPlayer: true)).GetToolsAsync(Ct)).Single(tool => tool.Descriptor.Id.Name == name);
 
-    private async Task<ArtifactRecord> CreateAsync(string name, string content) =>
-        (await Store().CreateAsync(new ArtifactDraft(name, ArtifactSource.Upload), new MemoryStream(Encoding.UTF8.GetBytes(content)), Ct)).Value;
+    private ArtifactDisplays Displays(bool withPlayer) =>
+        new(new SkiaArtifactRenditions(Store()), new FakeDisplayLinks(), new FakeDisplayDirectory(), withPlayer ? [_player] : []);
+
+    private Task<ArtifactRecord> CreateAsync(string name, string content) => CreateAsync(name, Encoding.UTF8.GetBytes(content));
+
+    private async Task<ArtifactRecord> CreateAsync(string name, byte[] content) =>
+        (await Store().CreateAsync(new ArtifactDraft(name, ArtifactSource.Upload), new MemoryStream(content), Ct)).Value;
 
     private FileArtifactStore Store() =>
         new(_database.Factory, _database.Accessor, new ArtifactKindDetector(), new ArtifactDirectory(_directory), Options.Create(new ArtifactOptions()), new FakeLiveEventPublisher(), _time);
+
+    private sealed class FakeDisplayLinks : IDisplayLinks
+    {
+        public string Create(ArtifactId id, int page, string extension) => $"http://tv.test/{id}/{page}.{extension}";
+    }
+
+    private sealed class FakeDisplayDirectory : IDisplayDirectory
+    {
+        public DisplaySurface? ForSatellite(string? satelliteId) =>
+            satelliteId == "assist_satellite.living_room" ? new DisplaySurface("living_tv", "media_player.living_room_tv") : null;
+    }
+
+    private sealed class RecordingPlayer : IDisplayPlayer
+    {
+        public bool IsAvailable => true;
+
+        public List<(DisplaySurface Display, string Url, DisplayMediaType Type)> Played { get; } = [];
+
+        public Error? Failure { get; set; }
+
+        public Task<Result> PlayAsync(DisplaySurface display, string url, DisplayMediaType type, CancellationToken cancellationToken)
+        {
+            if (Failure is { } failure)
+                return Task.FromResult(Result.Failure(failure));
+
+            Played.Add((display, url, type));
+            return Task.FromResult(Result.Success());
+        }
+    }
 
     private sealed class FakeLinks : IArtifactLinks
     {

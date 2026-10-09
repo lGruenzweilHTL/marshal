@@ -150,6 +150,18 @@ artifacts:                  # files in /data/artifacts: uploads, executor output
   maxUploadMb: 200          # largest single file
   signedLinkMinutes: 15     # lifetime of signed content links (e.g. for a phone notification)
 
+# Screens (Home Assistant media players, e.g. a TV through the DLNA Digital Media Renderer integration) on which
+# artifacts_show plays images, MP4 video and code / diff / Markdown as PNG pages. A satellite shows on the display
+# named in its satellites.yaml profile (display: living_tv). The TV fetches the media itself, so mediaBaseUrl must be
+# an address the TV reaches: DLNA renderers prefer plain HTTP and an IP address, so publish Marshal's HTTP port on the
+# LAN (e.g. ports: ["8080:8080"] in docker-compose.yml). An https URL with a certificate the TV trusts works too.
+# Without mediaBaseUrl, notifications.publicUrl is used.
+displays:
+  # mediaBaseUrl: http://192.168.1.10:8080/
+  linkMinutes: 240          # lifetime of display links; long enough to pause a video
+  surfaces: {}
+  #   living_tv: { entity: media_player.living_room_tv }
+
 # Inbound webhooks (POST /api/v1/hooks/<source>), published on the event bus for watches. Sources are code;
 # the first is uptime-kuma. Each source needs a token with its own scope, e.g. for Uptime Kuma:
 #   1. marshal tokens create --name kuma --scope hooks:uptime-kuma
@@ -157,9 +169,40 @@ artifacts:                  # files in /data/artifacts: uploads, executor output
 #      Post URL https://<marshal>/api/v1/hooks/uptime-kuma, Request Body "application/json" (or form-data),
 #      Additional Headers {"Authorization": "Bearer <token>"}
 #   3. Create a watch, e.g. "tell me when the NAS goes down" (source uptime-kuma, type monitor.down, entity NAS).
+#
+# Proxmox VE (8.3+) sends backup, replication, fencing and package-update notifications the same way:
+#   1. marshal tokens create --name proxmox --scope hooks:proxmox
+#   2. Proxmox: Datacenter > Notifications > Add > Webhook
+#        Method/URL: POST https://<marshal>/api/v1/hooks/proxmox
+#        Headers:    Authorization = Bearer {{ secrets.token }}    Content-Type = application/json
+#        Body:       {"severity":"{{ severity }}","timestamp":{{ timestamp }},"fields":{{ json fields }}}
+#        Secrets:    token = <the token from step 1>
+#      and a notification matcher that sends to it. Events: backup.failed, backup.ok, replication.failed,
+#      node.fenced, updates.available (entity: the backup job id, else the node name).
 webhooks:
   debounceSeconds: 60       # a repeat of the same event (type and monitor) within this window is dropped
   requestsPerMinute: 60     # per token; more get 429
+
+# Read-only Proxmox VE access for the infra.* tools (overview, guests, storage, tasks); hidden until url is set.
+# Create the token in Proxmox (Datacenter > Permissions > API Tokens, privilege separation on) and give it only
+# the PVEAuditor role on "/". Marshal sends GET requests only.
+# proxmox:
+#   url: https://pve.lan:8006/
+#   tokenId: marshal@pve!marshal
+#   tokenSecret: proxmox_token              # secret name; the value (a UUID) lives in /run/secrets or the database
+#   certificateFingerprint: "AB:CD:..."     # SHA-256 of the node's self-signed certificate (Node > System > Certificates)
+
+# Read-only GitHub access for the repos.* tools (pull requests, issues, CI runs and failed-job logs); hidden until
+# repos are listed. The model sees only these ids, never other repositories. Use a fine-grained personal access token
+# limited to these repositories with read-only Metadata, Contents, Pull requests, Issues and Actions permissions.
+# It expires (at most one year): replace the secret value, no restart needed. Keep the executor's git token separate.
+# Diffs and failed-job logs are stored as artifacts (source github, tainted); everything the tools return is
+# third-party text and taints the run.
+# github:
+#   tokenSecret: github_pat                 # secret name; the value lives in /run/secrets or the database
+#   repos:
+#     marshal: lukas/marshal                # id the model uses: owner/name on GitHub
+#     homelab: lukas/homelab
 
 # Coding sessions on the separate executor host (src/Marshal.ExecutorHost); tasks.run_executor is hidden until set.
 # executors:

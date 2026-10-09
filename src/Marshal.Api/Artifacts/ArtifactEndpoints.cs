@@ -61,11 +61,28 @@ internal static class ArtifactEndpoints
         return group;
     }
 
-    private static async Task<Ok<ArtifactList>> ListAsync(ArtifactKind? kind, ArtifactSource? source, string? query, IArtifactStore store, IArtifactLinks links, CancellationToken ct)
+    // Kind and source arrive in lowercase (the JSON names); enum binding is case-sensitive, so they are parsed here.
+    private static async Task<Results<Ok<ArtifactList>, ProblemHttpResult>> ListAsync(string? kind, string? source, string? query, IArtifactStore store, IArtifactLinks links, CancellationToken ct)
     {
-        IReadOnlyList<ArtifactRecord> found = await store.ListAsync(new ArtifactQuery(kind, source, query), ct);
+        if (!TryParse(kind, out ArtifactKind? kindFilter) || !TryParse(source, out ArtifactSource? sourceFilter))
+            return new Error("artifacts.invalid_filter", "Unknown kind or source.", ErrorType.Validation).ToProblem();
+
+        IReadOnlyList<ArtifactRecord> found = await store.ListAsync(new ArtifactQuery(kindFilter, sourceFilter, query), ct);
         ArtifactUsage usage = await store.UsageAsync(ct);
         return TypedResults.Ok(new ArtifactList([.. found.Select(artifact => ArtifactResponse.From(artifact, links))], usage.Used, usage.Quota));
+    }
+
+    private static bool TryParse<TEnum>(string? value, out TEnum? parsed)
+        where TEnum : struct, Enum
+    {
+        parsed = null;
+        if (string.IsNullOrEmpty(value))
+            return true;
+        if (!Enum.TryParse(value, ignoreCase: true, out TEnum result) || int.TryParse(value, out _))
+            return false;
+
+        parsed = result;
+        return true;
     }
 
     private static async Task<Results<Ok<ArtifactResponse>, ProblemHttpResult>> GetAsync(Guid id, IArtifactStore store, IArtifactLinks links, CancellationToken ct)

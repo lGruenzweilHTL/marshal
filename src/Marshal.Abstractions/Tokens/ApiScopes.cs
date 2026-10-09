@@ -16,8 +16,11 @@ public static class ApiScopes
     /// <summary>Posting Uptime Kuma webhooks.</summary>
     public const string HooksUptimeKuma = HooksPrefix + "uptime-kuma";
 
+    /// <summary>Posting Proxmox VE webhooks.</summary>
+    public const string HooksProxmox = HooksPrefix + "proxmox";
+
     /// <summary>Every known scope.</summary>
-    public static IReadOnlySet<string> All { get; } = new HashSet<string>(StringComparer.Ordinal) { ConversationWrite, TasksRead, TasksWrite, Admin, HooksUptimeKuma };
+    public static IReadOnlySet<string> All { get; } = new HashSet<string>(StringComparer.Ordinal) { ConversationWrite, TasksRead, TasksWrite, Admin, HooksUptimeKuma, HooksProxmox };
 
     /// <summary>The scope that allows posting webhooks of <paramref name="source"/>.</summary>
     public static string Hooks(string source) => HooksPrefix + source;

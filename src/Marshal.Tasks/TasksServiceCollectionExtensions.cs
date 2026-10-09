@@ -125,6 +125,7 @@ public static class TasksServiceCollectionExtensions
             .Validate(options => options.RequestsPerMinute is >= 1 and <= 6000, "webhooks.requestsPerMinute must be between 1 and 6000.")
             .ValidateOnStart();
         services.AddWebhookSource<UptimeKumaNormalizer>();
+        services.AddWebhookSource<ProxmoxNormalizer>();
         services.AddSingleton<WebhookIngest>();
         services.AddSingleton<IWebhookIngest>(provider => provider.GetRequiredService<WebhookIngest>());
 

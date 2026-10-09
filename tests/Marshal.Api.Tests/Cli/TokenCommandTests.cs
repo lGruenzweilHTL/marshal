@@ -50,17 +50,19 @@ public sealed class TokenCommandTests : IAsyncDisposable
         Assert.DoesNotContain(token, await AllTextInDatabaseAsync(), StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task Create_HookScope()
+    [Theory]
+    [InlineData("hooks:uptime-kuma")]
+    [InlineData("hooks:proxmox")]
+    public async Task Create_HookScope(string scope)
     {
         await using MarshalDbContext context = await ContextAsync();
 
-        int exit = await Command().RunAsync(["create", "--name", "kuma", "--scope", "hooks:uptime-kuma"], Ct);
+        int exit = await Command().RunAsync(["create", "--name", "hook", "--scope", scope], Ct);
 
         Assert.Equal(0, exit);
         OwnerId owner = await new EfInstanceOwner(Factory).GetAsync(Ct);
         using (_accessor.Use(new Abstractions.Execution.MarshalExecutionContext { OwnerId = owner, Source = Abstractions.Execution.SessionSource.Api }))
-            Assert.Equal([ApiScopes.HooksUptimeKuma], Assert.Single(await new ApiTokenService(Factory, _accessor, _time).ListAsync(Ct)).Scopes);
+            Assert.Equal([scope], Assert.Single(await new ApiTokenService(Factory, _accessor, _time).ListAsync(Ct)).Scopes);
     }
 
     [Fact]

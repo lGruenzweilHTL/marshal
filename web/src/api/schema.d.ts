@@ -1427,7 +1427,7 @@ export interface components {
             url: string;
         };
         /** @enum {unknown} */
-        ArtifactSource: "upload" | "executor" | "printer" | "mail";
+        ArtifactSource: "upload" | "executor" | "printer" | "mail" | "github";
         BabysitterCheck: {
             /** Format: date-time */
             at: string;
@@ -4498,8 +4498,8 @@ export interface operations {
     ListArtifacts: {
         parameters: {
             query?: {
-                kind?: components["schemas"]["ArtifactKind"];
-                source?: components["schemas"]["ArtifactSource"];
+                kind?: string;
+                source?: string;
                 query?: string;
             };
             header?: never;

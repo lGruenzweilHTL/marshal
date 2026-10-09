@@ -1,5 +1,6 @@
 using Marshal.Abstractions.Calendar;
 using Marshal.Abstractions.Context;
+using Marshal.Abstractions.Displays;
 using Marshal.Abstractions.Events;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
@@ -7,6 +8,7 @@ using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Satellites;
 using Marshal.Abstractions.Tools;
 using Marshal.Integrations.HomeAssistant.Calendar;
+using Marshal.Integrations.HomeAssistant.Displays;
 using Marshal.Integrations.HomeAssistant.Energy;
 using Marshal.Integrations.HomeAssistant.Notifications;
 using Microsoft.Extensions.Configuration;
@@ -49,6 +51,7 @@ public static class HomeAssistantServiceCollectionExtensions
         services.AddSingleton<INotificationChannel, HaVoiceAnnounceChannel>();
         services.AddSingleton<INotificationChannel, HaVoiceConversationChannel>();
         services.AddSingleton<INotificationChannel, HaPushChannel>();
+        services.AddSingleton<IDisplayPlayer, HomeAssistantDisplayPlayer>();
         services.AddSingleton<IRiskTargetResolver, HaTargetResolver>();
         services.AddSingleton<IContextContributor, HaAreaContextContributor>();
         services.Replace(ServiceDescriptor.Singleton<IAreaDirectory, HaAreaDirectory>());

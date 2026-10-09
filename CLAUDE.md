@@ -49,14 +49,18 @@ src/                         .NET projects
                              consolidation (entities and migrations live in Marshal.Data)
   Marshal.Tasks/             durable tasks, scheduler + worker pool, event bus, trigger matcher, deliveries,
                              notifications, approval queue, follow-ups, executors, system jobs,
-                             webhook ingest (Uptime Kuma normalizer)
+                             webhook ingest (Uptime Kuma and Proxmox normalizers)
   Marshal.Integrations.HomeAssistant/  HA REST + websocket client, registry and state cache, target resolver,
-                             area context, timer, places (zone) and energy tools, time zone source
+                             area context, timer, places (zone) and energy tools, time zone source, display player
   Marshal.Integrations.Moonraker/  printers: Moonraker REST + websocket state cache, snapshots, inspection, printer tools
   Marshal.Integrations.Mail/ mail providers (IMAP via MailKit) and credential sources, mail tools (never a send path)
   Marshal.Integrations.FreshRss/  FreshRSS Google Reader API client, full-text extraction, RSS tools
   Marshal.Integrations.Notes/  git-backed Markdown notes source, own hybrid notes index, notes tools
-  Marshal.Artifacts/         artifact store (files in /data/artifacts, per-owner quota), kind detection, artifacts tools
+  Marshal.Integrations.Proxmox/  read-only Proxmox VE client (API token, optional certificate pinning), infra tools
+  Marshal.Integrations.GitHub/  read-only GitHub REST client for allowlisted repos (fine-grained PAT), repos tools
+                             (diffs and failed-job logs as artifacts)
+  Marshal.Artifacts/         artifact store (files in /data/artifacts, per-owner quota), kind detection, media renditions
+                             for displays, artifacts tools
   Marshal.Data/              EF Core DbContext, migrations, owner-scoped query filters
   Marshal.ExecutorHost/      separate coding-sandbox service (own deployment and image, never in the main container,
                              never referenced by Marshal)
@@ -111,7 +115,7 @@ Key dependencies and what they are for. Keep this list current when adding or re
 | `SmartReader` | Readability full-text extraction for RSS articles |
 | `AngleSharp` | HTML parsing (SmartReader's parser): plain text of RSS summaries |
 | `Google.Apis.Gmail.v1`, `Microsoft.Graph` | Gmail API and Graph mail providers (later, build order §14) |
-| `SkiaSharp` (+ `SkiaSharp.NativeAssets.Linux.NoDependencies`) | Image resizing (printer and camera snapshots before VLM calls); MIT licensed; the native asset package runs in the slim container without fontconfig |
+| `SkiaSharp` (+ `SkiaSharp.NativeAssets.Linux.NoDependencies`) | Image resizing (printer and camera snapshots before VLM calls) and display renditions of artifacts (image conversion, text pages with the embedded JetBrains Mono font); MIT licensed; the native asset package runs in the slim container without fontconfig |
 | `Microsoft.Extensions.Http` | `IHttpClientFactory` named clients (MCP streamable HTTP, Home Assistant REST) |
 | `Microsoft.Extensions.Http.Resilience` | Retries / backoff for integration HTTP clients |
 | `OpenTelemetry.*` (`Extensions.Hosting`, `Exporter.OpenTelemetryProtocol`) | Traces and metrics (`Marshal.Runs` activity source, `Marshal` meter), OTLP export |

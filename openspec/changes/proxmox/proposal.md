@@ -7,18 +7,19 @@ The homelab runs on Proxmox VE, but Marshal cannot see it: "is the NAS VM runnin
 ## What Changes
 
 - New read-only Proxmox client over the Proxmox VE REST API, authenticated with an API token (`proxmox.url`, `proxmox.tokenId`, `proxmox.tokenSecret` as secret name), optionally pinned to the server certificate's SHA-256 fingerprint for self-signed setups.
-- New tools, all safe: `proxmox.overview` (nodes, guest counts, storage usage), `proxmox.guests(node?, status?)`, `proxmox.storage()`, `proxmox.tasks(failedOnly?, since?)`. No write paths exist: no start, stop, create, delete, console or shell.
+- New tools in the capability namespace `infra` (built-in namespaces name capabilities, never providers), all safe: `infra.overview` (nodes, guest counts, storage usage), `infra.guests(node?, status?)`, `infra.storage()`, `infra.tasks(failedOnly?, since?)`. No write paths exist: no start, stop, create, delete, console or shell.
 - New webhook source `proxmox` on `POST /api/v1/hooks/proxmox` with scope `hooks:proxmox`. It reads a fixed JSON body that the user sets as the webhook target's body template (documented), and publishes trusted events: `backup.failed`, `backup.ok`, `replication.failed`, `node.fenced`, `updates.available`. Free-text title and message are not part of the body, so no free text enters the event.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `proxmox`: Proxmox configuration, the read-only client and the `proxmox.*` tools.
+- `proxmox`: Proxmox configuration, the read-only client and the `infra.*` tools.
 
 ### Modified Capabilities
 
 - `webhook-ingest`: new `proxmox` source (body format, event mapping, trust).
+- `tool-registry`: `infra` joins the reserved namespaces (the list also catches up with `places`, `energy` and `artifacts`).
 
 ## Non-goals
 

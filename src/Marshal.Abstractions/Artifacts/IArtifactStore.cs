@@ -19,6 +19,9 @@ public interface IArtifactStore
 
     Task<IReadOnlyList<ArtifactRecord>> ListAsync(ArtifactQuery query, CancellationToken cancellationToken);
 
+    /// <summary>The newest artifact with this source and source reference, or null; for sources that reuse content.</summary>
+    Task<ArtifactRecord?> FindBySourceAsync(ArtifactSource source, string reference, CancellationToken cancellationToken);
+
     /// <summary>Removes the row and the file.</summary>
     Task<Result> DeleteAsync(ArtifactId id, CancellationToken cancellationToken);
 

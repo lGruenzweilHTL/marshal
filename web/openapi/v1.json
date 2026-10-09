@@ -2705,7 +2705,7 @@
             "in": "query",
             "description": "",
             "schema": {
-              "$ref": "#/components/schemas/ArtifactKind"
+              "type": "string"
             }
           },
           {
@@ -2713,7 +2713,7 @@
             "in": "query",
             "description": "",
             "schema": {
-              "$ref": "#/components/schemas/ArtifactSource"
+              "type": "string"
             }
           },
           {
@@ -3146,7 +3146,8 @@
           "upload",
           "executor",
           "printer",
-          "mail"
+          "mail",
+          "github"
         ]
       },
       "BabysitterCheck": {

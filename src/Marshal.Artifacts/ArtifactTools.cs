@@ -11,9 +11,9 @@ using Marshal.Abstractions.Tools;
 namespace Marshal.Artifacts;
 
 /// <summary>The <c>artifacts.*</c> tools (a built-in source).</summary>
-public sealed class ArtifactToolSource(IArtifactStore store, IArtifactLinks links) : IToolSource
+public sealed class ArtifactToolSource(IArtifactStore store, IArtifactLinks links, ArtifactDisplays displays) : IToolSource
 {
-    private readonly IReadOnlyList<ITool> _tools = [new ListTool(store), new ShowTool(store, links)];
+    private readonly IReadOnlyList<ITool> _tools = [new ListTool(store), new ShowTool(store, links, displays)];
 
     public string Name => "artifacts";
 
@@ -51,7 +51,7 @@ public sealed class ArtifactToolSource(IArtifactStore store, IArtifactLinks link
             """
             {"type":"object","properties":{
               "kind":{"type":"string","enum":["image","svg","video","model3d","code","diff","pdf","markdown","html","other"]},
-              "source":{"type":"string","enum":["upload","executor","printer","mail"]},
+              "source":{"type":"string","enum":["upload","executor","printer","mail","github"]},
               "query":{"type":"string","description":"Part of the file name."}}}
             """) with { UntrustedOutput = true, TaintKind = "artifact" };
 
@@ -89,22 +89,28 @@ public sealed class ArtifactToolSource(IArtifactStore store, IArtifactLinks link
         }
     }
 
-    // Opens an artifact in the web chat; hidden elsewhere until display surfaces exist.
-    private sealed class ShowTool(IArtifactStore store, IArtifactLinks links) : ITool
+    // Opens an artifact in the web chat, or plays its media rendition on the display in the satellite's room. The
+    // display comes from the satellite profile only; the model cannot pick another screen.
+    private sealed class ShowTool(IArtifactStore store, IArtifactLinks links, ArtifactDisplays displays) : ITool
     {
         public ToolDescriptor Descriptor { get; } = ArtifactToolSource.Descriptor("show",
-            "Shows an artifact (by id from artifacts_list) to the user in the chat.",
+            "Shows an artifact (by id from artifacts_list) to the user: in the chat in web conversations, on the screen in the room in voice conversations. Code, diffs and Markdown show as pages there; pass page for the next one.",
             """
-            {"type":"object","properties":{"id":{"type":"string","description":"Artifact id from artifacts_list."}},"required":["id"]}
+            {"type":"object","properties":{
+              "id":{"type":"string","description":"Artifact id from artifacts_list."},
+              "page":{"type":"integer","minimum":1,"description":"Page on a screen, default 1."}},"required":["id"]}
             """);
 
         public ValueTask<bool> IsAvailableAsync(MarshalExecutionContext context, CancellationToken cancellationToken) =>
-            ValueTask.FromResult(context.Source == SessionSource.Web);
+            ValueTask.FromResult(context.Source == SessionSource.Web || displays.For(context) is not null);
 
         public async Task<Result<ToolOutput>> InvokeAsync(ToolInvocation invocation, CancellationToken cancellationToken)
         {
             if (!ArtifactId.TryParse(Text(invocation.Arguments, "id"), null, out ArtifactId id))
                 return new Error("artifacts.not_found", "There is no artifact with that id.", ErrorType.NotFound);
+
+            if (invocation.Context.Source != SessionSource.Web)
+                return await ShowOnDisplayAsync(id, invocation, cancellationToken);
 
             Result<ArtifactRecord> artifact = await store.GetAsync(id, cancellationToken);
             if (artifact.IsFailure)
@@ -113,6 +119,35 @@ public sealed class ArtifactToolSource(IArtifactStore store, IArtifactLinks link
             ArtifactRecord shown = artifact.Value;
             var reference = new ArtifactRef(shown.Id, shown.Name, shown.Kind, links.Content(shown.Id));
             return new ToolOutput($"Shown to the user: {shown.Name} ({shown.Kind.ToString().ToLowerInvariant()}).") { Artifacts = [reference] };
+        }
+
+        private async Task<Result<ToolOutput>> ShowOnDisplayAsync(ArtifactId id, ToolInvocation invocation, CancellationToken cancellationToken)
+        {
+            if (displays.For(invocation.Context) is not { } target)
+                return new Error("artifacts.no_display", "There is no screen in this room.", ErrorType.Validation);
+
+            int page = 1;
+            if (invocation.Arguments.ValueKind == JsonValueKind.Object && invocation.Arguments.TryGetProperty("page", out JsonElement value) && value.ValueKind != JsonValueKind.Null
+                && !value.TryGetInt32(out page))
+            {
+                return Invalid("page must be a whole number.");
+            }
+
+            Result<ArtifactRendition> rendition = await displays.Renditions.DescribeAsync(id, cancellationToken);
+            if (rendition.IsFailure)
+                return rendition.Error;
+
+            ArtifactRendition shown = rendition.Value;
+            if (page < 1 || page > shown.Pages)
+                return SkiaArtifactRenditions.PageError(page, shown.Pages);
+
+            string url = displays.Links.Create(id, page, shown.Extension);
+            Result played = await target.Player.PlayAsync(target.Display, url, shown.DisplayType, cancellationToken);
+            if (played.IsFailure)
+                return played.Error;
+
+            return new ToolOutput(string.Create(CultureInfo.InvariantCulture,
+                $"Showing {shown.Artifact.Name} on the display {target.Display.Name}, page {page} of {shown.Pages}."));
         }
     }
 }
