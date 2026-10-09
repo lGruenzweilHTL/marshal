@@ -33,7 +33,7 @@ public interface IWebhookNormalizer
     Result<IReadOnlyList<WebhookEvent>> Normalize(WebhookRequest request);  // 0..n events
 }
 ```
-`WebhookRequest` carries content type and body bytes; `WebhookEvent` is type, entity and payload (the ingest adds source, owner, time and trust). Normalizers are pure (no I/O), so they are tested with recorded bodies. v1 implementation: `UptimeKumaNormalizer`.
+`WebhookRequest` carries content type, body bytes and the form fields of a form body (the endpoint parses multipart and URL-encoded bodies with ASP.NET Core, so normalizers stay free of multipart parsing); `WebhookEvent` is type, entity and payload (the ingest adds source, owner, time and trust). Normalizers are pure (no I/O), so they are tested with recorded bodies. v1 implementation: `UptimeKumaNormalizer`.
 
 Location: new folder `src/Marshal.Tasks/Webhooks` for the ingest service (debounce, publish, source state) and the Uptime Kuma normalizer; the interface in `Marshal.Abstractions/Events`. A project per webhook source would be heavier than the code it holds; when a source needs its own API client (Proxmox), that client goes to its integration project and the normalizer can live there.
 
@@ -58,15 +58,14 @@ Limits: `RequestSizeLimit(64 KB)` on the endpoint; ASP.NET Core's built-in rate 
 | Body | Event |
 |---|---|
 | `heartbeat.status` 0 / 1 / 2 / 3 | `monitor.down` / `up` / `pending` / `maintenance` |
-| no heartbeat, monitor set, msg matches `Certificate will expire in (\d+) days` | `certificate.expiring` with `days` |
-| no heartbeat, monitor set, other msg | nothing (unknown notice; logged at debug) |
-| neither | nothing (test notification) |
+| no heartbeat, msg matches `[<name>][<url>] … certificate … will expire in (\d+) days` | `certificate.expiring` with `name` and `days`; entity = `monitor.name`, else `<name>` from the message |
+| no heartbeat, other msg | nothing (test notification or unknown notice) |
 
-Entity = `monitor.name`. Payload: `monitorId`, `name`, `type`, `url` (when present), `time`, `pingMs`, `important`. No `msg` anywhere. The regex matches Uptime Kuma's English message; the language of these messages is not localized server-side (verify against the installed version when building).
+Entity = `monitor.name`. Payload: `monitorId`, `name`, `type`, `url` (when present), `time`, `pingMs`, `important`. No `msg` anywhere. The regex matches Uptime Kuma's English message, which is not localized server-side. Verified against Uptime Kuma's source (`server/model/monitor.js`, `sendCertNotificationByTargetDays`): the certificate notice is sent with `msg` only, without monitor and heartbeat objects, so the name comes from the message's first bracket. Heartbeat `time` is UTC `yyyy-MM-dd HH:mm:ss.SSS` without offset.
 
 ### 5. Event source state
 
-The ingest registers one `IEventSource` per normalizer: `Source` = name, `IsConnected` = a webhook was received in the last 24 hours. The UI's event sources list gets a "last received" time (additive field on the existing response).
+The ingest registers one `IEventSource` per normalizer: `Source` = name, `IsConnected` = a webhook was received in the last 24 hours. No event sources list existed yet: `GET /api/v1/system` gains an additive `eventSources` field (`source`, `connected`, `webhook`, `lastReceivedAt`) and the system page lists it. `IEventSource` gains `LastReceivedAt` with a default of null. The `user` role does not get hook scopes; only `admin` does.
 
 New interfaces: `IWebhookNormalizer` (v1: `UptimeKumaNormalizer`).
 

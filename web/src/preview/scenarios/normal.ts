@@ -461,7 +461,17 @@ export const normal = {
   '/api/v1/runs': runs,
   '/api/v1/runs/{id}': runDetail,
   '/api/v1/cost': cost,
-  '/api/v1/system': { version: '0.1.0', supportedApiVersions: ['1.0'], deprecatedApiVersions: [] },
+  '/api/v1/system': {
+    version: '0.1.0',
+    supportedApiVersions: ['1.0'],
+    deprecatedApiVersions: [],
+    eventSources: [
+      { source: 'ha', connected: true, webhook: false, lastReceivedAt: null },
+      { source: 'mail', connected: true, webhook: false, lastReceivedAt: null },
+      { source: 'printer', connected: true, webhook: false, lastReceivedAt: null },
+      { source: 'uptime-kuma', connected: true, webhook: true, lastReceivedAt: at(-18) },
+    ],
+  },
   '/api/v1/config': configSummary,
   '/api/v1/printers': [
     {

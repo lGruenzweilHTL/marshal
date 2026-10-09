@@ -7,6 +7,7 @@ using Marshal.Abstractions.Memory;
 using Marshal.Abstractions.Printers;
 using Marshal.Api.Auth;
 using Marshal.Api.Health;
+using Marshal.Api.Hooks;
 using Marshal.Api.Mail;
 using Marshal.Api.Models;
 using Marshal.Api.Printers;
@@ -32,6 +33,7 @@ public static class ApiServiceCollectionExtensions
     public static IServiceCollection AddMarshalApi(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<HttpOptions>().Bind(configuration.GetSection("http"));
+        services.AddHookRateLimiter();
         services.AddOptions<OwnerOptions>().Bind(configuration.GetSection("owner")).ValidateAttributes().ValidateOnStart();
 
         services.AddSingleton<ApiSnapshotLinks>();

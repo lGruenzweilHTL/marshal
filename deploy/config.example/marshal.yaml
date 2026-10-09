@@ -150,6 +150,17 @@ artifacts:                  # files in /data/artifacts: uploads, executor output
   maxUploadMb: 200          # largest single file
   signedLinkMinutes: 15     # lifetime of signed content links (e.g. for a phone notification)
 
+# Inbound webhooks (POST /api/v1/hooks/<source>), published on the event bus for watches. Sources are code;
+# the first is uptime-kuma. Each source needs a token with its own scope, e.g. for Uptime Kuma:
+#   1. marshal tokens create --name kuma --scope hooks:uptime-kuma
+#   2. Uptime Kuma: Settings > Notifications > Setup Notification > Webhook,
+#      Post URL https://<marshal>/api/v1/hooks/uptime-kuma, Request Body "application/json" (or form-data),
+#      Additional Headers {"Authorization": "Bearer <token>"}
+#   3. Create a watch, e.g. "tell me when the NAS goes down" (source uptime-kuma, type monitor.down, entity NAS).
+webhooks:
+  debounceSeconds: 60       # a repeat of the same event (type and monitor) within this window is dropped
+  requestsPerMinute: 60     # per token; more get 429
+
 # Coding sessions on the separate executor host (src/Marshal.ExecutorHost); tasks.run_executor is hidden until set.
 # executors:
 #   callbackBaseUrl: http://marshal:8080/     # Marshal as seen from the executor host

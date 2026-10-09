@@ -48,7 +48,8 @@ src/                         .NET projects
   Marshal.Memory/            memory chunks, versions and edges, hybrid retrieval, project activation,
                              consolidation (entities and migrations live in Marshal.Data)
   Marshal.Tasks/             durable tasks, scheduler + worker pool, event bus, trigger matcher, deliveries,
-                             notifications, approval queue, follow-ups, executors, system jobs
+                             notifications, approval queue, follow-ups, executors, system jobs,
+                             webhook ingest (Uptime Kuma normalizer)
   Marshal.Integrations.HomeAssistant/  HA REST + websocket client, registry and state cache, target resolver,
                              area context, timer, places (zone) and energy tools, time zone source
   Marshal.Integrations.Moonraker/  printers: Moonraker REST + websocket state cache, snapshots, inspection, printer tools

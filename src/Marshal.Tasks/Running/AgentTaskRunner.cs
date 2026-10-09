@@ -9,6 +9,7 @@ using Marshal.Abstractions.Tasks;
 using Marshal.Core.Agent;
 using Marshal.Core.Context;
 using Marshal.Tasks.Approvals;
+using Marshal.Tasks.Events;
 using Marshal.Tasks.Executors;
 using Marshal.Tasks.FollowUps;
 
@@ -99,7 +100,7 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
 
     // Approval decisions are written by the server; they are untrusted only when the approved action returned
     // untrusted content. A spoken reply is the user's own. Executor outcomes and event payloads can carry
-    // third-party text.
+    // third-party text, except events whose source declares them trusted in code.
     private static string? PayloadTaint(TaskRecord task)
     {
         if (task.TriggerPayload is null)
@@ -110,7 +111,9 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
             return null;
         if (Payload(task, ExecutorService.PayloadKey) is not null)
             return ExecutorTaint;
-        return task.Trigger.Kind == TaskTriggerKind.Event ? EventTaint : null;
+        if (task.Trigger.Kind != TaskTriggerKind.Event)
+            return null;
+        return EventPayloads.IsTrusted(task.TriggerPayload) ? null : EventTaint;
     }
 
     // The payload object when it has the top-level key (approval decision, spoken reply), else null.

@@ -17,7 +17,7 @@ The system SHALL provide sources for: HA state changes and `mobile_app_notificat
 
 #### Scenario: Webhook source listed
 - **WHEN** an Uptime Kuma webhook was received at 10:15
-- **THEN** the event sources list shows `uptime-kuma` with last received 10:15
+- **THEN** the event sources list on the system page shows `uptime-kuma` with last received 10:15
 
 ## ADDED Requirements
 

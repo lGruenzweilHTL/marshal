@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
+using Marshal.Abstractions.Events;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Tokens;
 using Marshal.Api.Auth;
@@ -28,11 +29,12 @@ public sealed class AuthorizationTests : IAsyncLifetime
     public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
 
     [Fact]
-    public async Task CookiePrincipal_UserRole_GetsEveryScopeExceptAdmin()
+    public async Task CookiePrincipal_UserRole_GetsEveryScopeExceptAdminAndHooks()
     {
         ClaimsPrincipal principal = await TransformAsync(CookiePrincipal("user"));
 
-        Assert.Equal(ApiScopes.All.Where(scope => scope != ApiScopes.Admin).Order(StringComparer.Ordinal), Scopes(principal));
+        Assert.Equal(ApiScopes.All.Where(scope => scope != ApiScopes.Admin && !ApiScopes.IsHook(scope)).Order(StringComparer.Ordinal), Scopes(principal));
+        Assert.DoesNotContain(ApiScopes.HooksUptimeKuma, Scopes(principal));
     }
 
     [Fact]
@@ -41,6 +43,16 @@ public sealed class AuthorizationTests : IAsyncLifetime
         ClaimsPrincipal principal = await TransformAsync(CookiePrincipal("admin"));
 
         Assert.Equal(ApiScopes.All.Order(StringComparer.Ordinal), Scopes(principal));
+    }
+
+    [Fact]
+    public void HookScopes_ExistForEveryWebhookSource()
+    {
+        IWebhookIngest ingest = _factory.Services.GetRequiredService<IWebhookIngest>();
+
+        Assert.Contains("uptime-kuma", ingest.Sources);
+        Assert.All(ingest.Sources, source => Assert.Contains(ApiScopes.Hooks(source), ApiScopes.All));
+        Assert.Equal("hooks:uptime-kuma", ApiScopes.HooksUptimeKuma);
     }
 
     [Fact]
@@ -65,6 +77,8 @@ public sealed class AuthorizationTests : IAsyncLifetime
     [InlineData("user", ApiScopes.Admin, false)]
     [InlineData("user", ApiScopes.ConversationWrite, true)]
     [InlineData("admin", ApiScopes.Admin, true)]
+    [InlineData("admin", ApiScopes.HooksUptimeKuma, true)]
+    [InlineData("user", ApiScopes.HooksUptimeKuma, false)]
     public async Task CookieAndTokenPrincipals_GoThroughTheSameScopePolicies(string role, string policy, bool allowed)
     {
         IAuthorizationService authorization = _factory.Services.GetRequiredService<IAuthorizationService>();

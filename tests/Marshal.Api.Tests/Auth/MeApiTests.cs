@@ -22,7 +22,7 @@ public sealed class MeApiTests
         Assert.Equal(user.ToString(), me.Id);
         Assert.StartsWith("user-", me.DisplayName, StringComparison.Ordinal);
         Assert.Equal(["user"], me.Roles);
-        Assert.Equal(ApiScopes.All.Where(scope => scope != ApiScopes.Admin).Order(StringComparer.Ordinal), me.Scopes);
+        Assert.Equal(ApiScopes.All.Where(scope => scope != ApiScopes.Admin && !ApiScopes.IsHook(scope)).Order(StringComparer.Ordinal), me.Scopes);
     }
 
     [Fact]

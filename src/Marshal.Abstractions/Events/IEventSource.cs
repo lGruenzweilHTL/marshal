@@ -10,4 +10,7 @@ public interface IEventSource
 
     /// <summary>Whether it currently receives events.</summary>
     bool IsConnected { get; }
+
+    /// <summary>When it last received something (webhook sources); null when unknown or never.</summary>
+    DateTimeOffset? LastReceivedAt => null;
 }

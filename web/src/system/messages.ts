@@ -22,6 +22,14 @@ export const en = {
   none: 'none',
   configTitle: 'Configuration',
   configBody: 'Read-only view of /config and marshal.yaml.',
+  sources: {
+    title: 'Event sources',
+    connected: 'connected',
+    disconnected: 'not connected',
+    lastWebhook: 'Last webhook {time}',
+    noWebhook: 'No webhook received yet',
+    names: { ha: 'Home Assistant', printer: 'Printers', mail: 'Mail', executor: 'Executors', 'uptime-kuma': 'Uptime Kuma' },
+  },
   config: {
     title: 'Configuration',
     subtitle: 'Read-only view of /config and marshal.yaml. Edit the files to change it; secrets appear by name only.',
@@ -105,6 +113,14 @@ export const de: Catalog<typeof en> = {
   none: 'keine',
   configTitle: 'Konfiguration',
   configBody: 'Nur-Lese-Ansicht von /config und marshal.yaml.',
+  sources: {
+    title: 'Ereignisquellen',
+    connected: 'verbunden',
+    disconnected: 'nicht verbunden',
+    lastWebhook: 'Letzter Webhook {time}',
+    noWebhook: 'Noch kein Webhook empfangen',
+    names: { ha: 'Home Assistant', printer: 'Drucker', mail: 'Mail', executor: 'Executors', 'uptime-kuma': 'Uptime Kuma' },
+  },
   config: {
     title: 'Konfiguration',
     subtitle: 'Nur-Lese-Ansicht von /config und marshal.yaml. Ändere die Dateien, um sie anzupassen; Secrets erscheinen nur mit Namen.',

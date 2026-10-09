@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { Bot, Database, FileCog, HeartPulse, House, KeyRound, Plug } from 'lucide-vue-next'
+import { Activity, Bot, Database, FileCog, HeartPulse, House, KeyRound, Mail, Plug, Printer, Radio, Terminal } from 'lucide-vue-next'
 import { computed, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useApi } from '../api/inject'
+import type { Schemas } from '../api/client'
 import { useLoad } from '../api/useLoad'
+import { useFormat } from '../i18n/locale'
 import { useUserSession } from '../session'
 import KillSwitch from '../tasks/KillSwitch.vue'
 import { Badge, Card, IconTile, KeyValueList, ListCard, ListRow, LoadBoundary, Page, PageHeader, Section, useDesktop, type Tone } from '../ui'
@@ -14,6 +16,7 @@ const api = useApi()
 const user = useUserSession()
 const desktop = useDesktop()
 const { t, te } = useI18n()
+const format = useFormat()
 
 const info = useLoad(() => api.call((client) => client.GET('/api/v1/system')), { isEmpty: () => false })
 const health = useLoad<HealthReport>(() => loadHealth(api), { isEmpty: () => false })
@@ -25,6 +28,10 @@ const tones: Record<HealthCheck['status'], Tone> = { healthy: 'success', degrade
 const icons: Record<string, Component> = { database: Database, config: FileCog, secrets: KeyRound, mcp: Plug, memory: Bot, homeassistant: House }
 const checkName = (name: string) => (te(`system.checks.${name}`) ? t(`system.checks.${name}`) : name)
 const checkDetail = (check: HealthCheck) => [check.description, ...(check.warnings ?? [])].filter(Boolean).join(' · ') || undefined
+const sourceIcons: Record<string, Component> = { ha: House, printer: Printer, mail: Mail, executor: Terminal, 'uptime-kuma': Activity }
+const sourceName = (source: string) => (te(`system.sources.names.${source}`) ? t(`system.sources.names.${source}`) : source)
+const sourceDetail = (source: Schemas['EventSourceInfo']) =>
+  !source.webhook ? undefined : source.lastReceivedAt ? t('system.sources.lastWebhook', { time: format.value.dateTime(source.lastReceivedAt) }) : t('system.sources.noWebhook')
 const about = (data: { version: string; supportedApiVersions: string[]; deprecatedApiVersions: string[] }) => [
   { key: 'version', label: t('system.version'), value: data.version, mono: true },
   { key: 'api-versions', label: t('system.api'), value: data.supportedApiVersions.join(', '), mono: true },
@@ -69,6 +76,20 @@ const about = (data: { version: string; supportedApiVersions: string[]; deprecat
             </template>
           </LoadBoundary>
         </Card>
+        <Section :title="t('system.sources.title')">
+          <LoadBoundary :load="info">
+            <template #default="{ data }">
+              <ListCard :label="t('system.sources.title')">
+                <ListRow v-for="source in data.eventSources" :key="source.source" :data-source="source.source" :title="sourceName(source.source)" :subtitle="sourceDetail(source)">
+                  <template #lead><IconTile :icon="sourceIcons[source.source] ?? Radio" /></template>
+                  <template #trail>
+                    <Badge :tone="source.connected ? 'success' : 'neutral'" dot :label="source.connected ? t('system.sources.connected') : t('system.sources.disconnected')" />
+                  </template>
+                </ListRow>
+              </ListCard>
+            </template>
+          </LoadBoundary>
+        </Section>
         <ListCard v-if="isAdmin">
           <ListRow to="/system/config" :title="t('system.configTitle')" :subtitle="t('system.configBody')">
             <template #lead><IconTile :icon="FileCog" /></template>

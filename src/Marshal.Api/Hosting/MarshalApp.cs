@@ -6,6 +6,7 @@ using Marshal.Api.Configuration;
 using Marshal.Api.Conversation;
 using Marshal.Api.Executors;
 using Marshal.Api.Health;
+using Marshal.Api.Hooks;
 using Marshal.Api.LiveEvents;
 using Marshal.Api.Mail;
 using Marshal.Api.Notifications;
@@ -81,6 +82,7 @@ public static class MarshalApp
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseRateLimiter();
         app.UseMiddleware<AntiforgeryValidationMiddleware>();
         app.UseMiddleware<OwnerContextMiddleware>();
 
@@ -110,6 +112,7 @@ public static class MarshalApp
         v1.MapProposalEndpoints();
         v1.MapExecutorCallbackEndpoints();
         v1.MapArtifactEndpoints();
+        v1.MapHookEndpoints();
         app.MapMailOAuthCallback();
         app.MapSpaFallback();
         return app;

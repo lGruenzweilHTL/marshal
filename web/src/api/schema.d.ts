@@ -267,7 +267,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The app version and the supported and deprecated API versions. */
+        /** The app version, the supported and deprecated API versions and the event sources. */
         get: operations["GetSystem"];
         put?: never;
         post?: never;
@@ -373,6 +373,23 @@ export interface paths {
         put?: never;
         /** Copies a printer snapshot into the artifact store, outside the snapshot retention. */
         post: operations["KeepPrinterSnapshot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hooks/{source}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Receives a webhook of a source (e.g. uptime-kuma) and publishes its events. */
+        post: operations["PostWebhook"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1605,6 +1622,20 @@ export interface components {
         DayOfWeek: "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
         /** @enum {unknown} */
         DeliveryChannel: "voice" | "push" | "inbox" | "silent";
+        /** @description An event source and its state. */
+        EventSourceInfo: {
+            /** @description Source name, e.g. `ha`, `uptime-kuma`. */
+            source: string;
+            /** @description Whether it currently receives events (webhook sources: a webhook arrived in the last 24 hours). */
+            connected: boolean;
+            /** @description Whether it is a webhook source (`POST /api/v1/hooks/{source}`). */
+            webhook: boolean;
+            /**
+             * Format: date-time
+             * @description When it last received a webhook; null for other sources or before the first one.
+             */
+            lastReceivedAt: null | string;
+        };
         ExecutorSessionRecord: {
             /** Format: uuid */
             id: string;
@@ -2047,6 +2078,14 @@ export interface components {
             filamentUsed: number;
             exists: boolean;
         };
+        ProblemDetails: {
+            type?: null | string;
+            title?: null | string;
+            /** Format: int32 */
+            status?: null | number;
+            detail?: null | string;
+            instance?: null | string;
+        };
         /** @enum {unknown} */
         ProjectAliasStatus: "candidate" | "active" | "rejected";
         ProjectAliasView: {
@@ -2288,6 +2327,8 @@ export interface components {
             supportedApiVersions: string[];
             /** @description Supported versions that will be removed. */
             deprecatedApiVersions: string[];
+            /** @description What publishes events on the event bus (HA, printers, mail, webhook sources). */
+            eventSources: components["schemas"]["EventSourceInfo"][];
         };
         TaintSource: {
             kind: string;
@@ -3011,6 +3052,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ArtifactResponse"];
+                };
+            };
+        };
+    };
+    PostWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": unknown;
+                "multipart/form-data": unknown;
+                "application/x-www-form-urlencoded": unknown;
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
         };

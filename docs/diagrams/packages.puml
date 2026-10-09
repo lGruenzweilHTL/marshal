@@ -84,7 +84,7 @@ package "src/ (.NET 10)" {
   }
 
   package "Marshal.Tasks" as Tasks {
-    component "Scheduler, EventBus +\nTriggerMatcher, worker pool,\nexecutors, NotificationRouter" as TaskParts
+    component "Scheduler, EventBus +\nTriggerMatcher, worker pool,\nexecutors, NotificationRouter,\nwebhook ingest" as TaskParts
     component "Cronos" <<nuget>>
   }
 

@@ -5,7 +5,16 @@ import { FakeServer } from '../testing/fakeServer'
 import { health } from '../testing/fixtures'
 import { me, mountOptions } from '../testing/mountApp'
 
-const info = { version: '0.1.0+abc', supportedApiVersions: ['1.0'], deprecatedApiVersions: [] as string[] }
+const info = {
+  version: '0.1.0+abc',
+  supportedApiVersions: ['1.0'],
+  deprecatedApiVersions: [] as string[],
+  eventSources: [
+    { source: 'ha', connected: true, webhook: false, lastReceivedAt: null },
+    { source: 'mail', connected: false, webhook: false, lastReceivedAt: null },
+    { source: 'uptime-kuma', connected: true, webhook: true, lastReceivedAt: '2026-10-08T08:15:00Z' },
+  ],
+}
 
 function server(user = me) {
   return new FakeServer()
@@ -40,6 +49,27 @@ describe('SystemView', () => {
     expect(database).toContain('unhealthy')
     expect(database).toContain('database is locked')
     expect(wrapper.get('[data-test="overall"]').text()).toContain('unhealthy')
+  })
+
+  it('lists the event sources with their state and the last webhook time', async () => {
+    const wrapper = await mountSystem(server())
+
+    expect(wrapper.findAll('[data-source]').map((row) => row.attributes('data-source'))).toEqual(['ha', 'mail', 'uptime-kuma'])
+    expect(wrapper.get('[data-source="ha"]').text()).toContain('Home Assistant')
+    expect(wrapper.get('[data-source="mail"]').text()).toContain('not connected')
+    const kuma = wrapper.get('[data-source="uptime-kuma"]').text()
+    expect(kuma).toContain('Uptime Kuma')
+    expect(kuma).toContain('Last webhook')
+    expect(kuma).toContain('10:15')
+  })
+
+  it('shows the event sources in German', async () => {
+    const wrapper = await mountSystem(server(), 'de')
+
+    expect(wrapper.text()).toContain('Ereignisquellen')
+    expect(wrapper.get('[data-source="mail"]').text()).toContain('nicht verbunden')
+    expect(wrapper.get('[data-source="uptime-kuma"]').text()).toContain('Letzter Webhook')
+    expect(wrapper.get('[data-source="uptime-kuma"]').text()).toContain('10:15')
   })
 
   it('lists warnings of a degraded check', async () => {

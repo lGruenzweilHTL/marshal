@@ -10,6 +10,18 @@ public static class ApiScopes
     public const string TasksWrite = "tasks:write";
     public const string Admin = "admin";
 
+    /// <summary>Prefix of the per-source webhook scopes (<c>hooks:&lt;source&gt;</c>).</summary>
+    public const string HooksPrefix = "hooks:";
+
+    /// <summary>Posting Uptime Kuma webhooks.</summary>
+    public const string HooksUptimeKuma = HooksPrefix + "uptime-kuma";
+
     /// <summary>Every known scope.</summary>
-    public static IReadOnlySet<string> All { get; } = new HashSet<string>(StringComparer.Ordinal) { ConversationWrite, TasksRead, TasksWrite, Admin };
+    public static IReadOnlySet<string> All { get; } = new HashSet<string>(StringComparer.Ordinal) { ConversationWrite, TasksRead, TasksWrite, Admin, HooksUptimeKuma };
+
+    /// <summary>The scope that allows posting webhooks of <paramref name="source"/>.</summary>
+    public static string Hooks(string source) => HooksPrefix + source;
+
+    /// <summary>Whether <paramref name="scope"/> is a webhook scope; only the <c>admin</c> role grants those.</summary>
+    public static bool IsHook(string scope) => scope.StartsWith(HooksPrefix, StringComparison.Ordinal);
 }

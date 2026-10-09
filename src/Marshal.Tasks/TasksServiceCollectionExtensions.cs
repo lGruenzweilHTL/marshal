@@ -24,6 +24,7 @@ using Marshal.Tasks.Running;
 using Marshal.Tasks.Scheduling;
 using Marshal.Tasks.Store;
 using Marshal.Tasks.Tools;
+using Marshal.Tasks.Webhooks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -119,12 +120,28 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<ITaskRunner, SystemTaskRunner>();
         services.AddSingleton<IHostedService, SystemTaskSeeder>();
 
+        services.AddOptions<WebhookOptions>().Bind(configuration.GetSection("webhooks"))
+            .Validate(options => options.DebounceSeconds is >= 0 and <= 3600, "webhooks.debounceSeconds must be between 0 and 3600.")
+            .Validate(options => options.RequestsPerMinute is >= 1 and <= 6000, "webhooks.requestsPerMinute must be between 1 and 6000.")
+            .ValidateOnStart();
+        services.AddWebhookSource<UptimeKumaNormalizer>();
+        services.AddSingleton<WebhookIngest>();
+        services.AddSingleton<IWebhookIngest>(provider => provider.GetRequiredService<WebhookIngest>());
+
         services.AddSingleton<ITriggerMatcher, DeclarativeTriggerMatcher>();
         services.AddSingleton<ChannelEventBus>();
         services.AddSingleton<IEventPublisher>(provider => provider.GetRequiredService<ChannelEventBus>());
         services.AddSingleton<IEventSubscriber>(provider => provider.GetRequiredService<ChannelEventBus>());
         services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<ChannelEventBus>());
         return services;
+    }
+
+    // A webhook source: its normalizer and its entry in the event sources list (the ingest tracks its last webhook).
+    private static void AddWebhookSource<TNormalizer>(this IServiceCollection services) where TNormalizer : class, IWebhookNormalizer, new()
+    {
+        string source = new TNormalizer().Source;
+        services.AddSingleton<IWebhookNormalizer, TNormalizer>();
+        services.AddSingleton<IEventSource>(provider => provider.GetRequiredService<WebhookIngest>().EventSources.Single(state => state.Source == source));
     }
 
     private static bool IsCron(string? schedule) => TaskTriggers.Validate(TaskTrigger.Cron(schedule ?? "")).IsSuccess;

@@ -29,6 +29,25 @@ public sealed class SystemApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task System_ListsUptimeKumaWithItsLastReceivedTime()
+    {
+        (HttpClient browser, _) = await Browser.SignInAsync(_factory, "user");
+        static JsonElement Kuma(JsonElement system) => system.GetProperty("eventSources").EnumerateArray().Single(source => source.GetProperty("source").GetString() == "uptime-kuma");
+
+        JsonElement before = Kuma(await browser.GetFromJsonAsync<JsonElement>("/api/v1/system", Ct));
+        HttpClient hook = await _factory.ClientWithTokenAsync(ApiScopes.HooksUptimeKuma);
+        DateTimeOffset sent = DateTimeOffset.UtcNow;
+        var test = new StringContent("""{"heartbeat":null,"monitor":null,"msg":"Testing"}""", System.Text.Encoding.UTF8, "application/json");
+        Assert.Equal(HttpStatusCode.Accepted, (await hook.PostAsync("/api/v1/hooks/uptime-kuma", test, Ct)).StatusCode);
+        JsonElement after = Kuma(await browser.GetFromJsonAsync<JsonElement>("/api/v1/system", Ct));
+
+        Assert.Equal((false, JsonValueKind.Null), (before.GetProperty("connected").GetBoolean(), before.GetProperty("lastReceivedAt").ValueKind));
+        Assert.True(after.GetProperty("connected").GetBoolean());
+        Assert.True(after.GetProperty("webhook").GetBoolean());
+        Assert.InRange(after.GetProperty("lastReceivedAt").GetDateTimeOffset(), sent.AddSeconds(-1), DateTimeOffset.UtcNow.AddSeconds(1));
+    }
+
+    [Fact]
     public async Task System_Token_IsAllowed()
     {
         HttpClient client = await _factory.ClientWithTokenAsync(ApiScopes.TasksRead);

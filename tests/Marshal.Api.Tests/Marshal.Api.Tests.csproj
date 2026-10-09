@@ -15,6 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\Marshal.Tasks.Tests\Webhooks\Fixtures\*" LinkBase="Webhooks\Fixtures" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Marshal.Testing\Marshal.Testing.csproj" />
     <ProjectReference Include="..\..\src\Marshal.Api\Marshal.Api.csproj" />
   </ItemGroup>

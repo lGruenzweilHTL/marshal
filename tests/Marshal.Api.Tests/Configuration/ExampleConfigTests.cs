@@ -11,6 +11,7 @@ using Marshal.Core.Models;
 using Marshal.Core.Satellites;
 using Marshal.Core.Skills;
 using Marshal.Core.Templates;
+using Marshal.Tasks.Webhooks;
 using Marshal.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -70,6 +71,17 @@ public sealed class ExampleConfigTests
         ArtifactOptions options = services.GetRequiredService<IOptions<ArtifactOptions>>().Value;
 
         Assert.Equal((5120, 200, 15), (options.QuotaMb, options.MaxUploadMb, options.SignedLinkMinutes));
+    }
+
+    [Fact]
+    public void ExampleMarshalYaml_BindsWebhookOptions()
+    {
+        IConfiguration configuration = new ConfigurationBuilder().AddMarshalConfiguration(_directory, new Hashtable()).Build();
+
+        WebhookOptions options = configuration.GetSection("webhooks").Get<WebhookOptions>()!;
+
+        Assert.Equal((60, 60), (options.DebounceSeconds, options.RequestsPerMinute));
+        Assert.Contains("hooks:uptime-kuma", File.ReadAllText(Path.Combine(_directory, "marshal.yaml")), StringComparison.Ordinal);
     }
 
     [Fact]

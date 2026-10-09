@@ -48,8 +48,8 @@ The ingest SHALL drop an event whose source, type and entity equal those of an e
 ### Requirement: Uptime Kuma source
 The `uptime-kuma` source SHALL read Uptime Kuma's webhook notification body (JSON `{ heartbeat, monitor, msg }`, or form data with a `data` field holding that JSON) and publish:
 - a heartbeat with status 0, 1, 2 or 3 as `monitor.down`, `monitor.up`, `monitor.pending` or `monitor.maintenance`, entity = monitor name, payload with monitor id, name, type and URL, the heartbeat time, ping in milliseconds and `important`;
-- a notification without heartbeat whose message reports certificate expiry as `certificate.expiring`, entity = monitor name, payload with the days left;
-- nothing for a notification without monitor and heartbeat (Uptime Kuma's test message).
+- a notification without heartbeat whose message reports certificate expiry (`[<monitor>][<url>] <type> certificate <CN> will expire in <n> days`; Uptime Kuma sends it without monitor object) as `certificate.expiring`, entity = monitor name (from `monitor.name`, else from the message), payload with the monitor name and the days left;
+- nothing for any other notification without heartbeat (Uptime Kuma's test message and unknown notices).
 The payload SHALL contain no free-text message from Uptime Kuma (`msg`, `heartbeat.msg`). The source's events SHALL be trusted.
 
 #### Scenario: Monitor down
@@ -57,11 +57,11 @@ The payload SHALL contain no free-text message from Uptime Kuma (`msg`, `heartbe
 - **THEN** a trusted `monitor.down` event for `NAS` is published and its payload contains no `msg`
 
 #### Scenario: Certificate expiry
-- **WHEN** the body has no heartbeat, `monitor.name = Nextcloud` and `msg = "[Nextcloud][https://cloud.example] Certificate will expire in 14 days"`
+- **WHEN** the body has no heartbeat and `msg = "[Nextcloud][https://cloud.example] server certificate cloud.example will expire in 14 days"`
 - **THEN** a `certificate.expiring` event for `Nextcloud` with `days: 14` is published
 
 #### Scenario: Test notification
-- **WHEN** the body has neither monitor nor heartbeat
+- **WHEN** the body has neither monitor nor heartbeat and its message is not a certificate notice
 - **THEN** the response is 202 and no event is published
 
 #### Scenario: Watch on a monitor

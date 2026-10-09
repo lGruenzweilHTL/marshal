@@ -456,7 +456,7 @@
         "tags": [
           "System"
         ],
-        "summary": "The app version and the supported and deprecated API versions.",
+        "summary": "The app version, the supported and deprecated API versions and the event sources.",
         "operationId": "GetSystem",
         "responses": {
           "200": {
@@ -670,6 +670,95 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ArtifactResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hooks/{source}": {
+      "post": {
+        "tags": [
+          "Hooks"
+        ],
+        "summary": "Receives a webhook of a source (e.g. uptime-kuma) and publishes its events.",
+        "operationId": "PostWebhook",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {}
+            },
+            "multipart/form-data": {
+              "schema": {}
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -3676,6 +3765,38 @@
           "silent"
         ]
       },
+      "EventSourceInfo": {
+        "required": [
+          "source",
+          "connected",
+          "webhook",
+          "lastReceivedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "Source name, e.g. \u0060ha\u0060, \u0060uptime-kuma\u0060."
+          },
+          "connected": {
+            "type": "boolean",
+            "description": "Whether it currently receives events (webhook sources: a webhook arrived in the last 24 hours)."
+          },
+          "webhook": {
+            "type": "boolean",
+            "description": "Whether it is a webhook source (\u0060POST /api/v1/hooks/{source}\u0060)."
+          },
+          "lastReceivedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When it last received a webhook; null for other sources or before the first one.",
+            "format": "date-time"
+          }
+        },
+        "description": "An event source and its state."
+      },
       "ExecutorSessionRecord": {
         "required": [
           "id",
@@ -5130,6 +5251,42 @@
           }
         }
       },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "ProjectAliasStatus": {
         "enum": [
           "candidate",
@@ -5994,7 +6151,8 @@
         "required": [
           "version",
           "supportedApiVersions",
-          "deprecatedApiVersions"
+          "deprecatedApiVersions",
+          "eventSources"
         ],
         "type": "object",
         "properties": {
@@ -6015,6 +6173,13 @@
               "type": "string"
             },
             "description": "Supported versions that will be removed."
+          },
+          "eventSources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventSourceInfo"
+            },
+            "description": "What publishes events on the event bus (HA, printers, mail, webhook sources)."
           }
         },
         "description": "Version information."
@@ -6625,6 +6790,9 @@
     },
     {
       "name": "Printers"
+    },
+    {
+      "name": "Hooks"
     },
     {
       "name": "Tokens"
