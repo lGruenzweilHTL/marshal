@@ -5,7 +5,7 @@
 See proposal.md (Why). External facts (HA `music_assistant` integration docs and `services.yaml`; re-check against the installed version):
 
 - **Response services** `music_assistant.search`, `get_library`, `get_queue` (called with `return_response`):
-  - `search(config_entry_id, name, media_type?, artist?, album?, search_options{limit, library_only})` returns lists per type (`artists`, `albums`, `tracks`, `playlists`, `radio`, …). Items have `name`, `uri`, `media_type`, `artists`, `album`.
+  - `search(config_entry_id, name, media_type?, artist?, album?, limit?, library_only?)` (`services.yaml` groups `limit` and `library_only` in a `search_options` section, which is UI-only: the service data is flat) returns lists per type (`artists`, `albums`, `tracks`, `playlists`, `radio`, …). Items have `name`, `uri`, `media_type`, `artists`, `album`.
   - `get_queue` (target: player entity) returns per entity `current_item`, `next_item`, `items` (count), `shuffle_enabled`, `repeat_mode`, `elapsed_time`.
 - **Action services:**
   - `music_assistant.play_media(media_id, media_type?, artist?, album?, enqueue?, radio_mode?)`. `media_id` is a name, `"Artist - Title"`, a URI or a URL. `enqueue` ∈ `play`, `replace`, `next`, `replace_next`, `add`. `media_type` ∈ `artist`, `album`, `audiobook`, `folder`, `playlist`, `podcast`, `track`, `radio`.
@@ -35,9 +35,9 @@ Code lives in `Marshal.Integrations.HomeAssistant/Music`, because every call goe
 | Interface | v1 implementation | Purpose |
 |---|---|---|
 | `ISpeakerDirectory` (Abstractions) | `ConfiguredSpeakerDirectory` (Core, from `music.speakers` + satellite profiles) | `ForSatellite(satelliteId)`, `ByName(name)`, `Names`; used by the tools and the satellite context |
-| `IMusicPlayer` | `HomeAssistantMusicPlayer` | `SearchAsync`, `PlayAsync`, `GetQueueAsync`, `ControlAsync`, `TransferAsync`, `GroupAsync`, `UngroupAsync` over `IHomeAssistantCommands`; caches the MA `config_entry_id` until reconnect |
+| `IMusicPlayer` | `HomeAssistantMusicPlayer` | `SearchAsync`, `PlayAsync`, `GetQueueAsync`, `ControlAsync`, `TransferAsync`, `GroupAsync`, `UngroupAsync` over `IHomeAssistantCommands`; caches the MA `config_entry_id` and reads it again after any failed call (`IHomeAssistantCache` has no reconnect signal, and a failed call is when a stale id shows) |
 
-`MusicToolSource : IToolSource` (namespace `music`) depends on both interfaces, so tool tests use fakes. `HomeAssistantMusicPlayer` is tested against the existing in-process fake HA websocket server, checking service domain, service, target and data per call.
+`MusicToolSource : IToolSource` (namespace `music`) depends on both interfaces, so tool tests use fakes. `HomeAssistantMusicPlayer` is tested with a recording fake `IHomeAssistantCommands` (service domain, service, target and data per call) plus wire tests against the in-process fake HA websocket server (per-service `call_service` responses). The playback state in `music.queue` comes from the player entity's state in the HA cache, because `get_queue` has none.
 
 This mirrors display-surfaces (`IDisplayDirectory` in Abstractions, `ConfiguredDisplayDirectory` in Core), so the satellite profile validation for `speaker` sits next to the one for `display`.
 

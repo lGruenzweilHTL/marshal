@@ -7,6 +7,7 @@ using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.LiveEvents;
 using Marshal.Abstractions.Mcp;
 using Marshal.Abstractions.Models;
+using Marshal.Abstractions.Music;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Satellites;
 using Marshal.Abstractions.Secrets;
@@ -17,6 +18,7 @@ using Marshal.Core.Agent;
 using Marshal.Core.Configuration;
 using Marshal.Core.Context;
 using Marshal.Core.Displays;
+using Marshal.Core.Music;
 using Marshal.Core.Conversation;
 using Marshal.Core.Execution;
 using Marshal.Core.Guard;
@@ -68,10 +70,15 @@ public static class CoreServiceCollectionExtensions
         services.AddOptions<DisplayOptions>().Bind(configuration.GetSection("displays")).ValidateOnStart();
         services.AddSingleton<IValidateOptions<DisplayOptions>, DisplayOptionsValidator>();
         services.AddSingleton<IDisplayDirectory, ConfiguredDisplayDirectory>();
+        services.AddOptions<MusicOptions>().Bind(configuration.GetSection("music")).ValidateOnStart();
+        services.AddSingleton<IValidateOptions<MusicOptions>, MusicOptionsValidator>();
+        services.AddSingleton<ISpeakerDirectory, ConfiguredSpeakerDirectory>();
         AddConfigFile<RiskRulesFile>(services, RiskFile, RiskRulesFile.Validate);
-        // Display names straight from configuration: reading invalid DisplayOptions would throw before its errors are reported.
-        AddConfigFile<SatellitesFile>(services, SatellitesFileName, file =>
-            SatellitesFile.Validate(file, [.. configuration.GetSection("displays:surfaces").GetChildren().Select(display => display.Key)]));
+        // Display and speaker names straight from configuration: reading invalid options would throw before their errors are reported.
+        AddConfigFile<SatellitesFile>(services, SatellitesFileName, file => SatellitesFile.Validate(
+            file,
+            [.. configuration.GetSection("displays:surfaces").GetChildren().Select(display => display.Key)],
+            [.. configuration.GetSection("music:speakers").GetChildren().Select(speaker => speaker.Key)]));
 
         services.AddSingleton<IModelRouter, ConfiguredModelRouter>();
         services.AddSingleton<ICostCalculator, PriceTableCostCalculator>();

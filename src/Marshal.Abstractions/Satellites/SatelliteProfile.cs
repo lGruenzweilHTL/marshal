@@ -9,7 +9,8 @@ namespace Marshal.Abstractions.Satellites;
 /// <param name="DenyTools">Tool id globs hidden and denied on this satellite.</param>
 /// <param name="DenyConfirm">Tool id globs that may not ask for confirmation on this satellite.</param>
 /// <param name="Display">Name of the display in the satellite's room, if any.</param>
-public sealed record SatelliteProfile(string Verbosity, string? Notes, IReadOnlyList<string> DenyTools, IReadOnlyList<string> DenyConfirm, string? Display = null)
+/// <param name="Speaker">Name of the music speaker in the satellite's room, if any.</param>
+public sealed record SatelliteProfile(string Verbosity, string? Notes, IReadOnlyList<string> DenyTools, IReadOnlyList<string> DenyConfirm, string? Display = null, string? Speaker = null)
 {
     /// <summary>Profile of unconfigured satellites and turns without a satellite.</summary>
     public static SatelliteProfile Default { get; } = new("normal", null, [], []);

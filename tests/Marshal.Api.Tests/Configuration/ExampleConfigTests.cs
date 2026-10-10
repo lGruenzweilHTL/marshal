@@ -104,6 +104,17 @@ public sealed class ExampleConfigTests
     }
 
     [Fact]
+    public void ExampleConfig_DocumentsMusicSpeakers()
+    {
+        string marshal = File.ReadAllText(Path.Combine(_directory, "marshal.yaml"));
+
+        Assert.Contains("# music:", marshal, StringComparison.Ordinal);
+        Assert.Contains("#   speakers:", marshal, StringComparison.Ordinal);
+        Assert.Contains("Assist", marshal[marshal.IndexOf("# music:", StringComparison.Ordinal)..], StringComparison.Ordinal);
+        Assert.Contains("# speaker: kitchen", File.ReadAllText(Path.Combine(_directory, "satellites.yaml")), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ExampleMcpServerSkillAndTemplate_LoadWithoutErrors()
     {
         var scanner = new ConfigSecretScanner();

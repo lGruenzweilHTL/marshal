@@ -216,6 +216,16 @@ webhooks:
 #   radarr: { url: https://radarr.lan/, apiKeySecret: radarr_api_key }
 #   jellyfinUrl: https://jellyfin.lan/
 
+# Music through Music Assistant (optional; needs ha.url and the Music Assistant integration in Home Assistant). Each
+# speaker name maps to a Music Assistant media_player entity; the music_* tools take these names only, and a
+# satellite plays on the speaker named in its satellites.yaml profile (speaker: kitchen). Do not expose the Music
+# Assistant players to Assist: HA's own media intents then offer a second way to pause or play the same speaker, and
+# small models pick between the two at random.
+# music:
+#   speakers:
+#     kitchen:     media_player.kitchen_satellite_ma   # the satellite's own Music Assistant player
+#     living_room: media_player.living_room_sonos
+
 # Read-only GitHub access for the repos.* tools (pull requests, issues, CI runs and failed-job logs); hidden until
 # repos are listed. The model sees only these ids, never other repositories. Use a fine-grained personal access token
 # limited to these repositories with read-only Metadata, Contents, Pull requests, Issues and Actions permissions.

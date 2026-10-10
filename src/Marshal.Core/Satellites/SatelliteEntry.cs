@@ -15,4 +15,7 @@ public sealed class SatelliteEntry
 
     /// <summary>Name of the display in the satellite's room (<c>displays.surfaces</c>).</summary>
     public string? Display { get; set; }
+
+    /// <summary>Name of the music speaker in the satellite's room (<c>music.speakers</c>).</summary>
+    public string? Speaker { get; set; }
 }

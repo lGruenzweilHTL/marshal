@@ -11,6 +11,9 @@ public sealed class FixtureTests
     [InlineData("energy-prefs-empty.json")]
     [InlineData("energy-info.json")]
     [InlineData("energy-statistics.json")]
+    [InlineData("music-config-entries.json")]
+    [InlineData("music-search.json")]
+    [InlineData("music-queue.json")]
     public void Fixture_IsCopiedAndScrubbed(string file)
     {
         string text = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", file));

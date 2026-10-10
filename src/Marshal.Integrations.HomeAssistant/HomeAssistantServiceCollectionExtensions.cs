@@ -10,6 +10,7 @@ using Marshal.Abstractions.Tools;
 using Marshal.Integrations.HomeAssistant.Calendar;
 using Marshal.Integrations.HomeAssistant.Displays;
 using Marshal.Integrations.HomeAssistant.Energy;
+using Marshal.Integrations.HomeAssistant.Music;
 using Marshal.Integrations.HomeAssistant.Notifications;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,7 +23,8 @@ namespace Marshal.Integrations.HomeAssistant;
 /// <summary>
 /// Registers the Home Assistant integration. Without <c>ha.url</c> every part stays inert (no connection, no timer
 /// tools, no context, ids as area names, time zone from config or UTC). Call after the core services: it replaces
-/// the area directory and the instance time zone source. Calendar tools stay hidden until HA reports calendars.
+/// the area directory and the instance time zone source. Calendar tools stay hidden until HA reports calendars;
+/// music tools exist only with <c>music.speakers</c>.
 /// </summary>
 public static class HomeAssistantServiceCollectionExtensions
 {
@@ -69,6 +71,8 @@ public static class HomeAssistantServiceCollectionExtensions
         services.AddSingleton<IToolSource, EnergyToolSource>();
         services.AddSingleton<ICalendarProvider, HomeAssistantCalendarProvider>();
         services.AddSingleton<IToolSource, CalendarToolSource>();
+        services.AddSingleton<IMusicPlayer, HomeAssistantMusicPlayer>();
+        services.AddSingleton<IToolSource, MusicToolSource>();
         return services;
     }
 }

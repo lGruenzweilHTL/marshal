@@ -13,6 +13,7 @@ public sealed class YamlSatelliteContextProviderTests
           assist_satellite.kitchen:
             verbosity: short
             notes: "Cooking area. Timer and recipe questions are common."
+            speaker: kitchen
           assist_satellite.kids_room:
             verbosity: short
             denyConfirm: [printer.*, calendar.*]
@@ -47,7 +48,7 @@ public sealed class YamlSatelliteContextProviderTests
     [Fact]
     public async Task Prompt_ProfileNotesAppear()
     {
-        var contributor = new SatelliteContextContributor(Provider(Yaml));
+        var contributor = new SatelliteContextContributor(Provider(Yaml), new FakeSpeakerDirectory());
 
         string? text = await contributor.ContributeAsync(new ContextRequest(TestExecutionContext.Voice(satelliteId: "assist_satellite.kitchen"), "x"), Ct);
 
@@ -58,7 +59,7 @@ public sealed class YamlSatelliteContextProviderTests
     [Fact]
     public async Task Prompt_AreaNameInContext()
     {
-        var contributor = new SatelliteContextContributor(Provider(Yaml));
+        var contributor = new SatelliteContextContributor(Provider(Yaml), new FakeSpeakerDirectory());
 
         string? text = await contributor.ContributeAsync(new ContextRequest(TestExecutionContext.Voice(satelliteId: null, areaId: "living_room"), "x"), Ct);
 
@@ -68,7 +69,7 @@ public sealed class YamlSatelliteContextProviderTests
     [Fact]
     public async Task Prompt_NoSatelliteNoArea_NothingAdded()
     {
-        var contributor = new SatelliteContextContributor(Provider(Yaml));
+        var contributor = new SatelliteContextContributor(Provider(Yaml), new FakeSpeakerDirectory());
 
         string? text = await contributor.ContributeAsync(new ContextRequest(TestExecutionContext.Text(), "x"), Ct);
 
@@ -85,16 +86,44 @@ public sealed class YamlSatelliteContextProviderTests
     [Fact]
     public void Validate_KnownDisplay_Succeeds()
     {
-        Assert.True(SatellitesFile.Validate(Parse(Yaml), ["living_tv"]).IsSuccess);
+        Assert.True(SatellitesFile.Validate(Parse(Yaml), ["living_tv"], ["kitchen"]).IsSuccess);
     }
 
     [Fact]
     public void Validate_UnknownDisplay_FailsNamingKey()
     {
-        Abstractions.Result result = SatellitesFile.Validate(Parse(Yaml), ["office_tv"]);
+        Abstractions.Result result = SatellitesFile.Validate(Parse(Yaml), ["office_tv"], ["kitchen"]);
 
         Assert.StartsWith("satellites.assist_satellite.living_room.display ", result.Error.Message, StringComparison.Ordinal);
         Assert.Contains("living_tv", result.Error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GetProfile_Speaker_IsRead()
+    {
+        Assert.Equal("kitchen", Provider(Yaml).GetProfile("assist_satellite.kitchen").Speaker);
+        Assert.Null(Provider(Yaml).GetProfile("assist_satellite.living_room").Speaker);
+    }
+
+    [Fact]
+    public void Validate_UnknownSpeaker_FailsNamingKey()
+    {
+        Abstractions.Result result = SatellitesFile.Validate(Parse(Yaml), ["living_tv"], ["living_room"]);
+
+        Assert.StartsWith("satellites.assist_satellite.kitchen.speaker ", result.Error.Message, StringComparison.Ordinal);
+        Assert.Contains("kitchen", result.Error.Message, StringComparison.Ordinal);
+        Assert.Contains("music.speakers", result.Error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GetProfile_FileReloaded_ReadsNewSpeaker()
+    {
+        var monitor = new StaticMonitor<SatellitesFile>(Parse(Yaml));
+        var provider = new YamlSatelliteContextProvider(monitor, new IdAreaDirectory());
+
+        monitor.Value = Parse("satellites:\n  assist_satellite.kitchen:\n    speaker: living_room\n");
+
+        Assert.Equal("living_room", provider.GetProfile("assist_satellite.kitchen").Speaker);
     }
 
     [Fact]

@@ -1,0 +1,37 @@
+{
+  "context": { "id": "01J9QUEUECONTEXT0000000000", "parent_id": null, "user_id": null },
+  "response": {
+    "media_player.kitchen_ma": {
+      "queue_id": "kitchen_ma",
+      "active": true,
+      "name": "Kitchen",
+      "items": 12,
+      "shuffle_enabled": false,
+      "repeat_mode": "off",
+      "current_index": 2,
+      "elapsed_time": 82,
+      "current_item": {
+        "queue_item_id": "5f0c",
+        "name": "Queen - Innuendo",
+        "duration": 391,
+        "media_item": {
+          "media_type": "track", "uri": "library://track/101", "name": "Innuendo", "version": "", "image": null,
+          "artists": [ { "media_type": "artist", "uri": "library://artist/7", "name": "Queen", "version": "", "image": null } ],
+          "album": { "media_type": "album", "uri": "library://album/12", "name": "Innuendo", "version": "", "image": null }
+        },
+        "stream_title": null
+      },
+      "next_item": {
+        "queue_item_id": "5f0d",
+        "name": "Queen - I'm Going Slightly Mad",
+        "duration": 262,
+        "media_item": {
+          "media_type": "track", "uri": "library://track/102", "name": "I'm Going Slightly Mad", "version": "", "image": null,
+          "artists": [ { "media_type": "artist", "uri": "library://artist/7", "name": "Queen", "version": "", "image": null } ],
+          "album": { "media_type": "album", "uri": "library://album/12", "name": "Innuendo", "version": "", "image": null }
+        },
+        "stream_title": null
+      }
+    }
+  }
+}

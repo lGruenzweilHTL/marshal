@@ -1,0 +1,39 @@
+{
+  "context": { "id": "01J9SEARCHCONTEXT000000000", "parent_id": null, "user_id": null },
+  "response": {
+    "artists": [
+      { "media_type": "artist", "uri": "library://artist/7", "name": "Queen", "version": "", "image": null, "favorite": true }
+    ],
+    "albums": [
+      {
+        "media_type": "album", "uri": "library://album/12", "name": "Innuendo", "version": "", "image": null, "favorite": false,
+        "artists": [ { "media_type": "artist", "uri": "library://artist/7", "name": "Queen", "version": "", "image": null } ]
+      },
+      {
+        "media_type": "album", "uri": "spotify://album/39WqpoPgZxygo6YQjehLJJ", "name": "Innuendo (2011 Remaster)", "version": "Remastered", "image": null,
+        "artists": [ { "media_type": "artist", "uri": "spotify://artist/1dfeR4HaWDbWqFHLkxsg1d", "name": "Queen", "version": "", "image": null } ]
+      }
+    ],
+    "tracks": [
+      {
+        "media_type": "track", "uri": "library://track/101", "name": "Innuendo", "version": "", "image": null, "duration": 391,
+        "artists": [ { "media_type": "artist", "uri": "library://artist/7", "name": "Queen", "version": "", "image": null } ],
+        "album": { "media_type": "album", "uri": "library://album/12", "name": "Innuendo", "version": "", "image": null }
+      },
+      {
+        "media_type": "track", "uri": "tidal://track/4489", "name": "Under Pressure", "version": "", "image": null, "duration": 248,
+        "artists": [
+          { "media_type": "artist", "uri": "tidal://artist/1", "name": "Queen", "version": "", "image": null },
+          { "media_type": "artist", "uri": "tidal://artist/2", "name": "David Bowie", "version": "", "image": null }
+        ],
+        "album": null
+      }
+    ],
+    "playlists": [],
+    "radio": [
+      { "media_type": "radio", "uri": "tunein://radio/s24896", "name": "Queen Radio", "version": "", "image": null }
+    ],
+    "audiobooks": [],
+    "podcasts": []
+  }
+}

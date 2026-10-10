@@ -28,6 +28,9 @@ internal sealed class FakeHomeAssistant : IAsyncDisposable
     /// <summary>Command type → result, initialized from <c>websocket-session.json</c>.</summary>
     public ConcurrentDictionary<string, JsonNode?> Responses { get; } = new(StringComparer.Ordinal);
 
+    /// <summary><c>call_service</c> results by <c>domain/service</c>; other services answer with the recorded result.</summary>
+    public ConcurrentDictionary<string, JsonNode?> ServiceResponses { get; } = new(StringComparer.Ordinal);
+
     /// <summary>Every websocket command received, in order.</summary>
     public ConcurrentQueue<JsonObject> Commands { get; } = new();
 
@@ -219,7 +222,12 @@ internal sealed class FakeHomeAssistant : IAsyncDisposable
                     continue;
                 }
 
-                JsonNode? result = type == "subscribe_events" ? null : Responses.GetValueOrDefault(type)?.DeepClone();
+                JsonNode? result = type switch
+                {
+                    "subscribe_events" => null,
+                    "call_service" when ServiceResponses.TryGetValue($"{command["domain"]}/{command["service"]}", out JsonNode? response) => response?.DeepClone(),
+                    _ => Responses.GetValueOrDefault(type)?.DeepClone(),
+                };
                 await session.SendAsync(new JsonObject { ["id"] = (int)command["id"]!, ["type"] = "result", ["success"] = true, ["result"] = result });
             }
         }

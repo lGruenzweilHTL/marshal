@@ -51,7 +51,8 @@ src/                         .NET projects
                              notifications, approval queue, follow-ups, executors, system jobs,
                              webhook ingest (Uptime Kuma and Proxmox normalizers)
   Marshal.Integrations.HomeAssistant/  HA REST + websocket client, registry and state cache, target resolver,
-                             area context, timer, places (zone) and energy tools, time zone source, display player
+                             area context, timer, places (zone) and energy tools, time zone source, display player,
+                             music (Music Assistant player and music tools)
   Marshal.Integrations.Moonraker/  printers: Moonraker REST + websocket state cache, snapshots, inspection, printer tools
   Marshal.Integrations.Mail/ mail providers (IMAP via MailKit) and credential sources, mail tools (never a send path)
   Marshal.Integrations.FreshRss/  FreshRSS Google Reader API client, full-text extraction, RSS tools

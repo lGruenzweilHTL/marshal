@@ -1,14 +1,15 @@
 using System.Globalization;
 using System.Text;
 using Marshal.Abstractions.Context;
+using Marshal.Abstractions.Music;
 using Marshal.Abstractions.Satellites;
 
 namespace Marshal.Core.Context;
 
 /// <summary>
-/// A few lines about where the turn was spoken: area, floor, satellite notes and verbosity.
+/// A few lines about where the turn was spoken: area, floor, satellite notes, verbosity and the music speakers.
 /// </summary>
-public sealed class SatelliteContextContributor(ISatelliteContextProvider satellites) : IContextContributor
+public sealed class SatelliteContextContributor(ISatelliteContextProvider satellites, ISpeakerDirectory speakers) : IContextContributor
 {
     public int Order => 300;
 
@@ -25,6 +26,13 @@ public sealed class SatelliteContextContributor(ISatelliteContextProvider satell
             text.AppendLine(CultureInfo.InvariantCulture, $"Preferred reply length on this device: {context.Profile.Verbosity}.");
         if (!string.IsNullOrWhiteSpace(context.Profile.Notes))
             text.AppendLine(CultureInfo.InvariantCulture, $"About this device: {context.Profile.Notes}");
+        if (speakers.Names is { Count: > 0 } names)
+        {
+            string all = string.Join(", ", names);
+            text.AppendLine(speakers.ForSatellite(request.Context.SatelliteId) is { } here
+                ? $"Music speaker in this room: {here.Name}. Speakers: {all}."
+                : $"Music speakers: {all}.");
+        }
 
         return text.Length == 0 ? null : text.ToString();
     }

@@ -54,6 +54,7 @@ public sealed class ToolRegistryTests
     [InlineData("infra")]
     [InlineData("repos")]
     [InlineData("media")]
+    [InlineData("music")]
     public async Task Refresh_ExternalSourceInReservedNamespace_RejectedOthersKeepWorking(string ns)
     {
         ToolRegistry registry = await RegistryAsync(

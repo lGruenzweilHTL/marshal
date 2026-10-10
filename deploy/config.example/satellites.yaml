@@ -5,7 +5,8 @@ satellites:
     verbosity: short
     notes: "Cooking area. Timer and recipe questions are common."
     # display: kitchen_tv                  # a display from displays.surfaces in marshal.yaml: artifacts_show plays there
+    # speaker: kitchen                     # a speaker from music.speakers in marshal.yaml: music_* tools default to it
   assist_satellite.kids_room:
     verbosity: short
     denyConfirm: [printer.*, calendar.*]   # confirm-tier tools hidden here
-    denyTools: [mail.*]                    # hidden entirely
+    denyTools: [mail.*]                    # hidden entirely (e.g. [mail.*, music.*])

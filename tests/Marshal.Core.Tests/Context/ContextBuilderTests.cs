@@ -115,7 +115,7 @@ public sealed class ContextBuilderTests
             new BasePromptContributor(),
             new UserProfileContributor(profiles),
             new TimeLocaleContributor(profiles, _time),
-            new SatelliteContextContributor(satellites),
+            new SatelliteContextContributor(satellites, new FakeSpeakerDirectory()),
             new OutputModeContributor(),
         ]);
     }
