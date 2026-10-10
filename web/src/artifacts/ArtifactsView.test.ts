@@ -39,6 +39,27 @@ describe('ArtifactsView', () => {
     expect(wrapper.get('[data-test="usage"]').text()).toBe('3 MB of 5 GB used')
   })
 
+  it('shows lazy preview thumbnails for models and images and the kind icon otherwise', async () => {
+    const { wrapper } = await mountList(server([artifact(), artifact({ id: 'a2', name: 'photo.png', kind: 'image', url: '/api/v1/artifacts/a2/content' }), artifact({ id: 'a3', name: 'Program.cs', kind: 'code', url: '/api/v1/artifacts/a3/content' })]))
+
+    const rows = wrapper.findAll('[data-artifact]')
+    const thumb = rows[0]!.get('img[data-test="thumb"]')
+    expect(thumb.attributes('src')).toBe('/api/v1/artifacts/a1/preview')
+    expect(thumb.attributes('loading')).toBe('lazy')
+    expect(thumb.attributes('alt')).toBe('')
+    expect(rows[1]!.get('img[data-test="thumb"]').attributes('src')).toBe('/api/v1/artifacts/a2/preview')
+    expect(rows[2]!.find('img[data-test="thumb"]').exists()).toBe(false)
+  })
+
+  it('falls back to the kind icon when the preview fails to load', async () => {
+    const { wrapper } = await mountList(server([artifact()]))
+
+    await wrapper.get('img[data-test="thumb"]').trigger('error')
+
+    expect(wrapper.find('img[data-test="thumb"]').exists()).toBe(false)
+    expect(wrapper.get('[data-artifact="a1"]').find('.tile').exists()).toBe(true)
+  })
+
   it('sends kind and source filters and the search', async () => {
     const fake = server()
     const { wrapper } = await mountList(fake)

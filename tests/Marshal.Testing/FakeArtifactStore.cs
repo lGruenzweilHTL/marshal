@@ -31,10 +31,11 @@ public sealed class FakeArtifactStore : IArtifactStore
             ".cs" or ".log" => (ArtifactKind.Code, "text/plain; charset=utf-8"),
             ".diff" => (ArtifactKind.Diff, "text/x-diff; charset=utf-8"),
             ".stl" => (ArtifactKind.Model3d, "model/stl"),
+            ".3mf" => (ArtifactKind.Model3d, "model/3mf"),
             ".md" => (ArtifactKind.Markdown, "text/markdown; charset=utf-8"),
             _ => (ArtifactKind.Other, "application/octet-stream"),
         };
-        var record = new ArtifactRecord(ArtifactId.New(), TestExecutionContext.OwnerA, draft.Name, kind, mediaType, buffer.Length, "", draft.Source, draft.SourceReference, draft.Tainted, DateTimeOffset.UnixEpoch);
+        var record = new ArtifactRecord(ArtifactId.New(), TestExecutionContext.OwnerA, draft.Name, kind, mediaType, buffer.Length, Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(buffer.ToArray())), draft.Source, draft.SourceReference, draft.Tainted, DateTimeOffset.UnixEpoch);
         Artifacts.Add((record, buffer.ToArray()));
         return record;
     }

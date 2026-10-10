@@ -115,6 +115,55 @@ public sealed class ArtifactsApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Preview_ModelPngWithETag_UnchangedIs304()
+    {
+        string id = await UploadIdAsync("part.stl", Triangle());
+
+        HttpResponseMessage first = await _browser.GetAsync($"/api/v1/artifacts/{id}/preview", Ct);
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal("image/png", first.Content.Headers.ContentType?.MediaType);
+        Assert.Equal("nosniff", first.Headers.GetValues("X-Content-Type-Options").Single());
+        byte[] png = await first.Content.ReadAsByteArrayAsync(Ct);
+        Assert.Equal(_png[..8], png[..8]);
+        EntityTagHeaderValue etag = first.Headers.ETag!;
+
+        using var again = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/artifacts/{id}/preview");
+        again.Headers.IfNoneMatch.Add(etag);
+        HttpResponseMessage second = await _browser.SendAsync(again, Ct);
+
+        Assert.Equal(HttpStatusCode.NotModified, second.StatusCode);
+        Assert.Empty(await second.Content.ReadAsByteArrayAsync(Ct));
+    }
+
+    [Fact]
+    public async Task Preview_CodeForeignUnknown_NotFound_AnonymousUnauthorized()
+    {
+        string code = await UploadIdAsync("Program.cs", "class A {}"u8.ToArray());
+        string model = await UploadIdAsync("part.stl", Triangle());
+        (HttpClient other, _) = await Browser.SignInAsync(_factory, "user");
+
+        Assert.Equal(HttpStatusCode.NotFound, (await _browser.GetAsync($"/api/v1/artifacts/{code}/preview", Ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await other.GetAsync($"/api/v1/artifacts/{model}/preview", Ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await _browser.GetAsync($"/api/v1/artifacts/{Guid.NewGuid()}/preview", Ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _factory.CreateClient().GetAsync($"/api/v1/artifacts/{model}/preview", Ct)).StatusCode);
+    }
+
+    // One binary STL triangle: 80-byte header, count 1, normal, three corners, attribute bytes.
+    private static byte[] Triangle()
+    {
+        using var stream = new MemoryStream();
+        using var writer = new BinaryWriter(stream);
+        writer.Write(new byte[80]);
+        writer.Write(1u);
+        foreach (float value in (float[])[0, 0, 1, 0, 0, 0, 10, 0, 0, 0, 10, 0])
+            writer.Write(value);
+        writer.Write((ushort)0);
+        writer.Flush();
+        return stream.ToArray();
+    }
+
+    [Fact]
     public async Task Delete_RemovesItAndPublishes()
     {
         string id = await UploadIdAsync("a.md", "a"u8.ToArray());

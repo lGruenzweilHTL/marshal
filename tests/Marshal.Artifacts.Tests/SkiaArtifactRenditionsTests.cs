@@ -36,7 +36,6 @@ public sealed class SkiaArtifactRenditionsTests
     }
 
     [Theory]
-    [InlineData("bracket.stl")]
     [InlineData("clip.webm")]
     [InlineData("logo.svg")]
     [InlineData("manual.pdf")]

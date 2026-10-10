@@ -602,6 +602,35 @@
         }
       }
     },
+    "/api/v1/artifacts/{id}/preview": {
+      "get": {
+        "tags": [
+          "Artifacts"
+        ],
+        "summary": "A PNG preview within 480 \u00D7 270 pixels for 3D models and images; 404 for other kinds.",
+        "operationId": "GetArtifactPreview",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "304": {
+            "description": "Not Modified"
+          }
+        }
+      }
+    },
     "/api/v1/artifacts/{id}/content/signed": {
       "get": {
         "tags": [

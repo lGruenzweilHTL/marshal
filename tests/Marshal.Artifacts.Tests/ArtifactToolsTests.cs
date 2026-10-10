@@ -144,7 +144,18 @@ public sealed class ArtifactToolsTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Show_OnSatellite_ModelHasNoRendition()
+    public async Task Show_OnSatellite_ModelShadedViewIsPage1Of2()
+    {
+        ArtifactRecord model = await CreateAsync("bracket.stl", Models.MeshFixtures.AsciiStl(Models.MeshFixtures.Cube(10)));
+
+        Result<ToolOutput> shown = await InvokeAsync("show", new { id = model.Id.ToString() }, LivingRoom);
+
+        Assert.Equal("Showing bracket.stl on the display living_tv, page 1 of 2.", shown.Value.Content);
+        Assert.Equal($"http://tv.test/{model.Id}/1.png", Assert.Single(_player.Played).Url);
+    }
+
+    [Fact]
+    public async Task Show_OnSatellite_UnreadableModelHasNoRendition()
     {
         ArtifactRecord model = await CreateAsync("bracket.stl", "solid b\n facet normal 0 0 1\n endfacet\nendsolid");
 

@@ -11,9 +11,11 @@ using Marshal.Abstractions.Tools;
 namespace Marshal.Artifacts;
 
 /// <summary>The <c>artifacts.*</c> tools (a built-in source).</summary>
-public sealed class ArtifactToolSource(IArtifactStore store, IArtifactLinks links, ArtifactDisplays displays) : IToolSource
+public sealed class ArtifactToolSource(IArtifactStore store, IArtifactLinks links, ArtifactDisplays displays, ArtifactInspector? inspector = null) : IToolSource
 {
-    private readonly IReadOnlyList<ITool> _tools = [new ListTool(store), new ShowTool(store, links, displays)];
+    private readonly IReadOnlyList<ITool> _tools = inspector is null
+        ? [new ListTool(store), new ShowTool(store, links, displays)]
+        : [new ListTool(store), new ShowTool(store, links, displays), new InspectTool(inspector)];
 
     public string Name => "artifacts";
 
@@ -148,6 +150,48 @@ public sealed class ArtifactToolSource(IArtifactStore store, IArtifactLinks link
 
             return new ToolOutput(string.Create(CultureInfo.InvariantCulture,
                 $"Showing {shown.Artifact.Name} on the display {target.Display.Name}, page {page} of {shown.Pages}."));
+        }
+    }
+
+    // Sends one rendition page to a vision model. The answer describes a picture that can contain third-party text
+    // (mail attachments, executor output), so it is untrusted like the list.
+    private sealed class InspectTool(ArtifactInspector inspector) : ITool
+    {
+        public ToolDescriptor Descriptor { get; } = ArtifactToolSource.Descriptor("inspect",
+            "Looks at an artifact (by id from artifacts_list) and answers a question about it: a 3D model (page 1 one view, page 2 front, right, top and perspective views), an image, or a page of code, a diff or Markdown. Good for checking a model's shape; not for exact measurements.",
+            """
+            {"type":"object","properties":{
+              "id":{"type":"string","description":"Artifact id from artifacts_list."},
+              "question":{"type":"string","description":"What to look for."},
+              "page":{"type":"integer","minimum":1,"description":"Page of the rendition, default 1."}},"required":["id","question"]}
+            """) with { UntrustedOutput = true, TaintKind = "artifact" };
+
+        public ValueTask<bool> IsAvailableAsync(MarshalExecutionContext context, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(inspector.IsAvailable(context));
+
+        public Result Validate(JsonElement arguments) => Parse(arguments) is { IsFailure: true } parsed ? parsed.Error : Result.Success();
+
+        public async Task<Result<ToolOutput>> InvokeAsync(ToolInvocation invocation, CancellationToken cancellationToken)
+        {
+            Result<(ArtifactId Id, string Question, int Page)> parsed = Parse(invocation.Arguments);
+            if (parsed.IsFailure)
+                return parsed.Error;
+
+            (ArtifactId id, string question, int page) = parsed.Value;
+            return await inspector.InspectAsync(id, page, question, invocation.Context, cancellationToken);
+        }
+
+        private static Result<(ArtifactId Id, string Question, int Page)> Parse(JsonElement arguments)
+        {
+            if (!ArtifactId.TryParse(Text(arguments, "id"), null, out ArtifactId id))
+                return Invalid("id must be an artifact id from artifacts_list.");
+            if (Text(arguments, "question")?.Trim() is not { Length: > 0 } question)
+                return Invalid("question is required.");
+
+            int page = 1;
+            if (arguments.TryGetProperty("page", out JsonElement value) && value.ValueKind != JsonValueKind.Null && (!value.TryGetInt32(out page) || page < 1))
+                return Invalid("page must be a whole number from 1.");
+            return (id, question, page);
         }
     }
 }

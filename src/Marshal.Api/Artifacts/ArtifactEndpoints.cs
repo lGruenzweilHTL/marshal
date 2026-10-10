@@ -49,6 +49,11 @@ internal static class ArtifactEndpoints
         group.MapGet("/artifacts/{id:guid}/content", ContentAsync).WithName("GetArtifactContent").WithTags("Artifacts")
             .WithSummary("The artifact's content (session or token).")
             .RequireAuthorization();
+        group.MapGet("/artifacts/{id:guid}/preview", PreviewAsync).WithName("GetArtifactPreview").WithTags("Artifacts")
+            .WithSummary("A PNG preview within 480 × 270 pixels for 3D models and images; 404 for other kinds.")
+            .Produces(StatusCodes.Status200OK, contentType: "image/png")
+            .Produces(StatusCodes.Status304NotModified)
+            .RequireAuthorization();
         group.MapGet("/artifacts/{id:guid}/content/signed", SignedContentAsync).WithName("GetSignedArtifactContent").WithTags("Artifacts")
             .WithSummary("The artifact's content through a signed, expiring link; no sign-in.")
             .AllowAnonymous();
@@ -150,6 +155,24 @@ internal static class ArtifactEndpoints
     }
 
     private static Task<IResult> ContentAsync(Guid id, IArtifactStore store, HttpContext context) => ServeAsync(ArtifactId.From(id), store, context);
+
+    // The ETag is the artifact's hash: the preview of a stored file never changes.
+    private static async Task<IResult> PreviewAsync(Guid id, IArtifactPreviews previews, HttpContext context)
+    {
+        Result<ArtifactPreview> preview = await previews.GetPreviewAsync(ArtifactId.From(id), context.RequestAborted);
+        if (preview.IsFailure)
+            return preview.Error.ToProblem();
+
+        var etag = new EntityTagHeaderValue($"\"{preview.Value.Sha256}\"");
+        IHeaderDictionary headers = context.Response.Headers;
+        headers.XContentTypeOptions = "nosniff";
+        headers.CacheControl = "private, max-age=86400";
+        headers.ETag = etag.ToString();
+        if (context.Request.GetTypedHeaders().IfNoneMatch.Any(match => match.Compare(etag, useStrongComparison: false)))
+            return TypedResults.StatusCode(StatusCodes.Status304NotModified);
+
+        return TypedResults.File(preview.Value.Png, "image/png");
+    }
 
     // An invalid, expired or foreign signature looks like a missing artifact.
     private static async Task<IResult> SignedContentAsync(Guid id, string? signature, ApiArtifactLinks links, IArtifactStore store, IExecutionContextAccessor executionContext, HttpContext context)

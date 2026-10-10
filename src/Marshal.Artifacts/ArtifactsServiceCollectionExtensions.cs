@@ -1,6 +1,7 @@
 using Marshal.Abstractions.Artifacts;
 using Marshal.Abstractions.LiveEvents;
 using Marshal.Abstractions.Tools;
+using Marshal.Artifacts.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,10 +25,19 @@ public static class ArtifactsServiceCollectionExtensions
         services.AddSingleton(provider => new ArtifactDirectory(artifactDirectory(provider)));
         services.AddSingleton<IArtifactKindDetector, ArtifactKindDetector>();
         services.AddSingleton<IArtifactStore, FileArtifactStore>();
-        services.AddSingleton<IArtifactRenditions, SkiaArtifactRenditions>();
+        // 3D model pages take long to draw, so they are cached next to the artifacts (/data/cache/renditions).
+        services.AddSingleton(provider => new SkiaArtifactRenditions(
+            provider.GetRequiredService<IArtifactStore>(),
+            new FileRenditionCache(RenditionCacheDirectory(provider.GetRequiredService<ArtifactDirectory>().Path))));
+        services.AddSingleton<IArtifactRenditions>(provider => provider.GetRequiredService<SkiaArtifactRenditions>());
+        services.AddSingleton<IArtifactPreviews>(provider => provider.GetRequiredService<SkiaArtifactRenditions>());
+        services.AddSingleton<ArtifactInspector>();
         services.AddSingleton<ArtifactDisplays>();
         services.AddSingleton<IToolSource, ArtifactToolSource>();
         services.AddSingleton(new LiveTopic(FileArtifactStore.Topic));
         return services;
     }
+
+    private static string RenditionCacheDirectory(string artifactDirectory) =>
+        Path.Combine(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(artifactDirectory)) ?? artifactDirectory, "cache", "renditions");
 }

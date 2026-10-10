@@ -4,6 +4,7 @@ using Marshal.Abstractions;
 using Marshal.Abstractions.Artifacts;
 using Marshal.Abstractions.Displays;
 using Marshal.Artifacts.Highlighting;
+using Marshal.Artifacts.Models;
 using SkiaSharp;
 
 namespace Marshal.Artifacts;
@@ -11,10 +12,16 @@ namespace Marshal.Artifacts;
 /// <summary>
 /// Media renditions with SkiaSharp: JPEG, PNG and MP4 as stored, GIF and WebP as a PNG of the first frame, and code,
 /// diffs and Markdown as 1920×1080 PNG pages of monospace text (JetBrains Mono, embedded, because the container has
-/// no fonts), highlighted by <see cref="CodeHighlighter"/> with <see cref="SyntaxPalette"/> colors. Nothing is cached; text pages render in milliseconds.
+/// no fonts), highlighted by <see cref="CodeHighlighter"/> with <see cref="SyntaxPalette"/> colors. Text pages are not
+/// cached (they render in milliseconds); 3D model pages and previews are (see the Models part of this class).
 /// </summary>
-public sealed class SkiaArtifactRenditions(IArtifactStore store) : IArtifactRenditions
+public sealed partial class SkiaArtifactRenditions(IArtifactStore store) : IArtifactRenditions, IArtifactPreviews
 {
+    private readonly IRenditionCache _cache = NoRenditionCache.Instance;
+
+    internal SkiaArtifactRenditions(IArtifactStore store, IRenditionCache cache)
+        : this(store) => _cache = cache;
+
     /// <summary>Text rows per page; readable on a TV from a distance.</summary>
     internal const int RowsPerPage = 40;
 
@@ -63,6 +70,10 @@ public sealed class SkiaArtifactRenditions(IArtifactStore store) : IArtifactRend
                 if (rows.IsFailure)
                     return rows.Error;
                 return new ArtifactRendition(artifact, Math.Max(1, (rows.Value.Count + RowsPerPage - 1) / RowsPerPage), "image/png", "png", DisplayMediaType.Image);
+            case ArtifactKind.Model3d:
+                // Drawing page 1 checks that the model can be read; the cache keeps it for the request that follows.
+                Result<byte[]> first = await ModelPageAsync(artifact, 1, cancellationToken);
+                return first.IsFailure ? first.Error : new ArtifactRendition(artifact, ModelPages, "image/png", "png", DisplayMediaType.Image);
             default:
                 return NoRendition(artifact.Kind);
         }
@@ -85,6 +96,12 @@ public sealed class SkiaArtifactRenditions(IArtifactStore store) : IArtifactRend
             return rows.IsFailure ? rows.Error : Result.Success<Stream>(RenderPage(artifact.Name, rows.Value, page, rendition.Pages));
         }
 
+        if (artifact.Kind == ArtifactKind.Model3d)
+        {
+            Result<byte[]> png = await ModelPageAsync(artifact, page, cancellationToken);
+            return png.IsFailure ? png.Error : new MemoryStream(png.Value, writable: false);
+        }
+
         Result<(ArtifactRecord Artifact, Stream Content)> opened = await store.OpenReadAsync(id, cancellationToken);
         if (opened.IsFailure)
             return opened.Error;
@@ -102,7 +119,7 @@ public sealed class SkiaArtifactRenditions(IArtifactStore store) : IArtifactRend
 
     private static Error NoRendition(ArtifactKind kind) =>
         new("artifacts.no_rendition",
-            $"A display cannot show {kind.ToString().ToLowerInvariant()} artifacts. Displays show images (JPEG, PNG, GIF, WebP), MP4 video, code, diffs and Markdown.",
+            $"A display cannot show {kind.ToString().ToLowerInvariant()} artifacts. Displays show images (JPEG, PNG, GIF, WebP), MP4 video, 3D models (STL, 3MF), code, diffs and Markdown.",
             ErrorType.Validation);
 
     private static Result<Stream> ConvertToPng(Stream content)

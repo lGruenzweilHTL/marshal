@@ -145,13 +145,16 @@ notifications:
   followUpReplyWindow: "00:00:20"  # a voice turn this soon after a spoken question from the same satellite answers it
   # publicUrl: https://marshal.example.com/   # push notifications link into the web UI
 
+# artifacts_inspect looks at a 3D model, image or code page with a vision model (a model with vision: true in the
+# run's tier or in standard); rendered 3D pages are cached in /data/cache/renditions (at most 512 MB, disposable).
 artifacts:                  # files in /data/artifacts: uploads, executor output, kept snapshots, saved attachments
   quotaMb: 5120             # storage per user
   maxUploadMb: 200          # largest single file
   signedLinkMinutes: 15     # lifetime of signed content links (e.g. for a phone notification)
 
 # Screens (Home Assistant media players, e.g. a TV through the DLNA Digital Media Renderer integration) on which
-# artifacts_show plays images, MP4 video and code / diff / Markdown as PNG pages. A satellite shows on the display
+# artifacts_show plays images, MP4 video, 3D models (STL, 3MF: a shaded view, then front/right/top views) and
+# code / diff / Markdown as PNG pages. A satellite shows on the display
 # named in its satellites.yaml profile (display: living_tv). The TV fetches the media itself, so mediaBaseUrl must be
 # an address the TV reaches: DLNA renderers prefer plain HTTP and an IP address, so publish Marshal's HTTP port on the
 # LAN (e.g. ports: ["8080:8080"] in docker-compose.yml). An https URL with a certificate the TV trusts works too.

@@ -8,7 +8,7 @@ import { useSubmit } from '../api/useSubmit'
 import { useFormat } from '../i18n/locale'
 import { useLiveEvent } from '../live/liveEvents'
 import { AppButton, Badge, Dialog, ErrorBanner, Field, IconTile, ListCard, ListRow, LoadBoundary, Page, PageHeader, ProgressBar, useDesktop, useToasts } from '../ui'
-import { kindIcons, kinds, sources, type Artifact, type ArtifactKind, type ArtifactSource } from './artifactKinds'
+import { kindIcons, kinds, previewUrl, sources, type Artifact, type ArtifactKind, type ArtifactSource } from './artifactKinds'
 
 /** The owner's artifacts, newest first: filter by kind and source, search by name, upload and delete. */
 const api = useApi()
@@ -79,6 +79,10 @@ const remove = useSubmit(async () => {
   return result
 })
 
+/** Previews that failed to load show the kind icon instead. */
+const brokenPreviews = reactive(new Set<string>())
+const thumbnail = (artifact: Artifact) => (brokenPreviews.has(artifact.id) ? undefined : previewUrl(artifact))
+
 const subtitle = (artifact: Artifact) =>
   [t(`artifacts.kind.${artifact.kind}`), t(`artifacts.source.${artifact.source}`), format.value.bytes(artifact.size), format.value.relative(artifact.createdAt)].join(' · ')
 </script>
@@ -127,7 +131,19 @@ const subtitle = (artifact: Artifact) =>
             :subtitle="subtitle(artifact)"
             :to="{ name: 'artifact', params: { id: artifact.id } }"
           >
-            <template #lead><IconTile :icon="kindIcons[artifact.kind]" :size="36" /></template>
+            <template #lead>
+              <img
+                v-if="thumbnail(artifact)"
+                class="thumb"
+                data-test="thumb"
+                :src="thumbnail(artifact)"
+                alt=""
+                loading="lazy"
+                decoding="async"
+                @error="brokenPreviews.add(artifact.id)"
+              />
+              <IconTile v-else :icon="kindIcons[artifact.kind]" :size="36" />
+            </template>
             <template #trail>
               <Badge v-if="artifact.tainted" tone="warning" data-test="tainted" :label="t('artifacts.tainted')" />
               <AppButton
@@ -156,6 +172,14 @@ const subtitle = (artifact: Artifact) =>
 </template>
 
 <style scoped>
+.thumb {
+  width: 64px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--surface-3);
+  object-fit: cover;
+}
 .uploading {
   display: flex;
   flex-direction: column;

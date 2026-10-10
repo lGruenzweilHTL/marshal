@@ -21,3 +21,11 @@ export const kindIcons: Record<ArtifactKind, Component> = {
   html: Globe,
   other: File,
 }
+
+/** Kinds the server renders a preview image for (`GET /api/v1/artifacts/{id}/preview`). */
+const previewKinds: ReadonlySet<ArtifactKind> = new Set(['model3d', 'image'])
+
+/** The preview image next to the artifact's content URL, or undefined for kinds without one. */
+export function previewUrl(artifact: Artifact): string | undefined {
+  return previewKinds.has(artifact.kind) ? artifact.url.replace(/\/content$/, '/preview') : undefined
+}
