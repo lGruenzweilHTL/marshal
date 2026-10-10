@@ -4,6 +4,7 @@ using Marshal.Abstractions.Executors;
 using Marshal.Abstractions.FollowUps;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.LiveEvents;
+using Marshal.Abstractions.Media;
 using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Secrets;
 using Marshal.Abstractions.Tasks;
@@ -27,6 +28,7 @@ using Marshal.Tasks.Tools;
 using Marshal.Tasks.Webhooks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
 namespace Marshal.Tasks;
@@ -124,8 +126,10 @@ public static class TasksServiceCollectionExtensions
             .Validate(options => options.DebounceSeconds is >= 0 and <= 3600, "webhooks.debounceSeconds must be between 0 and 3600.")
             .Validate(options => options.RequestsPerMinute is >= 1 and <= 6000, "webhooks.requestsPerMinute must be between 1 and 6000.")
             .ValidateOnStart();
-        services.AddWebhookSource<UptimeKumaNormalizer>();
-        services.AddWebhookSource<ProxmoxNormalizer>();
+        services.AddWebhookSource<UptimeKumaNormalizer>(UptimeKumaNormalizer.SourceName);
+        services.AddWebhookSource<ProxmoxNormalizer>(ProxmoxNormalizer.SourceName);
+        services.AddWebhookSource<SeerrNormalizer>(SeerrNormalizer.SourceName);
+        services.TryAddSingleton<IJellyfinLinks, NoJellyfinLinks>();
         services.AddSingleton<WebhookIngest>();
         services.AddSingleton<IWebhookIngest>(provider => provider.GetRequiredService<WebhookIngest>());
 
@@ -138,9 +142,8 @@ public static class TasksServiceCollectionExtensions
     }
 
     // A webhook source: its normalizer and its entry in the event sources list (the ingest tracks its last webhook).
-    private static void AddWebhookSource<TNormalizer>(this IServiceCollection services) where TNormalizer : class, IWebhookNormalizer, new()
+    private static void AddWebhookSource<TNormalizer>(this IServiceCollection services, string source) where TNormalizer : class, IWebhookNormalizer
     {
-        string source = new TNormalizer().Source;
         services.AddSingleton<IWebhookNormalizer, TNormalizer>();
         services.AddSingleton<IEventSource>(provider => provider.GetRequiredService<WebhookIngest>().EventSources.Single(state => state.Source == source));
     }

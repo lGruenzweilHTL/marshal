@@ -30,6 +30,7 @@ public sealed class ExampleConfigTests
     [InlineData("risk.yaml")]
     [InlineData("satellites.yaml")]
     [InlineData("tasks/briefing.yaml")]
+    [InlineData("tasks/media-available.yaml")]
     public void ExampleFile_HasNoLiteralSecrets(string file)
     {
         Result<IReadOnlyList<ConfigSecretFinding>> scan = new ConfigSecretScanner().Scan(file, File.ReadAllText(Path.Combine(_directory, file)));
@@ -97,6 +98,8 @@ public sealed class ExampleConfigTests
         Assert.Equal((60, 60), (options.DebounceSeconds, options.RequestsPerMinute));
         Assert.Contains("hooks:uptime-kuma", File.ReadAllText(Path.Combine(_directory, "marshal.yaml")), StringComparison.Ordinal);
         Assert.Contains("hooks:proxmox", File.ReadAllText(Path.Combine(_directory, "marshal.yaml")), StringComparison.Ordinal);
+        Assert.Contains("hooks:seerr", File.ReadAllText(Path.Combine(_directory, "marshal.yaml")), StringComparison.Ordinal);
+        Assert.Contains("# media:", File.ReadAllText(Path.Combine(_directory, "marshal.yaml")), StringComparison.Ordinal);
         Assert.Contains("# github:", File.ReadAllText(Path.Combine(_directory, "marshal.yaml")), StringComparison.Ordinal);
     }
 

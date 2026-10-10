@@ -99,6 +99,30 @@ public sealed class HookApiTests : IDisposable
     }
 
     [Fact]
+    public async Task Post_SeerrAvailable_PublishesTrustedEvent()
+    {
+        HttpClient client = await _factory.ClientWithTokenAsync(ApiScopes.HooksSeerr);
+        const string body = """{"notification_type":"MEDIA_AVAILABLE","subject":"Dune (2021)","media":{"media_type":"movie","tmdbId":"438631","status":"AVAILABLE","jellyfinMediaId":"abc123"},"request":{"request_id":"7"}}""";
+
+        HttpResponseMessage response = await client.PostAsync("/api/v1/hooks/seerr", new StringContent(body, Encoding.UTF8, "application/json"), Ct);
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        MarshalEvent @event = Assert.Single(_events.Events);
+        Assert.Equal(("seerr", "media.available", "movie:438631", true), (@event.Source, @event.Type, @event.Entity, @event.Trusted));
+    }
+
+    [Fact]
+    public async Task Post_SeerrWithProxmoxToken_Returns403()
+    {
+        HttpClient client = await _factory.ClientWithTokenAsync(ApiScopes.HooksProxmox);
+
+        HttpResponseMessage response = await client.PostAsync("/api/v1/hooks/seerr", new StringContent("""{"notification_type":"TEST_NOTIFICATION"}""", Encoding.UTF8, "application/json"), Ct);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Empty(_events.Events);
+    }
+
+    [Fact]
     public async Task Post_WithoutTheSourceScope_Returns403()
     {
         HttpClient client = await _factory.ClientWithTokenAsync(ApiScopes.ConversationWrite);

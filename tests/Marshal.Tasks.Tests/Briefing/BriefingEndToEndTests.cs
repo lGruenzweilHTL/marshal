@@ -157,6 +157,26 @@ public sealed class BriefingEndToEndTests : IAsyncLifetime
         Assert.Equal([(NotificationOutcome.Inboxed, Speech), (NotificationOutcome.Fallback, Speech)], await HistoryAsync());
     }
 
+    [Fact]
+    public async Task MediaAvailableExample_CreatesSeerrWatch()
+    {
+        JsonNode arguments = YamlToJson(Path.Combine(_examples, "tasks", "media-available.yaml"));
+        MarshalExecutionContext context = Text(OwnerA, "de");
+        ITool watch = (await Tools().GetToolsAsync(Ct)).Single(tool => tool.Descriptor.Id.Name == "watch");
+
+        TaskRecord task;
+        using (_harness.Accessor.Use(context))
+        {
+            Result<ToolOutput> created = await watch.InvokeAsync(new ToolInvocation(JsonSerializer.SerializeToElement(arguments), context), Ct);
+            Assert.True(created.IsSuccess, created.IsFailure ? created.Error.Message : null);
+            task = (await Store().FindAsync("media-available", Ct)).Value;
+        }
+
+        Assert.Equal(TaskTriggerKind.Event, task.Trigger.Kind);
+        using var filter = JsonDocument.Parse(task.Trigger.Spec);
+        Assert.Equal(("seerr", "media.available"), (filter.RootElement.GetProperty("source").GetString(), filter.RootElement.GetProperty("type").GetString()));
+    }
+
     private async Task<TaskRecord> CreateFromExampleAsync()
     {
         JsonNode arguments = YamlToJson(Path.Combine(_examples, "tasks", "briefing.yaml"));

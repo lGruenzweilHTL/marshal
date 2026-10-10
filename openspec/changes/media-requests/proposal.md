@@ -13,7 +13,7 @@ The homelab runs Seerr in front of Sonarr and Radarr, with Jellyfin as the libra
   - Titles and overviews come from TMDB through Seerr, so the output of these tools is untrusted.
 - Results link to the title's Jellyfin web page when `jellyfinUrl` is set and Seerr knows the Jellyfin item.
 - New webhook source `seerr` on `POST /api/v1/hooks/seerr` with scope `hooks:seerr`. Seerr's webhook agent sends a documented body template. The source publishes trusted events `media.approved`, `media.available`, `media.declined` and `media.failed` with media type, TMDB id and Jellyfin link, and no free text.
-- Example task `deploy/config.example/tasks/media-available.yaml`: an event-triggered task that pushes "<title> is available" with the Jellyfin link.
+- Example watch `deploy/config.example/tasks/media-available.yaml` (arguments of `tasks.watch`): an event-triggered task that pushes "<title> is available" with the Jellyfin link.
 
 ## Capabilities
 

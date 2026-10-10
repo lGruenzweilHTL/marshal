@@ -53,6 +53,7 @@ public sealed class TokenCommandTests : IAsyncDisposable
     [Theory]
     [InlineData("hooks:uptime-kuma")]
     [InlineData("hooks:proxmox")]
+    [InlineData("hooks:seerr")]
     public async Task Create_HookScope(string scope)
     {
         await using MarshalDbContext context = await ContextAsync();

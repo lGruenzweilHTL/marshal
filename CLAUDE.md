@@ -56,6 +56,8 @@ src/                         .NET projects
   Marshal.Integrations.Mail/ mail providers (IMAP via MailKit) and credential sources, mail tools (never a send path)
   Marshal.Integrations.FreshRss/  FreshRSS Google Reader API client, full-text extraction, RSS tools
   Marshal.Integrations.Notes/  git-backed Markdown notes source, own hybrid notes index, notes tools
+  Marshal.Integrations.Media/  Seerr client (search, requests), read-only Sonarr/Radarr calendars and queues, Jellyfin
+                             links, media tools
   Marshal.Integrations.Proxmox/  read-only Proxmox VE client (API token, optional certificate pinning), infra tools
   Marshal.Integrations.GitHub/  read-only GitHub REST client for allowlisted repos (fine-grained PAT), repos tools
                              (diffs and failed-job logs as artifacts)

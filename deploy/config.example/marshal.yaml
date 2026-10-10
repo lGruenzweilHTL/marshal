@@ -179,6 +179,16 @@ displays:
 #        Secrets:    token = <the token from step 1>
 #      and a notification matcher that sends to it. Events: backup.failed, backup.ok, replication.failed,
 #      node.fenced, updates.available (entity: the backup job id, else the node name).
+#
+# Seerr sends request notifications (the example watch tasks/media-available.yaml pushes "now available"):
+#   1. marshal tokens create --name seerr --scope hooks:seerr
+#   2. Seerr: Settings > Notifications > Webhook
+#        Webhook URL:          https://<marshal>/api/v1/hooks/seerr
+#        Authorization Header: Bearer <the token from step 1>
+#        JSON Payload:         {"notification_type":"{{notification_type}}","{{media}}":{"media_type":"{{media_type}}","tmdbId":"{{media_tmdbid}}","status":"{{media_status}}","jellyfinMediaId":"{{media_jellyfinMediaId}}"},"{{request}}":{"request_id":"{{request_id}}"}}
+#        Notification Types:   Request Approved, Request Automatically Approved, Request Available,
+#                              Request Declined, Request Failed
+#      Events: media.approved, media.available, media.declined, media.failed (entity: movie:<tmdb id> or tv:<tmdb id>).
 webhooks:
   debounceSeconds: 60       # a repeat of the same event (type and monitor) within this window is dropped
   requestsPerMinute: 60     # per token; more get 429
@@ -191,6 +201,17 @@ webhooks:
 #   tokenId: marshal@pve!marshal
 #   tokenSecret: proxmox_token              # secret name; the value (a UUID) lives in /run/secrets or the database
 #   certificateFingerprint: "AB:CD:..."     # SHA-256 of the node's self-signed certificate (Node > System > Certificates)
+
+# Media requests for the media.* tools: search and request titles through Seerr (requests need confirmation),
+# upcoming episodes and downloads from Sonarr and Radarr (optional, read only), links to the Jellyfin web client
+# (optional). Hidden until seerr.url is set. Seerr's API key belongs to its admin; Marshal only reads and creates
+# requests. Sonarr and Radarr keys are full-access (neither has read-only keys): Marshal sends GET requests only, but
+# keep the services on the LAN and the keys in secrets.
+# media:
+#   seerr:  { url: https://seerr.lan/,  apiKeySecret: seerr_api_key }
+#   sonarr: { url: https://sonarr.lan/, apiKeySecret: sonarr_api_key }
+#   radarr: { url: https://radarr.lan/, apiKeySecret: radarr_api_key }
+#   jellyfinUrl: https://jellyfin.lan/
 
 # Read-only GitHub access for the repos.* tools (pull requests, issues, CI runs and failed-job logs); hidden until
 # repos are listed. The model sees only these ids, never other repositories. Use a fine-grained personal access token

@@ -13,6 +13,7 @@
     <ProjectReference Include="..\Marshal.Integrations.GitHub\Marshal.Integrations.GitHub.csproj" />
     <ProjectReference Include="..\Marshal.Integrations.HomeAssistant\Marshal.Integrations.HomeAssistant.csproj" />
     <ProjectReference Include="..\Marshal.Integrations.Mail\Marshal.Integrations.Mail.csproj" />
+    <ProjectReference Include="..\Marshal.Integrations.Media\Marshal.Integrations.Media.csproj" />
     <ProjectReference Include="..\Marshal.Integrations.Moonraker\Marshal.Integrations.Moonraker.csproj" />
     <ProjectReference Include="..\Marshal.Integrations.Notes\Marshal.Integrations.Notes.csproj" />
     <ProjectReference Include="..\Marshal.Integrations.Proxmox\Marshal.Integrations.Proxmox.csproj" />

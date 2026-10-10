@@ -36,7 +36,7 @@ New project `Marshal.Integrations.Media` (references `Marshal.Abstractions` only
 | Interface | v1 implementation | Purpose |
 |---|---|---|
 | `ISeerrClient` | `SeerrRestClient` (named `HttpClient`, resilience handler) | `SearchAsync`, `GetTitleAsync(type, tmdbId)`, `CreateRequestAsync`, `GetRequestsAsync`; typed records, `Result<T>` with `media.unavailable` |
-| `IArrClient` | `ArrRestClient`, two instances keyed `sonarr` / `radarr` | `GetCalendarAsync(start, end)`, `GetQueueAsync()`; one class, because the v3 APIs share auth, paging and the queue shape. The kind decides the include parameters and the record mapping |
+| `IArrClient` | `ArrRestClient` | `IsConfigured(kind)`, `GetCalendarAsync(kind, start, end)`, `GetQueueAsync(kind)`; one class for Sonarr and Radarr, because the v3 APIs share auth, paging and the queue shape. The kind decides the include parameters and the record mapping |
 | `IJellyfinLinks` | `JellyfinLinks` | item id → link, or null without `jellyfinUrl`; shared by the tools and `SeerrNormalizer` |
 
 `IJellyfinLinks` lives in `Marshal.Abstractions` (the normalizer in `Marshal.Tasks` must not reference the integration project). `MediaToolSource : IToolSource` depends only on these interfaces, so tool tests use hand-written fakes. The REST clients are tested against in-process fake servers (`Microsoft.AspNetCore.TestHost`) with recorded-shape JSON. The tests also assert the HTTP methods sent, which covers the spec's limited write access.
@@ -56,7 +56,8 @@ Alternatives:
 | `media.downloads()` | safe | yes | same |
 
 - `type` is `movie` or `show`. The tool maps `show` to Seerr's `tv`; the model-facing word is the common one.
-- Person results from Seerr's search are dropped.
+- Person results from Seerr's search are dropped. Search results carry no seasons, so `media.search` reads the details of each show among the results (at most 10, in parallel). A failed detail call only drops the season count.
+- Seerr's request list has no titles, so `media.requests` reads the details of each listed request (at most 20, in parallel).
 - Overviews are cut to 200 characters. They help the model tell "Dune" apart, but are third-party text, which is why every media tool is untrusted. Taint source `media`.
 - `seasons` is a list of season numbers. Omitted means `"all"` (user decision). Numbers a show does not have fail with `media.invalid_arguments`.
 - **Confirmation text without a lookup.** `ITool.Summarize` is synchronous and sees only the arguments, so the model passes `title` and `year` from `media.search`. The summary is built from them: "Dune (2021), movie" or "Severance (2022), show, all seasons". The frozen action holds `type`, `tmdbId`, `title`, `year`, `seasons`.
@@ -82,11 +83,11 @@ Seerr → Settings → Notifications → Webhook
          Request Declined, Request Failed
 ```
 
-Debounce (source + type + entity) collapses Seerr's duplicate notifications for one title within 60 s.
+Debounce (source + type + entity) collapses Seerr's duplicate notifications for one title within 60 s. The normalizer needs `IJellyfinLinks`, so webhook sources are registered with an explicit source name instead of being constructed once to read it. `Marshal.Tasks` registers an empty `IJellyfinLinks` fallback with `TryAdd`, so it works without the media integration.
 
 ### 4. "Available" notification is a task
 
-No built-in notifier. Following "generic mechanisms over special cases", the example task `tasks/media-available.yaml` has an event trigger `source: seerr, type: media.available`, the `fast` tier and a goal: "Tell me in one push which title became available, with the Jellyfin link". The event is trusted, so the run starts untainted. To name the title, the run calls `media.requests`, and that taints it. A push needs no confirmation, so this does not matter. The owner can change wording, channel or quiet hours like any task.
+No built-in notifier. Following "generic mechanisms over special cases", the example `tasks/media-available.yaml` holds the arguments of `tasks.watch` (event triggers are created by `tasks.watch`, not `tasks.create`): filter `source: seerr, type: media.available`, a goal ("Tell me in one push which title became available, with the Jellyfin link") and a push delivery. The run uses the default model tier: `tasks.watch` has no tier setting. The event is trusted, so the run starts untainted. To name the title, the run calls `media.requests`, and that taints it. A push needs no confirmation, so this does not matter. The owner can change wording, channel or quiet hours like any task.
 
 Alternative: a built-in notifier that formats the push itself (no model call). Rejected for v1: it duplicates the task system and fixes the wording. Revisit if the model cost matters.
 

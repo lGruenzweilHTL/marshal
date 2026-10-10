@@ -1,0 +1,14 @@
+# Example watch: the arguments of tasks.watch. Ask Marshal to create it ("create the media-available watch with
+# these settings"); afterwards it is edited like any other task. Needs the media section and the Seerr webhook
+# (see marshal.yaml). The seerr event is trusted and carries only ids and the Jellyfin link; looking up the title
+# with media_requests reads TMDB text, which taints the run (a push needs no confirmation, so this is fine).
+name: media-available
+filter:
+  source: seerr
+  type: media.available
+goal: >-
+  A title requested in Seerr has become available. The event payload has its type, TMDB id and, if Jellyfin knows
+  it, the Jellyfin link. Find the title with media_requests and tell me in one short sentence which title is
+  ready to watch, with the Jellyfin link.
+deliver:
+  - channel: push
