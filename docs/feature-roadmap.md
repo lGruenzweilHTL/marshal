@@ -4,7 +4,6 @@ Planning reference from an explore session on 2026-10-06. Nine features are in s
 
 This is not a spec. Each numbered item becomes its own OpenSpec change (`opsx:propose`), and no implementation starts without an approved change. Once a change exists in `openspec/changes/`, its proposal, design and delta specs supersede what this document says about it.
 
-**Before starting:** finish and archive `spa-redesign`.
 
 ## Implementation order
 
@@ -21,23 +20,27 @@ Dependencies first, then size: cheap Home Assistant wins, then the artifact and 
  4 ─────────────────────────────────────────▶ 10 GitHub (CI logs / diffs as code artifacts)
 ```
 
-| # | Proposed change | Feature | Depends on | Size |
-|---|---|---|---|---|
-| 1 | `location-reminders` | Reminders on zone entry | existing event bus + task triggers | S |
-| 2 | `mcp-untrusted-tools` | HA todo lists (HA's MCP tools; per-tool taint for shared lists) | HA MCP | S |
-| 3 | `ha-energy` | HA energy statistics | HA websocket client | S |
-| 4 | `artifacts` | Artifact store + web viewer | — | M |
-| 5 | `display-surfaces` | Show artifacts on the TV nearest the satellite | 4 | M |
-| 5b | `artifact-3d-render` | Headless 3D renderer (turntable + still) | 4, 5 | M–L |
-| 6 | `media-requests` | Seerr requests, Sonarr/Radarr read-only, Jellyfin playback | 5 | M |
-| 7 | `music-assistant` | Music on the nearest speaker | 5, 6 | S–M |
-| 8 | `webhook-ingest` | Uptime Kuma as first generic webhook event source | machine tokens | M |
-| 9 | `proxmox` | Proxmox read-only + events | 8 | S–M |
-| 10 | `github` | GitHub read-only (fine-grained PAT) | 4 | M |
+| # | Proposed change | Feature | Depends on | Size | Status |
+|---|---|---|---|---|---|
+| 1 | `location-reminders` | Reminders on zone entry | existing event bus + task triggers | S | done (wave 1) |
+| 2 | `mcp-untrusted-tools` | HA todo lists (HA's MCP tools; per-tool taint for shared lists) | HA MCP | S | done (wave 1) |
+| 3 | `ha-energy` | HA energy statistics | HA websocket client | S | done (wave 1) |
+| 4 | `artifacts` | Artifact store + web viewer | — | M | done (wave 1) |
+| 5 | `display-surfaces` | Show artifacts on the TV nearest the satellite | 4 | M | done (wave 2) |
+| 5b | `artifact-3d-render` | 3D stills rendered in C# + `artifacts.inspect` | 4, 5 | M–L | proposed (wave 3) |
+| 6 | `media-requests` | Seerr requests, Sonarr/Radarr read-only, Jellyfin links | 5 | M | proposed (wave 3) |
+| 7 | `music-assistant` | Music on the nearest speaker | 5, 6 | S–M | proposed (wave 3) |
+| 8 | `webhook-ingest` | Uptime Kuma as first generic webhook event source | machine tokens | M | done (wave 1) |
+| 9 | `proxmox` | Proxmox read-only + events | 8 | S–M | done (wave 2) |
+| 10 | `github` | GitHub read-only (fine-grained PAT) | 4 | M | done (wave 2) |
 
 Items 2 and 3 were split: HA's MCP server already exposes to-do tools, so item 2 only needs per-tool untrusted marking (`mcp-untrusted-tools`); item 3 is `ha-energy`.
 
-Wave 1 (items 1, 2, 3, 4, 8) is proposed in `openspec/changes/`.
+Waves 1 (items 1, 2, 3, 4, 8) and 2 (5, 9, 10) are archived in `openspec/changes/archive/`. Wave 3 is proposed in `openspec/changes/`, built in the order 6 → 5b → 7. An explore session on 2026-10-10 changed its scope:
+
+- **6:** no TV playback (Jellyfin is watched in the browser); results and events link to the Jellyfin web page. A Seerr webhook feeds an example "available" task.
+- **5b:** still images from a C# software renderer instead of a sidecar, no turntable MP4; adds preview thumbnails and `artifacts.inspect` (vision check of models, images and code pages).
+- **7:** explicit `speaker` per satellite (mixed setup: satellite players and separate speakers); designed against HA's documented `music_assistant` services until Music Assistant is installed.
 
 ## 1–3. Home Assistant quick wins
 
@@ -227,8 +230,8 @@ Marshal proposes, something outside Marshal applies. Never writes its own config
 
 - [ ] Does HA MCP expose todo list intents and a list-read tool on the current HA version?
 - [ ] Does the Samsung Q6 appear via `dlna_dmr`, and which formats does it play? AirPlay 2?
-- [ ] Is HA's media search-and-play intent exposed over MCP for Jellyfin?
-- [ ] Which music source feeds Music Assistant?
+- [x] ~~Is HA's media search-and-play intent exposed over MCP for Jellyfin?~~ Not needed: no TV playback in item 6.
+- [ ] Which music source feeds Music Assistant? (MA planned, not installed yet)
 - [ ] PV or dynamic tariff available for energy optimization?
 - [ ] Where do artifacts come from: executor output only, or uploads and generated images too?
 - [ ] Is `/config` a git repo, and where is it hosted (for future self-modification)?
