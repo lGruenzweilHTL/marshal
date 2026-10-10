@@ -32,5 +32,5 @@
 
 ## 5. Integration checks
 
-- [ ] 5.1 Once Music Assistant is installed: record real `search`, `get_queue` and `config_entries/get` responses and replace the schema-based fixtures. Play, transfer and group on two real speakers; record the results in the change
+- [ ] 5.1 Once Music Assistant is installed: record real `search`, `get_queue` and `config_entries/get` responses and replace the schema-based fixtures. Play, transfer and group on two real speakers; record the results in the change — open at archive (2026-10-10): Music Assistant is not installed yet; tracked in docs/feature-roadmap.md
 - [x] 5.2 Run the full .NET test suite and `openspec validate music-assistant --strict`; both pass

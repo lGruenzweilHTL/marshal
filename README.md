@@ -41,7 +41,16 @@ Marshal reads your mail across all your accounts, tells you what's important, an
 Connected to your RSS reader, Marshal picks the stories that fit your interests, summarizes them, and learns what you want more or less of.
 
 ### 🏠 Understand your home
-Marshal works with your Home Assistant devices and knows which room you're talking from. "Turn on the light" means *this* light.
+Marshal works with your Home Assistant devices and knows which room you're talking from. "Turn on the light" means *this* light. It also knows your energy use, your to-do lists, and reminds you of things when you arrive somewhere.
+
+### 🎵 Play music and find movies
+"Play Innuendo" starts the album on the speaker in the room you're in. Move the music to the living room, group speakers, or skip a track, all through Music Assistant. Looking for a film? Marshal finds it, asks you to confirm, requests it through Seerr, and can tell you when it's ready to watch in Jellyfin.
+
+### 📺 Show it on the screen
+Photos, videos, code, and 3D models go to the TV nearest you. Marshal renders 3D prints as pictures and can look at a model, image, or page to answer questions about it.
+
+### 🖥️ Keep an eye on your homelab
+Marshal hears from Uptime Kuma and Proxmox when something goes down, can tell you what's running, and reads your GitHub pull requests and failed CI runs. It only looks: it never changes your servers or code.
 
 ### 🧠 Remember what matters
 Tell Marshal something once and it will remember it. It keeps track of your projects and recognizes what you're talking about, even when you don't say the name. You can see and edit everything it remembers.

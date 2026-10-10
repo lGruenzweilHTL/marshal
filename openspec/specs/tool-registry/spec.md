@@ -17,15 +17,15 @@ Every tool SHALL have an internal id `<namespace>.<name>` used in risk rules, sa
 - **THEN** the call is denied, nothing is executed, and the model receives an error result
 
 ### Requirement: Reserved namespaces
-The namespaces `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra` and `repos` SHALL be reserved for built-in tools. Built-in namespaces SHALL name capabilities, never providers.
+The namespaces `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra`, `repos`, `media` and `music` SHALL be reserved for built-in tools. Built-in namespaces SHALL name capabilities, never providers.
 
 #### Scenario: Reserved namespace used by another tool source
 - **WHEN** a non-built-in tool source registers a tool in namespace `mail`
 - **THEN** that tool source is rejected with a clear error and all other tools keep working
 
 #### Scenario: Capability namespace for a provider integration
-- **WHEN** an MCP server is configured with id `repos`
-- **THEN** it is rejected because `repos` is reserved
+- **WHEN** an MCP server is configured with id `music`
+- **THEN** it is rejected because `music` is reserved
 
 ### Requirement: Name sanitizing and collisions
 Characters outside `[a-zA-Z0-9_-]` in external tool names SHALL be replaced with `_`; model-facing names longer than 64 characters SHALL be truncated with a short hash suffix. Two tools mapping to the same model-facing name SHALL cause the later tool source to be rejected.

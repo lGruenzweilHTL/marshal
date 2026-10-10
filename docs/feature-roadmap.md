@@ -2,6 +2,8 @@
 
 Planning reference from an explore session on 2026-10-06. Nine features are in scope, built in the order below; four ideas are deferred.
 
+> **Status: closed on 2026-10-10.** All items (1–10 and 5b) are built and archived in `openspec/changes/archive/`; their requirements live in `openspec/specs/`. This document is now a historical record of the plan: where it differs from the specs, the specs are right. One follow-up is open (see [Outcome](#outcome)); the deferred ideas and open questions below stay as input for future changes.
+
 This is not a spec. Each numbered item becomes its own OpenSpec change (`opsx:propose`), and no implementation starts without an approved change. Once a change exists in `openspec/changes/`, its proposal, design and delta specs supersede what this document says about it.
 
 
@@ -27,20 +29,38 @@ Dependencies first, then size: cheap Home Assistant wins, then the artifact and 
 | 3 | `ha-energy` | HA energy statistics | HA websocket client | S | done (wave 1) |
 | 4 | `artifacts` | Artifact store + web viewer | — | M | done (wave 1) |
 | 5 | `display-surfaces` | Show artifacts on the TV nearest the satellite | 4 | M | done (wave 2) |
-| 5b | `artifact-3d-render` | 3D stills rendered in C# + `artifacts.inspect` | 4, 5 | M–L | proposed (wave 3) |
-| 6 | `media-requests` | Seerr requests, Sonarr/Radarr read-only, Jellyfin links | 5 | M | proposed (wave 3) |
-| 7 | `music-assistant` | Music on the nearest speaker | 5, 6 | S–M | proposed (wave 3) |
+| 5b | `artifact-3d-render` | 3D stills rendered in C# + `artifacts.inspect` | 4, 5 | M–L | done (wave 3) |
+| 6 | `media-requests` | Seerr requests, Sonarr/Radarr read-only, Jellyfin links | 5 | M | done (wave 3) |
+| 7 | `music-assistant` | Music on the nearest speaker | 5, 6 | S–M | done (wave 3)¹ |
 | 8 | `webhook-ingest` | Uptime Kuma as first generic webhook event source | machine tokens | M | done (wave 1) |
 | 9 | `proxmox` | Proxmox read-only + events | 8 | S–M | done (wave 2) |
 | 10 | `github` | GitHub read-only (fine-grained PAT) | 4 | M | done (wave 2) |
 
+¹ Archived with one open task: checks against a real Music Assistant install (see [Outcome](#outcome)).
+
 Items 2 and 3 were split: HA's MCP server already exposes to-do tools, so item 2 only needs per-tool untrusted marking (`mcp-untrusted-tools`); item 3 is `ha-energy`.
 
-Waves 1 (items 1, 2, 3, 4, 8) and 2 (5, 9, 10) are archived in `openspec/changes/archive/`. Wave 3 is proposed in `openspec/changes/`, built in the order 6 → 5b → 7. An explore session on 2026-10-10 changed its scope:
+Waves 1 (items 1, 2, 3, 4, 8), 2 (5, 9, 10) and 3 (6, 5b, 7, built in that order) are archived in `openspec/changes/archive/`. An explore session on 2026-10-10 changed the scope of wave 3:
 
 - **6:** no TV playback (Jellyfin is watched in the browser); results and events link to the Jellyfin web page. A Seerr webhook feeds an example "available" task.
 - **5b:** still images from a C# software renderer instead of a sidecar, no turntable MP4; adds preview thumbnails and `artifacts.inspect` (vision check of models, images and code pages).
 - **7:** explicit `speaker` per satellite (mixed setup: satellite players and separate speakers); designed against HA's documented `music_assistant` services until Music Assistant is installed.
+
+## Outcome
+
+| Wave | Archived | Changes |
+|---|---|---|
+| 1 | 2026-10-09 | `location-reminders`, `mcp-untrusted-tools`, `ha-energy`, `artifacts`, `webhook-ingest` |
+| 2 | 2026-10-09 | `display-surfaces`, `proxmox`, `github` |
+| 3 | 2026-10-10 | `media-requests`, `artifact-3d-render`, `music-assistant` |
+
+Where the build differs from the plan below, the change's `design.md` records why. The larger differences:
+
+- **5b:** a C# software rasterizer (no sidecar, no turntable MP4) renders the stills, previews and the pages `artifacts.inspect` checks.
+- **6:** no Jellyfin playback through HA; Marshal links to the Jellyfin web client instead.
+- **7:** Music Assistant is called through HA's websocket `call_service`, not HA REST or exposed scripts; the playback state comes from HA's entity state.
+
+**Open follow-up (music-assistant task 5.1):** once Music Assistant is installed, record real `search`, `get_queue` and `config_entries/get` responses to replace the schema-based fixtures in `tests/Marshal.Integrations.HomeAssistant.Tests/Fixtures/music-*.json`, then try play, transfer and group on two real speakers. Fix any schema difference as a new change.
 
 ## 1–3. Home Assistant quick wins
 
@@ -228,10 +248,10 @@ Marshal proposes, something outside Marshal applies. Never writes its own config
 
 ## Open questions
 
-- [ ] Does HA MCP expose todo list intents and a list-read tool on the current HA version?
+- [x] ~~Does HA MCP expose todo list intents and a list-read tool on the current HA version?~~ Yes: `todo__get_items` (see `mcp-untrusted-tools`).
 - [ ] Does the Samsung Q6 appear via `dlna_dmr`, and which formats does it play? AirPlay 2?
 - [x] ~~Is HA's media search-and-play intent exposed over MCP for Jellyfin?~~ Not needed: no TV playback in item 6.
 - [ ] Which music source feeds Music Assistant? (MA planned, not installed yet)
 - [ ] PV or dynamic tariff available for energy optimization?
-- [ ] Where do artifacts come from: executor output only, or uploads and generated images too?
+- [x] ~~Where do artifacts come from: executor output only, or uploads and generated images too?~~ Uploads, executor output, kept snapshots, saved mail attachments and GitHub diffs and logs (see `artifacts`).
 - [ ] Is `/config` a git repo, and where is it hosted (for future self-modification)?
