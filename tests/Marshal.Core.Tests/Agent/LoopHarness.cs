@@ -142,7 +142,7 @@ internal sealed class CountingHistory : Marshal.Abstractions.Sessions.IConversat
 {
     public int Loads { get; private set; }
 
-    public Task<IReadOnlyList<Microsoft.Extensions.AI.ChatMessage>> LoadAsync(Marshal.Abstractions.Sessions.SessionId sessionId, int maxTurns, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<Microsoft.Extensions.AI.ChatMessage>> LoadAsync(Marshal.Abstractions.Sessions.SessionId sessionId, int maxTurns, DateTimeOffset? after, CancellationToken cancellationToken)
     {
         Loads++;
         return Task.FromResult<IReadOnlyList<Microsoft.Extensions.AI.ChatMessage>>([]);

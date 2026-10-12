@@ -18,15 +18,17 @@ using Microsoft.Extensions.Options;
 namespace Marshal.Memory.Consolidation;
 
 /// <summary>
-/// Summarizes a closed session into memory with one model call (template <c>memory-summarizer</c>, fast tier unless
+/// Summarizes a closed or resting session into memory with one model call (template <c>memory-summarizer</c>, fast tier unless
 /// the template says otherwise). The model sees the user turns and replies (never tool results) plus the existing
 /// memory relevant to them, so it can reuse titles and name contradictions. A candidate becomes a <c>contradicts</c>
 /// edge instead of an overwrite when the model names the contradicted chunk, or when the stored chunk with the same
 /// id is pinned or changed after the session began; the candidate is then stored under a <c>(conflicting)</c> title.
-/// Deleted chunks are never revived. The call is recorded as a run of the session.
+/// Deleted chunks are never revived. The call is recorded as a run of the session. Only turns and background results
+/// after the session's summary watermark are read; a successful summary moves the watermark to the newest of them.
 /// </summary>
 public sealed partial class LlmMemorySummarizer(
     IConversationHistory history,
+    ISummaryWatermark watermark,
     IModelRouter router,
     ITemplateCatalog templates,
     IMemoryRetriever retriever,
@@ -62,7 +64,8 @@ public sealed partial class LlmMemorySummarizer(
 
     public async Task<Result<MemorySummary>> SummarizeAsync(SessionId session, CancellationToken cancellationToken)
     {
-        IReadOnlyList<ChatMessage> messages = await history.LoadAsync(session, options.Value.Summarizer.MaxTurns, cancellationToken);
+        DateTimeOffset? summarizedUntil = await watermark.GetAsync(session, cancellationToken);
+        IReadOnlyList<ChatMessage> messages = await history.LoadAsync(session, options.Value.Summarizer.MaxTurns, summarizedUntil, cancellationToken);
         List<string> userTurns = [.. messages.Where(message => message.Role == ChatRole.User).Select(message => message.Text)];
         if (userTurns.Count == 0)
             return new MemorySummary([], [], 0);
@@ -125,6 +128,9 @@ public sealed partial class LlmMemorySummarizer(
         }
 
         await recorder.CompleteRunAsync(run, new RunCompletion(RunOutcome.Ok, null, []), cancellationToken);
+        if (messages.Max(message => message.CreatedAt) is { } newest)
+            await watermark.SetAsync(session, newest, cancellationToken);
+
         LogSummarized(logger, session.Value, written.Count, contradictions.Count, skipped);
         return new MemorySummary(written, contradictions, skipped);
     }

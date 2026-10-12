@@ -5,6 +5,7 @@ import SetupPage from './auth/SetupPage.vue'
 import AppShell from './layout/AppShell.vue'
 import ArtifactView from './artifacts/ArtifactView.vue'
 import ArtifactsView from './artifacts/ArtifactsView.vue'
+import ChatHistoryView from './chat/ChatHistoryView.vue'
 import ChatView from './chat/ChatView.vue'
 import ConfigView from './config/ConfigView.vue'
 import HomeView from './home/HomeView.vue'
@@ -55,7 +56,8 @@ const routes: RouteRecordRaw[] = [
     children: [
       // Act
       { path: '', name: 'home', component: HomeView, meta: { title: 'shell.nav.home', nav: 'home' } },
-      { path: 'chat', name: 'chat', component: ChatView, meta: { title: 'shell.nav.chat', nav: 'chat' } },
+      { path: 'chat/history', name: 'chat-history', component: ChatHistoryView, meta: { title: 'chat.history.title', nav: 'chat' } },
+      { path: 'chat/:id?', name: 'chat', component: ChatView, meta: { title: 'shell.nav.chat', nav: 'chat' } },
       { path: 'inbox', name: 'inbox', component: InboxView, meta: { title: 'shell.nav.inbox', nav: 'inbox' } },
       { path: 'inbox/approvals/:id', name: 'approval', component: ApprovalView, meta: { title: 'inbox.approval', nav: 'inbox' } },
       { path: 'inbox/proposals/:id', name: 'proposal', component: ProposalView, meta: { title: 'inbox.proposals', nav: 'inbox' } },

@@ -9,7 +9,8 @@ namespace Marshal.Tasks.Running;
 /// <summary>
 /// <see cref="IBackgroundHandoff"/>: a task for the turn's user, due now, with the turn's satellite as origin (its
 /// policy keeps applying), the result delivered by voice to that satellite (voice turns; push without a satellite)
-/// or to the inbox (text turns), and the transcript for its first run. Refused while the kill switch is active.
+/// or to the inbox (text turns), the turn's session as origin (its result joins that conversation), and the transcript
+/// for its first run. Refused while the kill switch is active.
 /// </summary>
 public sealed class TaskHandoff(ITaskStore tasks, TaskPauses pauses, TaskContinuations continuations, ITaskScheduler scheduler) : IBackgroundHandoff
 {
@@ -27,6 +28,7 @@ public sealed class TaskHandoff(ITaskStore tasks, TaskPauses pauses, TaskContinu
             Template = context.Template,
             ProjectId = context.ProjectId,
             OriginSatelliteId = context.SatelliteId,
+            OriginSessionId = context.SessionId,
             Notes = $"Continues a turn moved to the background ({handoff.Reason}, run {context.RunId}).",
             Deliveries = [Delivery(context)],
         }, cancellationToken);

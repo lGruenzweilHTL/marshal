@@ -1,5 +1,6 @@
 using Marshal.Abstractions;
 using Marshal.Abstractions.LiveEvents;
+using Marshal.Abstractions.Sessions;
 using Marshal.Abstractions.Tasks;
 using Marshal.Tasks.Store;
 using Marshal.Testing;
@@ -48,6 +49,34 @@ public sealed class LiveTaskStoreTests : IAsyncLifetime
 
         Assert.True(stale.IsFailure);
         Assert.Empty(_live.Events);
+    }
+
+    [Fact]
+    public async Task ResultOnHandedOffTask_PublishesConversationResultToTheOwner()
+    {
+        var session = SessionId.New();
+        TaskRecord task = (await Store().CreateAsync(new NewTask { Goal = "Check the printer.", Trigger = TaskTrigger.Now(), OriginSessionId = session }, Ct)).Value;
+        task = (await Store().UpdateAsync(task with { Status = AgentTaskStatus.Running }, Ct)).Value;
+        _live.Events.Clear();
+        DateTimeOffset now = _time.GetUtcNow();
+
+        task = (await Store().UpdateAsync(task with { Status = AgentTaskStatus.Done, Result = new TaskResult("Done at 14:02.", "The printer finished at 14:02."), ResultAt = now }, Ct)).Value;
+        await Store().UpdateAsync(task with { StatusReason = "unchanged result" }, Ct);
+
+        LiveEvent result = Assert.Single(_live.Events, live => live.Topic == "conversations");
+        Assert.Equal(("conversation.result", OwnerA), (result.Type, result.Owner));
+        ConversationResultPayload payload = Assert.IsType<ConversationResultPayload>(result.Payload);
+        Assert.Equal((session, task.Id, now, "The printer finished at 14:02."), (payload.SessionId, payload.TaskId, payload.ResultAt, payload.Body));
+    }
+
+    [Fact]
+    public async Task ResultWithoutOriginSession_NoConversationEvent()
+    {
+        TaskRecord task = (await Store().CreateAsync(new NewTask { Goal = "Briefing.", Trigger = TaskTrigger.Now() }, Ct)).Value;
+
+        await Store().UpdateAsync(task with { Status = AgentTaskStatus.Done, Result = new TaskResult("Done.", "Done."), ResultAt = _time.GetUtcNow() }, Ct);
+
+        Assert.DoesNotContain(_live.Events, live => live.Topic == "conversations");
     }
 
     private LiveTaskStore Store() => new(new EfTaskStore(_database.Factory, _database.Accessor, new ViennaProfiles(), Options.Create(new TaskOptions()), _time), _live);

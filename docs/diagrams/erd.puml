@@ -145,7 +145,9 @@ package "Conversations & Runs" {
     * resolved_by : string
     * created_at : DateTimeOffset
     * last_turn_at : DateTimeOffset
-    closed_at : DateTimeOffset
+    closed_at : DateTimeOffset  <<token sessions after the idle TTL>>
+    rested_at : DateTimeOffset  <<idle web session, cleared by its next turn>>
+    summarized_until : DateTimeOffset  <<memory summarizer watermark>>
     <<unique (api_token_id, external_id) where closed_at is null>>
   }
 
@@ -345,6 +347,7 @@ package "Background Work" {
     template : string
     project_id : ProjectId <<FK>>
     origin_satellite_id : string  <<policy applies to all runs + children>>
+    origin_session_id : SessionId <<background handoff: result joins the session>>
     * trigger_kind : now | at | cron | event | after
     * trigger_spec : string  <<time, cron, event filter json or task id>>
     * trigger_once : bool  <<event only: fire once, then done>>
@@ -514,6 +517,7 @@ Session |o--o{ FollowUp : linked
 ApiToken |o--o{ Session : created by
 Session ||--o{ Run
 Session ||--o{ PendingAction
+Session |o..o{ AgentTask : origin_session_id (no FK)
 Run ||--|{ RunStep
 
 Project ||--o{ ProjectAlias

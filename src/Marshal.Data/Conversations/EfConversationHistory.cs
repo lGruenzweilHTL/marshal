@@ -1,5 +1,3 @@
-using System.Text.Json;
-using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Sessions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
@@ -7,41 +5,33 @@ using Microsoft.Extensions.AI;
 namespace Marshal.Data.Conversations;
 
 /// <summary>
-/// Rebuilds the user / assistant exchange of a session from the context and reply steps of its runs.
+/// Rebuilds the user / assistant exchange of a session from the context and reply steps of its runs, with background
+/// results of its handed-off tasks as assistant messages.
 /// </summary>
 public sealed class EfConversationHistory(IDbContextFactory<MarshalDbContext> contexts) : IConversationHistory
 {
-    public async Task<IReadOnlyList<ChatMessage>> LoadAsync(SessionId sessionId, int maxTurns, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ChatMessage>> LoadAsync(SessionId sessionId, int maxTurns, DateTimeOffset? after, CancellationToken cancellationToken)
     {
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
-        var runs = await db.Runs.AsNoTracking()
-            .Where(run => run.SessionId == sessionId)
-            .OrderByDescending(run => run.StartedAt)
-            .Take(maxTurns)
-            .Select(run => new { run.Id, run.StartedAt })
-            .ToListAsync(cancellationToken);
-        List<RunId> ids = [.. runs.Select(run => run.Id)];
-
-        var steps = await db.RunSteps.AsNoTracking()
-            // Subagent steps (depth 1 and more) are the loop's internals, not the exchange with the user.
-            .Where(step => ids.Contains(step.RunId) && step.Depth == 0 && (step.Kind == RunStepKind.Context || step.Kind == RunStepKind.Reply))
-            .Select(step => new { step.RunId, step.Kind, step.Payload })
-            .ToListAsync(cancellationToken);
+        List<ConversationEntry> entries = await ConversationEntries.LoadAsync(db, sessionId, after, maxTurns, cancellationToken);
 
         var messages = new List<ChatMessage>();
-        foreach (var run in Enumerable.Reverse(runs))
+        foreach (ConversationEntry entry in entries)
         {
-            string? input = Read(steps.FirstOrDefault(step => step.RunId == run.Id && step.Kind == RunStepKind.Context)?.Payload)?.Input;
-            string? reply = Read(steps.FirstOrDefault(step => step.RunId == run.Id && step.Kind == RunStepKind.Reply)?.Payload)?.Content;
-            if (input is not null)
-                messages.Add(new ChatMessage(ChatRole.User, input) { CreatedAt = run.StartedAt });
-            if (reply is not null)
-                messages.Add(new ChatMessage(ChatRole.Assistant, reply) { CreatedAt = run.StartedAt });
+            switch (entry)
+            {
+                case TurnEntry turn:
+                    if (turn.Input is not null)
+                        messages.Add(new ChatMessage(ChatRole.User, turn.Input) { CreatedAt = turn.At });
+                    if (turn.Reply is not null)
+                        messages.Add(new ChatMessage(ChatRole.Assistant, turn.Reply) { CreatedAt = turn.At });
+                    break;
+                case BackgroundResultEntry result:
+                    messages.Add(new ChatMessage(ChatRole.Assistant, result.Body) { CreatedAt = result.At });
+                    break;
+            }
         }
 
         return messages;
     }
-
-    private static DbRunRecorder.StepPayload? Read(string? payload) =>
-        payload is null ? null : JsonSerializer.Deserialize<DbRunRecorder.StepPayload>(payload, DbRunRecorder.StepPayload.Json);
 }

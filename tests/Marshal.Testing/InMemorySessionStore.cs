@@ -34,7 +34,7 @@ public sealed class InMemorySessionStore(IExecutionContextAccessor executionCont
     {
         int index = _sessions.FindIndex(entry => entry.Record.Id == id && entry.Record.OwnerId == Owner());
         if (index >= 0)
-            _sessions[index] = _sessions[index] with { Record = _sessions[index].Record with { LastTurnAt = timeProvider.GetUtcNow() } };
+            _sessions[index] = _sessions[index] with { Record = _sessions[index].Record with { LastTurnAt = timeProvider.GetUtcNow(), RestedAt = null } };
 
         return Task.CompletedTask;
     }
@@ -48,8 +48,17 @@ public sealed class InMemorySessionStore(IExecutionContextAccessor executionCont
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyList<SessionId>> FindIdleAsync(DateTimeOffset idleBefore, CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyList<SessionId>>([.. Open().Where(record => record.LastTurnAt < idleBefore).Select(record => record.Id)]);
+    public Task RestAsync(SessionId id, CancellationToken cancellationToken)
+    {
+        int index = _sessions.FindIndex(entry => entry.Record.Id == id && entry.Record.OwnerId == Owner() && entry.ClosedAt is null);
+        if (index >= 0)
+            _sessions[index] = _sessions[index] with { Record = _sessions[index].Record with { RestedAt = timeProvider.GetUtcNow() } };
+
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<SessionRecord>> FindIdleAsync(DateTimeOffset idleBefore, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<SessionRecord>>([.. Open().Where(record => record.RestedAt is null && record.LastTurnAt < idleBefore)]);
 
     private IEnumerable<SessionRecord> Open() =>
         _sessions.Where(entry => entry.ClosedAt is null && entry.Record.OwnerId == Owner()).Select(entry => entry.Record);

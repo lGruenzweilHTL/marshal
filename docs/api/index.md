@@ -99,6 +99,7 @@ The web interface uses the following groups. They require a logged-in person (co
 | Tokens and secrets | `/me/tokens`, `/me/secrets`, `/secrets/instance` | Manage API tokens and UI-managed secrets |
 | Preferences | `/me/preferences` | Per-user settings |
 | Runs and cost | `/runs`, `/runs/{id}`, `/cost` | Run recording and cost |
+| Conversations | `/conversations`, `/conversations/{id}` | Chat history: web, voice and API conversations with their turns and background results |
 | Tasks | `/tasks`, `/tasks/{id}`, `/tasks/kill-switch` | Task list and kill switch |
 | Approvals | `/approvals` | Approval queue |
 | Notifications | `/notifications` | Notification history |

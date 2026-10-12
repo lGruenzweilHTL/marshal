@@ -113,6 +113,7 @@ public static class MarshalApp
         v1.MapPrinterEndpoints();
         v1.MapMailAccountEndpoints();
         v1.MapConversationEndpoints();
+        v1.MapConversationHistoryEndpoints();
         v1.MapApprovalEndpoints();
         v1.MapTaskEndpoints();
         v1.MapNotificationEndpoints();

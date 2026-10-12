@@ -76,7 +76,7 @@ Active projects and their reasons are recorded in the run and shown in the web U
 Memory is written in three ways, all through the deterministic id:
 
 - **Explicitly.** `memory.remember(type, title, content, importance?, scope?, project?, sourceRef?)` writes or updates a chunk. It cannot pin; pinning is a user action in the web UI. In tainted runs it needs confirmation with reason `taint`.
-- **At session close.** When a session closes after its idle TTL, a cheap model proposes chunk candidates from your turns and Marshal's replies only, never from raw tool results. A candidate that contradicts an existing chunk creates a `contradicts` edge instead of overwriting.
+- **At session close or rest.** When a session closes after its idle TTL, or a web chat session rests, a cheap model proposes chunk candidates from your turns and Marshal's replies only, never from raw tool results. Background results of the session count as replies. Each summary reads only the turns since the last one, so a web session that rests several times is not summarized again from its start. A candidate that contradicts an existing chunk creates a `contradicts` edge instead of overwriting.
 - **Nightly consolidation.** A system task runs the same summarizer over the day's closed sessions.
 
 Notes are never memory by themselves. Content from notes enters memory only when the agent writes a chunk in its own words with `source_ref` set to the note path.

@@ -103,12 +103,30 @@ public sealed class EfSessionStoreTests
         _time.Advance(TimeSpan.FromMinutes(10));
         SessionRecord fresh = await store.CreateAsync(new NewSession(SessionSource.Web, null, null, _evidence, "cookie"), Ct);
 
-        IReadOnlyList<SessionId> idle = await store.FindIdleAsync(_time.GetUtcNow().AddMinutes(-5), Ct);
+        IReadOnlyList<SessionRecord> idle = await store.FindIdleAsync(_time.GetUtcNow().AddMinutes(-5), Ct);
 
-        Assert.Equal([old.Id], idle);
+        Assert.Equal([old.Id], idle.Select(session => session.Id));
+        Assert.Equal(SessionSource.Web, idle[0].Source);
         await store.TouchAsync(old.Id, Ct);
         Assert.Empty(await store.FindIdleAsync(_time.GetUtcNow().AddMinutes(-5), Ct));
         Assert.NotEqual(old.Id, fresh.Id);
+    }
+
+    [Fact]
+    public async Task Rest_SkippedByFindIdle_ClearedByTouch()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        await using MarshalDbContext context = database.CreateContext(OwnerA);
+        var store = new EfSessionStore(database.Factory, database.Accessor, _time);
+        SessionRecord session = await store.CreateAsync(new NewSession(SessionSource.Web, null, null, _evidence, "cookie"), Ct);
+        _time.Advance(TimeSpan.FromMinutes(10));
+
+        await store.RestAsync(session.Id, Ct);
+
+        Assert.Empty(await store.FindIdleAsync(_time.GetUtcNow().AddMinutes(-5), Ct));
+        Assert.Equal(_time.GetUtcNow(), (await store.FindOpenAsync(session.Id, Ct))!.RestedAt);
+        await store.TouchAsync(session.Id, Ct);
+        Assert.Null((await store.FindOpenAsync(session.Id, Ct))!.RestedAt);
     }
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;

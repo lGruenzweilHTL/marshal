@@ -10,8 +10,9 @@ namespace Marshal.Core.Sessions;
 
 /// <summary>
 /// Finds or creates the session of a turn. Token clients are looked up by (token, client conversation id), never by
-/// the client id alone; the owner is resolved once on the first turn and pinned. Idle sessions are closed,
-/// their pending action dropped and the close listeners notified before a new session starts.
+/// the client id alone; the owner is resolved once on the first turn and pinned. An idle token session is closed,
+/// its pending action dropped and the close listeners notified before a new session starts. An idle web session
+/// rests the same way and is then continued.
 /// </summary>
 /// <remarks>
 /// The token lookup runs as the token's owner. In v1 the resolved owner is always the instance owner, which also
@@ -41,7 +42,7 @@ public sealed class SessionResolver(
             }
 
             if (existing is not null)
-                await CloseAsync(existing, cancellationToken);
+                await SessionMaintenance.EndIdleAsync(sessions, pendingActions, closeListeners, existing, cancellationToken);
         }
 
         IdentityResolution resolution = await identity.ResolveAsync(evidence, cancellationToken);
@@ -56,28 +57,21 @@ public sealed class SessionResolver(
             return await sessions.CreateAsync(new NewSession(source, null, null, new IdentityEvidence(null, null, null, null), CookieResolvedBy), cancellationToken);
 
         SessionRecord? existing = await sessions.FindOpenAsync(sessionId.Value, cancellationToken);
-        if (existing is not null && IsIdle(existing))
-        {
-            await CloseAsync(existing, cancellationToken);
-            existing = null;
-        }
-
         if (existing is null)
             return new Error("session.not_found", "The conversation does not exist or has ended.", ErrorType.NotFound);
 
+        if (existing.RestedAt is null && IsIdle(existing))
+        {
+            await SessionMaintenance.EndIdleAsync(sessions, pendingActions, closeListeners, existing, cancellationToken);
+            if (existing.Source != SessionSource.Web)
+                return new Error("session.not_found", "The conversation does not exist or has ended.", ErrorType.NotFound);
+        }
+
         await sessions.TouchAsync(existing.Id, cancellationToken);
-        return existing;
+        return existing with { LastTurnAt = timeProvider.GetUtcNow(), RestedAt = null };
     }
 
     private bool IsIdle(SessionRecord session) => timeProvider.GetUtcNow() - session.LastTurnAt >= options.Value.IdleTtl;
-
-    private async Task CloseAsync(SessionRecord session, CancellationToken cancellationToken)
-    {
-        await pendingActions.DropForSessionAsync(session.Id, cancellationToken);
-        await sessions.CloseAsync(session.Id, cancellationToken);
-        foreach (ISessionCloseListener listener in closeListeners)
-            await listener.SessionClosedAsync(session.OwnerId, session.Id, cancellationToken);
-    }
 
     private static MarshalExecutionContext SystemContext(OwnerId owner, SessionSource source) =>
         new() { OwnerId = owner, Source = source, IsInteractive = false };

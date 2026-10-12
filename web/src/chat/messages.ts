@@ -15,6 +15,26 @@ export const en = {
   no: 'No',
   interrupted: 'The connection was interrupted before the reply was complete.',
   failed: 'The message could not be sent',
+  history: {
+    title: 'Conversations',
+    open: 'Conversations',
+    label: 'Earlier conversations',
+    untitled: 'Conversation',
+    api: 'API',
+    failed: 'The conversations could not be loaded',
+    empty: { title: 'No conversations yet', body: 'Chats, voice requests and API turns show up here.' },
+    more: 'Show older',
+  },
+  spoken: 'Spoken',
+  background: 'Background result',
+  noReply: 'No reply was recorded for this turn.',
+  readOnly: {
+    voice: 'This conversation was spoken. Continue it by voice, or start a new chat.',
+    api: 'This conversation came through the API. Start a new chat to continue here.',
+    closed: 'This conversation has ended. Start a new chat to continue.',
+  },
+  notFound: { title: 'Conversation not found', body: 'It does not exist or belongs to someone else.' },
+  loadFailed: 'The conversation could not be loaded',
 }
 
 export const de: Catalog<typeof en> = {
@@ -32,4 +52,24 @@ export const de: Catalog<typeof en> = {
   no: 'Nein',
   interrupted: 'Die Verbindung brach ab, bevor die Antwort fertig war.',
   failed: 'Die Nachricht konnte nicht gesendet werden',
+  history: {
+    title: 'Unterhaltungen',
+    open: 'Unterhaltungen',
+    label: 'Frühere Unterhaltungen',
+    untitled: 'Unterhaltung',
+    api: 'API',
+    failed: 'Die Unterhaltungen konnten nicht geladen werden',
+    empty: { title: 'Noch keine Unterhaltungen', body: 'Chats, Sprachanfragen und API-Turns erscheinen hier.' },
+    more: 'Ältere anzeigen',
+  },
+  spoken: 'Gesprochen',
+  background: 'Ergebnis aus dem Hintergrund',
+  noReply: 'Für diesen Turn wurde keine Antwort aufgezeichnet.',
+  readOnly: {
+    voice: 'Diese Unterhaltung wurde gesprochen. Setz sie per Sprache fort oder starte einen neuen Chat.',
+    api: 'Diese Unterhaltung kam über die API. Starte einen neuen Chat, um hier weiterzuschreiben.',
+    closed: 'Diese Unterhaltung ist beendet. Starte einen neuen Chat, um weiterzuschreiben.',
+  },
+  notFound: { title: 'Unterhaltung nicht gefunden', body: 'Sie existiert nicht oder gehört jemand anderem.' },
+  loadFailed: 'Die Unterhaltung konnte nicht geladen werden',
 }

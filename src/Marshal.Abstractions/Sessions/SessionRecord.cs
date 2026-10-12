@@ -6,6 +6,7 @@ namespace Marshal.Abstractions.Sessions;
 
 /// <summary>
 /// A conversation session. Per-turn data (input mode, satellite, area, language) lives on runs, not here.
+/// <see cref="RestedAt"/> is set while a web session rests after the idle TTL; its next turn clears it.
 /// </summary>
 public sealed record SessionRecord(
     SessionId Id,
@@ -14,4 +15,5 @@ public sealed record SessionRecord(
     ApiTokenId? ApiTokenId,
     string? ExternalId,
     string ResolvedBy,
-    DateTimeOffset LastTurnAt);
+    DateTimeOffset LastTurnAt,
+    DateTimeOffset? RestedAt = null);

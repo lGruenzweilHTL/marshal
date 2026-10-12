@@ -22,6 +22,7 @@ export const ids = {
   voron: id(7, 1),
   garden: id(7, 2),
   run: (n: number) => id(9, n),
+  conversation: (n: number) => id(10, n),
   chunk: (n: number) => id(6, n),
   notification: (n: number) => id(5, n),
 }
@@ -206,6 +207,78 @@ const runs: Schemas['RunSummary'][] = [
   { id: ids.run(7), sessionId: null, source: 'task', inputMode: null, trigger: 'cron', satelliteId: null, startedAt: at(-2), endedAt: at(-1), outcome: 'ok', outcomeReason: null, tainted: false, cost: 0.0044 },
   { id: ids.run(8), sessionId: null, source: 'api', inputMode: 'text', trigger: 'conversation', satelliteId: null, startedAt: at(-95), endedAt: at(-95), outcome: 'ok', outcomeReason: null, tainted: false, cost: 0.0007 },
 ]
+
+type ConversationEntry = Schemas['ConversationDetail']['entries'][number]
+
+const turn = (n: number, minutes: number, input: string, reply: string | null, overrides: Partial<Extract<ConversationEntry, { kind?: 'turn' }>> = {}): ConversationEntry => ({
+  kind: 'turn',
+  runId: ids.run(n),
+  at: at(minutes),
+  inputMode: 'text',
+  satelliteId: null,
+  areaId: null,
+  input,
+  reply,
+  continueConversation: false,
+  artifacts: [],
+  outcome: 'ok',
+  ...overrides,
+})
+
+const conversation = (n: number, source: Schemas['SessionSource'], minutes: number, turns: number, title: string, overrides: Partial<Schemas['ConversationSummary']> = {}): Schemas['ConversationSummary'] => ({
+  id: id(10, n),
+  source,
+  createdAt: at(minutes - 5),
+  lastTurnAt: at(minutes),
+  turns,
+  title,
+  canContinue: source === 'web',
+  satelliteId: null,
+  areaId: null,
+  ...overrides,
+})
+
+const conversations: Schemas['ConversationSummary'][] = [
+  conversation(1, 'voice', -3, 1, 'Is the Voron done yet?', { satelliteId: 'assist_satellite.kitchen', areaId: 'kitchen' }),
+  conversation(2, 'web', -18, 3, 'Which filament for the garden planter brackets?'),
+  conversation(3, 'voice', -41, 1, 'Check all three printers and tell me which one is free', { satelliteId: 'assist_satellite.living_room', areaId: 'living_room' }),
+  conversation(4, 'api', -95, 1, 'Summarize the RSS digest for the dashboard'),
+  conversation(5, 'web', -26 * 60, 2, 'Draft a reply to the filament invoice from Prusament'),
+]
+
+/** Conversation details by session id; the preview serves the one asked for. */
+export const conversationDetails: Record<string, Schemas['ConversationDetail']> = {
+  [id(10, 1)]: {
+    conversation: conversations[0]!,
+    entries: [turn(1, -3, 'Is the Voron done yet?', 'Not yet: layer 112 of 268, about 1 h 12 min left.', { inputMode: 'voice', satelliteId: 'assist_satellite.kitchen', areaId: 'kitchen' })],
+  },
+  [id(10, 2)]: {
+    conversation: conversations[1]!,
+    entries: [
+      turn(20, -26, 'Which filament for the garden planter brackets?', 'PETG: it handles sun and rain better than PLA. You have about **640 g** of black PETG left.'),
+      turn(21, -22, 'Is that enough for six brackets?', 'Yes. Six brackets take about 210 g with 4 walls and 30 % infill.'),
+      turn(2, -18, 'Queue them on the Voron after the current print', 'Should I add six `planter_bracket.gcode` jobs to the Voron queue?', { continueConversation: true }),
+    ],
+  },
+  [id(10, 3)]: {
+    conversation: conversations[2]!,
+    entries: [
+      turn(4, -41, 'Check all three printers and tell me which one is free', "I'm working on it and will tell you when I'm done.", { inputMode: 'voice', satelliteId: 'assist_satellite.living_room', areaId: 'living_room', outcome: 'backgrounded' }),
+      { kind: 'backgroundResult', taskId: ids.printTask, at: at(-39), body: 'The Prusa MK4 is free. The Voron is printing (about 1 h left) and the Bambu reports a clogged nozzle.' },
+    ],
+  },
+  [id(10, 4)]: {
+    conversation: conversations[3]!,
+    entries: [turn(8, -95, 'Summarize the RSS digest for the dashboard', 'Three new posts: Klipper 0.13 is out, a PETG drying guide and a Home Assistant release note.')],
+  },
+  [id(10, 5)]: {
+    conversation: conversations[4]!,
+    entries: [
+      turn(50, -26 * 60 - 4, 'Draft a reply to the filament invoice from Prusament', 'I saved a draft in your mail: thanks for the invoice, payment follows this week.'),
+      turn(51, -26 * 60, 'Thanks', null, { outcome: 'error' }),
+    ],
+  },
+}
 
 const step = (overrides: Partial<Schemas['RunStepDetail']> & Pick<Schemas['RunStepDetail'], 'sequence' | 'kind'>): Schemas['RunStepDetail'] => ({
   model: null,
@@ -458,6 +531,8 @@ export const normal = {
   '/api/v1/tasks': tasks,
   '/api/v1/tasks/{id}': taskDetail,
   '/api/v1/tasks/kill-switch': { active: false, cancelled: null },
+  '/api/v1/conversations': conversations,
+  '/api/v1/conversations/{id}': conversationDetails[id(10, 2)]!,
   '/api/v1/runs': runs,
   '/api/v1/runs/{id}': runDetail,
   '/api/v1/cost': cost,

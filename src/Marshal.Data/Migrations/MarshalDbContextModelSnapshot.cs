@@ -488,10 +488,18 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("resolved_by");
 
+                    b.Property<long?>("RestedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("rested_at");
+
                     b.Property<string>("Source")
                         .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("source");
+
+                    b.Property<long?>("SummarizedUntil")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("summarized_until");
 
                     b.HasKey("Id")
                         .HasName("pk_sessions");
@@ -1275,6 +1283,10 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("origin_satellite_id");
 
+                    b.Property<Guid?>("OriginSessionId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("origin_session_id");
+
                     b.Property<long?>("OverrideQuietHoursUntil")
                         .HasColumnType("INTEGER")
                         .HasColumnName("override_quiet_hours_until");
@@ -1354,6 +1366,9 @@ namespace Marshal.Data.Migrations
                     b.HasIndex("DeliveriesPending")
                         .HasDatabaseName("ix_agent_tasks_deliveries_pending")
                         .HasFilter("deliveries_pending");
+
+                    b.HasIndex("OriginSessionId")
+                        .HasDatabaseName("ix_agent_tasks_origin_session_id");
 
                     b.HasIndex("ParentId")
                         .HasDatabaseName("ix_agent_tasks_parent_id");

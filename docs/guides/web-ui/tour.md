@@ -22,7 +22,7 @@ Every view works at phone width. The views you act on (Home, Inbox, Chat, Printe
 | Group | Destination | What it does |
 |---|---|---|
 | Act | Home | What needs you first: pending approvals with approve and reject, printer alerts, running tasks and next runs, recent notifications. The kill switch appears while background tasks run. |
-| Act | Chat | Text chat with Marshal. Replies stream in. Markdown, tables and code render; images show only from Marshal's own origin. Artifacts appear inline (images) or as cards that open the viewer. |
+| Act | Chat | Text chat with Marshal. Replies stream in. Markdown, tables and code render; images show only from Marshal's own origin. Artifacts appear inline (images) or as cards that open the viewer. Earlier conversations, typed and spoken, are listed next to the chat. |
 | Act | Inbox | The one place for everything that waits for you: approvals (frozen action, reasons, time left), coding proposals (diff, merge or reject) and the notification history, filterable by outcome. |
 | Act | Printer | Live printer state. |
 | Activity | Tasks | Tasks and watches with status, trigger, next run, budget and latest result. Edit a goal, cancel a task, use the kill switch. |
@@ -41,6 +41,18 @@ Every view works at phone width. The views you act on (Home, Inbox, Chat, Printe
 ## Approvals from a push notification
 
 Tapping a push notification for an approval opens a focused approval screen. It shows the frozen action, its arguments and the time left, with approve and reject reachable without scrolling. Approve, reject and merge are audited user actions. See [approvals](../tasks/approvals.md).
+
+## Chat history
+
+The chat keeps your conversations. On desktop the list of earlier conversations sits next to the chat, newest first. On a phone, the history button in the chat header opens it. Each conversation has its own address (`/chat/{id}`), so a reload or a bookmark brings it back.
+
+- **Web conversations** continue where you left off, whatever time has passed. After a few idle minutes the conversation rests: a pending confirmation is dropped and Marshal summarizes the new turns into memory, but the next message continues the same conversation.
+- **Voice conversations** from Home Assistant satellites are listed with a microphone and the satellite or area. Each spoken turn is marked. They are read-only in the web chat: continue them by voice, or start a new chat.
+- **API conversations** are marked "API" and are read-only too.
+
+## Background results in the chat
+
+When a turn takes too long, or Marshal moves it to the background itself, the reply says Marshal is working on it. When the background task finishes, its result appears in the same conversation as a reply marked "Background result", without a reload. The Inbox still receives the result as well. If the connection dropped in the meantime, the chat loads the conversation again when it reconnects. In the next turn, Marshal knows the result, so you can ask follow-up questions about it.
 
 ## Chat confirmations
 

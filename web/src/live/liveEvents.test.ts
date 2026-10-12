@@ -14,6 +14,9 @@ class FakeEventSource implements EventSourceLike {
   close() {
     this.closed = true
   }
+  fire(type: string) {
+    this.listeners.get(type)?.(new MessageEvent(type))
+  }
   emit(type: string, message: unknown) {
     this.listeners.get(type)?.(new MessageEvent(type, { data: JSON.stringify(message) }))
   }
@@ -46,5 +49,25 @@ describe('createLiveEvents', () => {
     expect(FakeEventSource.opened[0]!.closed).toBe(false)
     second()
     expect(FakeEventSource.opened[0]!.closed).toBe(true)
+  })
+
+  it('reports a reconnect after the connection dropped, not the first open', () => {
+    FakeEventSource.opened = []
+    const live = createLiveEvents('https://marshal.test', (url) => new FakeEventSource(url))
+    let reconnects = 0
+    live.on('conversations', 'conversation.result', () => {})
+    const stop = live.onReconnect(() => reconnects++)
+    const source = FakeEventSource.opened[0]!
+
+    source.fire('open')
+    expect(reconnects).toBe(0)
+    source.fire('error')
+    source.fire('open')
+    expect(reconnects).toBe(1)
+
+    stop()
+    source.fire('error')
+    source.fire('open')
+    expect(reconnects).toBe(1)
   })
 })

@@ -311,6 +311,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The user's conversations (web, voice, api), newest last turn first; page with before (a lastTurnAt) and limit. */
+        get: operations["ListConversations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One conversation: its turns and background results in time order. */
+        get: operations["GetConversation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications": {
         parameters: {
             query?: never;
@@ -1397,6 +1431,8 @@ export interface components {
              */
             expiresAt: string;
         };
+        /** Format: uuid */
+        ArtifactId: string;
         /** @enum {unknown} */
         ArtifactKind: "image" | "svg" | "video" | "model3d" | "code" | "diff" | "pdf" | "markdown" | "html" | "other";
         /** @description Artifacts with the owner's storage usage. */
@@ -1413,6 +1449,12 @@ export interface components {
              * @description Storage allowed (`artifacts.quotaMb`).
              */
             quotaBytes: number;
+        };
+        ArtifactRef: {
+            id: components["schemas"]["ArtifactId"];
+            name: string;
+            kind: components["schemas"]["ArtifactKind"];
+            url: string;
         };
         /** @description An artifact. */
         ArtifactResponse: {
@@ -1543,6 +1585,48 @@ export interface components {
             detail?: null | string;
             /** Format: double */
             score?: null | number;
+        };
+        ConversationDetail: {
+            conversation: components["schemas"]["ConversationSummary"];
+            entries: components["schemas"]["ConversationEntry"][];
+        };
+        ConversationEntry: components["schemas"]["ConversationEntryTurnEntry"] | components["schemas"]["ConversationEntryBackgroundResultEntry"];
+        ConversationEntryBackgroundResultEntry: {
+            /** @enum {string} */
+            kind?: "backgroundResult";
+            taskId: components["schemas"]["TaskId"];
+            body: string;
+            /** Format: date-time */
+            at: string;
+        };
+        ConversationEntryTurnEntry: {
+            /** @enum {string} */
+            kind?: "turn";
+            runId: components["schemas"]["RunId"];
+            inputMode: null | components["schemas"]["InputMode"];
+            satelliteId: null | string;
+            areaId: null | string;
+            input: null | string;
+            reply: null | string;
+            continueConversation: null | boolean;
+            artifacts: components["schemas"]["ArtifactRef"][];
+            outcome: components["schemas"]["RunOutcome"];
+            /** Format: date-time */
+            at: string;
+        };
+        ConversationSummary: {
+            id: components["schemas"]["SessionId"];
+            source: components["schemas"]["SessionSource"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            lastTurnAt: string;
+            /** Format: int32 */
+            turns: number;
+            title: null | string;
+            canContinue: boolean;
+            satelliteId: null | string;
+            areaId: null | string;
         };
         /** @description A conversation turn. */
         ConversationTurnRequest: {
@@ -2980,6 +3064,51 @@ export interface operations {
                 };
                 content: {
                     "text/event-stream": components["schemas"]["SseItemOfObject"];
+                };
+            };
+        };
+    };
+    ListConversations: {
+        parameters: {
+            query?: {
+                before?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationSummary"][];
+                };
+            };
+        };
+    };
+    GetConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationDetail"];
                 };
             };
         };

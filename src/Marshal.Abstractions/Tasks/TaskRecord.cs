@@ -1,5 +1,6 @@
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Memory;
+using Marshal.Abstractions.Sessions;
 
 namespace Marshal.Abstractions.Tasks;
 
@@ -28,6 +29,9 @@ public sealed record TaskRecord
     public ProjectId? ProjectId { get; init; }
 
     public string? OriginSatelliteId { get; init; }
+
+    /// <summary>Conversation a background handoff came from; the result is shown there.</summary>
+    public SessionId? OriginSessionId { get; init; }
 
     public required TaskTrigger Trigger { get; init; }
 

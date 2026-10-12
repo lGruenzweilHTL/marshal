@@ -202,8 +202,36 @@ public sealed class LlmMemorySummarizerTests : IAsyncLifetime
         Assert.Null(await _store.GetAsync(Id(ChunkType.Preference, "Coffee"), Ct));
     }
 
+    [Fact]
+    public async Task SecondRest_ReadsOnlyNewTurnsAndAdvancesWatermark()
+    {
+        foreach (string turn in new[] { "q1", "q2", "q3" })
+        {
+            _time.Advance(TimeSpan.FromMinutes(1));
+            await TurnAsync(turn, "ok");
+        }
+
+        _model.ThenText(Candidates()).ThenText(Candidates());
+        Assert.True((await Summarizer().SummarizeAsync(_session, Ct)).IsSuccess);
+        foreach (string turn in new[] { "q4", "q5" })
+        {
+            _time.Advance(TimeSpan.FromMinutes(1));
+            await TurnAsync(turn, "ok");
+        }
+
+        DateTimeOffset last = _time.GetUtcNow();
+        Assert.True((await Summarizer().SummarizeAsync(_session, Ct)).IsSuccess);
+
+        string second = _model.Requests[1].Messages[^1].Text;
+        Assert.Contains("q4", second, StringComparison.Ordinal);
+        Assert.Contains("q5", second, StringComparison.Ordinal);
+        Assert.DoesNotContain("q3", second, StringComparison.Ordinal);
+        Assert.Equal(last, await new EfSummaryWatermark(_database.Factory).GetAsync(_session, Ct));
+    }
+
     private LlmMemorySummarizer Summarizer() => new(
         new EfConversationHistory(_database.Factory),
+        new EfSummaryWatermark(_database.Factory),
         new FastRouter(_model),
         _templates,
         MemoryTestKit.Retriever(_database, _embeddings, _time),

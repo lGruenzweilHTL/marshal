@@ -15,12 +15,15 @@ public interface ISessionStore
 
     Task<SessionRecord> CreateAsync(NewSession session, CancellationToken cancellationToken);
 
-    /// <summary>Sets the last turn time to now.</summary>
+    /// <summary>Sets the last turn time to now and ends a rest.</summary>
     Task TouchAsync(SessionId id, CancellationToken cancellationToken);
 
     /// <summary>Closes the session.</summary>
     Task CloseAsync(SessionId id, CancellationToken cancellationToken);
 
-    /// <summary>Open sessions whose last turn is older than <paramref name="idleBefore"/>.</summary>
-    Task<IReadOnlyList<SessionId>> FindIdleAsync(DateTimeOffset idleBefore, CancellationToken cancellationToken);
+    /// <summary>Marks an open web session as resting: it stays continuable but is no longer idle.</summary>
+    Task RestAsync(SessionId id, CancellationToken cancellationToken);
+
+    /// <summary>Open, not resting sessions whose last turn is older than <paramref name="idleBefore"/>.</summary>
+    Task<IReadOnlyList<SessionRecord>> FindIdleAsync(DateTimeOffset idleBefore, CancellationToken cancellationToken);
 }

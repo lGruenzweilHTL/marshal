@@ -120,17 +120,50 @@ public sealed class SessionResolverTests
     }
 
     [Fact]
-    public async Task Own_IdleSession_NotFound()
+    public async Task Own_IdleWebSession_RestedThenContinued()
     {
         SessionResolver resolver = Resolver();
         SessionRecord first = (await resolver.ResolveOwnSessionAsync(null, OwnerA, SessionSource.Web, Ct)).Value;
+        PendingActionRecord pending = await _pending.FreezeAsync(new FreezeRequest(first.Id, null, new ToolId("ha", "x"), "{}", "x", [], "en", _time.GetUtcNow().AddMinutes(10)), Ct);
         _time.Advance(TimeSpan.FromMinutes(6));
 
         Result<SessionRecord> result = await resolver.ResolveOwnSessionAsync(first.Id, OwnerA, SessionSource.Web, Ct);
 
-        Assert.Equal("session.not_found", result.Error.Code);
-        Assert.Contains(first.Id, _sessions.Closed);
+        Assert.Equal(first.Id, result.Value.Id);
+        Assert.Empty(_sessions.Closed);
+        Assert.Equal(PendingActionStatus.Dropped, _pending.Decisions[pending.Id].Status);
         Assert.Equal([(OwnerA, first.Id)], _listener.Closed);
+        Assert.Null(_sessions.All.Single().RestedAt);
+        Assert.Equal(_time.GetUtcNow(), _sessions.All.Single().LastTurnAt);
+    }
+
+    [Fact]
+    public async Task Own_RestedWebSession_ContinuedWithoutRestingAgain()
+    {
+        SessionResolver resolver = Resolver();
+        SessionRecord first = (await resolver.ResolveOwnSessionAsync(null, OwnerA, SessionSource.Web, Ct)).Value;
+        _time.Advance(TimeSpan.FromMinutes(6));
+        await Maintenance().CloseIdleAsync(OwnerA, Ct);
+        _time.Advance(TimeSpan.FromDays(2));
+
+        Result<SessionRecord> result = await resolver.ResolveOwnSessionAsync(first.Id, OwnerA, SessionSource.Web, Ct);
+
+        Assert.Equal(first.Id, result.Value.Id);
+        Assert.Equal([(OwnerA, first.Id)], _listener.Closed);
+        Assert.Null(_sessions.All.Single().RestedAt);
+    }
+
+    [Fact]
+    public async Task Own_ClosedSession_NotFound()
+    {
+        SessionResolver resolver = Resolver();
+        SessionRecord first = (await resolver.ResolveOwnSessionAsync(null, OwnerA, SessionSource.Web, Ct)).Value;
+        using (_accessor.Use(Text(OwnerA)))
+            await _sessions.CloseAsync(first.Id, Ct);
+
+        Result<SessionRecord> result = await resolver.ResolveOwnSessionAsync(first.Id, OwnerA, SessionSource.Web, Ct);
+
+        Assert.Equal("session.not_found", result.Error.Code);
     }
 
     [Fact]
@@ -144,21 +177,41 @@ public sealed class SessionResolverTests
     }
 
     [Fact]
-    public async Task IdleClose_ClosesIdleSessionsAndDropsPendingActions()
+    public async Task IdleClose_ClosesIdleTokenSessionsAndDropsPendingActions()
     {
         SessionResolver resolver = Resolver();
-        SessionRecord idle = (await resolver.ResolveOwnSessionAsync(null, OwnerA, SessionSource.Web, Ct)).Value;
+        SessionRecord idle = await resolver.ResolveTokenSessionAsync(_token, OwnerA, "01JABC", _evidence, SessionSource.Voice, Ct);
         PendingActionRecord pending = await _pending.FreezeAsync(new FreezeRequest(idle.Id, null, new ToolId("ha", "x"), "{}", "x", [], "en", _time.GetUtcNow().AddMinutes(1)), Ct);
         _time.Advance(TimeSpan.FromMinutes(4));
-        SessionRecord active = (await resolver.ResolveOwnSessionAsync(null, OwnerA, SessionSource.Web, Ct)).Value;
+        SessionRecord active = await resolver.ResolveTokenSessionAsync(_token, OwnerA, "01JDEF", _evidence, SessionSource.Voice, Ct);
         _time.Advance(TimeSpan.FromMinutes(2));
 
-        int closed = await new SessionMaintenance(_sessions, _pending, [_listener], _accessor, Options.Create(new SessionOptions()), _time).CloseIdleAsync(OwnerA, Ct);
+        int handled = await Maintenance().CloseIdleAsync(OwnerA, Ct);
 
-        Assert.Equal(1, closed);
+        Assert.Equal(1, handled);
         Assert.Equal([idle.Id], _sessions.Closed);
         Assert.Equal(PendingActionStatus.Dropped, _pending.Decisions[pending.Id].Status);
         Assert.NotEqual(idle.Id, active.Id);
+        Assert.Equal([(OwnerA, idle.Id)], _listener.Closed);
+    }
+
+    [Fact]
+    public async Task IdleClose_RestsIdleWebSessionOnce()
+    {
+        SessionRecord idle = (await Resolver().ResolveOwnSessionAsync(null, OwnerA, SessionSource.Web, Ct)).Value;
+        PendingActionRecord pending = await _pending.FreezeAsync(new FreezeRequest(idle.Id, null, new ToolId("ha", "x"), "{}", "x", [], "en", _time.GetUtcNow().AddMinutes(10)), Ct);
+        _time.Advance(TimeSpan.FromMinutes(6));
+        SessionMaintenance maintenance = Maintenance();
+
+        int first = await maintenance.CloseIdleAsync(OwnerA, Ct);
+        _time.Advance(TimeSpan.FromMinutes(6));
+        int second = await maintenance.CloseIdleAsync(OwnerA, Ct);
+
+        Assert.Equal(1, first);
+        Assert.Equal(0, second);
+        Assert.Empty(_sessions.Closed);
+        Assert.NotNull(_sessions.All.Single().RestedAt);
+        Assert.Equal(PendingActionStatus.Dropped, _pending.Decisions[pending.Id].Status);
         Assert.Equal([(OwnerA, idle.Id)], _listener.Closed);
     }
 
@@ -185,6 +238,8 @@ public sealed class SessionResolverTests
     }
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
+
+    private SessionMaintenance Maintenance() => new(_sessions, _pending, [_listener], _accessor, Options.Create(new SessionOptions()), _time);
 
     private SessionResolver Resolver() => new(_sessions, _identity, _pending, [_listener], _accessor, Options.Create(new SessionOptions()), _time);
 

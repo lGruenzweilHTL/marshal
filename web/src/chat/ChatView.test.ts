@@ -1,8 +1,11 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import ChatView from './ChatView.vue'
-import { eventStream, FakeServer, type RecordedRequest } from '../testing/fakeServer'
+import { eventStream, FakeServer, json, type RecordedRequest } from '../testing/fakeServer'
+import { conversationSummary } from '../testing/fixtures'
 import { me, mountOptions } from '../testing/mountApp'
+import { useViewport } from '../testing/viewport'
+import type { Schemas } from '../api/client'
 
 const turns = '/api/v1/conversation/turns'
 
@@ -14,11 +17,34 @@ function final(speech: string, conversationId = 's-1', continueConversation = fa
   return sse('final', { speech, continueConversation, conversationId })
 }
 
-async function mountChat(server: FakeServer) {
-  const { options } = await mountOptions(server.on('GET', '/api/v1/me', 200, me).antiforgery('t'), '/chat')
-  const wrapper = mount(ChatView, { ...options, attachTo: document.body })
+async function mountChat(server: FakeServer, path = '/chat') {
+  const mounted = await mountOptions(server.on('GET', '/api/v1/me', 200, me).antiforgery('t'), path)
+  const wrapper = mount(ChatView, { ...mounted.options, attachTo: document.body })
   await flushPromises()
-  return wrapper
+  return Object.assign(wrapper, { router: mounted.router, live: mounted.live })
+}
+
+type Entry = Schemas['ConversationDetail']['entries'][number]
+
+function turn(overrides: Partial<Extract<Entry, { kind?: 'turn' }>> = {}): Entry {
+  return {
+    kind: 'turn',
+    runId: 'r-1',
+    at: '2026-10-12T08:00:00Z',
+    inputMode: 'text',
+    satelliteId: null,
+    areaId: null,
+    input: 'hello',
+    reply: 'Hi there.',
+    continueConversation: false,
+    artifacts: [],
+    outcome: 'ok',
+    ...overrides,
+  }
+}
+
+function detail(id: string, entries: Entry[], overrides: Partial<Schemas['ConversationSummary']> = {}): Schemas['ConversationDetail'] {
+  return { conversation: conversationSummary({ id, turns: entries.length, ...overrides }), entries }
 }
 
 async function send(wrapper: Awaited<ReturnType<typeof mountChat>>, text: string) {
@@ -201,5 +227,149 @@ describe('ChatView', () => {
     expect(card.text()).toContain('bracket.stl')
     expect(card.text()).toContain('3D model')
     expect(card.attributes('href')).toBe('/artifacts/a2')
+  })
+
+  describe('history', () => {
+    it('loads /chat/{id} and renders its turns with voice marks', async () => {
+      const server = new FakeServer().on(
+        'GET',
+        '/api/v1/conversations/s-9',
+        200,
+        detail('s-9', [turn({ inputMode: 'voice', satelliteId: 'assist_satellite.kitchen', input: 'is the printer done?', reply: 'Not yet.' }), turn({ runId: 'r-2', input: 'thanks', reply: 'Sure.' })]),
+      )
+      const wrapper = await mountChat(server, '/chat/s-9')
+
+      const users = wrapper.findAll('[data-role="user"]')
+      expect(users.map((user) => user.get('.bubble').text())).toEqual(['is the printer done?', 'thanks'])
+      expect(users[0]!.get('[data-test="spoken"]').text()).toContain('kitchen')
+      expect(users[1]!.find('[data-test="spoken"]').exists()).toBe(false)
+      expect(wrapper.findAll('[data-role="assistant"]').map((reply) => reply.text())).toEqual(['Not yet.', 'Sure.'])
+    })
+
+    it('continues a loaded web conversation in the same session', async () => {
+      const server = new FakeServer().on('GET', '/api/v1/conversations/s-9', 200, detail('s-9', [turn()])).handle('POST', turns, () => eventStream([final('ok', 's-9')]))
+      const wrapper = await mountChat(server, '/chat/s-9')
+
+      await send(wrapper, 'again')
+      await flushPromises()
+
+      expect(body(server.request('POST', turns)).conversationId).toBe('s-9')
+    })
+
+    it('shows a note and a new chat action instead of the composer for read-only conversations', async () => {
+      const server = new FakeServer().on(
+        'GET',
+        '/api/v1/conversations/v-1',
+        200,
+        detail('v-1', [turn({ inputMode: 'voice', satelliteId: 'assist_satellite.kitchen' })], { source: 'voice', canContinue: false }),
+      )
+      const wrapper = await mountChat(server, '/chat/v-1')
+
+      expect(wrapper.find('form.composer').exists()).toBe(false)
+      expect(wrapper.get('[data-test="read-only"]').text()).toContain('spoken')
+      await wrapper.get('[data-test="read-only"] [data-test="read-only-new-chat"]').trigger('click')
+      await flushPromises()
+      expect(wrapper.router.currentRoute.value.path).toBe('/chat')
+      expect(wrapper.find('form.composer').exists()).toBe(true)
+    })
+
+    it('replaces the URL with the new session after the first turn of a new chat', async () => {
+      useViewport('desktop')
+      const server = new FakeServer()
+        .on('GET', '/api/v1/conversations', 200, [])
+        .handle('POST', turns, () => eventStream([final('Hello!', 's-new')]))
+      const wrapper = await mountChat(server)
+      const listLoads = server.count('GET', '/api/v1/conversations')
+
+      await send(wrapper, 'hi')
+      await flushPromises()
+
+      expect(wrapper.router.currentRoute.value.path).toBe('/chat/s-new')
+      expect(server.count('GET', '/api/v1/conversations/s-new')).toBe(0)
+      expect(server.count('GET', '/api/v1/conversations')).toBeGreaterThan(listLoads)
+      expect(wrapper.findAll('[data-role="assistant"]').at(-1)!.text()).toBe('Hello!')
+    })
+
+    it('says the conversation was not found and offers a new chat', async () => {
+      const server = new FakeServer().on('GET', '/api/v1/conversations/gone', 404, { code: 'conversation.not_found', detail: 'The conversation does not exist.' })
+      const wrapper = await mountChat(server, '/chat/gone')
+
+      expect(wrapper.text()).toContain('Conversation not found')
+      expect(wrapper.find('form.composer').exists()).toBe(false)
+      await wrapper.get('[data-test="not-found-new-chat"]').trigger('click')
+      await flushPromises()
+      expect(wrapper.router.currentRoute.value.path).toBe('/chat')
+    })
+
+    it('lists the conversations next to the chat on desktop', async () => {
+      useViewport('desktop')
+      const server = new FakeServer().on('GET', '/api/v1/conversations', 200, [conversationSummary({ id: 's-1', title: 'Printer status' })])
+      const wrapper = await mountChat(server)
+
+      expect(wrapper.get('[data-conversation="s-1"]').text()).toContain('Printer status')
+    })
+
+    it('opens the conversation list from the header on phones', async () => {
+      useViewport('phone')
+      const wrapper = await mountChat(new FakeServer())
+
+      expect(wrapper.find('[data-conversation]').exists()).toBe(false)
+      expect(wrapper.get('[data-test="history"]').attributes('href')).toBe('/chat/history')
+    })
+  })
+
+  describe('background results', () => {
+    const result = { sessionId: 's-9', taskId: 't-1', resultAt: '2026-10-12T08:05:00Z', body: 'The printer finished at 14:02.' }
+
+    it('shows a stored background result as a marked reply', async () => {
+      const server = new FakeServer().on(
+        'GET',
+        '/api/v1/conversations/s-9',
+        200,
+        detail('s-9', [turn({ reply: 'Working on it.', outcome: 'backgrounded' }), { kind: 'backgroundResult', taskId: 't-1', at: result.resultAt, body: result.body }]),
+      )
+      const wrapper = await mountChat(server, '/chat/s-9')
+
+      const last = wrapper.findAll('[data-role="assistant"]').at(-1)!
+      expect(last.get('[data-test="background"]').text()).toBe('Background result')
+      expect(last.text()).toContain('The printer finished at 14:02.')
+    })
+
+    it('appends a live result for the open session once', async () => {
+      const server = new FakeServer().on('GET', '/api/v1/conversations/s-9', 200, detail('s-9', [turn({ reply: 'Working on it.', outcome: 'backgrounded' })]))
+      const wrapper = await mountChat(server, '/chat/s-9')
+
+      wrapper.live.publish('conversations', 'conversation.result', result)
+      wrapper.live.publish('conversations', 'conversation.result', result)
+      await flushPromises()
+
+      const replies = wrapper.findAll('[data-role="assistant"]')
+      expect(replies).toHaveLength(2)
+      expect(replies[1]!.find('[data-test="background"]').exists()).toBe(true)
+      expect(replies[1]!.text()).toContain('The printer finished at 14:02.')
+    })
+
+    it('ignores a result for another session', async () => {
+      const server = new FakeServer().on('GET', '/api/v1/conversations/s-2', 200, detail('s-2', [turn()]))
+      const wrapper = await mountChat(server, '/chat/s-2')
+
+      wrapper.live.publish('conversations', 'conversation.result', result)
+      await flushPromises()
+
+      expect(wrapper.findAll('[data-role="assistant"]')).toHaveLength(1)
+    })
+
+    it('reloads the conversation after the live stream reconnected', async () => {
+      let entries: Entry[] = [turn({ reply: 'Working on it.', outcome: 'backgrounded' })]
+      const server = new FakeServer().handle('GET', '/api/v1/conversations/s-9', () => json(200, detail('s-9', entries)))
+      const wrapper = await mountChat(server, '/chat/s-9')
+      entries = [...entries, { kind: 'backgroundResult', taskId: 't-1', at: result.resultAt, body: result.body }]
+
+      wrapper.live.reconnect()
+      await flushPromises()
+
+      expect(server.count('GET', '/api/v1/conversations/s-9')).toBe(2)
+      expect(wrapper.findAll('[data-role="assistant"]').at(-1)!.text()).toContain('The printer finished at 14:02.')
+    })
   })
 })

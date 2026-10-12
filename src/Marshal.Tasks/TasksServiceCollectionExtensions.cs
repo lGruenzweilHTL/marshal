@@ -54,6 +54,7 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<ITaskStore, LiveTaskStore>();
         services.AddSingleton(new LiveTopic(TaskLiveEvents.Tasks));
         services.AddSingleton(new LiveTopic(TaskLiveEvents.Notifications));
+        services.AddSingleton(new LiveTopic(ConversationLiveEvents.Conversations));
         services.AddSingleton<ITaskSpending, EfTaskSpending>();
         services.AddSingleton<TaskBudgets>();
         services.AddSingleton<TaskPauses>();

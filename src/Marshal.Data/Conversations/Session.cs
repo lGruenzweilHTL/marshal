@@ -31,4 +31,10 @@ public sealed class Session : IOwned
     public required DateTimeOffset LastTurnAt { get; set; }
 
     public DateTimeOffset? ClosedAt { get; set; }
+
+    /// <summary>When an idle web session rested (pending actions dropped, summarized); cleared by its next turn.</summary>
+    public DateTimeOffset? RestedAt { get; set; }
+
+    /// <summary>Newest turn or background result the memory summarizer has read; later ones are summarized next.</summary>
+    public DateTimeOffset? SummarizedUntil { get; set; }
 }

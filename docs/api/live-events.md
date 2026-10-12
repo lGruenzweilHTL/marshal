@@ -38,6 +38,7 @@ Marshal sends a `ping` event (`{"topic":"system","type":"ping","id":"","payload"
 | `notifications` | `notification.created`, `notification.updated` | `id`, `source`, `priority`, `text`, `outcome`, `channel`, `reason`, `taskId`, `createdAt` |
 | `artifacts` | `artifact.created` | `id`, `name`, `kind`, `source` |
 | `artifacts` | `artifact.deleted` | `id` |
+| `conversations` | `conversation.result` | `sessionId`, `taskId`, `resultAt`, `body`: a background task finished work handed off from that session |
 
 Field names are camelCase. For the exact types of enum values, see the [OpenAPI document](openapi.md); the OpenAPI description covers only the envelope, and the payloads are defined by the web interface's `web/src/live/events.ts`.
 

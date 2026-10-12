@@ -5,7 +5,8 @@ using Marshal.Abstractions.Tasks;
 namespace Marshal.Tasks.Store;
 
 /// <summary>
-/// Publishes <c>task.changed</c> on the <c>tasks</c> topic after every successful create and update.
+/// Publishes <c>task.changed</c> on the <c>tasks</c> topic after every successful create and update, and
+/// <c>conversation.result</c> on <c>conversations</c> when an update gives a task handed off from a session a new result.
 /// </summary>
 internal sealed class LiveTaskStore(EfTaskStore inner, ILiveEventPublisher publisher) : ITaskStore
 {
@@ -18,8 +19,22 @@ internal sealed class LiveTaskStore(EfTaskStore inner, ILiveEventPublisher publi
 
     public Task<IReadOnlyList<TaskRecord>> ListAsync(TaskFilter filter, CancellationToken cancellationToken) => inner.ListAsync(filter, cancellationToken);
 
-    public async Task<Result<TaskRecord>> UpdateAsync(TaskRecord task, CancellationToken cancellationToken) =>
-        Published(await inner.UpdateAsync(task, cancellationToken));
+    public async Task<Result<TaskRecord>> UpdateAsync(TaskRecord task, CancellationToken cancellationToken)
+    {
+        // Only a changed result time is news; the previous value has to be read before the update overwrites it.
+        DateTimeOffset? previousResultAt = task is { OriginSessionId: not null, ResultAt: not null }
+            && await inner.GetAsync(task.Id, cancellationToken) is { IsSuccess: true } stored
+            ? stored.Value.ResultAt
+            : null;
+        Result<TaskRecord> updated = Published(await inner.UpdateAsync(task, cancellationToken));
+        if (updated.IsSuccess && updated.Value is { OriginSessionId: { } session, ResultAt: { } resultAt, Result: { } result } && resultAt != previousResultAt)
+        {
+            publisher.Publish(new LiveEvent(ConversationLiveEvents.Conversations, ConversationLiveEvents.Result, Guid.CreateVersion7().ToString(), updated.Value.OwnerId,
+                new ConversationResultPayload(session, updated.Value.Id, resultAt, result.Body)));
+        }
+
+        return updated;
+    }
 
     public Task<IReadOnlyList<OwnedTask>> GetDueAsync(DateTimeOffset now, int limit, CancellationToken cancellationToken) => inner.GetDueAsync(now, limit, cancellationToken);
 

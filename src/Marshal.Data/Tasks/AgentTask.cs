@@ -1,5 +1,6 @@
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Memory;
+using Marshal.Abstractions.Sessions;
 using Marshal.Abstractions.Tasks;
 
 namespace Marshal.Data.Tasks;
@@ -31,6 +32,9 @@ public sealed class AgentTask : IOwned, IVersioned
 
     /// <summary>Satellite the task was created from; its policy applies to all runs and child tasks.</summary>
     public string? OriginSatelliteId { get; init; }
+
+    /// <summary>Conversation a background handoff came from; the task's result joins that session.</summary>
+    public SessionId? OriginSessionId { get; init; }
 
     public required TaskTriggerKind TriggerKind { get; set; }
 

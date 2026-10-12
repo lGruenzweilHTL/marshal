@@ -5,6 +5,11 @@ import type { LiveEventMap, LiveEventType, LiveMessage } from './events'
 export interface LiveEvents {
   /** Calls `handler` for each `type` event on `topic`; returns the unsubscribe function. */
   on<T extends LiveEventType>(topic: string, type: T, handler: (payload: LiveEventMap[T]) => void): () => void
+  /**
+   * Calls `handler` each time the connection opens again after it dropped, so a view can reload what it may have
+   * missed in the gap; returns the unsubscribe function.
+   */
+  onReconnect(handler: () => void): () => void
 }
 
 /** The part of `EventSource` the live connection uses. */
@@ -31,11 +36,22 @@ export function createLiveEvents(
   let source: EventSourceLike | null = null
   let topics = ''
   const listened = new Set<string>()
+  const reconnected = new Set<() => void>()
 
   function dispatch(event: MessageEvent<string>) {
     const message = JSON.parse(event.data) as LiveMessage
     for (const subscription of subscriptions)
       if (subscription.topic === message.topic && subscription.type === message.type) (subscription.handler as (payload: unknown) => void)(message.payload)
+  }
+
+  function watchDrops(watched: EventSourceLike) {
+    let dropped = false
+    watched.addEventListener('error', () => (dropped = true))
+    watched.addEventListener('open', () => {
+      if (!dropped) return
+      dropped = false
+      for (const handler of [...reconnected]) handler()
+    })
   }
 
   function reconnect() {
@@ -46,6 +62,7 @@ export function createLiveEvents(
       source = wanted ? open(`${baseUrl}/api/v1/events?topics=${encodeURIComponent(wanted)}`) : null
       topics = wanted
       listened.clear()
+      if (source) watchDrops(source)
     }
     for (const type of types) {
       if (source && !listened.has(type)) {
@@ -65,6 +82,10 @@ export function createLiveEvents(
         reconnect()
       }
     },
+    onReconnect(handler) {
+      reconnected.add(handler)
+      return () => reconnected.delete(handler)
+    },
   }
 }
 
@@ -75,6 +96,16 @@ export function useLiveEvent<T extends LiveEventType>(topic: string, type: T, ha
   const live = inject(liveKey)
   if (!live) throw new Error('No live events provided.')
   onBeforeUnmount(live.on(topic, type, handler))
+}
+
+/** Calls `handler` when the live stream reconnected, for the lifetime of the calling component. */
+export function useLiveReconnect(handler: () => void) {
+  const live = inject(liveKey)
+  if (!live) throw new Error('No live events provided.')
+  const stop = live.onReconnect(handler)
+  onBeforeUnmount(() => {
+    stop()
+  })
 }
 
 /** The app's live-update stream (for subscriptions outside a component's lifetime, such as the Inbox badge). */

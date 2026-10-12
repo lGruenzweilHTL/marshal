@@ -29,6 +29,8 @@ public static class DataServiceCollectionExtensions
         services.AddSingleton<IPendingActionStore, EfPendingActionStore>();
         services.AddSingleton<ISessionStore, EfSessionStore>();
         services.AddSingleton<IConversationHistory, EfConversationHistory>();
+        services.AddSingleton<IConversationReader, EfConversationReader>();
+        services.AddSingleton<ISummaryWatermark, EfSummaryWatermark>();
         services.AddSingleton<IRunRecorder, DbRunRecorder>();
         services.AddSingleton<IAdvisorUsage, EfAdvisorUsage>();
         services.AddSingleton<IRunQueries, EfRunQueries>();

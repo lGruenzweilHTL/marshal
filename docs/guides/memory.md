@@ -21,7 +21,7 @@ Remember that the Voron uses a 0.6 mm nozzle.
 
 The agent calls `memory.remember` (type, title, content, optional importance, scope, project, sourceRef). In a clean run it writes without asking. In a tainted run (it read mail, RSS, notes, web content or event data) the write needs your confirmation with the reason `taint`, see [approvals](tasks/approvals.md). `memory.remember` cannot pin.
 
-Marshal also learns by itself: when a session closes after `sessions.idleTtl`, a fast-tier summarizer proposes chunks from your turns and Marshal's replies only, never from raw tool results. A candidate that contradicts a stored chunk creates a `contradicts` edge and leaves the stored chunk unchanged. A nightly consolidation catches sessions the close path missed.
+Marshal also learns by itself: when a session closes or a web chat session rests after `sessions.idleTtl`, a fast-tier summarizer proposes chunks from your turns and Marshal's replies only, never from raw tool results. A candidate that contradicts a stored chunk creates a `contradicts` edge and leaves the stored chunk unchanged. A nightly consolidation catches sessions the close path missed.
 
 ### 2. See what is used in a turn
 

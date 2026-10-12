@@ -59,6 +59,7 @@ public sealed class EfSessionStore(IDbContextFactory<MarshalDbContext> contexts,
             return;
 
         row.LastTurnAt = timeProvider.GetUtcNow();
+        row.RestedAt = null;
         await db.SaveChangesAsync(cancellationToken);
     }
 
@@ -73,15 +74,26 @@ public sealed class EfSessionStore(IDbContextFactory<MarshalDbContext> contexts,
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<SessionId>> FindIdleAsync(DateTimeOffset idleBefore, CancellationToken cancellationToken)
+    public async Task RestAsync(SessionId id, CancellationToken cancellationToken)
     {
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
-        return await db.Sessions.AsNoTracking()
-            .Where(session => session.ClosedAt == null && session.LastTurnAt < idleBefore)
-            .Select(session => session.Id)
+        Session? row = await db.Sessions.SingleOrDefaultAsync(session => session.Id == id && session.ClosedAt == null, cancellationToken);
+        if (row is null)
+            return;
+
+        row.RestedAt = timeProvider.GetUtcNow();
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<SessionRecord>> FindIdleAsync(DateTimeOffset idleBefore, CancellationToken cancellationToken)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        List<Session> rows = await db.Sessions.AsNoTracking()
+            .Where(session => session.ClosedAt == null && session.RestedAt == null && session.LastTurnAt < idleBefore)
             .ToListAsync(cancellationToken);
+        return [.. rows.Select(ToRecord)];
     }
 
     private static SessionRecord ToRecord(Session row) =>
-        new(row.Id, row.OwnerId, row.Source, row.ApiTokenId, row.ExternalId, row.ResolvedBy, row.LastTurnAt);
+        new(row.Id, row.OwnerId, row.Source, row.ApiTokenId, row.ExternalId, row.ResolvedBy, row.LastTurnAt, row.RestedAt);
 }

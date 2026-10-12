@@ -63,7 +63,7 @@ public sealed class ConversationService(
     {
         (ConversationTurn turn, SessionRecord session, MarshalExecutionContext context) = prepared;
         using IDisposable scope = executionContext.Use(context);
-        IReadOnlyList<ChatMessage> earlier = await history.LoadAsync(session.Id, HistoryTurns, cancellationToken);
+        IReadOnlyList<ChatMessage> earlier = await history.LoadAsync(session.Id, HistoryTurns, after: null, cancellationToken);
         FollowUpReply? followUp = followUps is null ? null : await followUps.HandleAsync(turn, context, cancellationToken);
         AgentRunRequest request = new()
         {

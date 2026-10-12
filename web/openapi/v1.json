@@ -524,6 +524,82 @@
         }
       }
     },
+    "/api/v1/conversations": {
+      "get": {
+        "tags": [
+          "Conversations"
+        ],
+        "summary": "The user\u0027s conversations (web, voice, api), newest last turn first; page with before (a lastTurnAt) and limit.",
+        "operationId": "ListConversations",
+        "parameters": [
+          {
+            "name": "before",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConversationSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/{id}": {
+      "get": {
+        "tags": [
+          "Conversations"
+        ],
+        "summary": "One conversation: its turns and background results in time order.",
+        "operationId": "GetConversation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/notifications": {
       "get": {
         "tags": [
@@ -3065,6 +3141,10 @@
         },
         "description": "A background approval in the review queue."
       },
+      "ArtifactId": {
+        "type": "string",
+        "format": "uuid"
+      },
       "ArtifactKind": {
         "enum": [
           "image",
@@ -3106,6 +3186,29 @@
           }
         },
         "description": "Artifacts with the owner\u0027s storage usage."
+      },
+      "ArtifactRef": {
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ArtifactId"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ArtifactKind"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
       },
       "ArtifactResponse": {
         "required": [
@@ -3510,6 +3613,203 @@
               "number"
             ],
             "format": "double"
+          }
+        }
+      },
+      "ConversationDetail": {
+        "required": [
+          "conversation",
+          "entries"
+        ],
+        "type": "object",
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/ConversationSummary"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEntry"
+            }
+          }
+        }
+      },
+      "ConversationEntry": {
+        "required": [
+          "kind"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ConversationEntryTurnEntry"
+          },
+          {
+            "$ref": "#/components/schemas/ConversationEntryBackgroundResultEntry"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "turn": "#/components/schemas/ConversationEntryTurnEntry",
+            "backgroundResult": "#/components/schemas/ConversationEntryBackgroundResultEntry"
+          }
+        }
+      },
+      "ConversationEntryBackgroundResultEntry": {
+        "required": [
+          "taskId",
+          "body",
+          "at"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "backgroundResult"
+            ],
+            "type": "string"
+          },
+          "taskId": {
+            "$ref": "#/components/schemas/TaskId"
+          },
+          "body": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ConversationEntryTurnEntry": {
+        "required": [
+          "runId",
+          "inputMode",
+          "satelliteId",
+          "areaId",
+          "input",
+          "reply",
+          "continueConversation",
+          "artifacts",
+          "outcome",
+          "at"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "turn"
+            ],
+            "type": "string"
+          },
+          "runId": {
+            "$ref": "#/components/schemas/RunId"
+          },
+          "inputMode": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InputMode"
+              }
+            ]
+          },
+          "satelliteId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "areaId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "input": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reply": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "continueConversation": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArtifactRef"
+            }
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/RunOutcome"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ConversationSummary": {
+        "required": [
+          "id",
+          "source",
+          "createdAt",
+          "lastTurnAt",
+          "turns",
+          "title",
+          "canContinue",
+          "satelliteId",
+          "areaId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/SessionId"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SessionSource"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastTurnAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "turns": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "canContinue": {
+            "type": "boolean"
+          },
+          "satelliteId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "areaId": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -6811,6 +7111,9 @@
     },
     {
       "name": "Marshal"
+    },
+    {
+      "name": "Conversations"
     },
     {
       "name": "Notifications"

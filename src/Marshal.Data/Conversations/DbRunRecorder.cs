@@ -111,6 +111,10 @@ public sealed class DbRunRecorder(IDbContextFactory<MarshalDbContext> contexts, 
         bool sensitive = step.Tool is { } tool
             && (step.Sensitive || options.Value.RedactTools.Any(pattern => ToolGlob.Matches(pattern, tool)))
             && !options.Value.KeepContentTools.Any(pattern => ToolGlob.Matches(pattern, tool));
+        // The reply is the model's answer the user already saw in full; chat history shows it again, so it is kept whole.
+        if (step.Kind == RunStepKind.Reply)
+            return step;
+
         return sensitive ? step with { Content = null } : step with { Content = Truncate(step.Content) };
     }
 

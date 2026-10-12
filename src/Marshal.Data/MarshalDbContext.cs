@@ -373,10 +373,12 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             task.HasIndex(entity => new { entity.Status, entity.NextRunAt });
             task.HasIndex(entity => entity.ParentId);
             task.HasIndex(entity => entity.DeliveriesPending).HasFilter("deliveries_pending");
+            task.HasIndex(entity => entity.OriginSessionId);
             task.Property(entity => entity.RowVersion).IsConcurrencyToken();
             task.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
             task.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.ParentId);
             task.HasOne<Project>().WithMany().HasForeignKey(entity => entity.ProjectId);
+            // No foreign key to sessions: SQLite would rebuild agent_tasks for it; the index serves the session lookups.
             OwnerFilter(task);
         });
 

@@ -53,7 +53,7 @@ The tool result tells the model that confirmation is pending and that the action
 
 On confirmation, Marshal executes exactly the stored tool and arguments. The model cannot change them. Before executing, Marshal checks the rules again; a frozen call whose tool is gone or is now `forbidden` does not run.
 
-There is at most one pending action per session. A new confirm-tier call supersedes the old one, which is marked `superseded`. Closing an idle session drops its pending action.
+There is at most one pending action per session. A new confirm-tier call supersedes the old one, which is marked `superseded`. Closing an idle session, or resting an idle web chat session, drops its pending action.
 
 ## How you confirm
 

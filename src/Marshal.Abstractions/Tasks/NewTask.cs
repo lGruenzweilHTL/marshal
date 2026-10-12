@@ -1,4 +1,5 @@
 using Marshal.Abstractions.Memory;
+using Marshal.Abstractions.Sessions;
 
 namespace Marshal.Abstractions.Tasks;
 
@@ -27,6 +28,9 @@ public sealed record NewTask
     public ProjectId? ProjectId { get; init; }
 
     public string? OriginSatelliteId { get; init; }
+
+    /// <summary>Conversation a background handoff came from; the result joins that session.</summary>
+    public SessionId? OriginSessionId { get; init; }
 
     public string? Notes { get; init; }
 

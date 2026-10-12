@@ -68,6 +68,8 @@ Validation errors (`400`, `404`, `403`) are returned as [problem details](index.
 
 Each turn has a hard latency cap: `agent.voiceLatencyCap` (default 8 seconds) for voice turns and `agent.textLatencyCap` (default 60 seconds) for text turns. When a turn reaches the cap, Marshal sends a short reply that it is working on it and will report back, ends the turn, and finishes the work as a background task owned by the same user. Voice results arrive on the originating satellite; text results arrive in the web interface. The model can also move a turn to the background itself.
 
+The background task records the session it came from. Its result joins that conversation: the web chat history lists it after the backgrounded turn, the open chat shows it live (`conversation.result` on the [live-event stream](live-events.md)), and the model sees it as an earlier reply in the next turn of the session.
+
 Set client timeouts above the text cap. The Home Assistant component allows 75 seconds in total. See [agent configuration](../configuration/marshal-yaml/agent.md).
 
 ## Confirmations

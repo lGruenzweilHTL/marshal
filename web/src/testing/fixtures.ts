@@ -187,3 +187,17 @@ export function artifact(overrides: Record<string, unknown> = {}) {
     ...overrides,
   }
 }
+
+export function conversationSummary(overrides: Partial<Schemas['ConversationSummary']> & Pick<Schemas['ConversationSummary'], 'id'>): Schemas['ConversationSummary'] {
+  return {
+    source: 'web',
+    createdAt: '2026-10-12T08:00:00Z',
+    lastTurnAt: '2026-10-12T08:00:00Z',
+    turns: 1,
+    title: 'Hello',
+    canContinue: true,
+    satelliteId: null,
+    areaId: null,
+    ...overrides,
+  }
+}

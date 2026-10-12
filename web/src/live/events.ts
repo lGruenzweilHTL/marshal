@@ -71,6 +71,14 @@ export interface ArtifactDeletedPayload {
   id: string
 }
 
+/** `conversation.result` on topic `conversations`: a handed-off task's result joins its session (`ConversationResultPayload`). */
+export interface ConversationResultPayload {
+  sessionId: string
+  taskId: string
+  resultAt: string
+  body: string
+}
+
 /** Event type → payload. Later changes add their topics' events here. */
 export interface LiveEventMap {
   'run.started': RunStartedPayload
@@ -81,6 +89,7 @@ export interface LiveEventMap {
   'notification.updated': NotificationPayload
   'artifact.created': ArtifactCreatedPayload
   'artifact.deleted': ArtifactDeletedPayload
+  'conversation.result': ConversationResultPayload
 }
 
 export type LiveEventType = keyof LiveEventMap

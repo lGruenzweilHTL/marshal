@@ -1,6 +1,7 @@
 using Marshal.Abstractions;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Runs;
+using Marshal.Abstractions.Sessions;
 using Marshal.Abstractions.Tasks;
 using Marshal.Core.Agent;
 using Marshal.Tasks.KillSwitch;
@@ -30,7 +31,7 @@ public sealed class TaskHandoffTests : IAsyncLifetime
     [Fact]
     public async Task VoiceTurn_TaskForTheUserDueNow_SpokenOnTheOriginSatellite()
     {
-        MarshalExecutionContext turn = Voice(OwnerA) with { RunId = RunId.New() };
+        MarshalExecutionContext turn = Voice(OwnerA) with { RunId = RunId.New(), SessionId = SessionId.New() };
         turn.Taint.Mark("mail", 1);
         _database.Accessor.Current = turn;
 
@@ -41,6 +42,7 @@ public sealed class TaskHandoffTests : IAsyncLifetime
         Assert.Equal((AgentTaskStatus.Pending, (DateTimeOffset?)_time.GetUtcNow(), "assist_satellite.kitchen"), (task.Status, task.NextRunAt, task.OriginSatelliteId));
         Assert.Equal(new TaskDelivery(DeliveryChannel.Voice, "assist_satellite.kitchen"), Assert.Single(task.Deliveries));
         Assert.Contains("latency_cap", task.Notes, StringComparison.Ordinal);
+        Assert.Equal(turn.SessionId, task.OriginSessionId);
         Assert.Equal(1, _scheduler.Woken);
         Assert.True(_continuations.TryTake(task.Id, out Continuation? continuation));
         Assert.Equal(3, continuation.Transcript.Count);
@@ -50,7 +52,7 @@ public sealed class TaskHandoffTests : IAsyncLifetime
     [Fact]
     public async Task TextTurn_ResultToTheInbox()
     {
-        MarshalExecutionContext turn = Text(OwnerA);
+        MarshalExecutionContext turn = Text(OwnerA) with { SessionId = SessionId.New() };
         _database.Accessor.Current = turn;
 
         Result<TaskId> handed = await Handoff().HandOffAsync(new BackgroundHandoff(turn, "compare the offers", Transcript(), "move_to_background"), Ct);
@@ -58,6 +60,7 @@ public sealed class TaskHandoffTests : IAsyncLifetime
         TaskRecord task = (await Store().GetAsync(handed.Value, Ct)).Value;
         Assert.Equal(new TaskDelivery(DeliveryChannel.Inbox), Assert.Single(task.Deliveries));
         Assert.Null(task.OriginSatelliteId);
+        Assert.Equal(turn.SessionId, task.OriginSessionId);
     }
 
     [Fact]
