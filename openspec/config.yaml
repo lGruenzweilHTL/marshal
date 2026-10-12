@@ -43,7 +43,7 @@ context: |
 
   References: CLAUDE.md (AI guidance, repo map, package index),
   STYLE_GUIDE.md (design philosophy + C# rules),
-  docs/brainstorm-notes.md (interim design notes until formalized here).
+  docs/internal/brainstorm-notes.md (interim design notes until formalized here).
 
 rules:
   proposal:

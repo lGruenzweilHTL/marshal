@@ -1,0 +1,52 @@
+name: Bug report
+description: Something in Marshal does not work as documented.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Remove secrets and personal data from everything you paste. For security problems, follow SECURITY.md instead of opening an issue.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected and what you saw instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Marshal version or commit
+      description: Shown on the System page, or `git rev-parse --short HEAD` of your build.
+    validations:
+      required: true
+  - type: dropdown
+    id: interface
+    attributes:
+      label: Where did it happen
+      options:
+        - Voice (Assist)
+        - Web app
+        - API
+        - Background task
+        - Startup or configuration
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Output of `docker compose logs marshal`. Set `logging.logLevel.default: Debug` for stack traces.
+      render: text
+  - type: textarea
+    id: setup
+    attributes:
+      label: Setup
+      description: Model providers, Home Assistant version, relevant parts of `marshal.yaml` (secret names only).

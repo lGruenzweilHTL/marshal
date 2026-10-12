@@ -101,31 +101,28 @@ Marshal understands and answers in both **English** and **German**.
 
 ## Getting started
 
-There is no published image yet; Marshal is built from this repository with Docker.
+There is no published image yet; Marshal is built from this repository with Docker. The [quick start](docs/getting-started/quick-start.md) walks you through configuring, starting and connecting Marshal to Home Assistant.
 
-1. **Configure.** Copy `deploy/config.example/` to `deploy/config/` and adjust `marshal.yaml` (models, Home Assistant URL, printers, mail, notifications). The config holds only secret *names*; Marshal refuses to start when it finds a literal secret there.
-2. **Provide secrets.** Give each named secret as a Docker secret file under `/run/secrets` or as a `MARSHAL_SECRET_<NAME>` environment variable (for example the Home Assistant token and a cloud model key). Secrets you enter in the web UI are stored encrypted in `/data`.
-3. **Start.** `docker compose -f deploy/docker-compose.yml up -d --build` builds Marshal and starts it next to Ollama. The web UI listens on port 8080; the first visit creates your account (password or passkey), unless you configured an OpenID Connect provider.
-4. **Connect Home Assistant.** Copy `ha/custom_components/marshal` into Home Assistant's `custom_components/` (see [ha/README.md](ha/README.md)), create an API token with the `conversation:write` scope on Marshal's Security page, and add the integration with Marshal's URL and that token. Then pick Marshal as the conversation agent of your Assist pipelines.
-5. **Optional: coding sessions.** The executor host (`src/Marshal.ExecutorHost`, own Dockerfile) runs Claude Code in sandbox containers on a separate machine or rootless Docker. Marshal itself never gets a Docker socket.
+- Everything Marshal stores lives in `/data`; `/config` holds no secrets and can live in git.
+- The full list of settings is in the [configuration reference](docs/configuration/index.md).
+- If Marshal does not start, `docker compose logs marshal` lists every configuration problem with its file and key. See [troubleshooting](docs/guides/troubleshooting.md).
 
-Everything Marshal stores lives in `/data` (SQLite database, encryption keys, nightly backups, notes repository); `/config` can live in git.
+---
 
-**If Marshal does not start**, `docker compose logs marshal` lists every configuration problem it found, each with the file (or `MARSHAL__` variable) and key, for example:
+## Documentation
 
-```
-marshal: startup failed (2 errors)
-  marshal.yaml  embedding.provider  must be ollama or openai-compatible.
-  marshal.yaml  embedding.model  is required.
-```
-
-Missing secrets are reported the same way once the configuration is valid. Set `logging.logLevel.default: Debug` in `marshal.yaml` to get the stack trace as well.
+- [Documentation home](docs/index.md): reading paths for new users, voice users, integrators and contributors
+- [Quick start](docs/getting-started/quick-start.md)
+- [Configuration](docs/configuration/index.md)
+- [Architecture](docs/concepts/architecture.md)
+- [FAQ](docs/faq.md) and [roadmap](docs/roadmap.md)
+- [Contributing](CONTRIBUTING.md), [security policy](SECURITY.md) and [support](SUPPORT.md)
 
 ---
 
 ## Architecture
 
-For the curious: how Marshal is put together. The diagrams are kept up to date with the code; sources and details are in [docs/diagrams](docs/diagrams/).
+For the curious: how Marshal is put together, explained in [Architecture](docs/concepts/architecture.md). The diagrams are kept up to date with the code; sources and details are in [docs/diagrams](docs/diagrams/).
 
 ### Packages
 ![Package diagram](docs/diagrams/packages.svg)

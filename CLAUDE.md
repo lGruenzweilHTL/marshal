@@ -10,7 +10,7 @@ Marshal is a self-hosted ASP.NET agent that Home Assistant conversation entities
 
 1. **`openspec/specs/`** — the authoritative specifications. If code and spec disagree, the spec wins; fix the code or propose a spec change, never silently diverge.
 2. **`openspec/changes/`** — proposed and in-progress changes (delta specs, design, tasks). Archived changes live in `openspec/changes/archive/`.
-3. **`docs/brainstorm-notes.md`** — informal design notes from the initial discussion. Interim reference only, until the topics are formalized in OpenSpec. Once a topic exists in `openspec/specs/`, the spec supersedes the notes.
+3. **`docs/internal/brainstorm-notes.md`** — informal design notes from the initial discussion. Interim reference only, until the topics are formalized in OpenSpec. Once a topic exists in `openspec/specs/`, the spec supersedes the notes.
 
 Workflow skills: `opsx:propose` (new change), `opsx:apply` (implement tasks), `opsx:sync` / `opsx:archive` (finish a change), `opsx:explore` (think before changing).
 
@@ -76,7 +76,8 @@ ha/                          custom_components/marshal (Python HA integration, H
 deploy/                      docker-compose.yml, config.example/ (example /config files: marshal.yaml, risk.yaml,
                              satellites.yaml, mcp/, skills/, templates/, tasks/ with the example briefing task);
                              Dockerfile at repo root
-docs/                        design notes, images
+docs/                        user and contributor documentation (Markdown, Diátaxis layout; style rules in
+                             docs/development/docs-style.md), diagrams/, images/, internal/ (design notes, not published)
 openspec/                    specifications and changes
 ```
 

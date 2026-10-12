@@ -4,6 +4,9 @@
 |---|---|---|
 | Entity relationship diagram | [`erd.puml`](erd.puml) | [`erd.svg`](erd.svg) |
 | Package diagram | [`packages.puml`](packages.puml) | [`packages.svg`](packages.svg) |
+| Voice turn request flow | [`request-flow.puml`](request-flow.puml) | [`request-flow.svg`](request-flow.svg) |
+| Confirm-tier action flow | [`confirm-flow.puml`](confirm-flow.puml) | [`confirm-flow.svg`](confirm-flow.svg) |
+| Task lifecycle | [`task-lifecycle.puml`](task-lifecycle.puml) | [`task-lifecycle.svg`](task-lifecycle.svg) |
 
 ## Keep them up to date
 

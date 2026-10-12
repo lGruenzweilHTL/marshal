@@ -1,0 +1,74 @@
+@startuml confirm-flow
+' Marshal — Confirm-tier action flow
+'
+' KEEP UP TO DATE: this diagram must match the guard, pending action store,
+' confirmation flow and approval queue (risk-guard and approval-queue specs).
+' Update it in the same change that alters them, and re-render the SVG
+' (see docs/diagrams/README.md).
+
+!pragma layout smetana
+skinparam shadowing false
+skinparam defaultFontName Monospaced
+skinparam sequence {
+  ParticipantBackgroundColor #FEFEFE
+  ParticipantBorderColor #555555
+  LifeLineBorderColor #999999
+  ArrowColor #555555
+  GroupBorderColor #999999
+}
+hide footbox
+
+title Marshal — Confirm-tier action
+
+actor "User" as User
+participant "Model" as Model
+participant "Guard" as Guard
+database "Pending actions\n(SQLite)" as Store
+participant "Confirmation flow\n(keyword, judge)" as Flow
+participant "Approval queue" as Queue
+participant "Tool" as Tool
+
+Model -> Guard : tool call (name, args)
+Guard -> Guard : rules, target resolution,\ntaint escalation → confirm\nreasons: rule / unresolved_target /\ntaint / quiet_hours_override
+
+alt interactive turn
+  Guard -> Store : freeze: tool, args, session, satellite,\nowner, nonce, reasons, expiry (60 s)\nsupersedes older pending action
+  Store --> Model : "Confirmation pending, NOT done.\nAsk the user: {summary}. Reason: {sentence}"
+  Model --> User : confirmation question\n(continueConversation = true)
+else background task run
+  Guard -> Queue : freeze with task, nonce,\nreasons, expiry (10 min)
+  Queue --> User : actionable push (Approve / Reject)\n+ web UI review queue
+  Queue -> Queue : run ends, task waiting,\nworker freed
+end
+
+== Only user actions confirm ==
+
+alt user turn in the same session
+  User -> Flow : reply
+  Flow -> Flow : normalize, keyword match?
+  alt no keyword
+    Flow -> Flow : fast-tier judge (summary + reply)\npositive / neutral / negative\ntimeout or garbage → drop
+  end
+else web UI approval
+  User -> Queue : Approve (antiforgery, cookie session)
+else push action
+  User -> Queue : mobile_app_notification_action\nwith nonce
+  Queue -> Queue : unknown or expired nonce →\nnothing approved, logged
+end
+
+alt confirmed and not expired
+  Flow -> Store : mark approved
+  Store -> Guard : re-check rules (gone / forbidden → no run)
+  Guard -> Tool : execute exactly the frozen tool + args
+  Tool --> Model : result (interactive)\nor resume payload (task)
+else expired
+  Store -> Store : mark expired, nothing executes
+else negative / neutral
+  Store -> Store : mark rejected / dropped
+end
+
+note over Model, Tool
+  Tool output, model output and content
+  of any kind never confirm.
+end note
+@enduml
