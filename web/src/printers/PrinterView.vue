@@ -286,6 +286,14 @@ const size = (bytes: number) => `${format.value.number(Math.round((bytes / 1_048
   color: var(--ink-3);
   font: 400 13px/18px var(--font-sans);
 }
+/* The link and its external-link icon stay on one line. */
+.note a {
+  white-space: nowrap;
+}
+.note a svg {
+  display: inline;
+  vertical-align: -2px;
+}
 .row-actions {
   display: flex;
   align-items: center;

@@ -18,6 +18,11 @@ const graph = useLoad(() => api.call((client) => client.GET('/api/v1/memory/grap
 // The layout is stretched onto a fixed canvas, so a few far-apart clusters do not shrink every node to a dot.
 const width = 1000
 const height = 600
+
+/** Labels of nodes near the left or right edge grow inwards, so they are not cut off by the drawing's border. */
+function labelAnchor(x: number): 'start' | 'middle' | 'end' {
+  return x < width * 0.2 ? 'start' : x > width * 0.8 ? 'end' : 'middle'
+}
 const pad = 60
 const drawing = computed(() => {
   const data = graph.data.value
@@ -70,7 +75,7 @@ const open = (id: string) => router.push(`/memory/chunks/${id}`)
           @keydown.enter="open(node.id)"
         >
           <circle :r="5 + node.importance * 1.5" />
-          <text :y="-(10 + node.importance * 1.5)" text-anchor="middle">{{ node.title }}</text>
+          <text :y="-(10 + node.importance * 1.5)" :text-anchor="labelAnchor(drawing.positions.get(node.id)!.x)">{{ node.title }}</text>
         </g>
       </svg>
       <MapLegend class="legend" />

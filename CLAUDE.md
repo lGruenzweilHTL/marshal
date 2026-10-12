@@ -148,6 +148,7 @@ No mocking or assertion libraries — use hand-written fakes from `Marshal.Testi
 | `markdown-it` | Chat markdown rendering with HTML disabled and a same-origin-only image rule (ships its own types) |
 | `three` (+ `@types/three`, dev) | 3D artifact viewer (STL and 3MF loaders, orbit controls); lazy chunk, never in the entry chunk |
 | `vitest`, `@vue/test-utils`, `jsdom` | Component tests (`npm test`) against a hand-written fake API server (`src/testing/fakeServer.ts`) |
+| `playwright` (dev, pinned to the `mcr.microsoft.com/playwright` image version) | Screenshot sweep and layout checks over preview mode (`npm run screenshots`); never downloads browsers |
 
 **Python (`ha/`)**
 | Package | Purpose |

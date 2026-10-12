@@ -37,7 +37,7 @@ describe('CostView', () => {
     const { wrapper } = await mountCost()
 
     const headers = wrapper.findAll('thead th').map((cell) => cell.text())
-    expect(headers).toEqual(['Day', 'fast', 'standard', 'Advisor', 'Total'])
+    expect(headers).toEqual(['Day', 'Fast', 'Standard', 'Advisor', 'Total'])
     const today = wrapper.get('[data-day="2026-09-28"]').findAll('td').map((cell) => cell.text())
     expect(today).toEqual(['Sep 28, 2026', '0.25', '0.50', '1.00', '1.75'])
     const totals = wrapper.get('tfoot tr').findAll('td').map((cell) => cell.text())

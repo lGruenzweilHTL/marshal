@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createFormatter } from './format'
+import { createFormatter, satelliteName } from './format'
 
 // 2026-03-29 is the day Central Europe switches to summer time; 23:30 UTC is already the next day in Vienna.
 const instant = '2026-03-29T23:30:00Z'
@@ -39,5 +39,15 @@ describe('formatter', () => {
     expect(en.cost(0.5)).toBe('0.50')
     expect([en.bytes(512), en.bytes(1536), de.bytes(5 * 1024 * 1024 * 1024)]).toEqual(['512 B', '1.5 KB', '5 GB'])
     expect(de.cost(0.01234)).toBe('0,0123')
+  })
+})
+
+describe('satelliteName', () => {
+  it('drops the entity domain of a satellite id', () => {
+    expect(satelliteName('assist_satellite.living_room')).toBe('living_room')
+  })
+
+  it('keeps ids without a domain', () => {
+    expect(satelliteName('kitchen')).toBe('kitchen')
   })
 })

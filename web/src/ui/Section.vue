@@ -65,6 +65,8 @@ defineProps<{ title: string; count?: number; action?: string; to?: RouteLocation
   gap: 2px;
   min-height: var(--target);
   padding: 0 var(--space-1);
+  /* The padding only widens the touch target: the chevron ends at the content edge like the cards below. */
+  margin-right: calc(-1 * var(--space-1));
   border-radius: var(--radius-sm);
   color: var(--ink-2);
   font: 600 14px/1 var(--font-sans);

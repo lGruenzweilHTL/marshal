@@ -290,9 +290,11 @@ onBeforeUnmount(() => running?.abort())
 }
 textarea {
   flex-grow: 1;
-  min-height: 36px;
+  /* The control height, so a one-line draft is centred on the send button and the button stays at the bottom edge
+     when the draft grows. */
+  min-height: var(--target);
   max-height: 200px;
-  padding: 7px 0;
+  padding: 11px 0;
   border: 0;
   outline: 0;
   resize: none;

@@ -21,6 +21,8 @@ const y = (value: number) => height - (value / scale.value) * (height - top)
 
 function path(pick: (sample: TemperatureSample) => number): string {
   const count = props.samples.length
+  // One reading (right after the page opened) is drawn as a flat line, not as an invisible point.
+  if (count === 1) return `M0,${y(pick(props.samples[0]!)).toFixed(1)} L${width},${y(pick(props.samples[0]!)).toFixed(1)}`
   return props.samples.map((sample, index) => `${index === 0 ? 'M' : 'L'}${count === 1 ? width : (index / (count - 1)) * width},${y(pick(sample)).toFixed(1)}`).join(' ')
 }
 const guides = computed(() => [props.targets?.bed, props.targets?.extruder].filter((value): value is number => !!value))

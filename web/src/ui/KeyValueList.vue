@@ -29,4 +29,8 @@ dd {
   min-width: 0;
   overflow-wrap: anywhere;
 }
+/* Monospace and plain values share one line height, so rows keep an even rhythm whatever their value style. */
+dd.t-mono {
+  line-height: 22px;
+}
 </style>

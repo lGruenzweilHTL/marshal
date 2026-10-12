@@ -47,6 +47,26 @@ The UI is available in German and English, with `vue-i18n` in Composition API mo
 
 `npm test` runs Vitest with `@vue/test-utils` and `jsdom`. Tests mount the app with `testing/mountApp.ts` against the hand-written fake API server in `testing/fakeServer.ts`; add fixtures to `testing/fixtures.ts`. Tests never need the real backend. Write the failing test first.
 
+## Screenshot sweep
+
+`npm run screenshots` (`scripts/screenshots.ts`) opens every route of preview mode at 375 px and 1280 px, in light and dark, and writes one PNG per route and variant to `web/.screenshots/<scenario>-<lang>/<width>-<theme>/` (git-ignored). Use it to review layout changes across all views. It also runs layout checks that jsdom cannot measure, for example that the one-line chat composer is centred on the send button; a failed check fails the command.
+
+Options:
+
+- `--scenario normal,empty,failing`: the preview scenarios to capture. The default is all three. Layout checks run only for `normal`.
+- `--lang de`: the interface language. The default is `en`. German labels are longer, so run it once in German before finishing a layout change.
+- `--only chat,home`: only these routes, by the names in the script's route list.
+- `--no-shots`: run the layout checks only.
+
+The script never downloads a browser. It uses `PLAYWRIGHT_CHROMIUM`, `/opt/pw-browsers/chromium` or the newest Chromium in the Playwright cache. When the host lacks Chromium's system libraries, run it in the Playwright image that matches the pinned `playwright` version:
+
+```sh
+sg docker -c "docker run --rm -v $PWD/..:/work -w /work/web --user $(id -u):$(id -g) -e HOME=/tmp \
+  mcr.microsoft.com/playwright:v1.63.0-noble node scripts/screenshots.ts --scenario normal"
+```
+
+Run it from `web/`. Leave out `sg docker -c` when your user is in the `docker` group. A full sweep of all three scenarios takes about ten minutes.
+
 ## PWA
 
 `vite-plugin-pwa` produces the web app manifest and a Workbox service worker for the app shell only. Navigations are network-only and an offline page is static. PWA icon PNGs are rendered at build time from the logo SVGs by `scripts/appAssets.ts` (`@resvg/resvg-js`). Design tokens come from `npm run gen:tokens`.
@@ -61,6 +81,7 @@ The UI is available in German and English, with `vue-i18n` in Composition API mo
 | `npm run typecheck` | `vue-tsc --noEmit`. |
 | `npm run build` | Generate types, type-check, build. |
 | `npm test` | Vitest. |
+| `npm run screenshots` | Screenshot sweep and layout checks over every route (see above). |
 
 ## Related
 

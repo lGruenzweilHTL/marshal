@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Bell, Check, Pencil, Radio, Square, X } from 'lucide-vue-next'
+import { Bell, Check, CircleStop, Pencil, Radio, X } from 'lucide-vue-next'
 import { computed, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
@@ -105,7 +105,7 @@ function describeDelivery(delivery: Schemas['TaskDelivery']): string {
       <template v-if="detail.data.value && current">
         <PageHeader :title="taskLabel(current)" back="/tasks" :back-label="t('tasks.title')">
           <template v-if="isUnfinished(current.status)" #actions>
-            <AppButton :icon="Square" data-test="cancel" @click="asking = true">{{ t('tasks.detail.cancel') }}</AppButton>
+            <AppButton :icon="CircleStop" data-test="cancel" @click="asking = true">{{ t('tasks.detail.cancel') }}</AppButton>
           </template>
         </PageHeader>
         <p class="status" data-test="status">
@@ -210,7 +210,7 @@ function describeDelivery(delivery: Schemas['TaskDelivery']): string {
           <ErrorBanner v-if="cancel.error.value" :error="cancel.error.value" />
           <template #actions>
             <AppButton @click="asking = false">{{ t('tasks.detail.keep') }}</AppButton>
-            <AppButton variant="danger" :icon="Square" data-test="cancel-confirm" :loading="cancel.busy.value" @click="cancel.submit()">
+            <AppButton variant="danger" :icon="CircleStop" data-test="cancel-confirm" :loading="cancel.busy.value" @click="cancel.submit()">
               {{ t('tasks.detail.cancelConfirm') }}
             </AppButton>
           </template>

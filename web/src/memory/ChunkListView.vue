@@ -97,7 +97,7 @@ const columns = computed(() => [
         <ListCard v-else>
           <ListRow v-for="chunk in data" :key="chunk.id" :to="`/memory/chunks/${chunk.id}`" :data-chunk="chunk.id">
             <template #title>
-              <span class="title"><AppIcon v-if="chunk.pinned" :icon="Pin" :size="14" class="pin" data-test="pinned" />{{ chunk.title }}</span>
+              <span class="row-title">{{ chunk.title }}<AppIcon v-if="chunk.pinned" :icon="Pin" :size="14" class="pin" data-test="pinned" /></span>
             </template>
             <template #subtitle><span class="content">{{ chunk.content }}</span></template>
             <template #trail><ChunkType :type="chunk.type" /></template>
@@ -134,6 +134,12 @@ const columns = computed(() => [
 }
 .pin {
   color: var(--accent-text);
+}
+/* The pin follows the title, so wrapped titles line up with the other rows. */
+.row-title .pin {
+  display: inline;
+  margin-left: 6px;
+  vertical-align: -1px;
 }
 .link {
   color: var(--ink);

@@ -63,7 +63,7 @@ async function decide(approve: boolean) {
   <article class="ticket" :class="[density, state]" :aria-label="t('inbox.ticket.label')" :data-approval="approval.id">
     <div class="top">
       <div class="meta">
-        <span class="tool"><AppIcon :icon="Zap" :size="14" :stroke="2" />{{ approval.tool }}</span>
+        <span class="tool" :title="approval.tool"><AppIcon :icon="Zap" :size="14" :stroke="2" /><span class="tool-name">{{ approval.tool }}</span></span>
         <span v-if="state === 'pending'" class="ttl" :class="{ low: fraction < 0.25 }">
           <span class="ttl-text"><span class="num ttl-clock" data-test="ttl">{{ clock }}</span><span class="ttl-label">{{ t('inbox.ticket.left') }}</span></span>
           <svg width="34" height="34" viewBox="0 0 36 36" aria-hidden="true">
@@ -130,7 +130,11 @@ async function decide(approve: boolean) {
 <style scoped>
 .ticket {
   position: relative;
+  /* Tickets side by side stretch to one height, with the actions at the bottom of each. */
+  display: flex;
+  flex-direction: column;
   width: 100%;
+  height: 100%;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
@@ -139,6 +143,7 @@ async function decide(approve: boolean) {
 .top {
   display: flex;
   flex-direction: column;
+  flex-grow: 1;
   gap: var(--space-3);
   padding: 18px var(--space-5) 14px;
 }
@@ -147,7 +152,6 @@ async function decide(approve: boolean) {
 }
 .meta {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }
@@ -161,9 +165,13 @@ async function decide(approve: boolean) {
   background: var(--accent-soft);
   color: var(--accent-text);
   font: 500 13px/1 var(--font-mono);
-  /* A narrow ticket moves the timer to the next line before the tool name breaks. */
-  max-width: 100%;
-  overflow-wrap: anywhere;
+  /* A narrow ticket shortens the tool name and keeps the timer on the same line; the full name is in the title. */
+  min-width: 0;
+}
+.tool-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .ttl {
   display: flex;

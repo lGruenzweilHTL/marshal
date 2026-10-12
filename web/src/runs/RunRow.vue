@@ -2,6 +2,7 @@
 import { Mic, MessageSquare, Plug, Zap } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import type { Schemas } from '../api/client'
+import { satelliteName } from '../format'
 import { useFormat } from '../i18n/locale'
 import { Badge, IconTile, ListRow, type Tone } from '../ui'
 import TaintFlag from './TaintFlag.vue'
@@ -17,7 +18,7 @@ const tones: Record<Schemas['RunOutcome'], Tone> = { ok: 'success', error: 'dang
 <template>
   <ListRow :to="`/runs/${run.id}`" :chevron="false" :data-run="run.id">
     <template #lead><IconTile :icon="icons[run.source]" /></template>
-    <template #title>{{ [t(`runs.source.${run.source}`), run.satelliteId].filter(Boolean).join(' · ') }}</template>
+    <template #title>{{ [t(`runs.source.${run.source}`), run.satelliteId && satelliteName(run.satelliteId)].filter(Boolean).join(' · ') }}</template>
     <template #subtitle>
       {{ run.trigger }} · <span class="num">{{ dated ? format.dateTime(run.startedAt) : format.time(run.startedAt) }}</span>
       <template v-if="run.tainted"> · <TaintFlag /></template>

@@ -84,6 +84,7 @@ export const en = {
     empty: { title: 'No projects yet', body: 'Create one, or let Marshal infer projects from what you say.' },
   },
   map: {
+    intro: 'How your memory chunks connect, and which of them are close in meaning.',
     graph: 'Graph',
     scatter: 'Scatter',
     view: 'View',
@@ -96,6 +97,7 @@ export const en = {
     phoneBody: 'On a phone, memory is grouped by type. Open Marshal on a computer to see links.',
   },
   audit: {
+    intro: 'What needs a look: contradictions, chunks nobody uses and memory of deleted projects.',
     clean: { title: 'Nothing to review', body: 'No contradictions, stale chunks, orphans or broken links.' },
     contradictions: 'Contradictions',
     contradictionsHint: 'Resolve by editing, superseding or deleting one of the two.',
@@ -193,6 +195,7 @@ export const de: Catalog<typeof en> = {
     empty: { title: 'Noch keine Projekte', body: 'Leg eines an, oder lass Marshal Projekte aus dem erkennen, was du sagst.' },
   },
   map: {
+    intro: 'Wie deine Gedächtniseinträge zusammenhängen und welche inhaltlich nah beieinander liegen.',
     graph: 'Graph',
     scatter: 'Streuung',
     view: 'Ansicht',
@@ -205,6 +208,7 @@ export const de: Catalog<typeof en> = {
     phoneBody: 'Am Telefon ist das Gedächtnis nach Art gruppiert. Öffne Marshal am Computer, um Verknüpfungen zu sehen.',
   },
   audit: {
+    intro: 'Was einen Blick braucht: Widersprüche, ungenutzte Einträge und Gedächtnis gelöschter Projekte.',
     clean: { title: 'Nichts zu prüfen', body: 'Keine Widersprüche, veralteten Einträge, Waisen oder kaputten Verknüpfungen.' },
     contradictions: 'Widersprüche',
     contradictionsHint: 'Löse sie, indem du einen der beiden bearbeitest, ersetzt oder löschst.',

@@ -34,6 +34,8 @@ defineProps<{ title: string; subtitle?: string; eyebrow?: string; back?: RouteLo
 .row {
   display: flex;
   align-items: flex-end;
+  /* As tall as an action button, so the header (and the tabs below it) keeps its height with or without actions. */
+  min-height: var(--target);
   gap: var(--space-3);
   flex-wrap: wrap;
 }

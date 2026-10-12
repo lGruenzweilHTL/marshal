@@ -118,6 +118,11 @@ const columns = computed(() => [
 .search {
   flex: 0 1 320px;
 }
+@media (max-width: 899px) {
+  .search {
+    flex-basis: 100%;
+  }
+}
 .chips {
   display: flex;
   flex-wrap: wrap;

@@ -200,6 +200,16 @@ function addWindow() {
   gap: var(--space-2);
   align-items: end;
 }
+/* Two time fields share a phone row: less inner padding and no picker icon keep "10:30 PM" visible. Phones open
+   their own time picker on tap. */
+@media (max-width: 899px) {
+  .window :deep(input[type='time']) {
+    padding: 0 var(--space-2) 0 14px;
+  }
+  .window :deep(input[type='time']::-webkit-calendar-picker-indicator) {
+    display: none;
+  }
+}
 @media (max-width: 899px) {
   .window {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;

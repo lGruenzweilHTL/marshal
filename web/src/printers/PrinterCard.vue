@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AlertTriangle, Pause, Play, Printer, Square, Thermometer, WifiOff } from 'lucide-vue-next'
+import { AlertTriangle, CircleStop, Pause, Play, Printer, Thermometer, WifiOff } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Schemas } from '../api/client'
@@ -85,7 +85,7 @@ const barTone = computed(() => (status.value === 'error' ? 'danger' : status.val
           @click="controls.send({ action: 'pause' })"
         >{{ t('printers.pause') }}</AppButton>
         <AppButton v-else :icon="Play" data-control="resume" :disabled="controls.busy.value" @click="controls.send({ action: 'resume' })">{{ t('printers.resume') }}</AppButton>
-        <AppButton variant="ghost" :icon="Square" data-control="cancel" :disabled="controls.busy.value" @click="controls.send({ action: 'cancel' })">
+        <AppButton variant="ghost" :icon="CircleStop" data-control="cancel" :disabled="controls.busy.value" @click="controls.send({ action: 'cancel' })">
           {{ t('printers.cancel') }}
         </AppButton>
       </div>

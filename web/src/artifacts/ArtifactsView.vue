@@ -144,8 +144,10 @@ const subtitle = (artifact: Artifact) =>
               />
               <IconTile v-else :icon="kindIcons[artifact.kind]" :size="36" />
             </template>
+            <!-- On phones the badge goes below the subtitle, so the name keeps the row's width. -->
+            <span v-if="artifact.tainted && !desktop" class="badge-line"><Badge tone="warning" data-test="tainted" :label="t('artifacts.tainted')" /></span>
             <template #trail>
-              <Badge v-if="artifact.tainted" tone="warning" data-test="tainted" :label="t('artifacts.tainted')" />
+              <Badge v-if="artifact.tainted && desktop" tone="warning" data-test="tainted" :label="t('artifacts.tainted')" />
               <AppButton
                 size="sm"
                 variant="ghost"
@@ -193,5 +195,9 @@ const subtitle = (artifact: Artifact) =>
 .filters.row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr);
+}
+.badge-line {
+  display: flex;
+  margin-top: 2px;
 }
 </style>

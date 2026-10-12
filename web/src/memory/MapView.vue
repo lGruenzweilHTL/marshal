@@ -39,7 +39,7 @@ const groups = computed(() => chunkTypes.map((type) => ({ type, nodes: (nodes?.d
 
 <template>
   <Page width="wide">
-    <PageHeader :title="t('memory.title')">
+    <PageHeader :title="t('memory.title')" :subtitle="desktop ? t('memory.map.intro') : undefined">
       <template v-if="desktop" #actions>
         <Segmented v-model="view" :options="views" :label="t('memory.map.view')" />
       </template>

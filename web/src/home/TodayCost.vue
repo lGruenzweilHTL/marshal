@@ -26,7 +26,7 @@ const height = (total: number) => `${max.value > 0 ? Math.max(6, (total / max.va
       <div class="bars" aria-hidden="true">
         <span v-for="(day, index) in recent" :key="day.date" class="bar" :class="{ current: index === recent.length - 1 }" :style="{ height: height(day.total) }" />
       </div>
-      <span class="meta">{{ t('home.lastDays', { count: recent.length }) }}</span>
+      <span class="meta">{{ t('home.lastDays', { count: props.days }) }}</span>
     </div>
   </div>
 </template>

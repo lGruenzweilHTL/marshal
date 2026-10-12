@@ -112,7 +112,7 @@ const serverSecrets = (server: Schemas['McpServerSummary']) => list([...(server.
                     <span v-for="warning in row.warnings" :key="warning" class="warning t-body-s ink-2">{{ warning }}</span>
                   </template>
                   <template #cell-toolCount="{ row }"><span class="num">{{ row.toolCount }}</span></template>
-                  <template #cell-target="{ row }"><span class="t-mono-s ink-2">{{ row.target }}</span></template>
+                  <template #cell-target="{ row }"><span class="t-mono-s ink-2 wrap-anywhere">{{ row.target }}</span></template>
                   <template #cell-secrets="{ row }"><span class="t-mono-s">{{ serverSecrets(row) }}</span></template>
                   <template #cell-untrusted="{ row }">
                     <span class="untrusted" :title="row.untrustedTools.length ? row.untrustedTools.join(', ') : undefined">{{ untrustedLabel(row) }}</span>
@@ -254,5 +254,9 @@ const serverSecrets = (server: Schemas['McpServerSummary']) => list([...(server.
 }
 .skills li:first-child {
   border-top: 0;
+}
+/* Long MCP targets (URLs) wrap inside their cell instead of running past the card. */
+.wrap-anywhere {
+  overflow-wrap: anywhere;
 }
 </style>

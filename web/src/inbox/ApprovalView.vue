@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Mic, Zap } from 'lucide-vue-next'
+import { Activity, Zap } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useApi } from '../api/inject'
@@ -33,7 +33,7 @@ const approval = useLoad(() => findIn(api.call((client) => client.GET('/api/v1/a
               <template #lead><IconTile :icon="Zap" /></template>
             </ListRow>
             <ListRow v-if="data.runId" :title="t('inbox.context.run')" :subtitle="format.dateTime(data.createdAt)" :to="`/runs/${data.runId}`">
-              <template #lead><IconTile :icon="Mic" /></template>
+              <template #lead><IconTile :icon="Activity" /></template>
             </ListRow>
           </ListCard>
         </Section>

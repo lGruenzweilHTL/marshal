@@ -114,3 +114,6 @@ desktop.ini
 
 # session handoff notes
 HANDOFF.md
+
+# Screenshot sweep output (npm run screenshots)
+web/.screenshots/

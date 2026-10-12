@@ -24,7 +24,7 @@ const data = computed(() => report.data.value)
 
 <template>
   <Page width="wide">
-    <PageHeader :title="t('memory.title')" />
+    <PageHeader :title="t('memory.title')" :subtitle="desktop ? t('memory.audit.intro') : undefined" />
     <MemoryTabs />
     <LoadBoundary :load="report" size="page" :empty-title="t('memory.audit.clean.title')" :empty-body="t('memory.audit.clean.body')" :empty-icon="CheckCircle2">
       <template v-if="data">

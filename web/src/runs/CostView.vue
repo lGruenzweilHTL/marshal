@@ -14,7 +14,9 @@ const api = useApi()
 const locale = useLocale()
 const desktop = useDesktop()
 const format = useFormat()
-const { t } = useI18n()
+const { t, te } = useI18n()
+/** Interface label of a model tier; tiers without one are shown as configured. */
+const tierLabel = (tier: string) => (te(`runs.tier.${tier}`) ? t(`runs.tier.${tier}`) : tier)
 
 const preset = shallowRef<Preset>('14')
 const custom = reactive({ from: '', to: '' })
@@ -62,7 +64,7 @@ const dayLabel = (date: string) => format.value.date(`${date}T12:00:00Z`)
 
 const columns = computed(() => [
   { key: 'date', label: t('runs.cost.day') },
-  ...tiers.value.map((tier) => ({ key: `tier:${tier}`, label: tier, align: 'right' as const })),
+  ...tiers.value.map((tier) => ({ key: `tier:${tier}`, label: tierLabel(tier), align: 'right' as const })),
   { key: 'advisor', label: t('runs.cost.advisor'), align: 'right' as const },
   { key: 'total', label: t('runs.cost.total'), align: 'right' as const },
 ])
@@ -107,7 +109,7 @@ const columns = computed(() => [
           <div class="chart-head">
             <h2 class="t-title-3">{{ t('runs.cost.perDay') }}</h2>
             <span class="legend">
-              <span v-for="(tier, index) in tiers" :key="tier" class="key"><span class="swatch" :class="`tier-${Math.min(index, 2)}`" />{{ tier }}</span>
+              <span v-for="(tier, index) in tiers" :key="tier" class="key"><span class="swatch" :class="`tier-${Math.min(index, 2)}`" />{{ tierLabel(tier) }}</span>
               <span class="key"><span class="swatch advisor" />{{ t('runs.cost.advisor') }}</span>
             </span>
           </div>
@@ -134,7 +136,7 @@ const columns = computed(() => [
             :key="day.date"
             :data-day="day.date"
             :title="dayLabel(day.date)"
-            :subtitle="[...tiers.map((tier) => `${tier} ${format.cost(day.byTier[tier] ?? 0)}`), `${t('runs.cost.advisor')} ${format.cost(day.advisor)}`].join(' · ')"
+            :subtitle="[...tiers.map((tier) => `${tierLabel(tier)} ${format.cost(day.byTier[tier] ?? 0)}`), `${t('runs.cost.advisor')} ${format.cost(day.advisor)}`].join(' · ')"
             :chevron="false"
           >
             <template #trail><strong class="num t-mono-s">{{ format.cost(day.total) }}</strong></template>

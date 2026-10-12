@@ -94,3 +94,8 @@ export function formatDateTime(iso: string): string {
 export function snakeCase(value: string): string {
   return value.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)
 }
+
+/** A satellite's name for lists: its entity id without the domain (`assist_satellite.kitchen` → `kitchen`). */
+export function satelliteName(id: string): string {
+  return id.slice(id.indexOf('.') + 1)
+}

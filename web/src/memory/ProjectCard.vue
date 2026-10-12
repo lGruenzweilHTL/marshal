@@ -205,6 +205,13 @@ const aliasLabel = (entry: Schemas['ProjectAliasView']) =>
   border-radius: var(--radius-full);
   background: var(--surface-3);
   font: 400 13px/18px var(--font-sans);
+  /* A chip stays on one line; the list wraps whole chips instead. */
+  max-width: 100%;
+  white-space: nowrap;
+}
+.alias > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .alias.candidate {
   border: 1px dashed var(--line-strong);

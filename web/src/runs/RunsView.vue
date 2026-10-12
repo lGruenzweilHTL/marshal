@@ -2,6 +2,7 @@
 import { Activity } from 'lucide-vue-next'
 import { computed, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { satelliteName } from '../format'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import type { Schemas } from '../api/client'
 import { useApi } from '../api/inject'
@@ -95,7 +96,7 @@ const columns = computed(() => [
         <template #cell-started="{ row }">
           <RouterLink :to="`/runs/${row.id}`" class="link num">{{ format.dateTime(row.startedAt) }}</RouterLink>
         </template>
-        <template #cell-source="{ row }">{{ [t(`runs.source.${row.source}`), row.satelliteId].filter(Boolean).join(' · ') }}</template>
+        <template #cell-source="{ row }">{{ [t(`runs.source.${row.source}`), row.satelliteId && satelliteName(row.satelliteId)].filter(Boolean).join(' · ') }}</template>
         <template #cell-trigger="{ row }">
           <span class="trigger">{{ row.trigger }}<TaintFlag v-if="row.tainted" /></span>
         </template>
