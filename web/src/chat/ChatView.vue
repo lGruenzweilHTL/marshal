@@ -373,7 +373,7 @@ onBeforeUnmount(() => running?.abort())
 }
 /* The page fills the viewport so the composer rests at the bottom even before the first message. */
 .chat {
-  min-height: calc(100dvh - var(--tabbar-height) - var(--space-6) - env(safe-area-inset-bottom));
+  min-height: calc(100dvh - var(--shell-top, 0px) - var(--tabbar-height) - var(--space-6) - env(safe-area-inset-bottom));
   padding-bottom: var(--space-4);
 }
 @media (min-width: 900px) {

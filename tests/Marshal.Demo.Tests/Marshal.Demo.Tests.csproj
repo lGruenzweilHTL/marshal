@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Marshal.Testing\Marshal.Testing.csproj" />
+    <ProjectReference Include="..\..\src\Marshal.Demo\Marshal.Demo.csproj" />
+    <ProjectReference Include="..\..\src\Marshal.Memory\Marshal.Memory.csproj" />
+  </ItemGroup>
+
+</Project>

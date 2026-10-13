@@ -65,6 +65,9 @@ src/                         .NET projects
   Marshal.Artifacts/         artifact store (files in /data/artifacts, per-owner quota), kind detection, media renditions
                              for displays, code highlighter (languages.json and parity cases shared with web/src/artifacts/
                              highlighting/), artifacts tools
+  Marshal.Demo/              demo mode: simulated HA (incl. the ha.* home control tools), printer, mail, RSS and notes
+                             behind the integrations' interfaces, demo world state, seeder and reset (referenced only by
+                             Marshal.Api)
   Marshal.Data/              EF Core DbContext, migrations, owner-scoped query filters
   Marshal.ExecutorHost/      separate coding-sandbox service (own deployment and image, never in the main container,
                              never referenced by Marshal)

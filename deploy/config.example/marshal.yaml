@@ -256,3 +256,10 @@ recording:
 
 # telemetry:
 #   otlpEndpoint: "http://otel-collector:4317"
+
+# Demo mode: simulates Home Assistant, a printer, mail, FreshRSS and notes where they are not configured above, and
+# seeds sample history (conversations, runs, tasks, notifications, an approval, memory) for the owner. Configured
+# integrations stay real. A model is still required. Remove the sample data with `marshal demo reset`.
+# demo:
+#   enabled: true
+#   showBadge: true                         # false hides the "Demo" badge, e.g. for screenshots

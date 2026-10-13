@@ -515,6 +515,40 @@ namespace Marshal.Data.Migrations
                     b.ToTable("sessions", (string)null);
                 });
 
+            modelBuilder.Entity("Marshal.Data.Demo.DemoSeed", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Entity")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("entity");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("RowId")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("row_id");
+
+                    b.Property<long>("SeededAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("seeded_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_demo_seed");
+
+                    b.HasIndex("OwnerId", "Entity")
+                        .HasDatabaseName("ix_demo_seed_owner_id_entity");
+
+                    b.ToTable("demo_seed", (string)null);
+                });
+
             modelBuilder.Entity("Marshal.Data.Identity.Role", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1901,6 +1935,16 @@ namespace Marshal.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_sessions_users_owner_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Demo.DemoSeed", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_demo_seed_users_owner_id");
                 });
 
             modelBuilder.Entity("Marshal.Data.Identity.UserPreferences", b =>

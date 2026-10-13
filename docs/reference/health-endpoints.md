@@ -62,7 +62,7 @@ A request to an unknown `/api/...` route or an unsupported version returns `404`
 
 ### `GET /api/v1/system`
 
-Requires authentication. Returns the application `version`, `supportedApiVersions`, `deprecatedApiVersions` and `eventSources`: for each event source its `source` name, `connected` state, whether it is a `webhook` source and `lastReceivedAt`. For webhook sources, `connected` means a webhook arrived in the last 24 hours. See [events](events.md).
+Requires authentication. Returns the application `version`, `supportedApiVersions`, `deprecatedApiVersions`, `eventSources` and `simulatedIntegrations`. `eventSources` lists, for each event source, its `source` name, `connected` state, whether it is a `webhook` source and `lastReceivedAt`. For webhook sources, `connected` means a webhook arrived in the last 24 hours. See [events](events.md). `simulatedIntegrations` lists the integrations [demo mode](../guides/demo-mode.md) simulates (`home_assistant`, `printers`, `mail`, `rss`, `notes`); it is empty without demo mode.
 
 ### Other unversioned paths
 

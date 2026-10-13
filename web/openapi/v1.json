@@ -4113,6 +4113,24 @@
           "silent"
         ]
       },
+      "DemoInfo": {
+        "required": [
+          "enabled",
+          "showBadge"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Unconfigured integrations are simulated and demo data is seeded."
+          },
+          "showBadge": {
+            "type": "boolean",
+            "description": "Show the \u0022Demo\u0022 badge in the navigation."
+          }
+        },
+        "description": "Demo mode as the UI needs it."
+      },
       "EventSourceInfo": {
         "required": [
           "source",
@@ -4937,7 +4955,8 @@
           "id",
           "displayName",
           "roles",
-          "scopes"
+          "scopes",
+          "demo"
         ],
         "type": "object",
         "properties": {
@@ -4962,6 +4981,10 @@
               "type": "string"
             },
             "description": "Scopes: granted by the roles for cookie sessions, the token\u0027s own for tokens."
+          },
+          "demo": {
+            "description": "Whether the instance runs in demo mode and shows the badge.",
+            "$ref": "#/components/schemas/DemoInfo"
           }
         },
         "description": "The current user."
@@ -6511,7 +6534,8 @@
           "version",
           "supportedApiVersions",
           "deprecatedApiVersions",
-          "eventSources"
+          "eventSources",
+          "simulatedIntegrations"
         ],
         "type": "object",
         "properties": {
@@ -6539,6 +6563,13 @@
               "$ref": "#/components/schemas/EventSourceInfo"
             },
             "description": "What publishes events on the event bus (HA, printers, mail, webhook sources)."
+          },
+          "simulatedIntegrations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Integrations demo mode simulates (\u0060home_assistant\u0060, \u0060printers\u0060, \u0060mail\u0060, \u0060rss\u0060, \u0060notes\u0060); empty without demo mode."
           }
         },
         "description": "Version information."

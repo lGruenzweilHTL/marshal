@@ -17,6 +17,7 @@ using Marshal.Data.Artifacts;
 using Marshal.Data.Audit;
 using Marshal.Data.Auth;
 using Marshal.Data.Conversations;
+using Marshal.Data.Demo;
 using Marshal.Data.Identity;
 using Marshal.Data.Mail;
 using Marshal.Data.Memory;
@@ -87,6 +88,8 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
     public DbSet<FollowUp> FollowUps => Set<FollowUp>();
 
     public DbSet<StoredArtifact> Artifacts => Set<StoredArtifact>();
+
+    public DbSet<DemoSeed> DemoSeeds => Set<DemoSeed>();
 
     /// <summary>The current owner. Throws when there is no execution context (fail closed).</summary>
     internal OwnerId CurrentOwnerId =>
@@ -298,6 +301,15 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             artifact.HasIndex(entity => new { entity.OwnerId, entity.CreatedAt });
             artifact.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
             OwnerFilter(artifact);
+        });
+
+        builder.Entity<DemoSeed>(seed =>
+        {
+            seed.ToTable("demo_seed");
+            seed.HasKey(entity => entity.Id);
+            seed.HasIndex(entity => new { entity.OwnerId, entity.Entity });
+            seed.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            OwnerFilter(seed);
         });
 
         builder.Entity<StoredMailAccount>(account =>

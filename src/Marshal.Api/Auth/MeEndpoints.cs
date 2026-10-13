@@ -2,8 +2,10 @@ using System.Security.Claims;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Identity;
 using Marshal.Api.Problems;
+using Marshal.Demo;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Options;
 
 namespace Marshal.Api.Auth;
 
@@ -27,7 +29,7 @@ internal static class MeEndpoints
         return group;
     }
 
-    private static async Task<Results<Ok<MeResponse>, ProblemHttpResult>> GetMeAsync(ClaimsPrincipal user, IUserProfileProvider profiles, CancellationToken ct)
+    private static async Task<Results<Ok<MeResponse>, ProblemHttpResult>> GetMeAsync(ClaimsPrincipal user, IUserProfileProvider profiles, IOptions<DemoOptions> demo, CancellationToken ct)
     {
         var owner = OwnerId.Parse(user.FindFirstValue(MarshalClaims.Owner)!, null);
         Result<UserProfile> profile = await profiles.GetAsync(owner, ct);
@@ -36,7 +38,7 @@ internal static class MeEndpoints
 
         List<string> roles = [.. user.FindAll(ClaimTypes.Role).Select(claim => claim.Value).Order(StringComparer.Ordinal)];
         List<string> scopes = [.. user.FindAll(MarshalClaims.Scope).Select(claim => claim.Value).Distinct().Order(StringComparer.Ordinal)];
-        return TypedResults.Ok(new MeResponse(owner, profile.Value.DisplayName, roles, scopes));
+        return TypedResults.Ok(new MeResponse(owner, profile.Value.DisplayName, roles, scopes, new DemoInfo(demo.Value.Enabled, demo.Value.ShowBadge)));
     }
 
     private static Results<Ok<AntiforgeryToken>, ProblemHttpResult> GetAntiforgeryToken(HttpContext context, IAntiforgery antiforgery)
@@ -55,7 +57,13 @@ internal static class MeEndpoints
 /// <param name="DisplayName">Name used in the UI and the system prompt.</param>
 /// <param name="Roles">Roles (empty for token principals).</param>
 /// <param name="Scopes">Scopes: granted by the roles for cookie sessions, the token's own for tokens.</param>
-public sealed record MeResponse(OwnerId Id, string DisplayName, IReadOnlyList<string> Roles, IReadOnlyList<string> Scopes);
+/// <param name="Demo">Whether the instance runs in demo mode and shows the badge.</param>
+public sealed record MeResponse(OwnerId Id, string DisplayName, IReadOnlyList<string> Roles, IReadOnlyList<string> Scopes, DemoInfo Demo);
+
+/// <summary>Demo mode as the UI needs it.</summary>
+/// <param name="Enabled">Unconfigured integrations are simulated and demo data is seeded.</param>
+/// <param name="ShowBadge">Show the "Demo" badge in the navigation.</param>
+public sealed record DemoInfo(bool Enabled, bool ShowBadge);
 
 /// <summary>Value for the <c>X-XSRF-TOKEN</c> header.</summary>
 public sealed record AntiforgeryToken(string Token);

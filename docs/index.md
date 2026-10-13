@@ -11,6 +11,7 @@ Marshal is a self-hosted AI agent for Home Assistant. This page maps the documen
 3. [Quick start](getting-started/quick-start.md)
 4. [Connect Home Assistant](getting-started/connect-home-assistant.md)
 5. [Next steps](getting-started/next-steps.md)
+6. Without Home Assistant yet: [try demo mode](guides/demo-mode.md)
 
 ### Voice user
 

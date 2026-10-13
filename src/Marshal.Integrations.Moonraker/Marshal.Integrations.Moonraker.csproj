@@ -18,6 +18,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Marshal.Integrations.Moonraker.Tests" />
+    <!-- Demo mode validates printer commands with the same rules. -->
+    <InternalsVisibleTo Include="Marshal.Demo" />
   </ItemGroup>
 
 </Project>

@@ -6,6 +6,7 @@ import { health } from '../testing/fixtures'
 import { me, mountOptions } from '../testing/mountApp'
 
 const info = {
+  simulatedIntegrations: [] as string[],
   version: '0.1.0+abc',
   supportedApiVersions: ['1.0'],
   deprecatedApiVersions: [] as string[],
@@ -49,6 +50,20 @@ describe('SystemView', () => {
     expect(database).toContain('unhealthy')
     expect(database).toContain('database is locked')
     expect(wrapper.get('[data-test="overall"]').text()).toContain('unhealthy')
+  })
+
+  it('marks each simulated integration in demo mode', async () => {
+    const wrapper = await mountSystem(server().on('GET', '/api/v1/system', 200, { ...info, simulatedIntegrations: ['home_assistant', 'printers', 'rss'] }))
+
+    expect(wrapper.findAll('[data-simulated]').map((row) => row.attributes('data-simulated'))).toEqual(['home_assistant', 'printers', 'rss'])
+    expect(wrapper.get('[data-simulated="home_assistant"]').text()).toContain('Home Assistant')
+    expect(wrapper.get('[data-simulated="rss"]').text()).toContain('simulated')
+  })
+
+  it('shows no simulated integrations without demo mode', async () => {
+    const wrapper = await mountSystem(server())
+
+    expect(wrapper.find('[data-test="simulated"]').exists()).toBe(false)
   })
 
   it('lists the event sources with their state and the last webhook time', async () => {

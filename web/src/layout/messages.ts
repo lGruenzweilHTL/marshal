@@ -31,6 +31,8 @@ export const en = {
   inboxCount: '{count} items need you | {count} item needs you | {count} items need you',
   admin: 'admin',
   user: 'user',
+  demo: 'Demo',
+  demoHint: 'Demo mode: unconfigured integrations are simulated and the history is sample data.',
 }
 
 export const de: Catalog<typeof en> = {
@@ -64,4 +66,6 @@ export const de: Catalog<typeof en> = {
   inboxCount: '{count} Einträge brauchen dich | {count} Eintrag braucht dich | {count} Einträge brauchen dich',
   admin: 'Admin',
   user: 'Benutzer',
+  demo: 'Demo',
+  demoHint: 'Demomodus: nicht konfigurierte Integrationen sind simuliert, der Verlauf besteht aus Beispieldaten.',
 }

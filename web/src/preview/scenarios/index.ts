@@ -2,7 +2,7 @@ import type { Language } from '../../i18n/catalog'
 import { eventStream, FakeServer, json } from '../../testing/fakeServer'
 import { anchor, conversationDetails, normal } from './normal'
 
-export const scenarios = ['normal', 'empty', 'failing', 'offline'] as const
+export const scenarios = ['normal', 'demo', 'empty', 'failing', 'offline'] as const
 export type ScenarioName = (typeof scenarios)[number]
 
 /** Paths every scenario answers normally, so the app gets past sign-in and shows its views. */
@@ -16,6 +16,13 @@ export function shiftTimes<T>(value: T, offset: number): T {
   if (Array.isArray(value)) return value.map((item) => shiftTimes(item, offset)) as T
   if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, shiftTimes(item, offset)])) as T
   return value
+}
+
+/** Demo mode: the normal data, with the badge on and every demo integration simulated. */
+function demo(path: string, body: unknown): unknown {
+  if (path === '/api/v1/me') return { ...(body as object), demo: { enabled: true, showBadge: true } }
+  if (path === '/api/v1/system') return { ...(body as object), simulatedIntegrations: ['home_assistant', 'printers', 'mail', 'rss', 'notes'] }
+  return body
 }
 
 /** Lists become empty; objects stay (an empty scenario still has a signed-in user and a printer state). */
@@ -60,7 +67,7 @@ data: ${JSON.stringify(data)}
 }
 
 /**
- * The fake Marshal API of preview mode. `normal` serves the sample data, `empty` empty lists, `failing` a server error
+ * The fake Marshal API of preview mode. `normal` serves the sample data, `demo` the same in demo mode, `empty` empty lists, `failing` a server error
  * for every request, `offline` no response at all; sign-in and preferences always work so the views are reachable.
  */
 export function createPreviewServer(scenario: ScenarioName, language: Language, now = Date.now()): FakeServer {
@@ -68,10 +75,10 @@ export function createPreviewServer(scenario: ScenarioName, language: Language, 
   const offset = now - anchor
   for (const [path, body] of Object.entries(normal)) {
     server.handle('GET', path, () => {
-      if (session.has(path)) return json(200, path === '/api/v1/me/preferences' ? { ...(body as object), language } : body)
+      if (session.has(path)) return json(200, path === '/api/v1/me/preferences' ? { ...(body as object), language } : scenario === 'demo' ? demo(path, body) : body)
       if (scenario === 'failing') return problem()
       if (scenario === 'offline') throw new TypeError('Failed to fetch')
-      return json(200, shiftTimes(scenario === 'empty' ? emptied(path, body) : body, offset))
+      return json(200, shiftTimes(scenario === 'empty' ? emptied(path, body) : scenario === 'demo' ? demo(path, body) : body, offset))
     })
   }
   server.handle('GET', '/health', () => {

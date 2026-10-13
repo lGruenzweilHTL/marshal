@@ -1726,6 +1726,13 @@ export interface components {
         DayOfWeek: "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
         /** @enum {unknown} */
         DeliveryChannel: "voice" | "push" | "inbox" | "silent";
+        /** @description Demo mode as the UI needs it. */
+        DemoInfo: {
+            /** @description Unconfigured integrations are simulated and demo data is seeded. */
+            enabled: boolean;
+            /** @description Show the "Demo" badge in the navigation. */
+            showBadge: boolean;
+        };
         /** @description An event source and its state. */
         EventSourceInfo: {
             /** @description Source name, e.g. `ha`, `uptime-kuma`. */
@@ -1991,6 +1998,8 @@ export interface components {
             roles: string[];
             /** @description Scopes: granted by the roles for cookie sessions, the token's own for tokens. */
             scopes: string[];
+            /** @description Whether the instance runs in demo mode and shows the badge. */
+            demo: components["schemas"]["DemoInfo"];
         };
         /** @description A configured model. */
         ModelSummary: {
@@ -2435,6 +2444,8 @@ export interface components {
             deprecatedApiVersions: string[];
             /** @description What publishes events on the event bus (HA, printers, mail, webhook sources). */
             eventSources: components["schemas"]["EventSourceInfo"][];
+            /** @description Integrations demo mode simulates (`home_assistant`, `printers`, `mail`, `rss`, `notes`); empty without demo mode. */
+            simulatedIntegrations: string[];
         };
         TaintSource: {
             kind: string;

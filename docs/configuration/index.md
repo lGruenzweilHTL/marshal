@@ -114,6 +114,7 @@ Users without the `admin` role get 403 and see no link. The view does not show t
 | `displays` | [displays.md](marshal-yaml/displays.md) |
 | `webhooks` | [webhooks.md](marshal-yaml/webhooks.md) |
 | `recording` | [recording.md](marshal-yaml/recording.md) |
+| `demo` | [demo.md](marshal-yaml/demo.md) |
 | `ha`, `printers`, `printerSnapshots`, `freshrss`, `notes`, `oauth`, `proxmox`, `media`, `music`, `github`, `executors` | [integrations.md](marshal-yaml/integrations.md) |
 
 ## Related

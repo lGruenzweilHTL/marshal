@@ -78,6 +78,28 @@ describe('AppShell', () => {
     expect(wrapper.get('nav').attributes('aria-label')).toBe('Hauptnavigation')
   })
 
+  it.each(['desktop', 'phone'] as const)('shows the Demo badge in demo mode (%s)', async (layout) => {
+    useViewport(layout)
+    const { wrapper } = await shell('/', server({ ...me, demo: { enabled: true, showBadge: true } }))
+
+    expect(wrapper.get('[data-test=demo-badge]').text()).toBe('Demo')
+    expect(wrapper.get('[data-test=demo-badge]').attributes('title')).toContain('simulated')
+  })
+
+  it.each(['desktop', 'phone'] as const)('hides the Demo badge with showBadge off (%s)', async (layout) => {
+    useViewport(layout)
+    const { wrapper } = await shell('/', server({ ...me, demo: { enabled: true, showBadge: false } }))
+
+    expect(wrapper.find('[data-test=demo-badge]').exists()).toBe(false)
+  })
+
+  it('shows no Demo badge without demo mode', async () => {
+    useViewport('desktop')
+    const { wrapper } = await shell()
+
+    expect(wrapper.find('[data-test=demo-badge]').exists()).toBe(false)
+  })
+
   it('signs out with a form post carrying the antiforgery token', async () => {
     useViewport('desktop')
     const submit = vi.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(() => {})

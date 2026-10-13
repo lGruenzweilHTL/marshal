@@ -6,7 +6,7 @@ import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useApi } from '../api/inject'
 import { useLiveEvents } from '../live/liveEvents'
 import { useUserSession } from '../session'
-import { AppButton, Avatar, ListCard, ListRow, Logo, Sheet, SideNav, TabBar, useDesktop, type NavGroup, type TabItem } from '../ui'
+import { AppButton, Avatar, Badge, ListCard, ListRow, Logo, Sheet, SideNav, TabBar, useDesktop, type NavGroup, type TabItem } from '../ui'
 import AppIcon from '../ui/AppIcon.vue'
 import { createInboxCount, inboxCountKey } from './inboxCount'
 import { groups, moreIcon, visibleDestinations } from './navigation'
@@ -22,6 +22,7 @@ void inbox.refresh()
 
 const moreOpen = shallowRef(false)
 const admin = computed(() => user.current.value?.roles.includes('admin') ?? false)
+const demoBadge = computed(() => (user.current.value?.demo.enabled && user.current.value.demo.showBadge) ?? false)
 const destinations = computed(() => visibleDestinations(admin.value))
 const active = computed(() => (route.meta.nav as string | undefined) ?? '')
 const countLabel = computed(() => t('shell.inboxCount', inbox.count.value))
@@ -85,10 +86,11 @@ async function logout() {
 </script>
 
 <template>
-  <div class="shell" :class="desktop ? 'desktop' : 'phone'">
+  <div class="shell" :class="[desktop ? 'desktop' : 'phone', { 'with-demo': demoBadge && !desktop }]">
     <SideNav v-if="desktop" class="side" :groups="sideGroups" :active="active" :label="t('shell.label')">
       <template #brand>
         <RouterLink to="/" class="brand" :aria-label="t('shell.nav.home')"><Logo :size="17" /></RouterLink>
+        <span v-if="demoBadge" class="demo" :title="t('shell.demoHint')" data-test="demo-badge"><Badge tone="warning" :label="t('shell.demo')" /></span>
       </template>
       <template #account>
         <Avatar :name="user.current.value?.displayName ?? ''" />
@@ -100,6 +102,7 @@ async function logout() {
       </template>
     </SideNav>
     <main class="main">
+      <div v-if="demoBadge && !desktop" class="demo-phone"><span class="demo" :title="t('shell.demoHint')" data-test="demo-badge"><Badge tone="warning" :label="t('shell.demo')" /></span></div>
       <RouterView />
     </main>
     <template v-if="!desktop">
@@ -155,6 +158,20 @@ async function logout() {
   align-items: center;
   height: 32px;
   color: var(--ink);
+}
+.demo {
+  display: inline-flex;
+}
+/* Phone: no shell header, so the badge gets its own row above the page, clear of the page header's actions. */
+.demo-phone {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: var(--shell-top);
+}
+/* Height of the demo row; full-height pages subtract it. */
+.with-demo {
+  --shell-top: calc(env(safe-area-inset-top) + 32px);
 }
 .account {
   display: flex;

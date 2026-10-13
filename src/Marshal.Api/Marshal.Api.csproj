@@ -20,6 +20,7 @@
     <ProjectReference Include="..\Marshal.Memory\Marshal.Memory.csproj" />
     <ProjectReference Include="..\Marshal.Artifacts\Marshal.Artifacts.csproj" />
     <ProjectReference Include="..\Marshal.Tasks\Marshal.Tasks.csproj" />
+    <ProjectReference Include="..\Marshal.Demo\Marshal.Demo.csproj" />
   </ItemGroup>
 
   <ItemGroup>

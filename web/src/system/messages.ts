@@ -22,6 +22,12 @@ export const en = {
   none: 'none',
   configTitle: 'Configuration',
   configBody: 'Read-only view of /config and marshal.yaml.',
+  demo: {
+    title: 'Demo mode',
+    hint: 'These integrations are not configured and are simulated; their data is sample data.',
+    simulated: 'simulated',
+    names: { home_assistant: 'Home Assistant', printers: 'Printers', mail: 'Mail', rss: 'RSS', notes: 'Notes' },
+  },
   sources: {
     title: 'Event sources',
     connected: 'connected',
@@ -113,6 +119,12 @@ export const de: Catalog<typeof en> = {
   none: 'keine',
   configTitle: 'Konfiguration',
   configBody: 'Nur-Lese-Ansicht von /config und marshal.yaml.',
+  demo: {
+    title: 'Demomodus',
+    hint: 'Diese Integrationen sind nicht konfiguriert und werden simuliert; ihre Daten sind Beispieldaten.',
+    simulated: 'simuliert',
+    names: { home_assistant: 'Home Assistant', printers: 'Drucker', mail: 'Mail', rss: 'RSS', notes: 'Notizen' },
+  },
   sources: {
     title: 'Ereignisquellen',
     connected: 'verbunden',

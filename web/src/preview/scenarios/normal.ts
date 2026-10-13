@@ -32,6 +32,7 @@ export const me: Schemas['MeResponse'] = {
   displayName: 'Lukas',
   roles: ['admin'],
   scopes: ['conversation:write', 'tasks:read', 'tasks:write', 'memory:read', 'memory:write', 'printers:read', 'printers:control', 'mail:read', 'approvals:write', 'admin'],
+  demo: { enabled: false, showBadge: true },
 }
 
 export const preferences: Schemas['UserPreferencesResponse'] = {
@@ -561,6 +562,7 @@ export const normal = {
       { source: 'uptime-kuma', connected: true, webhook: true, lastReceivedAt: at(-18) },
       { source: 'proxmox', connected: true, webhook: true, lastReceivedAt: at(-600) },
     ],
+    simulatedIntegrations: [],
   },
   '/api/v1/config': configSummary,
   '/api/v1/printers': [

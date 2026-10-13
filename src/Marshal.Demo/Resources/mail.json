@@ -1,0 +1,78 @@
+{
+  "address": "demo@marshal.example",
+  "folders": [
+    { "name": "INBOX", "specialUse": null },
+    { "name": "Archive", "specialUse": "\\Archive" },
+    { "name": "Drafts", "specialUse": "\\Drafts" },
+    { "name": "Sent", "specialUse": "\\Sent" }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "folder": "INBOX",
+      "from": "Prusament <invoices@prusament.example>",
+      "to": ["demo@marshal.example"],
+      "subject": "Invoice 2026-4471 for your filament order",
+      "minutesAgo": 95,
+      "unread": true,
+      "body": "Hello,\n\nthank you for your order. Attached is invoice 2026-4471 for:\n\n- 2 x Prusament PETG Jet Black, 1 kg\n- 1 x Prusament PLA Galaxy Silver, 1 kg\n\nTotal: 74.70 EUR, payable within 14 days.\nThe parcel ships tomorrow with DPD.\n\nBest regards\nPrusament customer service",
+      "attachments": ["invoice-2026-4471.pdf"]
+    },
+    {
+      "id": "m2",
+      "folder": "INBOX",
+      "from": "Printables <notifications@printables.example>",
+      "to": ["demo@marshal.example"],
+      "subject": "New model from a designer you follow: Gridfinity bin 2x3",
+      "minutesAgo": 410,
+      "unread": true,
+      "body": "A designer you follow published a new model: Gridfinity bin 2x3 with label slot.\n\nPrint settings: PLA or PETG, 0.2 mm layers, 15 % infill, no supports.\nEstimated print time on a 0.4 mm nozzle: 2 h 40 min.",
+      "attachments": []
+    },
+    {
+      "id": "m3",
+      "folder": "INBOX",
+      "from": "Jana Berger <jana@example.org>",
+      "to": ["demo@marshal.example"],
+      "cc": ["tom@example.org"],
+      "subject": "Dinner on Friday?",
+      "minutesAgo": 1300,
+      "unread": false,
+      "body": "Hi!\n\nAre we still on for Friday at 7? Tom booked a table at Gasthaus Zum Hirschen.\nCould you bring the planter brackets you printed? My balcony is waiting.\n\nJana",
+      "attachments": []
+    },
+    {
+      "id": "m4",
+      "folder": "INBOX",
+      "from": "DPD <noreply@dpd.example>",
+      "to": ["demo@marshal.example"],
+      "subject": "Your parcel is on its way",
+      "minutesAgo": 60,
+      "unread": true,
+      "body": "Your parcel from Prusament is on its way.\nExpected delivery: in 3 days, between 10:00 and 13:00.\nTracking number: 01234 5678 9012.",
+      "attachments": []
+    },
+    {
+      "id": "m5",
+      "folder": "INBOX",
+      "from": "Home Assistant Newsletter <news@home-assistant.example>",
+      "to": ["demo@marshal.example"],
+      "subject": "What's new this month",
+      "minutesAgo": 4300,
+      "unread": false,
+      "body": "This month: faster dashboards, a new energy view and voice improvements for Assist satellites.",
+      "attachments": []
+    },
+    {
+      "id": "m6",
+      "folder": "Archive",
+      "from": "Stadtwerke <service@stadtwerke.example>",
+      "to": ["demo@marshal.example"],
+      "subject": "Your annual electricity statement",
+      "minutesAgo": 20000,
+      "unread": false,
+      "body": "Your consumption last year: 3412 kWh, 6 % less than the year before.\nYour new monthly instalment: 86 EUR.",
+      "attachments": ["statement-2026.pdf"]
+    }
+  ]
+}

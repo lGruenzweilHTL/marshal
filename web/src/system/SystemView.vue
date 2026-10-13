@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Activity, Bot, Database, FileCog, HeartPulse, House, KeyRound, Mail, Plug, Printer, Radio, Terminal } from 'lucide-vue-next'
+import { Activity, Bot, Database, FileCog, FlaskConical, HeartPulse, House, KeyRound, Mail, NotebookText, Plug, Printer, Radio, Rss, Terminal } from 'lucide-vue-next'
 import { computed, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useApi } from '../api/inject'
@@ -29,6 +29,8 @@ const icons: Record<string, Component> = { database: Database, config: FileCog, 
 const checkName = (name: string) => (te(`system.checks.${name}`) ? t(`system.checks.${name}`) : name)
 const checkDetail = (check: HealthCheck) => [check.description, ...(check.warnings ?? [])].filter(Boolean).join(' · ') || undefined
 const sourceIcons: Record<string, Component> = { ha: House, printer: Printer, mail: Mail, executor: Terminal, 'uptime-kuma': Activity }
+const simulatedIcons: Record<string, Component> = { home_assistant: House, printers: Printer, mail: Mail, rss: Rss, notes: NotebookText }
+const simulatedName = (name: string) => (te(`system.demo.names.${name}`) ? t(`system.demo.names.${name}`) : name)
 const sourceName = (source: string) => (te(`system.sources.names.${source}`) ? t(`system.sources.names.${source}`) : source)
 const sourceDetail = (source: Schemas['EventSourceInfo']) =>
   !source.webhook ? undefined : source.lastReceivedAt ? t('system.sources.lastWebhook', { time: format.value.dateTime(source.lastReceivedAt) }) : t('system.sources.noWebhook')
@@ -76,6 +78,19 @@ const about = (data: { version: string; supportedApiVersions: string[]; deprecat
             </template>
           </LoadBoundary>
         </Card>
+        <LoadBoundary v-if="(info.data.value?.simulatedIntegrations.length ?? 0) > 0" :load="info">
+          <template #default="{ data }">
+            <Section :title="t('system.demo.title')" data-test="simulated">
+              <ListCard :label="t('system.demo.title')">
+                <ListRow v-for="name in data.simulatedIntegrations" :key="name" :data-simulated="name" :title="simulatedName(name)">
+                  <template #lead><IconTile :icon="simulatedIcons[name] ?? FlaskConical" /></template>
+                  <template #trail><Badge tone="warning" :label="t('system.demo.simulated')" /></template>
+                </ListRow>
+              </ListCard>
+              <p class="t-body-s ink-3">{{ t('system.demo.hint') }}</p>
+            </Section>
+          </template>
+        </LoadBoundary>
         <Section :title="t('system.sources.title')">
           <LoadBoundary :load="info">
             <template #default="{ data }">

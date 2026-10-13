@@ -40,6 +40,8 @@ The terms Marshal's documentation and specifications use, each with one meaning.
 
 ## D
 
+**Demo mode.** Simulated integrations in place of the unconfigured ones, plus seeded sample history that `marshal demo reset` removes. See [demo mode](../guides/demo-mode.md).
+
 **Delivery.** Where and how the result of a task goes: a channel (`voice`, `push`, `inbox`, `silent`), a target and conditions.
 
 **Display.** A screen Marshal can show an artifact on, in the room of a satellite.

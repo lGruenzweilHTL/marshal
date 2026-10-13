@@ -15,7 +15,7 @@ JSON is camelCase. Time stamps are ISO 8601 strings.
 | `POST /api/v1/conversation/turns` | yes | token or session | [One conversation turn, streamed](conversation.md) |
 | `GET /api/v1/events` | yes | token or session | [Live update stream](live-events.md) |
 | `POST /api/v1/hooks/{source}` | yes | token | [Inbound webhooks](webhooks.md) |
-| `GET /api/v1/me` | yes | token or session | Current principal: id, display name, roles, scopes |
+| `GET /api/v1/me` | yes | token or session | Current principal: id, display name, roles, scopes, demo mode |
 | `GET /api/versions` | no | none | Supported and deprecated API versions |
 | `GET /openapi/v1.json` | no | none | [OpenAPI document](openapi.md) |
 | `GET /health` | no | none | Liveness and readiness; see [health endpoints](../reference/health-endpoints.md) |

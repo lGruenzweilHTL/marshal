@@ -12,7 +12,7 @@ import { createToasts, toastKey, type Toasts } from '../ui/toast'
 import { FakeLiveEvents } from './fakeLiveEvents'
 import type { FakeServer } from './fakeServer'
 
-export const me = { id: '0199aaaa-0000-7000-8000-000000000001', displayName: 'Lukas', roles: ['user'], scopes: ['conversation:write'] }
+export const me = { id: '0199aaaa-0000-7000-8000-000000000001', displayName: 'Lukas', roles: ['user'], scopes: ['conversation:write'], demo: { enabled: false, showBadge: true } }
 
 /** Global mount options for a component under test: API session on the fake server, router at `path`, English by default. */
 export async function mountOptions(server: FakeServer, path: string, options: { language?: Language; timeZone?: string } = {}) {

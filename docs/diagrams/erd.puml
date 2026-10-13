@@ -482,6 +482,17 @@ package "Integrations & Secrets" {
     <<derived, rebuilt per file on change>>
     <<keyword: notes_fts (FTS5), vector: note_vectors (sqlite-vec)>>
   }
+
+  entity DemoSeed <<demo_seed>> {
+    * id : Guid <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    * entity : string  <<table of the seeded row, e.g. runs>>
+    * row_id : string  <<primary key of the seeded row (no FK)>>
+    * seeded_at : DateTimeOffset
+    <<index (owner_id, entity)>>
+    <<demo mode: marshal demo reset deletes exactly these rows>>
+  }
 }
 
 ' ------------------------------------------------------------------
@@ -510,6 +521,7 @@ User |o--o{ Secret
 User ||--o{ AuditEvent
 User ||--o{ FollowUp
 User ||--o{ NoteIndexEntry
+User ||--o{ DemoSeed
 PendingAction |o--o{ FollowUp
 AgentTask |o--o{ FollowUp
 Session |o--o{ FollowUp : linked

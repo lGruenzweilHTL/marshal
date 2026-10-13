@@ -1,0 +1,43 @@
+{
+  "categories": [
+    { "id": "user/-/label/3D printing", "label": "3D printing" },
+    { "id": "user/-/label/Smart home", "label": "Smart home" }
+  ],
+  "feeds": [
+    { "id": "feed/1", "title": "Klipper releases", "url": "https://klipper.example/releases.atom", "siteUrl": "https://klipper.example/", "categories": ["3D printing"] },
+    { "id": "feed/2", "title": "Filament Lab", "url": "https://filament-lab.example/feed", "siteUrl": "https://filament-lab.example/", "categories": ["3D printing"] },
+    { "id": "feed/3", "title": "Home Assistant blog", "url": "https://home-assistant.example/atom.xml", "siteUrl": "https://home-assistant.example/", "categories": ["Smart home"] }
+  ],
+  "articles": [
+    {
+      "id": "1760000000000001", "feed": "feed/1", "title": "Klipper 0.13 released", "minutesAgo": 180, "unread": true,
+      "link": "https://klipper.example/releases/0.13",
+      "summary": "Klipper 0.13 brings input shaper improvements, a new bed mesh algorithm and faster startup.",
+      "text": "Klipper 0.13 is out.\n\nHighlights:\n- Input shaper calibration now runs both axes in one pass.\n- The new bed mesh algorithm needs fewer probe points for the same accuracy.\n- Startup on slow hosts is up to 40 % faster.\n\nUpgrade notes: run a full firmware rebuild on every MCU after updating."
+    },
+    {
+      "id": "1760000000000002", "feed": "feed/2", "title": "Drying PETG: what actually works", "minutesAgo": 600, "unread": true,
+      "link": "https://filament-lab.example/drying-petg",
+      "summary": "We dried PETG at four temperatures and measured stringing. 65 °C for four hours wins.",
+      "text": "PETG absorbs moisture faster than PLA. Wet PETG strings, pops and loses strength.\n\nWe dried four spools at 50, 55, 65 and 70 °C. At 65 °C for four hours the stringing test was clean; 70 °C started to deform the spool.\n\nStore dried spools in a sealed box with fresh desiccant."
+    },
+    {
+      "id": "1760000000000003", "feed": "feed/2", "title": "Outdoor parts: PETG, ASA or PLA?", "minutesAgo": 2900, "unread": false,
+      "link": "https://filament-lab.example/outdoor-parts",
+      "summary": "A year on the balcony: PLA warped, PETG and ASA held up. ASA kept its colour best.",
+      "text": "We left test brackets on a south-facing balcony for a year.\n\nPLA softened in summer and warped. PETG kept its shape but faded slightly. ASA kept shape and colour, but needs an enclosure to print well."
+    },
+    {
+      "id": "1760000000000004", "feed": "feed/3", "title": "Release notes: energy dashboard and voice", "minutesAgo": 1500, "unread": true,
+      "link": "https://home-assistant.example/blog/release",
+      "summary": "The new release adds a reworked energy dashboard, timers on more satellites and faster Assist.",
+      "text": "This release reworks the energy dashboard with per-device consumption and a solar forecast.\n\nAssist satellites can now run several named timers, and wake word detection is faster on low-power devices."
+    },
+    {
+      "id": "1760000000000005", "feed": "feed/3", "title": "Building a voice satellite for the kitchen", "minutesAgo": 5000, "unread": false,
+      "link": "https://home-assistant.example/blog/kitchen-satellite",
+      "summary": "A step-by-step build of a small voice satellite with a good microphone and speaker.",
+      "text": "A kitchen satellite needs a microphone that copes with noise. We used a dual-mic board, a 3 W speaker and a 3D printed case.\n\nPlace it away from the extractor hood and test the wake word with the tap running."
+    }
+  ]
+}

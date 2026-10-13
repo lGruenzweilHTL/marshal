@@ -14,7 +14,7 @@
 ' Marshal.Integrations.{Moonraker,Mail,FreshRss,Notes} exist (integrations), Marshal.Integrations.Proxmox (proxmox),
 ' Marshal.Integrations.GitHub (github), Marshal.Integrations.Media (media-requests),
 ' Marshal.Tasks and Marshal.ExecutorHost exist (background-work), including the companion push path.
-' Marshal.Artifacts exists (artifacts).
+' Marshal.Artifacts exists (artifacts). Marshal.Demo exists (demo-mode).
 ' External packages are drawn inside the project that references them
 ' (grey boxes, <<nuget>> / <<npm>> / <<pip>>).
 
@@ -104,6 +104,10 @@ package "src/ (.NET 10)" {
     component "git CLI (notes repository)" as GitCli
   }
 
+  package "Marshal.Demo" as Demo {
+    component "Simulated integrations (HA,\nprinter, mail, RSS, notes),\ndemo world, seeder, reset" as DemoParts
+  }
+
   package "Marshal.Data" as Data {
     component "DbContext + migrations,\nowner-scoped query filters" as DataParts
     component "EF Core Sqlite\n+ NamingConventions\n+ sqlite-vec" <<nuget>>
@@ -137,6 +141,7 @@ Api --> Memory
 Api --> Tasks
 Api --> Integrations
 Api --> Artifacts
+Api --> Demo
 Api --> Data
 Api --> Abstractions
 
@@ -149,6 +154,9 @@ Tasks --> Abstractions
 Tasks --> Data
 Integrations --> Abstractions
 Integrations --> Data
+Demo --> Integrations
+Demo --> Abstractions
+Demo --> Data
 Artifacts --> Abstractions
 Artifacts --> Data
 Data --> Abstractions
@@ -166,6 +174,7 @@ Tests --> Integrations
 Tests --> Memory
 Tests --> Tasks
 Tests --> Artifacts
+Tests --> Demo
 Tests ..> ExecutorHost
 
 note bottom of Abstractions

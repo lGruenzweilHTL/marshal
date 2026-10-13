@@ -1,6 +1,8 @@
 using System.Reflection;
+using System.Text.Json;
 using Marshal.Abstractions.Events;
 using Marshal.Api.Versioning;
+using Marshal.Demo;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Marshal.Api.Health;
@@ -20,12 +22,13 @@ internal static class SystemEndpoints
         return group;
     }
 
-    private static Ok<SystemInfo> GetSystem(IEnumerable<IEventSource> sources, IWebhookIngest webhooks) =>
+    private static Ok<SystemInfo> GetSystem(IEnumerable<IEventSource> sources, IWebhookIngest webhooks, DemoIntegrations demo) =>
         TypedResults.Ok(new SystemInfo(
             AppVersion,
             [.. ApiVersions.Supported.Select(version => version.ToString())],
             [.. ApiVersions.Deprecated.Select(version => version.ToString())],
-            [.. sources.OrderBy(source => source.Source, StringComparer.Ordinal).Select(source => new EventSourceInfo(source.Source, source.IsConnected, webhooks.Sources.Contains(source.Source, StringComparer.Ordinal), source.LastReceivedAt))]));
+            [.. sources.OrderBy(source => source.Source, StringComparer.Ordinal).Select(source => new EventSourceInfo(source.Source, source.IsConnected, webhooks.Sources.Contains(source.Source, StringComparer.Ordinal), source.LastReceivedAt))],
+            [.. demo.SimulatedAtStartup.Select(integration => JsonNamingPolicy.SnakeCaseLower.ConvertName(integration.ToString()))]));
 }
 
 /// <summary>Version information.</summary>
@@ -33,7 +36,8 @@ internal static class SystemEndpoints
 /// <param name="SupportedApiVersions">API versions this build serves, e.g. <c>1.0</c>.</param>
 /// <param name="DeprecatedApiVersions">Supported versions that will be removed.</param>
 /// <param name="EventSources">What publishes events on the event bus (HA, printers, mail, webhook sources).</param>
-public sealed record SystemInfo(string Version, IReadOnlyList<string> SupportedApiVersions, IReadOnlyList<string> DeprecatedApiVersions, IReadOnlyList<EventSourceInfo> EventSources);
+/// <param name="SimulatedIntegrations">Integrations demo mode simulates (<c>home_assistant</c>, <c>printers</c>, <c>mail</c>, <c>rss</c>, <c>notes</c>); empty without demo mode.</param>
+public sealed record SystemInfo(string Version, IReadOnlyList<string> SupportedApiVersions, IReadOnlyList<string> DeprecatedApiVersions, IReadOnlyList<EventSourceInfo> EventSources, IReadOnlyList<string> SimulatedIntegrations);
 
 /// <summary>An event source and its state.</summary>
 /// <param name="Source">Source name, e.g. <c>ha</c>, <c>uptime-kuma</c>.</param>

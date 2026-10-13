@@ -61,7 +61,7 @@ curl -H "Authorization: Bearer <token>" https://marshal.example.com/api/v1/me
 ```
 
 ```json
-{ "id": "…", "displayName": "Lukas", "roles": [], "scopes": ["conversation:write"] }
+{ "id": "…", "displayName": "Lukas", "roles": [], "scopes": ["conversation:write"], "demo": { "enabled": false, "showBadge": true } }
 ```
 
 `roles` is empty for token principals and `scopes` lists the token's own scopes.

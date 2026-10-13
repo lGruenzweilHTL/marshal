@@ -22,6 +22,7 @@ using Marshal.Artifacts;
 using Marshal.Core;
 using Marshal.Core.Configuration;
 using Marshal.Data;
+using Marshal.Demo;
 using Marshal.Integrations.FreshRss;
 using Marshal.Integrations.GitHub;
 using Marshal.Integrations.HomeAssistant;
@@ -66,6 +67,8 @@ public static class MarshalApp
         builder.Services.AddMarshalTasks(builder.Configuration);
         builder.Services.AddMarshalData(builder.Configuration, ConnectionString);
         builder.Services.AddMarshalApi(builder.Configuration);
+        // Last: demo mode replaces the registrations of unconfigured integrations.
+        builder.Services.AddMarshalDemo(builder.Configuration);
         builder.Services.AddSingleton(new ProcessEnvironment(environment));
 
         WebApplication app = builder.Build();

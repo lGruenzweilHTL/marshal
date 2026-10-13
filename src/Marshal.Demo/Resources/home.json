@@ -1,0 +1,70 @@
+{
+  "timeZone": "Europe/Vienna",
+  "currency": "EUR",
+  "floors": [
+    { "id": "ground_floor", "name": "Ground floor", "aliases": ["downstairs"] },
+    { "id": "upper_floor", "name": "Upper floor", "aliases": ["upstairs"] }
+  ],
+  "areas": [
+    { "id": "kitchen", "name": "Kitchen", "floor": "ground_floor", "aliases": [] },
+    { "id": "living_room", "name": "Living room", "floor": "ground_floor", "aliases": ["lounge"] },
+    { "id": "hallway", "name": "Hallway", "floor": "ground_floor", "aliases": [] },
+    { "id": "office", "name": "Office", "floor": "upper_floor", "aliases": ["study"] },
+    { "id": "bedroom", "name": "Bedroom", "floor": "upper_floor", "aliases": [] },
+    { "id": "garage", "name": "Garage", "floor": "ground_floor", "aliases": ["workshop"] }
+  ],
+  "entities": [
+    { "id": "light.kitchen", "name": "Kitchen light", "area": "kitchen", "state": "off", "attributes": { "brightness": null, "supported_color_modes": ["brightness"] } },
+    { "id": "light.kitchen_counter", "name": "Counter lights", "area": "kitchen", "state": "on", "attributes": { "brightness": 200, "supported_color_modes": ["brightness"] } },
+    { "id": "light.living_room", "name": "Living room light", "area": "living_room", "state": "on", "attributes": { "brightness": 140, "supported_color_modes": ["brightness"] } },
+    { "id": "light.hallway", "name": "Hallway light", "area": "hallway", "state": "off", "attributes": { "brightness": null, "supported_color_modes": ["onoff"] } },
+    { "id": "light.office", "name": "Office light", "area": "office", "state": "off", "attributes": { "brightness": null, "supported_color_modes": ["brightness"] } },
+    { "id": "light.bedroom", "name": "Bedroom light", "area": "bedroom", "state": "off", "attributes": { "brightness": null, "supported_color_modes": ["brightness"] } },
+    { "id": "light.garage", "name": "Workshop light", "area": "garage", "state": "on", "attributes": { "brightness": 255, "supported_color_modes": ["brightness"] } },
+    { "id": "switch.printer_enclosure_fan", "name": "Enclosure fan", "area": "garage", "state": "on", "attributes": {} },
+    { "id": "climate.living_room", "name": "Living room thermostat", "area": "living_room", "state": "heat", "attributes": { "hvac_modes": ["off", "heat"], "current_temperature": 21.2, "temperature": 21.5, "min_temp": 7, "max_temp": 28, "unit_of_measurement": "°C" } },
+    { "id": "climate.office", "name": "Office thermostat", "area": "office", "state": "heat", "attributes": { "hvac_modes": ["off", "heat"], "current_temperature": 20.4, "temperature": 21.0, "min_temp": 7, "max_temp": 28, "unit_of_measurement": "°C" } },
+    { "id": "sensor.outdoor_temperature", "name": "Outdoor temperature", "area": null, "deviceClass": "temperature", "state": "9.5", "attributes": { "unit_of_measurement": "°C", "state_class": "measurement" } },
+    { "id": "sensor.office_temperature", "name": "Office temperature", "area": "office", "deviceClass": "temperature", "state": "20.4", "attributes": { "unit_of_measurement": "°C", "state_class": "measurement" } },
+    { "id": "sensor.living_room_humidity", "name": "Living room humidity", "area": "living_room", "deviceClass": "humidity", "state": "47", "attributes": { "unit_of_measurement": "%", "state_class": "measurement" } },
+    { "id": "sensor.garage_temperature", "name": "Workshop temperature", "area": "garage", "deviceClass": "temperature", "state": "16.8", "attributes": { "unit_of_measurement": "°C", "state_class": "measurement" } },
+    { "id": "sensor.grid_consumption", "name": "Grid consumption", "area": null, "deviceClass": "energy", "state": "18342.6", "attributes": { "unit_of_measurement": "kWh", "state_class": "total_increasing" } },
+    { "id": "sensor.solar_production", "name": "Solar production", "area": null, "deviceClass": "energy", "state": "6120.3", "attributes": { "unit_of_measurement": "kWh", "state_class": "total_increasing" } },
+    { "id": "sensor.washing_machine_status", "name": "Washing machine", "area": null, "state": "Spinning", "attributes": { "remaining_minutes": 14 } },
+    { "id": "binary_sensor.front_door", "name": "Front door", "area": "hallway", "deviceClass": "door", "state": "off", "attributes": {} },
+    { "id": "binary_sensor.garage_window", "name": "Workshop window", "area": "garage", "deviceClass": "window", "state": "on", "attributes": {} },
+    { "id": "lock.front_door", "name": "Front door lock", "area": "hallway", "state": "locked", "attributes": {} },
+    { "id": "cover.living_room_blinds", "name": "Living room blinds", "area": "living_room", "deviceClass": "blind", "state": "open", "attributes": { "current_position": 100 } },
+    { "id": "media_player.kitchen", "name": "Kitchen speaker", "area": "kitchen", "deviceClass": "speaker", "state": "idle", "attributes": { "volume_level": 0.3, "mass_player_type": "player" } },
+    { "id": "media_player.living_room", "name": "Living room speaker", "area": "living_room", "deviceClass": "speaker", "state": "idle", "attributes": { "volume_level": 0.25, "mass_player_type": "player" } },
+    { "id": "media_player.office", "name": "Office speaker", "area": "office", "deviceClass": "speaker", "state": "off", "attributes": { "volume_level": 0.2, "mass_player_type": "player" } },
+    { "id": "assist_satellite.kitchen", "name": "Kitchen satellite", "area": "kitchen", "state": "idle", "attributes": {} },
+    { "id": "assist_satellite.office", "name": "Office satellite", "area": "office", "state": "idle", "attributes": {} },
+    { "id": "person.alex", "name": "Alex", "area": null, "state": "home", "attributes": { "latitude": 48.2082, "longitude": 16.3738, "gps_accuracy": 12 } },
+    { "id": "person.sam", "name": "Sam", "area": null, "state": "work", "attributes": { "latitude": 48.1951, "longitude": 16.3700, "gps_accuracy": 20 } },
+    { "id": "zone.home", "name": "Home", "area": null, "state": "1", "attributes": { "latitude": 48.2082, "longitude": 16.3738, "radius": 100, "passive": false } },
+    { "id": "zone.work", "name": "Work", "area": null, "state": "1", "attributes": { "latitude": 48.1951, "longitude": 16.3700, "radius": 150, "passive": false } },
+    { "id": "weather.home", "name": "Weather", "area": null, "state": "partlycloudy", "attributes": { "temperature": 9.5, "humidity": 71, "wind_speed": 12, "temperature_unit": "°C", "wind_speed_unit": "km/h" } }
+  ],
+  "calendars": [
+    {
+      "id": "calendar.family",
+      "name": "Family",
+      "events": [
+        { "summary": "Dentist (Sam)", "day": 0, "start": "16:30", "end": "17:15", "location": "Dr. Weber, Mariahilfer Straße 12" },
+        { "summary": "Bin collection: paper", "day": 1, "allDay": true },
+        { "summary": "Dinner with Jana and Tom", "day": 2, "start": "19:00", "end": "22:00", "location": "Gasthaus Zum Hirschen" },
+        { "summary": "Filament order arrives", "day": 3, "allDay": true },
+        { "summary": "Climbing", "day": 4, "start": "18:00", "end": "20:00", "location": "Boulderbar Hannovergasse" }
+      ]
+    },
+    {
+      "id": "calendar.work",
+      "name": "Work",
+      "events": [
+        { "summary": "Sprint review", "day": 0, "start": "10:00", "end": "11:00", "location": null },
+        { "summary": "1:1 with Maria", "day": 1, "start": "14:00", "end": "14:30", "location": null }
+      ]
+    }
+  ]
+}
