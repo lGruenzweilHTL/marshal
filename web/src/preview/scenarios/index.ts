@@ -36,14 +36,26 @@ const artifactText = '# Voron notes\n\n- Run `QUAD_GANTRY_LEVEL`, then `BED_MESH
 let trace = 0
 const problem = () => json(500, { title: 'server.unexpected', code: 'server.unexpected', detail: 'Something went wrong on the server.', traceId: `00-preview${String(++trace).padStart(4, '0')}-01` })
 
-/** A canned streamed chat reply in the turn event format. */
+/** A canned streamed chat reply in the turn event format: reasoning, one tool call, then the reply text. */
 function chatReply(language: Language): Response {
-  const text = language === 'de' ? 'Der Voron druckt gerade Schicht 112 von 268, noch etwa 1 h 12 min.' : 'The Voron is on layer 112 of 268, about 1 h 12 min left.'
-  const words = text.split(' ')
+  const de = language === 'de'
+  const text = de ? 'Der Voron druckt gerade Schicht 112 von 268, noch etwa 1 h 12 min.' : 'The Voron is on layer 112 of 268, about 1 h 12 min left.'
+  const thoughts = de
+    ? ['Gefragt ist der Stand des Drucks. ', 'Ich frage den Status des Voron ab, ', 'statt aus dem Gedächtnis zu antworten.']
+    : ['The user wants to know how the print is going. ', 'I will check the Voron status ', 'rather than answer from memory.']
+  const after = de ? 'Schicht und Restzeit reichen als Antwort.' : 'Layer and time left are enough for the answer.'
+  const tool = { id: 'call-1', tool: 'printer.status', arguments: 'printer=voron' }
+  const event = (name: string, data: unknown) => `event: ${name}
+data: ${JSON.stringify(data)}
+
+`
   return eventStream([
-    `event: status\ndata: ${JSON.stringify({ text: language === 'de' ? 'Frage den Drucker ab …' : 'Checking the printer…' })}\n\n`,
-    ...words.map((word, index) => `event: delta\ndata: ${JSON.stringify({ text: (index ? ' ' : '') + word })}\n\n`),
-    `event: final\ndata: ${JSON.stringify({ speech: text, continueConversation: false, conversationId: 'preview-conversation' })}\n\n`,
+    ...thoughts.map((chunk) => event('reasoning', { text: chunk })),
+    event('tool', { ...tool, state: 'running' }),
+    event('tool', { ...tool, state: 'ok', durationMs: 184, result: 'Printing planter_bracket.gcode, layer 112 of 268' }),
+    event('reasoning', { text: after }),
+    ...text.split(' ').map((word, index) => event('delta', { text: (index ? ' ' : '') + word })),
+    event('final', { speech: text, continueConversation: false, conversationId: 'preview-conversation' }),
   ])
 }
 

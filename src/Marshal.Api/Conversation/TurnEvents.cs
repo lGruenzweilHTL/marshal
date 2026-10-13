@@ -1,4 +1,6 @@
+using System.Text.Json.Serialization;
 using Marshal.Abstractions.Artifacts;
+using Marshal.Abstractions.Conversation;
 
 namespace Marshal.Api.Conversation;
 
@@ -14,6 +16,24 @@ public sealed record TurnStatus(string Text);
 /// <param name="Kind">Kind; picks inline image or card.</param>
 /// <param name="Url">Content URL.</param>
 public sealed record TurnArtifact(string Id, string Name, ArtifactKind Kind, string Url);
+
+/// <summary>A chunk of the model's reasoning (<c>reasoning</c> event, cookie clients only).</summary>
+public sealed record TurnReasoning(string Text);
+
+/// <summary>A tool call started or ended (<c>tool</c> event, cookie clients only).</summary>
+/// <param name="Id">Call id; the ending event repeats it.</param>
+/// <param name="Tool">Tool id, e.g. <c>printer.status</c>.</param>
+/// <param name="Arguments">One-line argument summary.</param>
+/// <param name="State"><c>running</c>, <c>ok</c>, <c>error</c>, <c>denied</c> or <c>pending</c>.</param>
+/// <param name="DurationMs">How long the call took (ending events).</param>
+/// <param name="Result">One-line result summary or error code; absent for sensitive tools.</param>
+public sealed record TurnTool(
+    string Id,
+    string Tool,
+    string Arguments,
+    ToolEventState State,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? DurationMs,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Result);
 
 /// <summary>The last event of a turn (<c>final</c> event).</summary>
 /// <param name="Speech">Full reply text.</param>

@@ -32,6 +32,12 @@ public sealed class ModelOptions
 
     public int ContextLength { get; set; } = 8192;
 
+    /// <summary>
+    /// Reasoning effort for text turns and background runs: <c>off</c>, <c>low</c>, <c>medium</c> or <c>high</c>. Voice
+    /// turns never request reasoning.
+    /// </summary>
+    public string Reasoning { get; set; } = "off";
+
     /// <summary>Price table entry; models without one cost 0.</summary>
     public ModelPrice? Price { get; set; }
 }

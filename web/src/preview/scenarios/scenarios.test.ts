@@ -3,7 +3,8 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { createApiSession } from '../../api/client'
 import { createPreviewServer, shiftTimes } from './index'
-import { anchor, normal } from './normal'
+import { anchor, conversationDetails, normal } from './normal'
+import { readEvents } from '../../chat/sse'
 
 const web = join(__dirname, '..', '..', '..')
 const openapi = JSON.parse(readFileSync(join(web, 'openapi', 'v1.json'), 'utf8')) as {
@@ -80,6 +81,26 @@ describe('preview scenarios', () => {
     const schema = openapi.paths['/api/v1/tasks/kill-switch']!.get!.responses['200']!.content!['application/json']!.schema
     expect(check({ active: 'yes' }, schema, 'kill-switch')).toEqual(['kill-switch.active: not a boolean'])
     expect(check({}, schema, 'kill-switch')).toEqual(['kill-switch.active: missing'])
+  })
+
+  it('matches the conversation detail schema and shows reasoning and tool steps', () => {
+    const schema = openapi.paths['/api/v1/conversations/{id}']!.get!.responses['200']!.content!['application/json']!.schema
+    expect(Object.entries(conversationDetails).flatMap(([id, detail]) => check(detail, schema, id))).toEqual([])
+    const turns = Object.values(conversationDetails).flatMap((detail) => detail.entries.flatMap((entry) => (entry.kind === 'turn' ? [entry] : [])))
+    expect(turns.some((turn) => turn.reasoning && turn.tools.length > 0)).toBe(true)
+  })
+
+  it('streams reasoning and tool events before the reply', async () => {
+    const response = await createPreviewServer('normal', 'en', anchor).fetch(new Request('https://marshal.test/api/v1/conversation/turns', { method: 'POST', body: '{}' }))
+    const events: string[] = []
+    for await (const { event } of readEvents(response.body!)) events.push(event)
+
+    const firstDelta = events.indexOf('delta')
+    expect(events.indexOf('reasoning')).toBeGreaterThanOrEqual(0)
+    expect(events.indexOf('reasoning')).toBeLessThan(firstDelta)
+    expect(events.filter((event) => event === 'tool').length).toBeGreaterThanOrEqual(2)
+    expect(events.lastIndexOf('tool')).toBeLessThan(firstDelta)
+    expect(events.at(-1)).toBe('final')
   })
 
   it('moves the sample timestamps to now', () => {

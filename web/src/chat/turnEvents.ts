@@ -1,4 +1,7 @@
-/** Payloads of the turn endpoint's server-sent events (`delta`, `status`, `artifact`, `final`); not described by OpenAPI. */
+/**
+ * Payloads of the turn endpoint's server-sent events (`delta`, `status`, `artifact`, `reasoning`, `tool`, `final`); not
+ * described by OpenAPI. `reasoning` and `tool` come only to the web UI (cookie sessions).
+ */
 export interface TurnDelta {
   text: string
 }
@@ -20,4 +23,34 @@ export interface TurnArtifact {
   name: string
   kind: 'image' | 'svg' | 'video' | 'model3d' | 'code' | 'diff' | 'pdf' | 'markdown' | 'html' | 'other'
   url: string
+}
+
+/** A chunk of the model's reasoning. */
+export interface TurnReasoning {
+  text: string
+}
+
+export type ToolState = 'running' | 'ok' | 'error' | 'denied' | 'pending'
+
+/** A tool call started (`running`) or ended; the ending event repeats the id. */
+export interface TurnTool {
+  id: string
+  /** Tool id, e.g. `printer.status`. */
+  tool: string
+  /** One-line argument summary. */
+  arguments: string
+  state: ToolState
+  durationMs?: number | null
+  /** One-line result summary or error code; absent for sensitive tools. */
+  result?: string | null
+}
+
+/** One line of a reply's timeline: a tool call, or a status message of the turn. */
+export type ToolStep = ({ kind: 'tool' } & TurnTool) | { kind: 'status'; text: string }
+
+/** Adds a tool event to the timeline: a new line for a new call, the same line updated when the call ends. */
+export function applyTool(steps: ToolStep[], event: TurnTool): void {
+  const index = steps.findIndex((step) => step.kind === 'tool' && step.id === event.id)
+  if (index < 0) steps.push({ kind: 'tool', ...event })
+  else steps[index] = { kind: 'tool', ...event }
 }

@@ -81,6 +81,8 @@ models:
     model: "qwen3:30b"
     endpoint: "http://ollama:11434"
     contextLength: 32768
+    reasoning: "off"                    # off | low | medium | high: text turns and background runs think first;
+                                        # voice turns never do. The web chat shows the reasoning.
   # advisor:
   #   tier: advisor
   #   provider: anthropic

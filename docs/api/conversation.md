@@ -40,7 +40,22 @@ A turn that carries `satelliteId`, `deviceId` or `haUserId` is recorded as a voi
 | `delta` | `{ "text": "…" }` | Zero or more times. A chunk of the reply text. |
 | `status` | `{ "text": "…" }` | Optional. A progress message, for example when a turn is moving to the background. Do not speak it. |
 | `artifact` | `{ "id", "name", "kind", "url" }` | Once per artifact the turn shows. `url` is the content URL. |
+| `reasoning` | `{ "text": "…" }` | Browser sessions only. Zero or more times. A chunk of the model's reasoning. |
+| `tool` | `{ "id", "tool", "arguments", "state", "durationMs", "result" }` | Browser sessions only. Twice per tool call: when it starts (`state` `running`) and when it ends (same `id`, `state` `ok`, `error`, `denied` or `pending`, with `durationMs` and an optional `result`). |
 | `final` | `{ "speech", "continueConversation", "conversationId" }` | Exactly once, last. |
+
+Token clients (Home Assistant, API) never receive `reasoning` or `tool` events. Their stream is unchanged.
+
+The `tool` event fields:
+
+| Field | Description |
+|---|---|
+| `id` | The call id. The ending event repeats it. |
+| `tool` | The tool id, for example `printer.status`. |
+| `arguments` | A one-line summary of the arguments (`key=value` pairs, cut to 120 characters). |
+| `state` | `running`, `ok`, `error`, `denied` (the guard refused it) or `pending` (waits for confirmation). |
+| `durationMs` | How long the call took. Ending events only. |
+| `result` | The first line of the result (cut to 120 characters) or the error code. Absent for sensitive and redacted tools. |
 
 The `final` event fields:
 

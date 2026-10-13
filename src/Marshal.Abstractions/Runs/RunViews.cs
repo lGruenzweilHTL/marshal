@@ -80,6 +80,8 @@ public sealed record RunDetail(RunSummary Run, string? Language, IReadOnlyList<T
 /// <param name="Error">Error, if the step failed.</param>
 /// <param name="Depth">Delegation depth: 0 for the run's own loop, 1 and more for subagent steps.</param>
 /// <param name="Notes">Context steps: active projects, retrieved memory and similar notes of the context build.</param>
+/// <param name="Reasoning">Model calls: the reasoning the model returned.</param>
+/// <param name="ReasoningWithheld">Model calls: reasoning followed a redacted tool result and was not kept.</param>
 public sealed record RunStepDetail(
     int Sequence,
     RunStepKind Kind,
@@ -102,7 +104,9 @@ public sealed record RunStepDetail(
     bool? ContinueConversation,
     string? Error,
     int Depth,
-    IReadOnlyList<Context.ContextNote> Notes);
+    IReadOnlyList<Context.ContextNote> Notes,
+    string? Reasoning,
+    bool ReasoningWithheld);
 
 /// <summary>
 /// Cost over a date range.

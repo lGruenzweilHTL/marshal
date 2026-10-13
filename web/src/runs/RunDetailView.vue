@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Bot, Cpu, Layers, MessageSquareText, ShieldAlert, Wrench } from 'lucide-vue-next'
-import { computed, nextTick, watch } from 'vue'
+import { computed, nextTick, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import type { Schemas } from '../api/client'
@@ -8,13 +8,14 @@ import { useApi } from '../api/inject'
 import { useLoad } from '../api/useLoad'
 import { useFormat } from '../i18n/locale'
 import { AppIcon, Badge, Banner, Card, CodeBlock, KeyValueList, LoadBoundary, Page, PageHeader, useDesktop, type Tone } from '../ui'
+import ReasoningBlock from '../chat/ReasoningBlock.vue'
 import TaintFlag from './TaintFlag.vue'
 
 type Step = Schemas['RunStepDetail']
 
 /**
  * One run as a timeline of its steps: context build (with the projects and memory it used), model calls with
- * tokens and latency, tool calls with risk tier and guard decision, and the reply. `#step-<n>` scrolls to a step
+ * tokens, latency and their reasoning (collapsed), tool calls with risk tier and guard decision, and the reply. `#step-<n>` scrolls to a step
  * (Inbox links to the step that tainted a run).
  */
 const api = useApi()
@@ -27,6 +28,8 @@ const id = String(route.params.id)
 const detail = useLoad(() => api.call((client) => client.GET('/api/v1/runs/{id}', { params: { path: { id } } })), { isEmpty: () => false })
 const run = computed(() => detail.data.value?.run ?? null)
 const outcomeTone: Record<Schemas['RunOutcome'], Tone> = { ok: 'success', error: 'danger', backgrounded: 'warning', cancelled: 'neutral' }
+/** Model calls whose reasoning the user opened, by step sequence. */
+const openReasoning = reactive<Record<number, boolean>>({})
 const taintedFrom = computed(() => Math.min(...(detail.data.value?.taintSources.map((source) => source.firstStep) ?? [])))
 
 watch(
@@ -110,6 +113,12 @@ const count = (value: number | null) => (value === null ? '–' : format.value.n
                     <span class="t-mono-s">{{ step.model }}</span>
                     <span class="num ink-3">{{ t('runs.detail.tokens', { in: count(step.tokensIn), out: count(step.tokensOut), cached: count(step.tokensCached) }) }}</span>
                   </p>
+                  <ReasoningBlock
+                    v-if="step.reasoning || step.reasoningWithheld"
+                    v-model:open="openReasoning[step.sequence]"
+                    :text="step.reasoning ?? ''"
+                    :withheld="step.reasoningWithheld"
+                  />
 
                   <p v-if="step.riskTier || step.guardDecision" class="line">
                     <Badge v-if="step.riskTier" :label="t(`runs.detail.risk.${step.riskTier}`)" :tone="step.riskTier === 'safe' ? 'neutral' : 'warning'" />

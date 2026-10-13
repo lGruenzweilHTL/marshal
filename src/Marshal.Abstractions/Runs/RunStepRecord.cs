@@ -51,6 +51,14 @@ public sealed record RunStepRecord
     /// <summary>True when the tool is flagged sensitive; the content is then never stored.</summary>
     public bool Sensitive { get; init; }
 
+    /// <summary>Model-call steps: the reasoning the model returned, if any.</summary>
+    public string? Reasoning { get; init; }
+
+    /// <summary>
+    /// Model-call steps: the model reasoned after a redacted tool result in the same run, so the reasoning was not kept.
+    /// </summary>
+    public bool ReasoningWithheld { get; init; }
+
     /// <summary>Reply steps: whether Marshal asked something.</summary>
     public bool? ContinueConversation { get; init; }
 

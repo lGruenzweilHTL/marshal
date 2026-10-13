@@ -2,7 +2,9 @@
 
 ## Purpose
 Provider-neutral access to chat and embedding models, with tiers, capability flags and cost from a price table.
+
 ## Requirements
+
 ### Requirement: Provider-neutral model access
 The system SHALL access all language models through `IChatClient` and all embedding models through `IEmbeddingGenerator` from `Microsoft.Extensions.AI`. The system SHALL support three provider kinds: `ollama`, `openai-compatible` (llama.cpp `llama-server`, vLLM, LM Studio) and `anthropic`. Provider SDK packages SHALL be referenced only by `Marshal.Api`.
 
@@ -36,3 +38,17 @@ The system SHALL compute the cost of every model call from a per-model price tab
 - **WHEN** a call goes to a model without a price entry
 - **THEN** the recorded cost is 0
 
+### Requirement: Reasoning effort
+Each configured model SHALL have a `reasoning` setting of `off`, `low`, `medium` or `high`, defaulting to `off`. A model call SHALL request reasoning at the configured effort for text turns and for background task runs. A model call for a voice turn SHALL request no reasoning, whatever the setting. A model whose provider cannot return reasoning SHALL be called as if the setting were `off`, and startup SHALL log a warning naming the model.
+
+#### Scenario: Text turn with reasoning
+- **WHEN** a text turn routes to a model configured with `reasoning: medium`
+- **THEN** the model call requests medium reasoning effort
+
+#### Scenario: Voice turn
+- **WHEN** a voice turn routes to the same model
+- **THEN** the model call requests no reasoning
+
+#### Scenario: Default
+- **WHEN** a model has no `reasoning` key
+- **THEN** its calls request no reasoning

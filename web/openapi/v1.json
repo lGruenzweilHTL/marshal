@@ -498,7 +498,7 @@
         "tags": [
           "Marshal"
         ],
-        "summary": "Runs one conversation turn and streams the reply as server-sent events (delta, status, final).",
+        "summary": "Runs one conversation turn and streams the reply as server-sent events (delta, status, artifact, final; web sessions also reasoning and tool).",
         "operationId": "CreateConversationTurn",
         "requestBody": {
           "content": {
@@ -3691,6 +3691,9 @@
           "continueConversation",
           "artifacts",
           "outcome",
+          "reasoning",
+          "reasoningWithheld",
+          "tools",
           "at"
         ],
         "properties": {
@@ -3751,6 +3754,21 @@
           },
           "outcome": {
             "$ref": "#/components/schemas/RunOutcome"
+          },
+          "reasoning": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reasoningWithheld": {
+            "type": "boolean"
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TurnToolStep"
+            }
           },
           "at": {
             "type": "string",
@@ -6006,7 +6024,9 @@
           "continueConversation",
           "error",
           "depth",
-          "notes"
+          "notes",
+          "reasoning",
+          "reasoningWithheld"
         ],
         "type": "object",
         "properties": {
@@ -6145,6 +6165,15 @@
             "items": {
               "$ref": "#/components/schemas/ContextNote"
             }
+          },
+          "reasoning": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reasoningWithheld": {
+            "type": "boolean"
           }
         }
       },
@@ -7026,6 +7055,46 @@
           }
         },
         "description": "A loaded agent template."
+      },
+      "ToolEventState": {
+        "enum": [
+          "running",
+          "ok",
+          "error",
+          "denied",
+          "pending"
+        ]
+      },
+      "TurnToolStep": {
+        "required": [
+          "tool",
+          "arguments",
+          "state",
+          "durationMs",
+          "result"
+        ],
+        "type": "object",
+        "properties": {
+          "tool": {
+            "type": "string"
+          },
+          "arguments": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ToolEventState"
+          },
+          "durationMs": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "result": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
       },
       "UnresolvedSecret": {
         "required": [

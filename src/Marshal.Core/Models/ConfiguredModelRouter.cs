@@ -22,7 +22,7 @@ public sealed class ConfiguredModelRouter(IOptions<ModelRoutingOptions> options,
                 continue;
 
             IChatClient client = _clients.GetOrAdd(key, _ => factory.Create(key, model));
-            return new RoutedModel(key, model.Tier, client);
+            return new RoutedModel(key, model.Tier, client, ModelReasoningSupport.Effective(model));
         }
 
         return new Error("model.not_available", $"No {request.Tier} model with the required capabilities is configured.", ErrorType.Unavailable);

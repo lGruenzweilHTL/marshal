@@ -56,8 +56,8 @@ Everything lives in `/data` on your host (see [data directory](../reference/data
 
 | Data | Where | Notes |
 |---|---|---|
-| Runs and steps | SQLite | Per step: the full system prompt of the context build, model and token metadata, tool arguments, results (truncated at 8000 characters by default) and the reply. |
-| Sensitive tool results | SQLite | Stored as references (message id, note path) instead of content. Mail and notes tools are sensitive by default. Change per tool with `recording.redactTools` and `recording.keepContentTools`. See [`recording`](../configuration/marshal-yaml/recording.md). |
+| Runs and steps | SQLite | Per step: the full system prompt of the context build, model and token metadata, the model's reasoning, tool arguments, results (truncated at 8000 characters by default) and the reply. |
+| Sensitive tool results | SQLite | Stored as references (message id, note path) instead of content. Mail and notes tools are sensitive by default. Reasoning of model calls after such a result in the same run is not stored. Change per tool with `recording.redactTools` and `recording.keepContentTools`. See [`recording`](../configuration/marshal-yaml/recording.md). |
 | Sessions | SQLite | Source, creating token, identity evidence and how the owner was resolved. |
 | Memory | SQLite | Chunks, versions, edges, embeddings, project feedback. |
 | Tasks, notifications, approvals, follow-ups | SQLite | Including notification history with the reason for each channel decision. |

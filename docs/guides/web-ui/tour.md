@@ -26,7 +26,7 @@ Every view works at phone width. The views you act on (Home, Inbox, Chat, Printe
 | Act | Inbox | The one place for everything that waits for you: approvals (frozen action, reasons, time left), coding proposals (diff, merge or reject) and the notification history, filterable by outcome. |
 | Act | Printer | Live printer state. |
 | Activity | Tasks | Tasks and watches with status, trigger, next run, budget and latest result. Edit a goal, cancel a task, use the kill switch. |
-| Activity | Runs | What Marshal did, step by step, and why. |
+| Activity | Runs | What Marshal did, step by step, and why, including the reasoning of each model call (collapsed). |
 | Activity | Artifacts | Files Marshal produced or received. See [artifacts](../artifacts.md). |
 | Activity | Cost | Model usage and cost. |
 | Memory | Chunks, Projects, Map, Audit | See and edit everything Marshal remembers. See [memory](../memory.md). |
@@ -49,6 +49,15 @@ The chat keeps your conversations. On desktop the list of earlier conversations 
 - **Web conversations** continue where you left off, whatever time has passed. After a few idle minutes the conversation rests: a pending confirmation is dropped and Marshal summarizes the new turns into memory, but the next message continues the same conversation.
 - **Voice conversations** from Home Assistant satellites are listed with a microphone and the satellite or area. Each spoken turn is marked. They are read-only in the web chat: continue them by voice, or start a new chat.
 - **API conversations** are marked "API" and are read-only too.
+
+## Reasoning and tool steps in the chat
+
+While Marshal works on a reply, the chat shows what it does:
+
+- **Reasoning.** If the model has `reasoning` set (see [models](../../configuration/marshal-yaml/models.md)), its reasoning streams into a block above the reply. The block is open while the model reasons and folds away when the reply text starts. Select "Reasoning" to open or close it. The text is shown as written, never as Markdown, so links and images in it stay inert.
+- **Tool steps.** Each tool call is one line: the tool's name, a short summary of its arguments, its state (running, done, failed, not allowed, waiting for confirmation), how long it took and a short result. Results of sensitive tools, such as mail and notes, are never summarized. Progress messages of the turn appear in the same list.
+
+"Thinking…" shows only until the first of these arrives. A reopened conversation shows both, collapsed. Reasoning that followed private content (a mail or a note) is not kept; the chat then shows a note instead. Voice turns never request reasoning, and Home Assistant and API clients never receive reasoning or tool steps.
 
 ## Background results in the chat
 

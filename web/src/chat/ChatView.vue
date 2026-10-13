@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowUp, CircleDot, History, Hourglass, MessageSquare, Mic, Plus, SearchX } from 'lucide-vue-next'
+import { ArrowUp, History, Hourglass, MessageSquare, Mic, Plus, SearchX } from 'lucide-vue-next'
 import { computed, nextTick, onBeforeUnmount, reactive, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -13,14 +13,22 @@ import { renderMarkdown } from './markdown'
 import { readEvents } from './sse'
 import ArtifactCard from '../artifacts/ArtifactCard.vue'
 import ConversationList from './ConversationList.vue'
-import type { TurnArtifact, TurnDelta, TurnFinal, TurnStatus } from './turnEvents'
+import ReasoningBlock from './ReasoningBlock.vue'
+import ToolTimeline from './ToolTimeline.vue'
+import { applyTool, type ToolStep, type TurnArtifact, type TurnDelta, type TurnFinal, type TurnReasoning, type TurnStatus, type TurnTool } from './turnEvents'
 
 interface Message {
   id: number
   role: 'user' | 'assistant'
   text: string
-  /** Status events of the turn ("Checking the printer…"), kept as the reply's steps. */
-  steps: string[]
+  /** Tool calls and status events of the turn, in order: the reply's timeline. */
+  steps: ToolStep[]
+  /** The model's reasoning (plain text); '' when there is none. */
+  reasoning: string
+  /** Whether the reasoning block is open: while reasoning streams, until the reply text starts. */
+  reasoningOpen: boolean
+  /** Some reasoning followed private content and was not kept. */
+  reasoningWithheld?: boolean
   /** Artifacts the turn showed: images inline, every other kind as a card. */
   artifacts: TurnArtifact[]
   /** A spoken user turn: the satellite (or area) it came from, '' when unknown. */
@@ -34,8 +42,8 @@ interface Message {
 type Entry = Schemas['ConversationDetail']['entries'][number]
 
 /**
- * Written conversation with Marshal over the turn stream: status events become the reply's steps, deltas grow the
- * text, and the final event settles it. A question back (continueConversation) offers Yes / No; the answer is an
+ * Written conversation with Marshal over the turn stream: reasoning fills a block that folds away when the reply
+ * starts, tool and status events become the reply's timeline, deltas grow the text, and the final event settles it. A question back (continueConversation) offers Yes / No; the answer is an
  * ordinary user turn, judged by the server like a spoken one. `/chat/{id}` opens an earlier conversation: web chats
  * continue, voice and API conversations are read-only. Results of work moved to the background arrive live.
  */
@@ -86,16 +94,35 @@ function newChat() {
   if (routeId.value) void router.push('/chat')
 }
 
+function empty(): Pick<Message, 'steps' | 'artifacts' | 'reasoning' | 'reasoningOpen'> {
+  return { steps: [], artifacts: [], reasoning: '', reasoningOpen: false }
+}
+
+/** No event of the reply arrived yet: the only time "Thinking…" shows. */
+function waiting(message: Message) {
+  return !message.text && !message.reasoning && message.steps.length === 0 && message.artifacts.length === 0
+}
+
 function toMessages(entry: Entry): Message[] {
-  if (entry.kind === 'backgroundResult') return [{ id: nextId++, role: 'assistant', text: entry.body, steps: [], artifacts: [], taskId: entry.taskId }]
+  if (entry.kind === 'backgroundResult') return [{ id: nextId++, role: 'assistant', text: entry.body, ...empty(), taskId: entry.taskId }]
   if (entry.kind !== 'turn') return []
   const turn = entry
   const result: Message[] = []
   if (turn.input) {
     const spoken = turn.inputMode === 'voice' ? (turn.satelliteId ? satelliteName(turn.satelliteId) : (turn.areaId ?? '')) : undefined
-    result.push({ id: nextId++, role: 'user', text: turn.input, steps: [], artifacts: [], spoken })
+    result.push({ id: nextId++, role: 'user', text: turn.input, ...empty(), spoken })
   }
-  result.push({ id: nextId++, role: 'assistant', text: turn.reply ?? '', steps: [], artifacts: [...turn.artifacts], noReply: turn.reply === null })
+  result.push({
+    id: nextId++,
+    role: 'assistant',
+    text: turn.reply ?? '',
+    ...empty(),
+    steps: turn.tools.map((step, index) => ({ kind: 'tool', id: `${turn.runId}-${index}`, ...step })),
+    reasoning: turn.reasoning ?? '',
+    reasoningWithheld: turn.reasoningWithheld,
+    artifacts: [...turn.artifacts],
+    noReply: turn.reply === null,
+  })
   return result
 }
 
@@ -147,7 +174,7 @@ watch(
 
 useLiveEvent('conversations', 'conversation.result', (result) => {
   if (result.sessionId !== conversationId || messages.value.some((message) => message.taskId === result.taskId)) return
-  messages.value.push({ id: nextId++, role: 'assistant', text: result.body, steps: [], artifacts: [], taskId: result.taskId })
+  messages.value.push({ id: nextId++, role: 'assistant', text: result.body, ...empty(), taskId: result.taskId })
   void scrollToEnd()
 })
 useLiveReconnect(() => void reload())
@@ -163,8 +190,8 @@ async function send(text = draft.value.trim()) {
   error.value = null
   interrupted.value = false
   awaitingAnswer.value = false
-  messages.value.push({ id: nextId++, role: 'user', text, steps: [], artifacts: [] })
-  const reply = reactive<Message>({ id: nextId++, role: 'assistant', text: '', steps: [], artifacts: [] })
+  messages.value.push({ id: nextId++, role: 'user', text, ...empty() })
+  const reply = reactive<Message>({ id: nextId++, role: 'assistant', text: '', ...empty() })
   messages.value.push(reply)
   void scrollToEnd()
 
@@ -186,12 +213,26 @@ async function send(text = draft.value.trim()) {
       error.value = result.error ?? { kind: 'unexpected', cause: 'empty stream' }
       return
     }
+    let afterTool = false
     for await (const { event, data: payload } of readEvents(result.data as unknown as ReadableStream<Uint8Array>)) {
-      if (event === 'delta') reply.text += (JSON.parse(payload) as TurnDelta).text
+      if (event === 'delta') {
+        // The reasoning folds away when the reply text starts; the user can open it again.
+        if (!reply.text) reply.reasoningOpen = false
+        reply.text += (JSON.parse(payload) as TurnDelta).text
+      } else if (event === 'reasoning') {
+        if (!reply.reasoning && !reply.text) reply.reasoningOpen = true
+        // A tool call ends one model call's reasoning; the next one starts a new paragraph, like reopened chats.
+        if (afterTool && reply.reasoning) reply.reasoning += '\n\n'
+        afterTool = false
+        reply.reasoning += (JSON.parse(payload) as TurnReasoning).text
+      } else if (event === 'tool') {
+        afterTool = true
+        applyTool(reply.steps, JSON.parse(payload) as TurnTool)
+      }
       else if (event === 'status') {
-        const step = (JSON.parse(payload) as TurnStatus).text
-        live.value = step
-        reply.steps.push(step)
+        const text = (JSON.parse(payload) as TurnStatus).text
+        live.value = text
+        reply.steps.push({ kind: 'status', text })
       } else if (event === 'artifact') reply.artifacts.push(JSON.parse(payload) as TurnArtifact)
       else if (event === 'final') {
         const final = JSON.parse(payload) as TurnFinal
@@ -265,12 +306,17 @@ onBeforeUnmount(() => running?.abort())
             <span class="avatar"><Logo variant="tile" :size="28" /></span>
             <div class="reply">
               <span v-if="message.taskId" class="background" data-test="background"><AppIcon :icon="Hourglass" :size="14" />{{ t('chat.background') }}</span>
-              <span v-for="(step, index) in message.steps" :key="index" class="step" data-test="step">
-                <AppIcon :icon="CircleDot" :size="14" />{{ step }}
-              </span>
+              <ReasoningBlock
+                v-if="message.reasoning || message.reasoningWithheld"
+                v-model:open="message.reasoningOpen"
+                :text="message.reasoning"
+                :streaming="busy && message.reasoningOpen && !message.text && message === messages[messages.length - 1]"
+                :withheld="message.reasoningWithheld"
+              />
+              <ToolTimeline v-if="message.steps.length" :steps="message.steps" />
               <!-- eslint-disable-next-line vue/no-v-html -- rendered with HTML disabled and same-origin images only -->
               <div v-if="message.text" class="markdown" v-html="renderMarkdown(message.text)"></div>
-              <span v-else-if="busy && message === messages[messages.length - 1]" class="thinking">{{ t('chat.thinking') }}</span>
+              <span v-else-if="busy && message === messages[messages.length - 1] && waiting(message)" class="thinking">{{ t('chat.thinking') }}</span>
               <span v-else-if="message.noReply" class="thinking">{{ t('chat.noReply') }}</span>
               <ArtifactCard v-for="artifact in message.artifacts" :key="artifact.id" :artifact="artifact" />
             </div>
@@ -387,18 +433,6 @@ onBeforeUnmount(() => running?.abort())
   gap: var(--space-2);
   min-width: 0;
   font: var(--text-body);
-}
-.step {
-  display: inline-flex;
-  align-self: flex-start;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 6px 10px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  color: var(--ink-2);
-  font: 400 13px/18px var(--font-sans);
 }
 .thinking {
   color: var(--ink-3);

@@ -21,6 +21,8 @@ public sealed class ModelRoutingOptionsValidator : IValidateOptions<ModelRouting
                 failures.Add($"{path}.apiKeySecret is required for anthropic models.");
             if (model.Provider == ModelProviders.OpenAiCompatible && model.Endpoint is null)
                 failures.Add($"{path}.endpoint is required for openai-compatible models.");
+            if (!ModelReasoningSupport.TryParse(model.Reasoning, out _))
+                failures.Add($"{path}.reasoning must be one of off, low, medium, high.");
             if (model.ContextLength <= 0)
                 failures.Add($"{path}.contextLength must be positive.");
         }

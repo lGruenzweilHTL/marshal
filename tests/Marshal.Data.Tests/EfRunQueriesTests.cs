@@ -92,6 +92,21 @@ public sealed class EfRunQueriesTests
     }
 
     [Fact]
+    public async Task Get_ModelCallReasoningAndWithheldMarker()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        DbRunRecorder recorder = Recorder(database);
+        database.Accessor.Current = Text(OwnerA);
+        RunId run = await recorder.StartRunAsync(new RunStart(Text(OwnerA), "turn"), Ct);
+        await recorder.RecordStepAsync(run, new RunStepRecord { Kind = RunStepKind.ModelCall, Model = "m", Reasoning = "Check the printer first." }, Ct);
+        await recorder.RecordStepAsync(run, new RunStepRecord { Kind = RunStepKind.ModelCall, Model = "m", ReasoningWithheld = true }, Ct);
+
+        RunDetail? detail = await Queries(database, OwnerA).GetAsync(run, Ct);
+
+        Assert.Equal([("Check the printer first.", false), (null, true)], detail!.Steps.Select(step => (step.Reasoning, step.ReasoningWithheld)));
+    }
+
+    [Fact]
     public async Task Get_ContextNotes_RoundTrip()
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();

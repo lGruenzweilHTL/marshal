@@ -2,7 +2,6 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Marshal.Abstractions.Runs;
-using Marshal.Abstractions.Tools;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -25,6 +24,7 @@ public sealed class DbRunRecorder(IDbContextFactory<MarshalDbContext> contexts, 
     };
 
     private readonly IRunObserver[] _observers = [.. observers];
+    private readonly RecordingToolRedaction _redaction = new(options);
 
     public async Task<RunId> StartRunAsync(RunStart start, CancellationToken cancellationToken)
     {
@@ -108,14 +108,12 @@ public sealed class DbRunRecorder(IDbContextFactory<MarshalDbContext> contexts, 
 
     private RunStepRecord Redact(RunStepRecord step)
     {
-        bool sensitive = step.Tool is { } tool
-            && (step.Sensitive || options.Value.RedactTools.Any(pattern => ToolGlob.Matches(pattern, tool)))
-            && !options.Value.KeepContentTools.Any(pattern => ToolGlob.Matches(pattern, tool));
+        bool sensitive = step.Tool is { } tool && _redaction.Redacts(tool, step.Sensitive);
         // The reply is the model's answer the user already saw in full; chat history shows it again, so it is kept whole.
         if (step.Kind == RunStepKind.Reply)
             return step;
 
-        return sensitive ? step with { Content = null } : step with { Content = Truncate(step.Content) };
+        return sensitive ? step with { Content = null } : step with { Content = Truncate(step.Content), Reasoning = step.ReasoningWithheld ? null : Truncate(step.Reasoning) };
     }
 
     private string? Truncate(string? content)
@@ -134,7 +132,10 @@ public sealed class DbRunRecorder(IDbContextFactory<MarshalDbContext> contexts, 
             step.Reasons.Count == 0 ? null : step.Reasons,
             step.ContinueConversation,
             step.Notes.Count == 0 ? null : step.Notes,
-            step.Artifacts);
+            step.Artifacts,
+            step.Reasoning,
+            step.ReasoningWithheld ? true : null,
+            step.Sensitive ? true : null);
         return payload == StepPayload.Empty ? null : JsonSerializer.Serialize(payload, _json);
     }
 
@@ -148,7 +149,10 @@ public sealed class DbRunRecorder(IDbContextFactory<MarshalDbContext> contexts, 
         IReadOnlyList<Abstractions.Guard.ConfirmationReason>? Reasons,
         bool? ContinueConversation,
         IReadOnlyList<Abstractions.Context.ContextNote>? Notes = null,
-        IReadOnlyList<Abstractions.Artifacts.ArtifactRef>? Artifacts = null)
+        IReadOnlyList<Abstractions.Artifacts.ArtifactRef>? Artifacts = null,
+        string? Reasoning = null,
+        bool? ReasoningWithheld = null,
+        bool? Sensitive = null)
     {
         public static StepPayload Empty { get; } = new(null, null, null, null, null, null);
 

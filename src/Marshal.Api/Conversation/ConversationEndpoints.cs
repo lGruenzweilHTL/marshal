@@ -24,7 +24,7 @@ internal static partial class ConversationEndpoints
         group.MapPost("/conversation/turns", CreateTurnAsync)
             .RequireAuthorization(Policies.ConversationWrite)
             .WithName("CreateConversationTurn")
-            .WithSummary("Runs one conversation turn and streams the reply as server-sent events (delta, status, final).");
+            .WithSummary("Runs one conversation turn and streams the reply as server-sent events (delta, status, artifact, final; web sessions also reasoning and tool).");
         return group;
     }
 
@@ -55,20 +55,27 @@ internal static partial class ConversationEndpoints
 
         ILogger logger = loggers.CreateLogger("Marshal.Conversation");
         LogTurn(logger, prepared.Value.Context.SessionId?.Value, turn.InputMode);
-        return TypedResults.ServerSentEvents(StreamAsync(conversations, prepared.Value, ct));
+        return TypedResults.ServerSentEvents(StreamAsync(conversations, prepared.Value, webClient: token is null, ct));
     }
 
-    private static async IAsyncEnumerable<SseItem<object>> StreamAsync(ConversationService conversations, PreparedTurn turn, [EnumeratorCancellation] CancellationToken ct)
+    private static async IAsyncEnumerable<SseItem<object>> StreamAsync(
+        ConversationService conversations, PreparedTurn turn, bool webClient, [EnumeratorCancellation] CancellationToken ct)
     {
         var events = Channel.CreateUnbounded<TurnEvent>(new UnboundedChannelOptions { SingleReader = true });
         Task<TurnOutcome> running = RunAsync(conversations, turn, events.Writer, ct);
         await foreach (TurnEvent turnEvent in events.Reader.ReadAllAsync(ct))
         {
+            // Reasoning and tool steps are for the web UI; token clients keep the v1 stream unchanged.
+            if (!webClient && turnEvent is ReasoningEvent or ToolEvent)
+                continue;
+
             yield return turnEvent switch
             {
                 DeltaEvent delta => new SseItem<object>(new TurnDelta(delta.Text), "delta"),
                 StatusEvent status => new SseItem<object>(new TurnStatus(status.Text), "status"),
                 ArtifactEvent shown => new SseItem<object>(new TurnArtifact(shown.Artifact.Id.ToString(), shown.Artifact.Name, shown.Artifact.Kind, shown.Artifact.Url), "artifact"),
+                ReasoningEvent reasoning => new SseItem<object>(new TurnReasoning(reasoning.Text), "reasoning"),
+                ToolEvent tool => new SseItem<object>(new TurnTool(tool.CallId, tool.Tool, tool.Arguments, tool.State, tool.DurationMs, tool.Result), "tool"),
                 _ => throw new InvalidOperationException($"Unknown turn event {turnEvent.GetType().Name}."),
             };
         }

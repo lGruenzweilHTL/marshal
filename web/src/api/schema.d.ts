@@ -303,7 +303,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Runs one conversation turn and streams the reply as server-sent events (delta, status, final). */
+        /** Runs one conversation turn and streams the reply as server-sent events (delta, status, artifact, final; web sessions also reasoning and tool). */
         post: operations["CreateConversationTurn"];
         delete?: never;
         options?: never;
@@ -1611,6 +1611,9 @@ export interface components {
             continueConversation: null | boolean;
             artifacts: components["schemas"]["ArtifactRef"][];
             outcome: components["schemas"]["RunOutcome"];
+            reasoning: null | string;
+            reasoningWithheld: boolean;
+            tools: components["schemas"]["TurnToolStep"][];
             /** Format: date-time */
             at: string;
         };
@@ -2323,6 +2326,8 @@ export interface components {
             /** Format: int32 */
             depth: number;
             notes: components["schemas"]["ContextNote"][];
+            reasoning: null | string;
+            reasoningWithheld: boolean;
         };
         /** @enum {unknown} */
         RunStepKind: "context" | "modelCall" | "toolCall" | "reply";
@@ -2630,6 +2635,16 @@ export interface components {
             maxAdvisorCalls: null | number;
             /** @description True for the built-in default (no `default.md`). */
             builtIn: boolean;
+        };
+        /** @enum {unknown} */
+        ToolEventState: "running" | "ok" | "error" | "denied" | "pending";
+        TurnToolStep: {
+            tool: string;
+            arguments: string;
+            state: components["schemas"]["ToolEventState"];
+            /** Format: int32 */
+            durationMs: number;
+            result: null | string;
         };
         /** @description A referenced secret that no source provides. */
         UnresolvedSecret: {

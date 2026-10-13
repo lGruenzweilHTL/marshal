@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Marshal.Abstractions.Artifacts;
+using Marshal.Abstractions.Conversation;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Tasks;
@@ -71,6 +72,9 @@ public abstract record ConversationEntry(DateTimeOffset At);
 /// <param name="ContinueConversation">Whether the reply asked something back.</param>
 /// <param name="Artifacts">Artifacts the turn showed.</param>
 /// <param name="Outcome">How the run ended.</param>
+/// <param name="Reasoning">The reasoning of the turn's model calls, in order; null when none was recorded.</param>
+/// <param name="ReasoningWithheld">Some reasoning followed a redacted tool result and was not kept.</param>
+/// <param name="Tools">The turn's tool calls (not those of subagents), in order.</param>
 public sealed record TurnEntry(
     RunId RunId,
     DateTimeOffset At,
@@ -81,7 +85,20 @@ public sealed record TurnEntry(
     string? Reply,
     bool? ContinueConversation,
     IReadOnlyList<ArtifactRef> Artifacts,
-    RunOutcome Outcome) : ConversationEntry(At);
+    RunOutcome Outcome,
+    string? Reasoning,
+    bool ReasoningWithheld,
+    IReadOnlyList<TurnToolStep> Tools) : ConversationEntry(At);
+
+/// <summary>
+/// One tool call of a turn, summarized like the live <c>tool</c> events.
+/// </summary>
+/// <param name="Tool">Tool id, e.g. <c>printer.status</c>.</param>
+/// <param name="Arguments">One-line argument summary.</param>
+/// <param name="State">How the call ended.</param>
+/// <param name="DurationMs">How long the call took.</param>
+/// <param name="Result">One-line result summary or error code; null for redacted tools.</param>
+public sealed record TurnToolStep(string Tool, string Arguments, ToolEventState State, int DurationMs, string? Result);
 
 /// <summary>
 /// The result of a background task that a turn of this conversation handed off.

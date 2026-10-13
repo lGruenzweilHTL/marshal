@@ -145,6 +145,8 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<IContextContributor, OutputModeContributor>();
         services.AddSingleton<IContextBuilder, ContextBuilder>();
 
+        services.TryAddSingleton<IToolRedaction, SensitiveToolRedaction>();
+        services.AddSingleton<IToolCallSummarizer, DefaultToolCallSummarizer>();
         services.AddSingleton<IAgentRunner, AgentRunner>();
         services.AddSingleton<IIdentityResolver, InstanceOwnerIdentityResolver>();
         services.AddOptions<InstanceOptions>().Bind(configuration.GetSection("instance"))
@@ -155,6 +157,7 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<SessionMaintenance>();
         services.AddSingleton<ConversationService>();
         services.AddHostedService<IdleSessionCloser>();
+        services.AddHostedService<ModelReasoningCheck>();
 
         services.AddSingleton(provider => new EnvironmentFileSecretSource(environment, provider.GetRequiredService<IOptions<PathsOptions>>().Value.Secrets));
         services.AddSingleton<ISecretSource>(provider => provider.GetRequiredService<EnvironmentFileSecretSource>());

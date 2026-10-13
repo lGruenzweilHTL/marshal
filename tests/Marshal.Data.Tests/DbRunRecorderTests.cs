@@ -148,6 +148,39 @@ public sealed class DbRunRecorderTests
     }
 
     [Fact]
+    public async Task Record_ModelCallWithReasoning_StoresItTruncated()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        await using MarshalDbContext context = database.CreateContext(OwnerA);
+        DbRunRecorder recorder = Recorder(database);
+        RunId run = await recorder.StartRunAsync(new RunStart(Text(OwnerA), "turn"), Ct);
+
+        await recorder.RecordStepAsync(run, new RunStepRecord { Kind = RunStepKind.ModelCall, Model = "claude", Reasoning = "Check the printer first." }, Ct);
+        await recorder.RecordStepAsync(run, new RunStepRecord { Kind = RunStepKind.ModelCall, Model = "claude", Reasoning = new string('r', 50_000) }, Ct);
+
+        List<RunStep> steps = await context.RunSteps.OrderBy(step => step.Sequence).ToListAsync(Ct);
+        Assert.Contains("\"reasoning\":\"Check the printer first.\"", steps[0].Payload, StringComparison.Ordinal);
+        Assert.DoesNotContain("reasoningWithheld", steps[0].Payload, StringComparison.Ordinal);
+        Assert.True(steps[1].Payload!.Length < 20_000);
+        Assert.Contains("[truncated]", steps[1].Payload, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Record_ReasoningWithheld_StoresMarkerAndNoText()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        await using MarshalDbContext context = database.CreateContext(OwnerA);
+        DbRunRecorder recorder = Recorder(database);
+        RunId run = await recorder.StartRunAsync(new RunStart(Text(OwnerA), "turn"), Ct);
+
+        await recorder.RecordStepAsync(run, new RunStepRecord { Kind = RunStepKind.ModelCall, Model = "claude", Reasoning = "The code is 1234.", ReasoningWithheld = true }, Ct);
+
+        string payload = (await context.RunSteps.SingleAsync(Ct)).Payload!;
+        Assert.Contains("\"reasoningWithheld\":true", payload, StringComparison.Ordinal);
+        Assert.DoesNotContain("1234", payload, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Record_LongReply_StoredInFull()
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();

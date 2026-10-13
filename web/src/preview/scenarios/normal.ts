@@ -222,6 +222,9 @@ const turn = (n: number, minutes: number, input: string, reply: string | null, o
   continueConversation: false,
   artifacts: [],
   outcome: 'ok',
+  reasoning: null,
+  reasoningWithheld: false,
+  tools: [],
   ...overrides,
 })
 
@@ -255,9 +258,18 @@ export const conversationDetails: Record<string, Schemas['ConversationDetail']> 
   [id(10, 2)]: {
     conversation: conversations[1]!,
     entries: [
-      turn(20, -26, 'Which filament for the garden planter brackets?', 'PETG: it handles sun and rain better than PLA. You have about **640 g** of black PETG left.'),
+      turn(20, -26, 'Which filament for the garden planter brackets?', 'PETG: it handles sun and rain better than PLA. You have about **640 g** of black PETG left.', {
+        reasoning: 'Outdoor parts need UV and heat resistance, so PLA is out. Check what the user said about filament before and what is in stock.',
+        tools: [
+          { tool: 'memory.recall', arguments: 'query=filament outdoor parts', state: 'ok', durationMs: 96, result: 'Prefers PETG for outdoor parts' },
+          { tool: 'printer.status', arguments: 'printer=voron', state: 'ok', durationMs: 211, result: 'Idle, spool: black PETG, 640 g left' },
+        ],
+      }),
       turn(21, -22, 'Is that enough for six brackets?', 'Yes. Six brackets take about 210 g with 4 walls and 30 % infill.'),
-      turn(2, -18, 'Queue them on the Voron after the current print', 'Should I add six `planter_bracket.gcode` jobs to the Voron queue?', { continueConversation: true }),
+      turn(2, -18, 'Queue them on the Voron after the current print', 'Should I add six `planter_bracket.gcode` jobs to the Voron queue?', {
+        continueConversation: true,
+        tools: [{ tool: 'printer.start_print', arguments: 'printer=voron, file=planter_bracket.gcode, copies=6', state: 'pending', durationMs: 0, result: null }],
+      }),
     ],
   },
   [id(10, 3)]: {
@@ -301,6 +313,8 @@ const step = (overrides: Partial<Schemas['RunStepDetail']> & Pick<Schemas['RunSt
   error: null,
   depth: 0,
   notes: [],
+  reasoning: null,
+  reasoningWithheld: false,
   ...overrides,
 })
 
@@ -319,9 +333,9 @@ const runDetail: Schemas['RunDetail'] = {
         { kind: 'project', label: 'Voron build', detail: 'active' },
       ],
     }),
-    step({ sequence: 2, kind: 'modelCall', model: 'qwen3:14b', tier: 'standard', tokensIn: 3_412, tokensOut: 96, tokensCached: 2_048, firstTokenMs: 640, durationMs: 1_820, cost: 0.0041 }),
+    step({ sequence: 2, kind: 'modelCall', model: 'qwen3:14b', tier: 'standard', tokensIn: 3_412, tokensOut: 96, tokensCached: 2_048, firstTokenMs: 640, durationMs: 1_820, cost: 0.0041 , reasoning: 'A new model on Printables matches the watch rule. Search the mail for the notification to get the file name.' }),
     step({ sequence: 3, kind: 'toolCall', tool: 'mail.search', riskTier: 'safe', guardDecision: 'safe', arguments: '{"query":"from:printables.com newer_than:1d"}', reference: 'tool-result:mail.search/run-6/3', durationMs: 910 }),
-    step({ sequence: 4, kind: 'modelCall', model: 'qwen3:14b', tier: 'standard', tokensIn: 4_980, tokensOut: 142, tokensCached: 3_400, firstTokenMs: 702, durationMs: 2_310, cost: 0.0061 }),
+    step({ sequence: 4, kind: 'modelCall', model: 'qwen3:14b', tier: 'standard', tokensIn: 4_980, tokensOut: 142, tokensCached: 3_400, firstTokenMs: 702, durationMs: 2_310, cost: 0.0061 , reasoningWithheld: true }),
     step({
       sequence: 5,
       kind: 'toolCall',

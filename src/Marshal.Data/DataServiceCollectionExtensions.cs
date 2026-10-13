@@ -32,6 +32,7 @@ public static class DataServiceCollectionExtensions
         services.AddSingleton<IConversationReader, EfConversationReader>();
         services.AddSingleton<ISummaryWatermark, EfSummaryWatermark>();
         services.AddSingleton<IRunRecorder, DbRunRecorder>();
+        services.AddSingleton<IToolRedaction, RecordingToolRedaction>();
         services.AddSingleton<IAdvisorUsage, EfAdvisorUsage>();
         services.AddSingleton<IRunQueries, EfRunQueries>();
         services.AddSingleton<IAuditLog, DbAuditLog>();

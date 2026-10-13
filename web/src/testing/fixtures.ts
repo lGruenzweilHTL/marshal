@@ -42,6 +42,8 @@ export function runStep(overrides: Partial<Schemas['RunStepDetail']> = {}): Sche
     error: null,
     depth: 0,
     notes: [],
+    reasoning: null,
+    reasoningWithheld: false,
     ...overrides,
   }
 }

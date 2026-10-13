@@ -15,11 +15,11 @@ recording:
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `recording.redactTools` | list of tool id globs | `[]` | Results of matching tools are stored as references only, in addition to tools flagged sensitive (which always are). |
+| `recording.redactTools` | list of tool id globs | `[]` | Results of matching tools are stored as references only, in addition to tools flagged sensitive (which always are). Reasoning of later model calls in the same run is not stored, and the chat's tool steps show no result summary for these tools. |
 | `recording.keepContentTools` | list of tool id globs | `[]` | Results of matching tools are stored in full even when the tool is flagged sensitive. |
-| `recording.maxContentLength` | integer | `8000` | Longer contents are truncated in run step payloads. |
+| `recording.maxContentLength` | integer | `8000` | Longer contents and reasoning are truncated in run step payloads. |
 
-Globs use `*` against the tool id (for example `mail.*`). Logs never contain secrets, message bodies, note contents or full prompts regardless of these settings. The section has no validator.
+Globs use `*` against the tool id (for example `mail.*`). Logs never contain secrets, message bodies, note contents, reasoning or full prompts regardless of these settings. The section has no validator.
 
 ## Related
 

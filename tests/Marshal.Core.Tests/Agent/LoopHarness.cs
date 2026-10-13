@@ -10,7 +10,6 @@ using Marshal.Core.Models;
 using Marshal.Core.Templates;
 using Marshal.Core.Tools;
 using Marshal.Testing;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Marshal.Core.Tests.Agent;
@@ -55,6 +54,9 @@ internal sealed class LoopHarness
     /// <summary><c>agent.delegate</c> bound to <see cref="Runner"/>; offered only when passed as a built-in.</summary>
     public DelegateTool DelegateTool { get; private set; } = null!;
 
+    /// <summary>Everything the runner logged.</summary>
+    public ListLogger<AgentRunner> Logger { get; } = new();
+
     public Channel<TurnEvent> Events { get; } = Channel.CreateUnbounded<TurnEvent>();
 
     /// <summary>Wraps <see cref="Runner"/> and records the requests it receives.</summary>
@@ -94,7 +96,7 @@ internal sealed class LoopHarness
             Microsoft.Extensions.Options.Options.Create(harness.Options),
             Microsoft.Extensions.Options.Options.Create(new ConfirmationOptions()),
             harness.Time,
-            NullLogger<AgentRunner>.Instance,
+            harness.Logger,
             handoff: harness.Handoff);
         harness.RunnerSpy = new RunnerSpy(harness.Runner);
         return harness;

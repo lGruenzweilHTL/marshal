@@ -1,9 +1,13 @@
+using System.Text.Json;
 using Marshal.Abstractions.Artifacts;
+using Marshal.Abstractions.Conversation;
 using Marshal.Abstractions.Execution;
+using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Sessions;
 using Marshal.Abstractions.Tasks;
+using Marshal.Abstractions.Tools;
 using Marshal.Data.Conversations;
 using Marshal.Data.Tasks;
 using Marshal.Testing;
@@ -126,6 +130,54 @@ public sealed class EfConversationReaderTests
     }
 
     [Fact]
+    public async Task Get_TurnCarriesReasoningAndTopLevelToolSteps()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        SessionId session = await SessionAsync(database, OwnerA, SessionSource.Web);
+        RunStepRecord[] steps =
+        [
+            new() { Kind = RunStepKind.ModelCall, Model = "claude", Reasoning = "Check the printer first." },
+            new() { Kind = RunStepKind.ToolCall, Tool = new ToolId("printer", "status"), GuardDecision = GuardDecision.Safe, Arguments = "{\"printer\":\"voron\"}", Content = "Printing.\nLayer 112.", DurationMs = 40 },
+            new() { Kind = RunStepKind.ToolCall, Tool = new ToolId("printer", "list"), GuardDecision = GuardDecision.Safe, Arguments = "{}", Content = "internal", Depth = 1 },
+            new() { Kind = RunStepKind.ModelCall, Model = "claude", Reasoning = "It is printing." },
+            new() { Kind = RunStepKind.ToolCall, Tool = new ToolId("mail", "read"), GuardDecision = GuardDecision.Safe, Arguments = "{\"id\":\"4711\"}", Content = "Dear Lukas", Reference = "imap:4711", Sensitive = true, DurationMs = 12 },
+            new() { Kind = RunStepKind.ToolCall, Tool = new ToolId("notes", "read"), GuardDecision = GuardDecision.Safe, Arguments = "{}", Content = "Door code 1234", Sensitive = true, DurationMs = 3 },
+            new() { Kind = RunStepKind.ToolCall, Tool = new ToolId("printer", "cancel"), GuardDecision = GuardDecision.Safe, Arguments = "{}", Error = "printer.offline: The printer is offline.", DurationMs = 5 },
+            new() { Kind = RunStepKind.ToolCall, Tool = new ToolId("door", "unlock"), GuardDecision = GuardDecision.Denied, Arguments = "{}", Error = "tool.not_available: No." },
+            new() { Kind = RunStepKind.ToolCall, Tool = new ToolId("test", "unlock"), GuardDecision = GuardDecision.Pending, Arguments = "{\"door\":\"front\"}" },
+            new() { Kind = RunStepKind.ModelCall, Model = "claude", ReasoningWithheld = true },
+        ];
+        await TurnAsync(database, session, Text(OwnerA), "how is the printer?", "Layer 112.", steps: steps);
+
+        TurnEntry turn = Assert.IsType<TurnEntry>(Assert.Single((await Reader(database, OwnerA).GetAsync(session, Ct))!.Entries));
+
+        Assert.Equal(("Check the printer first.\n\nIt is printing.", true), (turn.Reasoning, turn.ReasoningWithheld));
+        Assert.Equal(
+            [
+                new TurnToolStep("printer.status", "{\"printer\":\"voron\"}", ToolEventState.Ok, 40, "Printing."),
+                new TurnToolStep("mail.read", "{\"id\":\"4711\"}", ToolEventState.Ok, 12, null),
+                new TurnToolStep("notes.read", "{}", ToolEventState.Ok, 3, null),
+                new TurnToolStep("printer.cancel", "{}", ToolEventState.Error, 5, "printer.offline"),
+                new TurnToolStep("door.unlock", "{}", ToolEventState.Denied, 0, "tool.not_available"),
+                new TurnToolStep("test.unlock", "{\"door\":\"front\"}", ToolEventState.Pending, 0, null),
+            ],
+            turn.Tools);
+    }
+
+    [Fact]
+    public async Task Get_TurnWithoutModelOrToolSteps_NoReasoningNoTools()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        SessionId session = await SessionAsync(database, OwnerA, SessionSource.Web);
+        await TurnAsync(database, session, Text(OwnerA), "hi", "Hello.");
+
+        TurnEntry turn = Assert.IsType<TurnEntry>(Assert.Single((await Reader(database, OwnerA).GetAsync(session, Ct))!.Entries));
+
+        Assert.Equal(((string?)null, false), (turn.Reasoning, turn.ReasoningWithheld));
+        Assert.Empty(turn.Tools);
+    }
+
+    [Fact]
     public async Task History_BackgroundResultIsAssistantMessageInOrder()
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
@@ -159,7 +211,7 @@ public sealed class EfConversationReaderTests
     private EfConversationReader Reader(TestDatabase database, OwnerId owner)
     {
         database.Accessor.Current = Text(owner);
-        return new EfConversationReader(database.Factory);
+        return new EfConversationReader(database.Factory, new RawSummarizer());
     }
 
     private async Task<SessionId> SessionAsync(TestDatabase database, OwnerId owner, SessionSource source, bool closed = false)
@@ -183,13 +235,16 @@ public sealed class EfConversationReaderTests
 
     private async Task<RunId> TurnAsync(
         TestDatabase database, SessionId session, MarshalExecutionContext context, string? input, string? reply,
-        RunOutcome outcome = RunOutcome.Ok, bool? continueConversation = null, IReadOnlyList<ArtifactRef>? artifacts = null, string trigger = "turn")
+        RunOutcome outcome = RunOutcome.Ok, bool? continueConversation = null, IReadOnlyList<ArtifactRef>? artifacts = null, string trigger = "turn", IReadOnlyList<RunStepRecord>? steps = null)
     {
         _time.Advance(TimeSpan.FromSeconds(10));
         database.Accessor.Current = context;
-        var recorder = new DbRunRecorder(database.Factory, [], Options.Create(new RecordingOptions()), _time);
+        // notes.* keeps its content, so the reader must still hold back the summary of a sensitive tool.
+        var recorder = new DbRunRecorder(database.Factory, [], Options.Create(new RecordingOptions { KeepContentTools = ["notes.*"] }), _time);
         RunId run = await recorder.StartRunAsync(new RunStart(context with { SessionId = session }, trigger), Ct);
         await recorder.RecordStepAsync(run, new RunStepRecord { Kind = RunStepKind.Context, Content = "system", Input = input }, Ct);
+        foreach (RunStepRecord step in steps ?? [])
+            await recorder.RecordStepAsync(run, step, Ct);
         if (reply is not null)
             await recorder.RecordStepAsync(run, new RunStepRecord { Kind = RunStepKind.Reply, Content = reply, ContinueConversation = continueConversation, Artifacts = artifacts }, Ct);
         await recorder.CompleteRunAsync(run, new RunCompletion(outcome, null, []), Ct);
@@ -224,5 +279,14 @@ public sealed class EfConversationReaderTests
         });
         await context.SaveChangesAsync(Ct);
         return id;
+    }
+
+    /// <summary>Raw arguments; the result's first line or the error code, none for sensitive tools.</summary>
+    private sealed class RawSummarizer : IToolCallSummarizer
+    {
+        public string Arguments(JsonElement arguments) => arguments.GetRawText();
+
+        public string? Result(ToolId? tool, bool sensitive, string? content, string? errorCode) =>
+            errorCode ?? (sensitive ? null : content?.Split('\n')[0]);
     }
 }

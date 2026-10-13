@@ -12,6 +12,7 @@ using Marshal.Abstractions.Templates;
 using Marshal.Abstractions.Tools;
 using Marshal.Core.Context;
 using Marshal.Core.Guard;
+using Marshal.Core.Models;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -39,9 +40,14 @@ public sealed partial class AgentRunner(
     TimeProvider timeProvider,
     ILogger<AgentRunner> logger,
     IApprovalQueue? approvals = null,
-    IBackgroundHandoff? handoff = null) : IAgentRunner
+    IBackgroundHandoff? handoff = null,
+    IToolRedaction? redaction = null,
+    IToolCallSummarizer? summarizer = null) : IAgentRunner
 {
     private static readonly JsonSerializerOptions _argumentJson = new(AIJsonUtilities.DefaultOptions) { WriteIndented = false };
+
+    private readonly IToolRedaction _redaction = redaction ?? new SensitiveToolRedaction();
+    private readonly IToolCallSummarizer _summarizer = summarizer ?? new DefaultToolCallSummarizer(redaction ?? new SensitiveToolRedaction());
 
     public async Task<AgentRunResult> RunAsync(AgentRunRequest request, CancellationToken cancellationToken)
     {
@@ -157,7 +163,7 @@ public sealed partial class AgentRunner(
         while (true)
         {
             IReadOnlyList<RegisteredTool> visible = pending is null ? await visibility.GetVisibleToolsAsync(context, ct) : [];
-            ChatResponse response = await CallModelAsync(model, messages, visible, request.Events, context.Usage, ct);
+            ChatResponse response = await CallModelAsync(model, messages, visible, context, transcript, ct);
             messages.AddRange(response.Messages);
 
             List<FunctionCallContent> calls = [.. response.Messages.SelectMany(message => message.Contents).OfType<FunctionCallContent>()];
@@ -205,30 +211,42 @@ public sealed partial class AgentRunner(
         new(FixedReplies.BudgetExceeded(context.Language), null, RunOutcome.Error, "budget_exceeded");
 
     private async Task<ChatResponse> CallModelAsync(
-        RoutedModel model, List<ChatMessage> messages, IReadOnlyList<RegisteredTool> tools, System.Threading.Channels.ChannelWriter<TurnEvent>? events, RunUsage usage, CancellationToken ct)
+        RoutedModel model, List<ChatMessage> messages, IReadOnlyList<RegisteredTool> tools, MarshalExecutionContext context, Transcript transcript, CancellationToken ct)
     {
         var options = new ChatOptions
         {
             Tools = tools.Count == 0
                 ? null
                 : [.. tools.Select(tool => AIFunctionFactory.CreateDeclaration(tool.ModelName, tool.Descriptor.Description, tool.Descriptor.ParametersSchema))],
+            Reasoning = ReasoningRequest.For(model, context),
         };
 
         long started = timeProvider.GetTimestamp();
         int? firstToken = null;
         var updates = new List<ChatResponseUpdate>();
+        var reasoning = new System.Text.StringBuilder();
         await foreach (ChatResponseUpdate update in model.Client.GetStreamingResponseAsync(messages, options, ct))
         {
             updates.Add(update);
             string text = update.Text;
-            if (firstToken is null && (text.Length > 0 || update.Contents.Any(content => content is FunctionCallContent)))
+            if (firstToken is null && (text.Length > 0 || update.Contents.Any(content => content is FunctionCallContent or TextReasoningContent)))
                 firstToken = (int)timeProvider.GetElapsedTime(started).TotalMilliseconds;
-            if (text.Length > 0 && events is not null)
-                await events.WriteAsync(new DeltaEvent(text), ct);
+            foreach (TextReasoningContent thought in update.Contents.OfType<TextReasoningContent>())
+            {
+                if (string.IsNullOrEmpty(thought.Text))
+                    continue;
+
+                reasoning.Append(thought.Text);
+                await transcript.EmitAsync(new ReasoningEvent(thought.Text), ct);
+            }
+
+            if (text.Length > 0)
+                await transcript.EmitAsync(new DeltaEvent(text), ct);
         }
 
         var response = updates.ToChatResponse();
         decimal cost = costs.Calculate(model.Key, response.Usage);
+        RunUsage usage = context.Usage;
         usage.AddModelCall(cost, (response.Usage?.InputTokenCount ?? 0) + (response.Usage?.OutputTokenCount ?? 0));
         await RecordAsync(new RunStepRecord
         {
@@ -242,6 +260,9 @@ public sealed partial class AgentRunner(
             DurationMs = (int)timeProvider.GetElapsedTime(started).TotalMilliseconds,
             Cost = cost,
             Content = response.Text,
+            // Reasoning after a redacted tool result may quote it, so it is not kept.
+            Reasoning = transcript.WithholdsReasoning || reasoning.Length == 0 ? null : reasoning.ToString(),
+            ReasoningWithheld = transcript.WithholdsReasoning && reasoning.Length > 0,
         }, ct);
         return response;
     }
@@ -250,20 +271,26 @@ public sealed partial class AgentRunner(
         FunctionCallContent call, MarshalExecutionContext context, IReadOnlySet<string> offered, PendingActionRecord? pending, Transcript transcript, CancellationToken ct)
     {
         JsonElement arguments = JsonSerializer.SerializeToElement(call.Arguments ?? new Dictionary<string, object?>(), _argumentJson);
+        string argumentSummary = _summarizer.Arguments(arguments);
         if (pending is not null)
         {
             var notNow = new Error("confirmation.already_pending", "Not executed: another action is waiting for confirmation. Ask about that one first.", ErrorType.Conflict);
+            string unverified = GuessId(call.Name)?.ToString() ?? call.Name;
+            await transcript.EmitAsync(new ToolEvent(call.CallId, unverified, argumentSummary, ToolEventState.Running), ct);
             await RecordToolStepAsync(null, call.Name, arguments, null, GuardDecision.Denied, [], null, notNow, 0, ct);
+            await transcript.EmitAsync(new ToolEvent(call.CallId, unverified, argumentSummary, ToolEventState.Denied, 0, notNow.Code), ct);
             return (ErrorText(notNow), null);
         }
 
         GuardVerdict verdict = await guard.EvaluateAsync(new GuardRequest(call.Name, arguments, context, offered), ct);
-        string toolName = verdict.Tool?.Id.ToString() ?? call.Name;
+        string toolName = verdict.Tool?.Id.ToString() ?? GuessId(call.Name)?.ToString() ?? call.Name;
         LogToolDecision(logger, toolName, verdict.Decision);
+        await transcript.EmitAsync(new ToolEvent(call.CallId, toolName, argumentSummary, ToolEventState.Running), ct);
         switch (verdict.Outcome)
         {
             case GuardOutcome.Deny:
                 await RecordToolStepAsync(verdict.Tool, call.Name, arguments, verdict.Tier, GuardDecision.Denied, [], null, verdict.Denial, 0, ct);
+                await transcript.EmitAsync(new ToolEvent(call.CallId, toolName, argumentSummary, ToolEventState.Denied, 0, verdict.Denial?.Code), ct);
                 return (ErrorText(verdict.Denial!), null);
 
             case GuardOutcome.RequireConfirmation:
@@ -285,19 +312,24 @@ public sealed partial class AgentRunner(
                     ? await approvals!.EnqueueAsync(freeze, ct)
                     : await pendingActions.FreezeAsync(freeze, ct);
                 await RecordToolStepAsync(confirmTool, call.Name, arguments, verdict.Tier, verdict.Decision, verdict.Reasons, null, null, 0, ct);
+                await transcript.EmitAsync(new ToolEvent(call.CallId, toolName, argumentSummary, ToolEventState.Pending, 0), ct);
                 return (PendingText(frozen), frozen);
 
             default:
-                return (await ExecuteAsync(verdict.Tool!, call.Name, arguments, verdict, context, transcript, ct), null);
+                return (await ExecuteAsync(verdict.Tool!, call, arguments, argumentSummary, verdict, context, transcript, ct), null);
         }
     }
 
-    private async Task<string> ExecuteAsync(RegisteredTool tool, string modelName, JsonElement arguments, GuardVerdict verdict, MarshalExecutionContext context, Transcript transcript, CancellationToken ct)
+    private async Task<string> ExecuteAsync(
+        RegisteredTool tool, FunctionCallContent call, JsonElement arguments, string argumentSummary, GuardVerdict verdict, MarshalExecutionContext context, Transcript transcript, CancellationToken ct)
     {
         long started = timeProvider.GetTimestamp();
         Result<ToolOutput> result = await InvokeAsync(tool, arguments, context, ct);
         int duration = (int)timeProvider.GetElapsedTime(started).TotalMilliseconds;
-        return await CompleteToolCallAsync(tool, modelName, arguments, verdict.Tier, verdict.Decision, result, duration, context, transcript, ct);
+        string text = await CompleteToolCallAsync(tool, call.Name, arguments, verdict.Tier, verdict.Decision, result, duration, context, transcript, ct);
+        string? summary = _summarizer.Result(tool.Id, tool.Descriptor.Sensitive, result.IsSuccess ? result.Value.Content : null, result.IsFailure ? result.Error.Code : null);
+        await transcript.EmitAsync(new ToolEvent(call.CallId, tool.Id.ToString(), argumentSummary, result.IsSuccess ? ToolEventState.Ok : ToolEventState.Error, duration, summary), ct);
+        return text;
     }
 
     private async Task<string> CompleteToolCallAsync(
@@ -307,6 +339,8 @@ public sealed partial class AgentRunner(
         if (result.IsFailure)
             return ErrorText(result.Error);
 
+        if (_redaction.Redacts(tool.Id, tool.Descriptor.Sensitive))
+            transcript.WithholdsReasoning = true;
         await transcript.ShowAsync(result.Value.Artifacts, ct);
         if (!tool.Descriptor.UntrustedOutput)
             return result.Value.Content;
@@ -430,7 +464,16 @@ public sealed partial class AgentRunner(
         /// <summary>Artifacts the turn showed, kept with the reply.</summary>
         public List<ArtifactRef> Artifacts { get; } = [];
 
+        /// <summary>A redacted tool result entered the run; later reasoning may quote it and is not recorded.</summary>
+        public bool WithholdsReasoning { get; set; }
+
         public void Update(List<ChatMessage> messages) => Messages = [.. messages.Skip(1)];
+
+        public async ValueTask EmitAsync(TurnEvent turnEvent, CancellationToken ct)
+        {
+            if (events is not null)
+                await events.WriteAsync(turnEvent, ct);
+        }
 
         public async Task ShowAsync(IReadOnlyList<ArtifactRef>? artifacts, CancellationToken ct)
         {

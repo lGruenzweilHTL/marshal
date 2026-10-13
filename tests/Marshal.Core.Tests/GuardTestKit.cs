@@ -67,6 +67,9 @@ internal sealed class SingleModelRouter(IChatClient client, IChatClient? advisor
 
     public bool Unavailable { get; set; }
 
+    /// <summary>Reasoning setting of the routed (non-advisor) model.</summary>
+    public Marshal.Abstractions.Models.ModelReasoning Reasoning { get; set; }
+
     public Marshal.Abstractions.Result<Marshal.Abstractions.Models.RoutedModel> Route(Marshal.Abstractions.Models.ModelRequest request)
     {
         Requests.Add(request);
@@ -80,6 +83,6 @@ internal sealed class SingleModelRouter(IChatClient client, IChatClient? advisor
                 : new Marshal.Abstractions.Models.RoutedModel("advisor", request.Tier, advisor);
         }
 
-        return new Marshal.Abstractions.Models.RoutedModel(request.Tier.ToString().ToLowerInvariant(), request.Tier, client);
+        return new Marshal.Abstractions.Models.RoutedModel(request.Tier.ToString().ToLowerInvariant(), request.Tier, client, Reasoning);
     }
 }

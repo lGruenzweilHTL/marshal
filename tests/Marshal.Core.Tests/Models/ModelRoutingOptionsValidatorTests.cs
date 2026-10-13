@@ -19,6 +19,15 @@ public sealed class ModelRoutingOptionsValidatorTests
         Assert.True(result.Succeeded);
     }
 
+    [Fact]
+    public void Validate_UnknownReasoning_NamesKey()
+    {
+        ValidateOptionsResult result = Validate(("fast", new ModelOptions { Tier = ModelTier.Fast, Provider = "ollama", Model = "qwen3", Reasoning = "extreme" }));
+
+        Assert.True(result.Failed);
+        Assert.Contains("models.fast.reasoning must be one of off, low, medium, high.", result.FailureMessage, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("openai", "models.bad.provider")]
     [InlineData("", "models.bad.provider")]

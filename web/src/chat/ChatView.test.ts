@@ -39,6 +39,9 @@ function turn(overrides: Partial<Extract<Entry, { kind?: 'turn' }>> = {}): Entry
     continueConversation: false,
     artifacts: [],
     outcome: 'ok',
+    reasoning: null,
+    reasoningWithheld: false,
+    tools: [],
     ...overrides,
   }
 }
@@ -170,7 +173,109 @@ describe('ChatView', () => {
     await send(wrapper, 'printer?')
     await flushPromises()
 
-    expect(wrapper.findAll('[data-role="assistant"]').at(-1)!.get('[data-test="step"]').text()).toBe('Checking the printer…')
+    expect(wrapper.findAll('[data-role="assistant"]').at(-1)!.get('[data-test="status-step"]').text()).toBe('Checking the printer…')
+  })
+
+  describe('reasoning and tool steps', () => {
+    function gated(first: string[], rest: string[]) {
+      let release!: () => void
+      const gate = new Promise<void>((resolve) => (release = resolve))
+      const encoder = new TextEncoder()
+      const server = new FakeServer().handle('POST', turns, () => {
+        const stream = new ReadableStream<Uint8Array>({
+          async start(controller) {
+            controller.enqueue(encoder.encode(first.join('')))
+            await gate
+            controller.enqueue(encoder.encode(rest.join('')))
+            controller.close()
+          },
+        })
+        return new Response(stream, { headers: { 'Content-Type': 'text/event-stream' } })
+      })
+      return { server, release }
+    }
+
+    const tool = { id: 'call-1', tool: 'printer.status', arguments: 'printer=voron' }
+
+    it('opens the reasoning while it streams and collapses it when the reply starts', async () => {
+      const { server, release } = gated(
+        [sse('reasoning', { text: 'Check the printer ' }), sse('reasoning', { text: 'first.' })],
+        [sse('delta', { text: 'Printing.' }), final('Printing.')],
+      )
+      const wrapper = await mountChat(server)
+
+      await send(wrapper, 'printer?')
+      await flushPromises()
+      const reply = () => wrapper.findAll('[data-role="assistant"]').at(-1)!
+      expect(reply().get('details').attributes('open')).toBeDefined()
+      expect(reply().get('[data-test="reasoning-text"]').text()).toBe('Check the printer first.')
+      expect(reply().text()).not.toContain('Thinking… Check')
+      expect(reply().find('.thinking').exists()).toBe(false)
+
+      release()
+      await flushPromises()
+      expect(reply().get('details').attributes('open')).toBeUndefined()
+      expect(reply().get('.markdown').text()).toBe('Printing.')
+    })
+
+    it('shows the thinking indicator only until the first event and updates a tool line in place', async () => {
+      const { server, release } = gated([sse('tool', { ...tool, state: 'running' })], [sse('tool', { ...tool, state: 'ok', durationMs: 184, result: 'Printing' }), final('Printing.')])
+      const wrapper = await mountChat(server)
+
+      await send(wrapper, 'printer?')
+      const reply = () => wrapper.findAll('[data-role="assistant"]').at(-1)!
+      expect(reply().find('.thinking').exists()).toBe(true)
+      await flushPromises()
+      expect(reply().find('.thinking').exists()).toBe(false)
+      expect(reply().get('[data-test="tool-step"]').attributes('data-state')).toBe('running')
+
+      release()
+      await flushPromises()
+      const lines = reply().findAll('[data-test="tool-step"]')
+      expect(lines).toHaveLength(1)
+      expect(lines[0]!.attributes('data-state')).toBe('ok')
+      expect(reply().find('[data-test="reasoning"]').exists()).toBe(false)
+    })
+
+    it('separates the reasoning of model calls around a tool call', async () => {
+      const server = new FakeServer().handle('POST', turns, () =>
+        eventStream([
+          sse('reasoning', { text: 'Check the printer.' }),
+          sse('tool', { ...tool, state: 'running' }),
+          sse('tool', { ...tool, state: 'ok', durationMs: 5 }),
+          sse('reasoning', { text: 'It is printing.' }),
+          final('Printing.'),
+        ]),
+      )
+      const wrapper = await mountChat(server)
+
+      await send(wrapper, 'printer?')
+      await flushPromises()
+
+      expect(wrapper.get('[data-test="reasoning-text"]').element.textContent).toBe('Check the printer.\n\nIt is printing.')
+    })
+
+    it('shows the reasoning and tool steps of a reopened conversation collapsed', async () => {
+      const server = new FakeServer().on(
+        'GET',
+        '/api/v1/conversations/s-9',
+        200,
+        detail('s-9', [
+          turn({
+            reasoning: 'Check the printer first.',
+            tools: [{ tool: 'printer.status', arguments: 'printer=voron', state: 'ok', durationMs: 184, result: 'Printing' }],
+          }),
+          turn({ runId: 'r-2', reasoningWithheld: true }),
+        ]),
+      )
+      const wrapper = await mountChat(server, '/chat/s-9')
+
+      const [first, second] = wrapper.findAll('[data-role="assistant"]')
+      expect(first!.get('details').attributes('open')).toBeUndefined()
+      expect(first!.get('[data-test="reasoning-text"]').text()).toBe('Check the printer first.')
+      expect(first!.get('[data-test="tool-label"]').text()).toBe('Printer status')
+      expect(second!.find('[data-test="reasoning-withheld"]').exists()).toBe(true)
+    })
   })
 
   it('puts the text back into the composer when sending fails', async () => {

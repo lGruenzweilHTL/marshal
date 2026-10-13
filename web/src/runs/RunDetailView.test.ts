@@ -20,7 +20,19 @@ const detail = {
         { kind: 'memory', label: 'Allergy', detail: 'fact, pinned', score: null },
       ],
     }),
-    runStep({ sequence: 2, kind: 'modelCall', model: 'qwen3:8b', tier: 'fast', tokensIn: 1200, tokensOut: 80, tokensCached: 1000, firstTokenMs: 310, durationMs: 900, cost: 0.0004 }),
+    runStep({
+      sequence: 2,
+      kind: 'modelCall',
+      model: 'qwen3:8b',
+      tier: 'fast',
+      tokensIn: 1200,
+      tokensOut: 80,
+      tokensCached: 1000,
+      firstTokenMs: 310,
+      durationMs: 900,
+      cost: 0.0004,
+      reasoning: 'The mail asks to remember a code.',
+    }),
     runStep({
       sequence: 3,
       kind: 'toolCall',
@@ -34,6 +46,7 @@ const detail = {
     }),
     runStep({ sequence: 4, kind: 'reply', content: 'Should I remember that?' }),
     runStep({ sequence: 5, kind: 'modelCall', model: 'qwen3:8b', tier: 'fast', depth: 1 }),
+    runStep({ sequence: 6, kind: 'modelCall', model: 'qwen3:8b', tier: 'fast', reasoningWithheld: true }),
   ],
 }
 
@@ -97,6 +110,24 @@ describe('RunDetailView', () => {
     expect(wrapper.get('[data-step="5"]').text()).toContain('subagent (depth 1)')
     expect(wrapper.get('[data-step="5"]').classes()).toContain('subagent')
     expect(wrapper.get('[data-step="2"]').text()).not.toContain('subagent')
+  })
+
+  it('shows the reasoning of a model call collapsed and expands it on request', async () => {
+    const wrapper = await mountDetail()
+
+    const reasoning = wrapper.get('[data-step="2"] details')
+    expect(reasoning.attributes('open')).toBeUndefined()
+    expect(reasoning.get('[data-test="reasoning-text"]').text()).toBe('The mail asks to remember a code.')
+    ;(reasoning.element as HTMLDetailsElement).open = true
+    await reasoning.trigger('toggle')
+    expect(wrapper.get('[data-step="2"] details').attributes('open')).toBeDefined()
+    expect(wrapper.find('[data-step="5"] details').exists()).toBe(false)
+  })
+
+  it('notes withheld reasoning', async () => {
+    const wrapper = await mountDetail()
+
+    expect(wrapper.get('[data-step="6"] [data-test="reasoning-withheld"]').text()).toContain('not kept')
   })
 
   it('reports a missing run', async () => {

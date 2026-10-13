@@ -8,7 +8,7 @@ namespace Marshal.Data.Conversations;
 /// <summary>
 /// Conversations of the current owner from the session, run and task tables.
 /// </summary>
-public sealed class EfConversationReader(IDbContextFactory<MarshalDbContext> contexts) : IConversationReader
+public sealed class EfConversationReader(IDbContextFactory<MarshalDbContext> contexts, IToolCallSummarizer summarizer) : IConversationReader
 {
     private const int MaxLimit = 200;
     private const int TitleLength = 80;
@@ -44,7 +44,7 @@ public sealed class EfConversationReader(IDbContextFactory<MarshalDbContext> con
         if (session is null)
             return null;
 
-        List<ConversationEntry> entries = await ConversationEntries.LoadAsync(db, id, after: null, maxTurns: null, cancellationToken);
+        List<ConversationEntry> entries = await ConversationEntries.LoadAsync(db, id, after: null, maxTurns: null, cancellationToken, details: summarizer);
         List<TurnEntry> turns = [.. entries.OfType<TurnEntry>()];
         TurnEntry? first = turns.FirstOrDefault();
         return new ConversationDetail(Summary(session, turns.Count, first?.Input, first?.SatelliteId, first?.AreaId), entries);

@@ -25,7 +25,7 @@ Lets the user see earlier conversations with Marshal, typed and spoken, in the w
 - **THEN** the response is 403
 
 ### Requirement: Conversation detail
-`GET /api/v1/conversations/{id}` SHALL return the session's entries in time order. A turn entry SHALL carry the run id, start time, input mode, satellite, area, the user input, the full reply text, whether the reply asked a question back, the artifacts the turn showed and the run outcome. A background result entry SHALL carry the task id, the time the result was ready and the result body. Turns without a recorded reply (errors, cancellations) SHALL be listed with their outcome and no reply. A session of another owner or an unknown id SHALL return 404.
+`GET /api/v1/conversations/{id}` SHALL return the session's entries in time order. A turn entry SHALL carry the run id, start time, input mode, satellite, area, the user input, the full reply text, whether the reply asked a question back, the artifacts the turn showed, the run outcome, the reasoning of its model calls (or a withheld marker), and its tool steps (tool id, argument summary, state, duration, result summary except for sensitive tools). A background result entry SHALL carry the task id, the time the result was ready and the result body. Turns without a recorded reply (errors, cancellations) SHALL be listed with their outcome and no reply. A session of another owner or an unknown id SHALL return 404.
 
 #### Scenario: Mixed input modes
 - **WHEN** a session holds a voice turn from satellite `kitchen` followed by a text turn
@@ -42,6 +42,10 @@ Lets the user see earlier conversations with Marshal, typed and spoken, in the w
 #### Scenario: Background result in place
 - **WHEN** a turn of the session moved to the background and its task produced a result
 - **THEN** the detail lists a background result entry after that turn, with the task id and the result body
+
+#### Scenario: Reopened chat shows reasoning
+- **WHEN** a web turn recorded reasoning and two tool calls, and the conversation is opened again later
+- **THEN** the turn entry carries the reasoning and both tool steps, and the chat shows them collapsed
 
 ### Requirement: History in the web UI
 The web UI SHALL show the conversation list as part of the chat destination, as a side list next to the chat on desktop and as its own screen on phones. Each entry SHALL show the title and the last-turn time. Voice entries SHALL be marked with a microphone and the satellite or area name. API entries SHALL be marked as API. Opening an entry SHALL show the conversation with its turns, each voice turn marked as spoken. Voice and API conversations SHALL be read-only: the composer SHALL be replaced by a note and a "new chat" action. A conversation SHALL have its own URL (`/chat/{id}`) so it survives a reload.

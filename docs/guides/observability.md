@@ -15,7 +15,7 @@ Every conversation turn and every headless task run is recorded as a run.
 |---|---|
 | **Home** | Widgets for recent runs, today's cost and system health. A health warning moves the health widget up. |
 | **Runs** | All runs (voice, web, task, api) with filters by source, outcome and cost. |
-| **Run detail** | The context build (including active projects and why), each model call (model, tier, tokens, latency, time to first token, cost), each tool call (arguments, truncated or redacted result, risk tier, guard decision, confirmation reasons, taint sources) and the reply. |
+| **Run detail** | The context build (including active projects and why), each model call (model, tier, tokens, latency, time to first token, cost, reasoning collapsed or a note that it was not kept), each tool call (arguments, truncated or redacted result, risk tier, guard decision, confirmation reasons, taint sources) and the reply. |
 | **Cost** | Cost per turn, per day and per tier, with the advisor on its own line. These are the numbers the budgets use. |
 | **System** | Health details, app and supported API versions, the kill switch, and a link to the configuration view for admins. |
 
@@ -33,7 +33,9 @@ recording:
   keepContentTools: []          # store in full even if flagged sensitive
 ```
 
-Longer contents are truncated at 8000 characters in step payloads. Logs never contain secrets, message bodies, note contents or full prompts.
+Model-call steps keep the model's reasoning. Once a redacted tool result is part of a run, the reasoning of later model calls in that run is not stored, because it may quote the redacted content; the step only records that reasoning was withheld.
+
+Longer contents are truncated at 8000 characters in step payloads. Logs never contain secrets, message bodies, note contents, reasoning or full prompts.
 
 ## Audit log
 
