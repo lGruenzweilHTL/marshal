@@ -29,6 +29,7 @@ An agent template can pick a tier. Vision calls (printer cameras, artifact inspe
 | `vision` | boolean | `false` | Model accepts images |
 | `tools` | boolean | `true` | Model supports tool calls |
 | `contextLength` | integer | `8192` | Must be positive |
+| `reasoning` | `off`, `low`, `medium`, `high` | `off` | Reasoning effort for text turns and background tasks; voice turns never reason |
 | `price` | object | none | `inputPerMTok`, `outputPerMTok`, `cachedPerMTok`; without it the cost is 0 |
 
 ## Ollama
@@ -79,6 +80,21 @@ models:
 ```
 
 Provide the key as the Docker secret file `/run/secrets/anthropic_key` or the variable `MARSHAL_SECRET_ANTHROPIC_KEY`. Startup fails when the secret does not resolve. Limit advisor use with `agent.advisor.maxCallsPerRun` and `agent.advisor.dailyCostCap`.
+
+## Reasoning
+
+Thinking models can show their reasoning in the web chat. Set `reasoning` on the model:
+
+```yaml
+models:
+  standard:
+    tier: standard
+    provider: ollama
+    model: "qwen3:30b"
+    reasoning: medium
+```
+
+Text turns and background task runs then ask for reasoning at that effort. Voice turns never do, because of the voice latency cap. Reasoning tokens count as output tokens, so a higher effort costs more and makes replies slower. Which providers and models support it: [reasoning support](../configuration/marshal-yaml/models.md#reasoning-support).
 
 ## Embeddings
 

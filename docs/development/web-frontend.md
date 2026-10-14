@@ -53,7 +53,7 @@ The UI is available in German and English, with `vue-i18n` in Composition API mo
 
 Options:
 
-- `--scenario normal,empty,failing`: the preview scenarios to capture. The default is all three. Layout checks run only for `normal`.
+- `--scenario normal,empty,failing`: the preview scenarios to capture. The default is these three. Preview mode also has `demo` (the normal data in demo mode, with the badge and simulated integrations) and `offline`. Layout checks run only for `normal`.
 - `--lang de`: the interface language. The default is `en`. German labels are longer, so run it once in German before finishing a layout change.
 - `--only chat,home`: only these routes, by the names in the script's route list.
 - `--no-shots`: run the layout checks only.

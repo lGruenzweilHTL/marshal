@@ -242,6 +242,7 @@ Tools from [MCP servers](../configuration/mcp-servers.md) use the server id (or 
 - **Untrusted.** Tools of a server with `untrusted: true`, and tools matching `untrustedTools`, taint the run with source `mcp:<server id>`. Other tools do not.
 - **Hidden when.** The server is down, failed discovery or was rejected. The tools reappear after Marshal reconnects. `/health` shows a warning while a server is down.
 - **Home Assistant.** `ha.*` tools resolve their targets (name, area, floor, domain, device class) to concrete entities, so rules can match on `domain` and `deviceClass`. A call whose targets cannot be resolved is `confirm` with reason `unresolved_target`. The context builder gives the model the states of nearby entities; the model calls `ha.homeassistant__GetLiveContext` for more.
+- **Demo mode.** When Home Assistant is simulated and no MCP server `ha` is configured, [demo mode](../guides/demo-mode.md) offers `ha.intent__HassTurnOn`, `ha.intent__HassTurnOff`, `ha.intent__HassLightSet`, `ha.intent__HassClimateSetTemperature` and `ha.homeassistant__GetLiveContext` itself, backed by the simulated states. They default to `confirm` like the server's tools, so the same `risk.yaml` rules apply.
 
 ## Related
 

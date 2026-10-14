@@ -4,7 +4,7 @@ All notable changes to Marshal are documented here. The format follows [Keep a C
 
 ## [Unreleased]
 
-Development started on 2026-09-28. The latest work in the history is dated 2026-10-10.
+Development started on 2026-09-28. The latest work in the history is dated 2026-10-13.
 
 ### Added
 
@@ -21,10 +21,16 @@ Development started on 2026-09-28. The latest work in the history is dated 2026-
 - Webhook ingest with Uptime Kuma and Proxmox normalizers.
 - Artifacts: per-owner artifact store, web viewer, code highlighting, 3D model rendering and `artifacts.inspect`.
 - Display surfaces: show artifacts on the display nearest the satellite.
+- Chat history: web conversations rest after the idle time instead of closing and can be continued at any time. `GET /api/v1/conversations` lists them, and the web chat shows voice conversations read-only. Background results of a handoff appear in the conversation they came from.
+- Visible reasoning: per-model `reasoning: off|low|medium|high`, `reasoning` and `tool` stream events for the web UI, a reasoning block and tool timeline in the chat, and reasoning in the run detail. Voice turns never reason.
+- Demo mode (`demo.enabled`): simulated Home Assistant, printer, mail, FreshRSS and notes for unconfigured integrations, seeded sample history, `marshal demo reset` and `marshal demo seed`, and a "Demo" badge.
+- Screenshot sweep (`npm run screenshots`) over every web route at phone and desktop width, with layout checks.
 - Docker image, compose file, example `/config` files and clean startup failure messages that list every configuration problem.
 
 ### Changed
 
 - Startup failures list each problem with its file and key instead of failing on the first one.
+- Web UI alignment pass: the chat composer's text line and send button share one centre, and controls in one row share the control heights.
+- Reply steps are recorded in full, so the chat history shows the whole reply.
 
 [Unreleased]: https://gitea.gruenzweil.cc/lukas/marshal

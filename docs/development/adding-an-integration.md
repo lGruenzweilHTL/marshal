@@ -66,6 +66,7 @@ Every user-owned row has `owner_id`, and every query goes through the owner-scop
 - `CLAUDE.md`: repository map entry, package index rows for new packages.
 - `docs/diagrams/packages.puml` and, if you added entities, `docs/diagrams/erd.puml`. Re-render the SVGs and commit both ([diagrams README](../diagrams/README.md)).
 - `deploy/config.example/`: example config for the new section.
+- `src/Marshal.Demo`: if you change an interface that demo mode implements (Home Assistant, printers, mail, RSS, notes), update the simulated implementation in the same change. A new integration is not simulated unless an OpenSpec change adds it to the [demo mode](../guides/demo-mode.md) scope.
 
 ## Documentation checklist
 

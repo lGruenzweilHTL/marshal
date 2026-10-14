@@ -8,6 +8,10 @@ Short answers to common questions about what Marshal is, what it can do and what
 
 No. Marshal has no release yet. You build the image from the repository. See the [quick start](getting-started/quick-start.md).
 
+### Can I try Marshal without connecting my services?
+
+Yes. Turn on [demo mode](guides/demo-mode.md). Every integration you have not configured is then simulated, and the views show sample history. You still need a chat model.
+
 ### Does Marshal need the cloud?
 
 No. Marshal runs on your own hardware and works with fully local models through Ollama or an OpenAI-compatible local server. Only the services you connect, such as a cloud model or a Gmail account, are reached over the internet. See [models setup](installation/models-setup.md).

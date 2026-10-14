@@ -27,6 +27,7 @@ Marshal runs as one ASP.NET container plus an optional, separate executor host:
 | `Marshal.Tasks` | Durable tasks, scheduler and worker pool, event bus and trigger matching, deliveries, notifications, approval queue, follow-ups, executors, system jobs and webhook ingest. |
 | `Marshal.Integrations.*` | One project per integration (Home Assistant, Moonraker, mail, FreshRSS, notes, media, Proxmox, GitHub). Each contributes tools, event sources or context behind the shared interfaces. |
 | `Marshal.Artifacts` | The artifact store and its renditions. |
+| `Marshal.Demo` | Demo mode: simulated Home Assistant, printer, mail, RSS and notes behind the same interfaces, plus the sample data seeder. Only `Marshal.Api` references it, and it never contacts a network host. See [demo mode](../guides/demo-mode.md). |
 | `Marshal.Data` | EF Core on SQLite, migrations, owner-scoped query filters. |
 | `Marshal.ExecutorHost` | A separate service for coding sessions. It has its own image and deployment and is never referenced by Marshal. See [executor host](../installation/executor-host.md). |
 | `web/` | The Vue single-page app, built into the host's `wwwroot`. |
@@ -42,7 +43,7 @@ Clients reach Marshal in three ways: Home Assistant Assist through the custom co
 2. `Marshal.Api` authenticates the machine token, checks the `conversation:write` scope and looks up or creates the session.
 3. `Marshal.Core` checks for a pending confirmation, then runs the [agent loop](agent-loop.md): build the context, call the model with the visible tools, guard every call, execute, repeat.
 4. Tools reach Home Assistant (through its MCP server and REST / websocket APIs), printers, mail and other integrations.
-5. The reply streams back as SSE `delta` events and ends with a final event carrying `speech` and `continueConversation`.
+5. The reply streams back as SSE `delta` events and ends with a final event carrying `speech` and `continueConversation`. The web UI also receives `reasoning` and `tool` events for the same turn; token clients such as Home Assistant never do.
 
 Background work (scheduled tasks, event watches, approvals) uses the same loop and the same guard, without an HTTP request. See [tasks and scheduling](tasks-and-scheduling.md).
 

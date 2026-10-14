@@ -11,7 +11,7 @@ Find your way around Marshal's web app: what each destination shows and what you
 
 ## Layout
 
-On desktop a grouped side navigation lists every destination. On a phone a bottom bar shows Home, Chat, Inbox, Printer and More. More opens the rest. Destinations that need you (pending approvals, open proposals, unread critical notifications) show a count badge.
+On desktop a grouped side navigation lists every destination. On a phone a bottom bar shows Home, Chat, Inbox, Printer and More. More opens the rest. Destinations that need you (pending approvals, open proposals, unread critical notifications) show a count badge. In [demo mode](../demo-mode.md) a "Demo" badge sits next to the logo on desktop and above the page on a phone.
 
 ![Marshal Inbox on a phone: two pending approvals with approve and reject buttons and a bottom tab bar](../../images/mobile.png)
 
@@ -33,7 +33,7 @@ Every view works at phone width. The views you act on (Home, Inbox, Chat, Printe
 | Connections | Mail accounts | Connect mail accounts. See [mail](../integrations/mail.md). |
 | Settings | Preferences | Language, time zone, appearance, quiet hours, notification targets, do-not-disturb. |
 | Settings | Security | API tokens, passkeys and secrets. |
-| Settings | System | Health and the kill switch. |
+| Settings | System | Health and the kill switch. In demo mode, also the list of simulated integrations. |
 | Settings | Configuration | Read-only view of loaded configuration. Admins only. |
 
 ![Marshal memory view showing remembered chunks](../../images/memory.png)

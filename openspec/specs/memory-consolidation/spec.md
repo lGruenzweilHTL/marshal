@@ -1,7 +1,7 @@
 # memory-consolidation Specification
 
 ## Purpose
-How memory is written: explicit remembering, summarization when a session closes, and the audit of every change.
+How memory is written: explicit remembering, summarization when a session closes or a web session rests, and the audit of every change.
 
 ## Requirements
 

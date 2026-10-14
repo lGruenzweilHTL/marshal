@@ -4,11 +4,11 @@ What Marshal can do today and which ideas are deferred. This page is a summary, 
 
 ## What exists
 
-All planned features through the third roadmap wave are implemented and archived. No change is currently open in `openspec/changes/`.
+All planned features through the third roadmap wave are implemented and archived, followed by chat history, visible reasoning and demo mode. No change is currently open in `openspec/changes/`.
 
 | Area | Capabilities |
 |---|---|
-| Voice and chat | Assist conversation agent, streaming replies, voice follow-ups, web chat |
+| Voice and chat | Assist conversation agent, streaming replies, voice follow-ups, web chat with conversation history, background results in place, reasoning and tool steps |
 | Home | Home Assistant devices, areas, timers, places, energy statistics, to-do lists through MCP, location reminders |
 | Printers | Moonraker state, snapshots, inspection, print babysitting |
 | Information | Mail (read and draft only), FreshRSS, git-backed notes, daily briefing |
@@ -16,7 +16,7 @@ All planned features through the third roadmap wave are implemented and archived
 | Homelab | Uptime Kuma and Proxmox events, read-only Proxmox, read-only GitHub |
 | Artifacts and displays | Artifact store and viewer, code highlighting, 3D renders, show on the nearest display |
 | Memory and tasks | Hybrid memory retrieval, projects, consolidation, scheduled and event-driven tasks, approval queue |
-| Platform | Local and OIDC login, machine tokens, secret store, skills, agent templates, MCP servers, run recording |
+| Platform | Local and OIDC login, machine tokens, secret store, skills, agent templates, MCP servers, run recording, demo mode |
 
 See the [changelog](../CHANGELOG.md) for the full list.
 
@@ -35,6 +35,7 @@ These ideas are not planned for a specific release. Each needs its own OpenSpec 
 
 - Several users on one instance. The data model is ready, the product is not.
 - Checks against a real Music Assistant installation are still open.
+- Reasoning has not been checked live against a real reasoning model, and demo mode's chat flows have not been checked end to end with a real model.
 
 ## Influence the roadmap
 

@@ -73,7 +73,8 @@ Teach Marshal new skills, connect new tools, and create specialized assistants f
 
 Marshal comes with its own web app, built for desktop and phone:
 
-- **Chat** with Marshal when you can't talk out loud
+- **Chat** with Marshal when you can't talk out loud, and pick up any earlier conversation, typed or spoken
+- **Watch it think**: see the model's reasoning and each tool step while a reply streams in
 - **Approve** actions and review proposals with one tap
 - **See** what Marshal did, why it did it, and what it cost
 - **Explore and edit** everything Marshal remembers
@@ -105,6 +106,7 @@ There is no published image yet; Marshal is built from this repository with Dock
 
 - Everything Marshal stores lives in `/data`; `/config` holds no secrets and can live in git.
 - The full list of settings is in the [configuration reference](docs/configuration/index.md).
+- Want to look around first? [Demo mode](docs/guides/demo-mode.md) simulates Home Assistant, a printer, mail, news and notes and fills every view with sample history. You only need a model.
 - If Marshal does not start, `docker compose logs marshal` lists every configuration problem with its file and key. See [troubleshooting](docs/guides/troubleshooting.md).
 
 ---

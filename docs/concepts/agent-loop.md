@@ -26,6 +26,10 @@ Once a call is frozen as a pending action, the model gets no further tools in th
 
 The run's agent template can name a tier. Without one, voice turns use the `fast` tier and text turns the `standard` tier. If no model of that tier with tool support exists, the turn ends with a fixed "model unavailable" reply. See [`models`](../configuration/marshal-yaml/models.md).
 
+### Reasoning
+
+A model with `reasoning` set to `low`, `medium` or `high` is asked to reason at that effort in text turns and background task runs. Voice turns never ask for reasoning, because of the voice latency cap. In the web chat the reasoning streams as `reasoning` events, and each tool call as a `tool` event with a short summary of its arguments and result. Results of sensitive tools, such as mail and notes, are never summarized. See [conversation API](../api/conversation.md).
+
 ### Tool errors are results
 
 A tool that fails in an expected way returns a failed `Result` with a stable code, for example `printer.offline`. The loop gives the model a structured error (`{"error": {"code": ..., "message": ...}}`) and continues. A tool that throws an exception is treated the same way, with the code `tool.failed`. Neither ends the turn. The model can explain the problem or try something else.
@@ -43,7 +47,7 @@ See [`agent`](../configuration/marshal-yaml/agent.md) and [`tasks`](../configura
 
 ### Moving to the background
 
-When an interactive turn reaches its latency cap, Marshal speaks a short "working on it, I'll tell you when done" reply and ends the turn. The run continues as a background task owned by the same user, from its last completed tool round. The original run is recorded with outcome `backgrounded`. The task later delivers its result by voice to the originating satellite (voice turns) or to the web UI (text turns).
+When an interactive turn reaches its latency cap, Marshal speaks a short "working on it, I'll tell you when done" reply and ends the turn. The run continues as a background task owned by the same user, from its last completed tool round. The original run is recorded with outcome `backgrounded`. The task later delivers its result by voice to the originating satellite (voice turns) or to the web UI (text turns). The task records the session it came from, so its result also appears as a new reply in that conversation and counts as history for the session's next turn.
 
 The model can do the same on purpose with `agent.move_to_background(statusMessage)`, which is visible only in interactive turns.
 
@@ -63,7 +67,7 @@ The loop does not need an HTTP request. Owner, source, input mode, satellite, la
 
 ## What is recorded
 
-Every run is recorded with its steps in order: the context build, each model call (model, tier, tokens, latency, time to first token, cost), each tool call (tool id, arguments, result or reference, risk tier, guard decision, duration, error) and the reply (text, `continueConversation`). The run detail in the web UI shows this. See [observability](../guides/observability.md) and [privacy](privacy.md) for what is kept and for how long.
+Every run is recorded with its steps in order: the context build, each model call (model, tier, tokens, latency, time to first token, cost, reasoning), each tool call (tool id, arguments, result or reference, risk tier, guard decision, duration, error) and the reply (text, `continueConversation`). The run detail in the web UI shows this. Reasoning that follows a sensitive tool result in the same run is not stored. See [observability](../guides/observability.md) and [privacy](privacy.md) for what is kept and for how long.
 
 ## Trade-offs
 

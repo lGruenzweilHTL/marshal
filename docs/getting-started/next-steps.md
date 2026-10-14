@@ -2,6 +2,10 @@
 
 Where to go after the first working setup.
 
+## Try it without your services
+
+- [Demo mode](../guides/demo-mode.md) simulates Home Assistant, a printer, mail, RSS and notes, and fills the views with sample history. You only need a model.
+
 ## Make it durable
 
 - Put Marshal behind a proper [reverse proxy](../installation/reverse-proxy.md) with a real certificate ([TLS and domains](../installation/tls-and-domains.md)).
