@@ -7,6 +7,8 @@
 
   <ItemGroup>
     <PackageReference Include="MailKit" />
+    <!-- Pins MimeKit's vulnerable transitive version; see Directory.Packages.props. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
