@@ -38,6 +38,9 @@ public sealed class MediaToolSource(ISeerrClient seerr, IArrClient arr, IJellyfi
 
     public bool IsBuiltIn => true;
 
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [new("media", "Movies and TV shows: searching, requesting, upcoming episodes, the download queue and Jellyfin")];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) =>
         Task.FromResult(options.Value.IsConfigured ? _tools : []);
 
@@ -48,6 +51,7 @@ public sealed class MediaToolSource(ISeerrClient seerr, IArrClient arr, IJellyfi
         ParametersSchema = JsonDocument.Parse(schema).RootElement.Clone(),
         DefaultTier = tier,
         UntrustedOutput = true,
+        Fillers = name == "search" ? ToolFillers.Lines("Ich suche danach.", "Let me look that up.") : ToolFillers.None,
     };
 
     private static ToolOutput Json(object value) => new(JsonSerializer.Serialize(value, _json));

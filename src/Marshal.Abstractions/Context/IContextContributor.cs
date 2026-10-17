@@ -6,7 +6,13 @@ namespace Marshal.Abstractions.Context;
 /// </summary>
 public interface IContextContributor
 {
-    /// <summary>Position in the prompt; lower comes first.</summary>
+    /// <summary>
+    /// How often the section changes. The prompt holds all static sections first, then session, then turn sections,
+    /// so the text before the first turn section stays identical across a session's turns (provider prompt caches).
+    /// </summary>
+    ContextStability Stability { get; }
+
+    /// <summary>Position within the sections of the same stability; lower comes first.</summary>
     int Order { get; }
 
     /// <summary>The section text, or null to add nothing.</summary>

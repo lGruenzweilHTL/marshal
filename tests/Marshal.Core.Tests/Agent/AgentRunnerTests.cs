@@ -363,6 +363,8 @@ public sealed class AgentRunnerTests
 
     private sealed class NotingContributor : IContextContributor
     {
+        public ContextStability Stability => ContextStability.Turn;
+
         public int Order => 500;
 
         public Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken)

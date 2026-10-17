@@ -183,6 +183,7 @@ internal static class RssTools
             DefaultTier = RiskTier.Safe,
             UntrustedOutput = untrusted,
             TaintKind = untrusted ? Taint : null,
+            Fillers = name is "get_unread" or "search" or "fetch_full_text" ? ToolFillers.Lines("Ich sehe in den Nachrichten nach.", "Let me check the news.") : ToolFillers.None,
         };
 
         public ValueTask<bool> IsAvailableAsync(MarshalExecutionContext executionContext, CancellationToken cancellationToken) =>

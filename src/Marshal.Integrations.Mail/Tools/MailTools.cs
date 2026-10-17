@@ -354,6 +354,7 @@ internal static class MailTools
             TaintKind = untrusted ? Taint : null,
             Persists = saves,
             Sensitive = untrusted || saves,
+            Fillers = name == "search" ? ToolFillers.Lines("Ich sehe in deinen Mails nach.", "Let me check your mail.") : ToolFillers.None,
         };
 
         public string Summarize(JsonElement arguments, string language) => saves

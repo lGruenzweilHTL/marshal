@@ -12,6 +12,8 @@ namespace Marshal.Memory.Retrieval;
 /// </summary>
 public sealed class PinnedMemoryContributor(IMemoryRetriever retriever) : IContextContributor
 {
+    public ContextStability Stability => ContextStability.Session;
+
     public int Order => 150;
 
     public async Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken)
@@ -34,6 +36,8 @@ public sealed partial class RetrievedMemoryContributor(
     IOptions<MemoryOptions> options,
     ILogger<RetrievedMemoryContributor> logger) : IContextContributor
 {
+    public ContextStability Stability => ContextStability.Turn;
+
     public int Order => 160;
 
     public async Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken)

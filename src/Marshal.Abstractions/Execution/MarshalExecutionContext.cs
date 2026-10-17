@@ -61,6 +61,9 @@ public sealed record MarshalExecutionContext
     /// <summary>Requests of the run's tools to its loop. Shared by all copies within one run.</summary>
     public RunControl Control { get; init; } = new();
 
+    /// <summary>Tool namespaces loaded in the run (tool retrieval). Shared by all copies within one run.</summary>
+    public LoadedToolNamespaces LoadedTools { get; init; } = new();
+
     /// <summary>Agent template of the run.</summary>
     public string Template { get; init; } = "default";
 

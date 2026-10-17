@@ -24,7 +24,8 @@ public sealed class ConversationService(
     IUserProfileProvider profiles,
     IExecutionContextAccessor executionContext,
     IOptions<AgentOptions> options,
-    IFollowUpReplies? followUps = null)
+    IFollowUpReplies? followUps = null,
+    TimeProvider? timeProvider = null)
 {
     private const int HistoryTurns = 10;
     private static readonly string[] _supportedLanguages = ["de", "en"];
@@ -39,6 +40,7 @@ public sealed class ConversationService(
     /// <summary>Resolves the session, owner and reply language. Fails before anything runs.</summary>
     public async Task<Result<PreparedTurn>> PrepareAsync(ConversationTurn turn, CancellationToken cancellationToken)
     {
+        long received = (timeProvider ?? TimeProvider.System).GetTimestamp();
         Result<SessionRecord> session = await ResolveSessionAsync(turn, cancellationToken);
         if (session.IsFailure)
             return session.Error;
@@ -55,13 +57,14 @@ public sealed class ConversationService(
             AreaId = turn.Evidence.AreaId,
             SessionId = session.Value.Id,
         };
-        return new PreparedTurn(turn, session.Value, context);
+        return new PreparedTurn(turn, session.Value, context) { ReceivedAt = received };
     }
 
     /// <summary>Decides the session's pending action, then runs the loop under the latency cap.</summary>
     public async Task<TurnOutcome> RunAsync(PreparedTurn prepared, ChannelWriter<TurnEvent>? events, CancellationToken cancellationToken)
     {
         (ConversationTurn turn, SessionRecord session, MarshalExecutionContext context) = prepared;
+        long? received = prepared.ReceivedAt;
         using IDisposable scope = executionContext.Use(context);
         IReadOnlyList<ChatMessage> earlier = await history.LoadAsync(session.Id, HistoryTurns, after: null, cancellationToken);
         FollowUpReply? followUp = followUps is null ? null : await followUps.HandleAsync(turn, context, cancellationToken);
@@ -72,6 +75,7 @@ public sealed class ConversationService(
             UserText = turn.Text,
             Events = events,
             LatencyCap = turn.InputMode == InputMode.Voice ? options.Value.VoiceLatencyCap : options.Value.TextLatencyCap,
+            RequestStartedAt = received,
         };
 
         // A reply that decided an approval or resumed a waiting task is answered without a model call.

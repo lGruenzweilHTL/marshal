@@ -100,6 +100,7 @@ public sealed class DbRunRecorder(IDbContextFactory<MarshalDbContext> contexts, 
         run.OutcomeReason = completion.Reason;
         run.Tainted = completion.TaintSources.Count > 0;
         run.TaintSources = run.Tainted ? JsonSerializer.Serialize(completion.TaintSources, _json) : null;
+        run.TimeToFirstDeltaMs = completion.TimeToFirstDeltaMs;
         run.EndedAt = timeProvider.GetUtcNow();
         await db.SaveChangesAsync(cancellationToken);
         foreach (IRunObserver observer in _observers)

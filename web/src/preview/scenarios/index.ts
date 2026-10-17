@@ -1,6 +1,6 @@
 import type { Language } from '../../i18n/catalog'
 import { eventStream, FakeServer, json } from '../../testing/fakeServer'
-import { anchor, conversationDetails, normal } from './normal'
+import { anchor, conversationDetails, normal, runDetails } from './normal'
 
 export const scenarios = ['normal', 'demo', 'empty', 'failing', 'offline'] as const
 export type ScenarioName = (typeof scenarios)[number]
@@ -103,6 +103,13 @@ export function createPreviewServer(scenario: ScenarioName, language: Language, 
     if (scenario === 'offline') throw new TypeError('Failed to fetch')
     const detail = conversationDetails[request.path.split('/').at(-1)!]
     if (!detail || scenario === 'empty') return json(404, { title: 'not found', code: 'conversation.not_found', detail: 'The conversation does not exist.' })
+    return json(200, shiftTimes(detail, offset))
+  })
+  server.handle('GET', '/api/v1/runs/{id}', (request) => {
+    if (scenario === 'failing') return problem()
+    if (scenario === 'offline') throw new TypeError('Failed to fetch')
+    if (scenario === 'empty') return json(404, { title: 'not found', code: 'run.not_found', detail: 'The run does not exist.' })
+    const detail = runDetails[request.path.split('/').at(-1)!] ?? Object.values(runDetails)[0]!
     return json(200, shiftTimes(detail, offset))
   })
   server.handle('POST', '/api/v1/conversation/turns', () => {

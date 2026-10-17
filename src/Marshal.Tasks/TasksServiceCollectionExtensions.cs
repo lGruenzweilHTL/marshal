@@ -105,6 +105,8 @@ public static class TasksServiceCollectionExtensions
             services.AddSingleton<IExecutor, ClaudeCodeExecutor>();
         services.AddSingleton<ExecutorService>();
         services.AddSingleton<IExecutorCallbacks>(provider => provider.GetRequiredService<ExecutorService>());
+        // tasks.run_executor is a built-in tool next to the task tool source; both share the namespace description.
+        services.AddSingleton(TaskToolSource.Namespace);
         services.AddSingleton<ITool, RunExecutorTool>();
         services.AddSingleton<IExecutorSessions, EfExecutorSessions>();
         services.AddSingleton<IProposalReview, ProposalReview>();

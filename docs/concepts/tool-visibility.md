@@ -19,7 +19,7 @@ The usual way to stop an agent from doing something is to refuse the call after 
 
 Every tool has an internal id `<namespace>.<name>`, used in risk rules, satellite policies, template allowlists, run records and the audit log. The model sees a model-facing name `<namespace>_<name>`. The registry maps both ways: the model calls `agent_ask_advisor`, Marshal resolves `agent.ask_advisor`.
 
-Namespaces name capabilities, never providers. These namespaces are reserved for built-in tools: `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra`, `repos`, `media` and `music`. An MCP server configured with id `mail` or `music` is rejected.
+Namespaces name capabilities, never providers. These namespaces are reserved for built-in tools: `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra`, `repos`, `media`, `music` and `system`. An MCP server configured with id `mail` or `music` is rejected.
 
 External tool names are sanitized: characters outside `[a-zA-Z0-9_-]` become `_`, and names longer than 64 characters are shortened with a hash suffix. Two tools that map to the same model-facing name cause the later tool source to be rejected. See [tools reference](../reference/tools.md).
 
@@ -41,6 +41,24 @@ Before every model call, Marshal removes a tool from the list when any of these 
 ### Arg-aware tools stay visible
 
 Some tools are `safe` for some arguments and `confirm` for others. Turning on a light is safe, unlocking a door needs confirmation, and both go through the same Home Assistant tool. Hiding such a tool would also hide its safe uses. These tools stay visible, and the guard decides per call: a call that resolves to `confirm` on a satellite with `denyConfirm` is denied with "not allowed from this device", and no pending action is created.
+
+## Tool retrieval
+
+A long tool list costs tokens on every model call and makes it harder for a model, local models especially, to pick the right tool. After the visibility filter, Marshal therefore offers only the tools of the namespaces a session has loaded:
+
+- **Core namespaces** (`tools.core`, by default `agent`, `memory`, `tasks`, `notifications`, `timers`, `places`) are always loaded.
+- **Retrieval.** Before the first model call of a turn, Marshal compares the turn's embedding (the one memory retrieval already computes) with a one-line description of every other namespace and loads the best matches above `tools.retrieval.threshold`, at most `tools.retrieval.maxPerTurn`. Built-in tools describe their namespaces in code; an MCP server can set `description` in its file.
+- **Hints.** Deterministic matches load a namespace without an embedding: a Home Assistant entity, alias or area named in the turn loads `ha`, a configured speaker name loads `music`.
+- **`agent.find_tools(query)`.** When the model misses a tool, it can ask for it. The tool loads the best matching namespaces among those with visible tools; the found tools are offered from the next model call.
+- **Direct calls.** A call to a visible tool of a namespace that is not loaded yet loads it and goes through the guard as usual.
+
+Loaded namespaces stay loaded for the rest of the session. New tools are appended to the end of the list (core namespaces first, then the load order, tools by name), so the cached prompt prefix of the provider survives. Retrieval is skipped, and every visible tool offered, when `tools.retrieval.enabled` is `false` or no more than `tools.retrieval.minTools` tools are visible, for example with a narrow template.
+
+Retrieval is an efficiency mechanism, not a boundary. It never offers a tool the filter removed, and `agent.find_tools` only names namespaces with visible tools, so it cannot reveal a tool that a satellite or template hides. The run detail lists every loaded namespace with its reason and score. See [`tools`](../configuration/marshal-yaml/tools.md).
+
+### Spoken filler
+
+A voice turn is silent while a tool runs. Slow built-in tools (printer snapshots, mail and notes search, news, calendar, media, infrastructure and GitHub reads) carry a short line per language, such as "Let me look at the printer.". When a voice turn is about to run such a tool, nothing has been spoken yet, and the tool usually takes longer than `voice.fillerThresholdMs` (the median of its last 20 calls), Marshal speaks that line first. At most one line per turn; text turns never get one.
 
 ## The guard as second line
 

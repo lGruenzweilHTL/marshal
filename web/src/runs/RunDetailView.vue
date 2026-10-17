@@ -10,6 +10,7 @@ import { useFormat } from '../i18n/locale'
 import { AppIcon, Badge, Banner, Card, CodeBlock, KeyValueList, LoadBoundary, Page, PageHeader, useDesktop, type Tone } from '../ui'
 import ReasoningBlock from '../chat/ReasoningBlock.vue'
 import TaintFlag from './TaintFlag.vue'
+import VoiceTimeline from './VoiceTimeline.vue'
 
 type Step = Schemas['RunStepDetail']
 
@@ -41,7 +42,7 @@ watch(
   },
 )
 
-const noteOrder = ['project', 'memory']
+const noteOrder = ['tool_namespace', 'project', 'memory']
 function noteGroups(step: Step): { kind: string; notes: Schemas['ContextNote'][] }[] {
   const rank = (kind: string) => (noteOrder.includes(kind) ? noteOrder.indexOf(kind) : Number.MAX_SAFE_INTEGER)
   const kinds = [...new Set(step.notes.map((note) => note.kind))].sort((a, b) => rank(a) - rank(b))
@@ -88,6 +89,10 @@ const count = (value: number | null) => (value === null ? '–' : format.value.n
           {{ t('runs.detail.taintedBody') }}
         </Banner>
 
+        <Card v-if="run.inputMode === 'voice' && run.endedAt">
+          <VoiceTimeline :steps="detail.data.value.steps" :total-ms="Date.parse(run.endedAt) - Date.parse(run.startedAt)" :first-delta-ms="run.timeToFirstDeltaMs ?? null" />
+        </Card>
+
         <div class="layout" :class="{ split: desktop }">
           <Card>
             <ol class="steps">
@@ -133,7 +138,7 @@ const count = (value: number | null) => (value === null ? '–' : format.value.n
                   </ul>
 
                   <div v-for="group in noteGroups(step)" :key="group.kind" :data-notes="group.kind" class="notes">
-                    <span class="t-overline">{{ group.kind === 'project' || group.kind === 'memory' ? t(`runs.detail.notes.${group.kind}`) : group.kind }}</span>
+                    <span class="t-overline">{{ noteOrder.includes(group.kind) ? t(`runs.detail.notes.${group.kind}`) : group.kind }}</span>
                     <ul>
                       <li v-for="(note, noteIndex) in group.notes" :key="noteIndex">
                         {{ note.label }}<template v-if="note.detail"> – {{ note.detail }}</template><template v-if="note.score != null"> ({{ note.score.toFixed(2) }})</template>
@@ -164,6 +169,7 @@ const count = (value: number | null) => (value === null ? '–' : format.value.n
                 ...(run.satelliteId ? [{ key: 'satellite', label: t('runs.detail.facts.satellite'), value: run.satelliteId }] : []),
                 { key: 'started', label: t('runs.detail.facts.started'), value: format.dateTime(run.startedAt) },
                 ...(run.endedAt ? [{ key: 'duration', label: t('runs.detail.facts.duration'), value: format.duration(Date.parse(run.endedAt) - Date.parse(run.startedAt)) }] : []),
+                ...(run.timeToFirstDeltaMs != null ? [{ key: 'firstDelta', label: t('runs.detail.facts.firstDelta'), value: format.duration(run.timeToFirstDeltaMs) }] : []),
                 { key: 'outcome', label: t('runs.detail.facts.outcome') },
                 { key: 'cost', label: t('runs.detail.facts.cost'), value: format.cost(run.cost) },
                 ...(detail.data.value.language ? [{ key: 'language', label: t('runs.detail.facts.language'), value: detail.data.value.language }] : []),

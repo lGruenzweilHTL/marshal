@@ -13,6 +13,11 @@ public sealed record McpServerDefinition
     /// <summary>Tool namespace: <c>toolPrefix</c> when set, otherwise the id.</summary>
     public required string Namespace { get; init; }
 
+    /// <summary>
+    /// One-line description of the server's tools for tool retrieval; null builds one from the id and the tool names.
+    /// </summary>
+    public string? Description { get; init; }
+
     /// <summary>Transport.</summary>
     public required McpTransportKind Transport { get; init; }
 

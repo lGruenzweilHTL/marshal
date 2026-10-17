@@ -11,6 +11,8 @@ namespace Marshal.Core.Skills;
 /// </summary>
 public sealed class SkillIndexContributor(ISkillCatalog catalog, ITemplateCatalog templates) : IContextContributor
 {
+    public ContextStability Stability => ContextStability.Static;
+
     public int Order => 250;
 
     public Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken)

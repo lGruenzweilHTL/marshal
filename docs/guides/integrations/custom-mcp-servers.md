@@ -76,7 +76,7 @@ Adding, changing or removing a file takes effect without a restart. Running turn
 
 The namespace is the `id` or `toolPrefix`, without any `mcp` prefix. Server `ha` reporting `intent__HassTurnOn` gives the internal id `ha.intent__HassTurnOn` and the model-facing name `ha_intent__HassTurnOn`.
 
-Marshal reserves the namespaces of its built-in tools: `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra`, `repos`, `media`, `music`. A server that would use one is rejected.
+Marshal reserves the namespaces of its built-in tools: `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra`, `repos`, `media`, `music`, `system`. A server that would use one is rejected.
 
 ## Untrusted servers
 

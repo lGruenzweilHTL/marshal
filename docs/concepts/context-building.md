@@ -60,13 +60,14 @@ The context-build step of each run records the full system prompt, your input, a
 
 ## Extending the context
 
-A new capability adds context by registering another contributor with an order value; it does not edit existing prompts. See [adding an integration](../development/adding-an-integration.md).
+A new capability adds context by registering another contributor with a stability and an order value; it does not edit existing prompts. See [adding an integration](../development/adding-an-integration.md).
 
 ## Trade-offs
 
 - **English system prompts.** One prompt language keeps behavior consistent across reply languages and models, at the cost of a translation step the model does implicitly.
 - **Automatic memory and area context on every turn.** This avoids a tool round trip on voice turns but costs prompt tokens even when the turn does not need them. Budgets and the area-only rule keep it small.
 - **Templates come early.** A template's prompt sits right after the base rules, so templates shape behavior strongly but cannot remove the base rules.
+- **Stability before order.** Grouping by stability keeps the cacheable prefix long. The cost is that a `turn` section, such as the time, can never appear before a `static` one, whatever its order value.
 
 ## Related
 

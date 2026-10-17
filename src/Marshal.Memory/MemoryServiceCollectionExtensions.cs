@@ -41,10 +41,13 @@ public static class MemoryServiceCollectionExtensions
         services.AddSingleton<ProjectSessions>();
         services.AddSingleton<ProjectLearning>();
         services.AddSingleton<IProjectActivator, ProjectActivator>();
-        services.AddSingleton<ITurnMemory, TurnMemory>();
+        services.AddSingleton<TurnMemory>();
+        services.AddSingleton<ITurnMemory>(provider => provider.GetRequiredService<TurnMemory>());
+        services.AddSingleton<ITurnEmbedding>(provider => provider.GetRequiredService<TurnMemory>());
 
         services.AddSingleton<IContextContributor, PinnedMemoryContributor>();
         services.AddSingleton<IContextContributor, RetrievedMemoryContributor>();
+        services.AddSingleton(new ToolNamespace("memory", "Long-term memory: remembering and recalling facts, preferences, decisions and projects"));
         services.AddSingleton<ITool, MemoryRememberTool>();
         services.AddSingleton<ITool, MemoryRecallTool>();
         services.AddSingleton<ITool, MemoryCorrectProjectTool>();

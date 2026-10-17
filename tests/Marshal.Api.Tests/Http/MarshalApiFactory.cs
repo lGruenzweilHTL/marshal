@@ -46,6 +46,8 @@ public sealed class MarshalApiFactory : WebApplicationFactory<Program>
             ["owner:displayName"] = "Lukas",
             ["owner:language"] = "en",
             ["instance:timeZone"] = "Europe/Vienna",
+            // Most tests assert on the full tool list; tool retrieval tests turn it back on.
+            ["tools:retrieval:enabled"] = "false",
         };
         foreach ((string key, string? value) in settings ?? [])
             _settings[key] = value;

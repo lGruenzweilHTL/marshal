@@ -8,6 +8,8 @@ namespace Marshal.Core.Templates;
 /// </summary>
 public sealed class TemplatePromptContributor(ITemplateCatalog templates) : IContextContributor
 {
+    public ContextStability Stability => ContextStability.Static;
+
     public int Order => 50;
 
     public Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken)

@@ -13,5 +13,8 @@ public sealed class CalendarToolSource(ICalendarProvider provider, IUserProfileP
 
     public bool IsBuiltIn => true;
 
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [new("calendar", "Calendars: events, appointments, meetings and free time")];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) => Task.FromResult(_tools);
 }

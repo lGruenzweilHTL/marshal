@@ -56,6 +56,8 @@ public static class HomeAssistantServiceCollectionExtensions
         services.AddSingleton<IDisplayPlayer, HomeAssistantDisplayPlayer>();
         services.AddSingleton<IRiskTargetResolver, HaTargetResolver>();
         services.AddSingleton<IContextContributor, HaAreaContextContributor>();
+        services.AddSingleton<IToolNamespaceHints, HaNamespaceHints>();
+        services.AddSingleton<IToolNamespaceHints, MusicNamespaceHints>();
         services.Replace(ServiceDescriptor.Singleton<IAreaDirectory, HaAreaDirectory>());
         services.Replace(ServiceDescriptor.Singleton<IInstanceTimeZone>(provider =>
         {

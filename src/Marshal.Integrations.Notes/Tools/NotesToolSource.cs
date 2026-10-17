@@ -12,5 +12,8 @@ public sealed class NotesToolSource(INotesSource source, INotesIndex index) : IT
 
     public bool IsBuiltIn => true;
 
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [new("notes", "The user's notes: searching, reading and writing Markdown notes")];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) => Task.FromResult(_tools);
 }

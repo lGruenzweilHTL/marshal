@@ -46,4 +46,7 @@ public sealed class Run : IOwned
     public string? TaintSources { get; set; }
 
     public decimal Cost { get; set; }
+
+    /// <summary>Milliseconds from the request to the first streamed delta; null when none was sent.</summary>
+    public int? TimeToFirstDeltaMs { get; set; }
 }

@@ -32,14 +32,17 @@ public sealed record TurnMemoryContext(string? Text, ReadOnlyMemory<float>? Embe
 
 /// <summary>
 /// <see cref="ITurnMemory"/> that embeds the turn text once per <see cref="ContextRequest"/> instance and activates
-/// projects with that embedding (no extra model call).
+/// projects with that embedding (no extra model call). Tool retrieval reuses the same embedding.
 /// </summary>
-public sealed class TurnMemory(IEmbeddingGenerator<string, Embedding<float>> embeddings, IAreaDirectory areas, IProjectActivator activator) : ITurnMemory
+public sealed class TurnMemory(IEmbeddingGenerator<string, Embedding<float>> embeddings, IAreaDirectory areas, IProjectActivator activator) : ITurnMemory, ITurnEmbedding
 {
     private readonly ConditionalWeakTable<ContextRequest, Task<TurnMemoryContext>> _turns = [];
 
     public Task<TurnMemoryContext> GetAsync(ContextRequest request, CancellationToken cancellationToken) =>
         _turns.GetValue(request, turn => ComputeAsync(turn, cancellationToken));
+
+    async Task<ReadOnlyMemory<float>?> ITurnEmbedding.GetAsync(ContextRequest request, CancellationToken cancellationToken) =>
+        (await GetAsync(request, cancellationToken)).Embedding;
 
     private async Task<TurnMemoryContext> ComputeAsync(ContextRequest request, CancellationToken cancellationToken)
     {

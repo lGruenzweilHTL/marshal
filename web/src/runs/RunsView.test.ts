@@ -37,6 +37,23 @@ describe('RunsView', () => {
     expect(rows[0]!.get('a').attributes('href')).toBe('/runs/r-2')
   })
 
+  it('shows the time to first words and sorts slowest first through the query', async () => {
+    const fake = new FakeServer()
+      .on('GET', '/api/v1/me', 200, me)
+      .on('GET', '/api/v1/runs', 200, [runSummary({ id: 'r-2', timeToFirstDeltaMs: 1600 }), runSummary({ id: 'r-1', source: 'web', timeToFirstDeltaMs: null })])
+    const { wrapper, router } = await mountRuns(fake)
+
+    expect(wrapper.get('[data-run="r-2"]').text()).toContain('1.6 s')
+    expect(wrapper.get('[data-run="r-1"]').text()).toContain('–')
+
+    await wrapper.get('[data-sort="timeToFirstDelta"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ sort: 'timeToFirstDelta' })
+    expect(Object.fromEntries(new URLSearchParams(fake.request('GET', '/api/v1/runs')!.search))).toEqual({ sort: 'timeToFirstDelta', limit: '50' })
+    expect(wrapper.find('[data-test="more"]').exists()).toBe(false)
+  })
+
   it('filters by source, outcome and minimum cost through the query', async () => {
     const fake = server()
     const { wrapper, router } = await mountRuns(fake)

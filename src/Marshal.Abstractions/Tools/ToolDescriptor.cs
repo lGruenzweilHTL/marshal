@@ -37,4 +37,10 @@ public sealed record ToolDescriptor
     /// reason to show (e.g. <c>overrideQuietHoursUntil</c> → <see cref="ConfirmationReasonCode.QuietHoursOverride"/>).
     /// </summary>
     public IReadOnlyDictionary<string, ConfirmationReasonCode> ConfirmingArguments { get; init; } = new Dictionary<string, ConfirmationReasonCode>();
+
+    /// <summary>
+    /// Short line per language (<c>de</c>, <c>en</c>) spoken in a voice turn before this tool runs when it is
+    /// usually slow (e.g. "Let me look at the printer."). Built-in tools only.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Fillers { get; init; } = new Dictionary<string, string>();
 }

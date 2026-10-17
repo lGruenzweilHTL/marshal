@@ -56,6 +56,29 @@ public sealed class McpToolSourceTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Namespaces_ConfiguredDescription_IsUsed()
+    {
+        _server.WithTool("search_documents");
+        McpToolSource source = await StartAsync(FakeMcpServerCatalog.Server("paperless") with { Description = "Scanned documents, letters and bills" });
+
+        ToolNamespace described = Assert.Single(source.Namespaces);
+
+        Assert.Equal(new ToolNamespace("paperless", "Scanned documents, letters and bills"), described);
+    }
+
+    [Fact]
+    public async Task Namespaces_NoDescription_BuiltFromIdAndToolNames()
+    {
+        _server.WithTool("search_documents").WithTool("get_document");
+        McpToolSource source = await StartAsync(FakeMcpServerCatalog.Server("paperless"));
+
+        ToolNamespace described = Assert.Single(source.Namespaces);
+
+        Assert.Equal("paperless", described.Name);
+        Assert.Equal("Tools of the paperless server: get_document, search_documents", described.Description);
+    }
+
+    [Fact]
     public async Task Registry_HaTool_ModelNameIsFlat()
     {
         _server.WithTool("intent__HassTurnOn").WithTool("todo.get items");

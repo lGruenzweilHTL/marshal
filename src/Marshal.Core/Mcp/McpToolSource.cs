@@ -50,6 +50,10 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
 
     public bool IsBuiltIn => false;
 
+    /// <summary>The server's namespace with its configured description, or one built from the id and tool names.</summary>
+    public IReadOnlyList<ToolNamespace> Namespaces =>
+        [new(_server.Namespace, _server.Description ?? FallbackDescription(_server.Id, _state.Tools.OfType<McpTool>().Select(tool => tool.Name)))];
+
     /// <summary>The definition this source was created from.</summary>
     public McpServerDefinition Server => _server;
 

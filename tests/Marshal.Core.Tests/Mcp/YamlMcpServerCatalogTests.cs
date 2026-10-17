@@ -49,6 +49,19 @@ public sealed class YamlMcpServerCatalogTests : IDisposable
     }
 
     [Fact]
+    public void Load_Description_ParsedAndNullByDefault()
+    {
+        Write("paperless.yaml", "id: paperless\ntransport: http\nurl: http://paperless/mcp\ndescription: Scanned documents, letters and bills\n");
+        Write("other.yaml", "id: other\ntransport: http\nurl: http://other/mcp\n");
+
+        using YamlMcpServerCatalog catalog = Load();
+
+        Assert.Empty(catalog.Errors);
+        Assert.Equal("Scanned documents, letters and bills", catalog.Servers.Single(server => server.Id == "paperless").Description);
+        Assert.Null(catalog.Servers.Single(server => server.Id == "other").Description);
+    }
+
+    [Fact]
     public void Load_UntrustedTools_ParsedAndEmptyByDefault()
     {
         Write("ha.yaml", "id: ha\ntransport: http\nurl: http://ha/api/mcp\nuntrustedTools: [todo__get_items, \"*get_items\"]\n");

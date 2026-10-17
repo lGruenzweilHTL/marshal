@@ -15,5 +15,8 @@ public sealed class TimerToolSource(IHomeAssistantClient client, IOptions<HomeAs
 
     public bool IsBuiltIn => true;
 
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [new("timers", "Timers and countdowns on voice satellites")];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) => Task.FromResult(_tools);
 }

@@ -21,6 +21,9 @@ public sealed class ArtifactToolSource(IArtifactStore store, IArtifactLinks link
 
     public bool IsBuiltIn => true;
 
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [new("artifacts", "Files and artifacts: showing images, documents, code and 3D models, sending them to displays")];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) => Task.FromResult(_tools);
 
     /// <summary>Most matches <c>artifacts.list</c> returns.</summary>
@@ -38,6 +41,7 @@ public sealed class ArtifactToolSource(IArtifactStore store, IArtifactLinks link
         Description = description,
         ParametersSchema = JsonDocument.Parse(schema).RootElement.Clone(),
         DefaultTier = RiskTier.Safe,
+        Fillers = name is "show" or "inspect" ? ToolFillers.Lines("Einen Moment, ich bereite das vor.", "One moment, I'm preparing that.") : ToolFillers.None,
     };
 
     private static string? Text(JsonElement arguments, string property) =>

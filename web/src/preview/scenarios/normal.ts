@@ -199,10 +199,10 @@ const tasks: Schemas['TaskItem'][] = [
 ]
 
 const runs: Schemas['RunSummary'][] = [
-  { id: ids.run(1), sessionId: id(10, 1), source: 'voice', inputMode: 'voice', trigger: 'conversation', satelliteId: 'assist_satellite.kitchen', startedAt: at(-3), endedAt: at(-3), outcome: 'ok', outcomeReason: null, tainted: false, cost: 0.0012 },
-  { id: ids.run(2), sessionId: id(10, 2), source: 'web', inputMode: 'text', trigger: 'conversation', satelliteId: null, startedAt: at(-18), endedAt: at(-18), outcome: 'ok', outcomeReason: null, tainted: false, cost: 0.0094 },
+  { id: ids.run(1), sessionId: id(10, 1), source: 'voice', inputMode: 'voice', trigger: 'conversation', satelliteId: 'assist_satellite.kitchen', startedAt: at(-3), endedAt: at(-3), outcome: 'ok', outcomeReason: null, tainted: false, cost: 0.0012, timeToFirstDeltaMs: 1_640 },
+  { id: ids.run(2), sessionId: id(10, 2), source: 'web', inputMode: 'text', trigger: 'conversation', satelliteId: null, startedAt: at(-18), endedAt: at(-18), outcome: 'ok', outcomeReason: null, tainted: false, cost: 0.0094, timeToFirstDeltaMs: 920 },
   { id: ids.run(3), sessionId: null, source: 'task', inputMode: null, trigger: 'event', satelliteId: null, startedAt: at(-24), endedAt: at(-23), outcome: 'ok', outcomeReason: null, tainted: false, cost: 0.0031 },
-  { id: ids.run(4), sessionId: id(10, 3), source: 'voice', inputMode: 'voice', trigger: 'conversation', satelliteId: 'assist_satellite.living_room', startedAt: at(-41), endedAt: at(-41), outcome: 'backgrounded', outcomeReason: 'Latency cap reached (8 s).', tainted: false, cost: 0.0023 },
+  { id: ids.run(4), sessionId: id(10, 3), source: 'voice', inputMode: 'voice', trigger: 'conversation', satelliteId: 'assist_satellite.living_room', startedAt: at(-41), endedAt: at(-41), outcome: 'backgrounded', outcomeReason: 'Latency cap reached (8 s).', tainted: false, cost: 0.0023, timeToFirstDeltaMs: 7_980 },
   { id: ids.run(5), sessionId: null, source: 'task', inputMode: null, trigger: 'cron', satelliteId: null, startedAt: at(-40), endedAt: at(-40), outcome: 'error', outcomeReason: 'Budget exceeded.', tainted: false, cost: 0.0102 },
   { id: ids.run(6), sessionId: null, source: 'task', inputMode: null, trigger: 'event', satelliteId: null, startedAt: at(-7), endedAt: at(-6), outcome: 'ok', outcomeReason: null, tainted: true, cost: 0.0187 },
   { id: ids.run(7), sessionId: null, source: 'task', inputMode: null, trigger: 'cron', satelliteId: null, startedAt: at(-2), endedAt: at(-1), outcome: 'ok', outcomeReason: null, tainted: false, cost: 0.0044 },
@@ -353,6 +353,41 @@ const runDetail: Schemas['RunDetail'] = {
     }),
     step({ sequence: 6, kind: 'reply', content: 'I asked you to approve starting gridfinity_bin_2x3.gcode on the Voron.', continueConversation: false }),
   ],
+}
+
+const voiceRunDetail: Schemas['RunDetail'] = {
+  run: { ...runs[0]!, endedAt: new Date(Date.parse(runs[0]!.startedAt) + 4_120).toISOString() },
+  language: 'en',
+  taintSources: [],
+  loadedNamespaces: [
+    { name: 'agent', reason: 'core', score: null },
+    { name: 'memory', reason: 'core', score: null },
+    { name: 'printer', reason: 'retrieval', score: 0.71 },
+  ],
+  steps: [
+    step({
+      sequence: 1,
+      kind: 'context',
+      durationMs: 310,
+      input: 'Is the Voron done yet?',
+      notes: [
+        { kind: 'tool_namespace', label: 'agent', detail: 'core' },
+        { kind: 'tool_namespace', label: 'memory', detail: 'core' },
+        { kind: 'tool_namespace', label: 'printer', detail: 'retrieval', score: 0.71 },
+        { kind: 'project', label: 'Voron build', detail: 'alias' },
+      ],
+    }),
+    step({ sequence: 2, kind: 'modelCall', model: 'qwen3:8b', tier: 'fast', tokensIn: 2_210, tokensOut: 24, tokensCached: 1_980, firstTokenMs: 280, durationMs: 1_190, cost: 0.0004 }),
+    step({ sequence: 3, kind: 'toolCall', tool: 'printer.status', riskTier: 'safe', guardDecision: 'safe', arguments: '{"printer":"voron"}', content: 'printing, layer 112 of 268', durationMs: 1_840 }),
+    step({ sequence: 4, kind: 'modelCall', model: 'qwen3:8b', tier: 'fast', tokensIn: 2_330, tokensOut: 31, tokensCached: 2_210, firstTokenMs: 160, durationMs: 640, cost: 0.0003 }),
+    step({ sequence: 5, kind: 'reply', content: 'Let me check the printer. Not yet: layer 112 of 268, about 1 h 12 min left.' }),
+  ],
+}
+
+/** Run details by id; other ids get the tainted task run. */
+export const runDetails: Record<string, Schemas['RunDetail']> = {
+  [ids.run(6)]: runDetail,
+  [ids.run(1)]: voiceRunDetail,
 }
 
 const days: Schemas['DailyCost'][] = Array.from({ length: 14 }, (_, index) => {

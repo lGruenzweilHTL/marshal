@@ -9,7 +9,7 @@ namespace Marshal.Data.Conversations;
 /// <summary>
 /// Sessions of the current owner.
 /// </summary>
-public sealed class EfSessionStore(IDbContextFactory<MarshalDbContext> contexts, IExecutionContextAccessor executionContext, TimeProvider timeProvider) : ISessionStore
+public sealed class EfSessionStore(IDbContextFactory<MarshalDbContext> contexts, IExecutionContextAccessor executionContext, TimeProvider timeProvider) : ISessionStore, ISessionToolNamespaces
 {
     private static readonly JsonSerializerOptions _json = new(JsonSerializerDefaults.Web) { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 
@@ -60,6 +60,24 @@ public sealed class EfSessionStore(IDbContextFactory<MarshalDbContext> contexts,
 
         row.LastTurnAt = timeProvider.GetUtcNow();
         row.RestedAt = null;
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<string>> GetAsync(SessionId sessionId, CancellationToken cancellationToken)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        string? stored = await db.Sessions.AsNoTracking().Where(session => session.Id == sessionId).Select(session => session.LoadedToolNamespaces).SingleOrDefaultAsync(cancellationToken);
+        return stored is null ? [] : JsonSerializer.Deserialize<string[]>(stored) ?? [];
+    }
+
+    public async Task SaveAsync(SessionId sessionId, IReadOnlyList<string> namespaces, CancellationToken cancellationToken)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        Session? row = await db.Sessions.SingleOrDefaultAsync(session => session.Id == sessionId, cancellationToken);
+        if (row is null)
+            return;
+
+        row.LoadedToolNamespaces = namespaces.Count == 0 ? null : JsonSerializer.Serialize(namespaces);
         await db.SaveChangesAsync(cancellationToken);
     }
 

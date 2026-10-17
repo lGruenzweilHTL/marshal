@@ -31,6 +31,12 @@ public sealed record AgentRunRequest
     /// <summary>Hard latency cap; null = none.</summary>
     public TimeSpan? LatencyCap { get; init; }
 
+    /// <summary>
+    /// <see cref="TimeProvider.GetTimestamp"/> when the request arrived, for the time to first delta; null uses the
+    /// run's start.
+    /// </summary>
+    public long? RequestStartedAt { get; init; }
+
     /// <summary>Budget limits; a run that reaches one ends with reason <c>budget_exceeded</c>.</summary>
     public RunLimits? Limits { get; init; }
 }

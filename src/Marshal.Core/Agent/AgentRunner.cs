@@ -66,14 +66,15 @@ public sealed partial class AgentRunner(
 
         // The run keeps the tools of its start; sources added or removed meanwhile apply to the next run.
         ToolSnapshot tools = request.Context.Tools ?? await registry.RefreshAsync(cancellationToken);
-        MarshalExecutionContext context = request.Context with { RunId = runId, Tools = tools };
+        // Every run, subagents included, starts its tool loading from the core namespaces.
+        MarshalExecutionContext context = request.Context with { RunId = runId, Tools = tools, LoadedTools = new LoadedToolNamespaces() };
         using IDisposable scope = executionContext.Use(context);
         LogRunStarted(logger, runId.Value, request.Trigger);
 
         using CancellationTokenSource latencyCap = request.LatencyCap is { } cap ? new CancellationTokenSource(cap, timeProvider) : new CancellationTokenSource();
         using CancellationTokenSource wallTime = request.Limits?.MaxDuration is { } duration ? new CancellationTokenSource(duration, timeProvider) : new CancellationTokenSource();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, latencyCap.Token, wallTime.Token);
-        var transcript = new Transcript(request.Events);
+        var transcript = new Transcript(request.Events, timeProvider, request.RequestStartedAt ?? timeProvider.GetTimestamp());
         LoopResult result;
         try
         {
@@ -90,12 +91,26 @@ public sealed partial class AgentRunner(
                 ?? await TooLongAsync(request, context, cancellationToken);
         }
 
+        // A spoken filler is part of what the user heard.
+        if (transcript.Filler is { } filler)
+            result = result with { Reply = $"{filler} {result.Reply}" };
+
         bool continueConversation = result.Pending is not null;
+        await SaveLoadedNamespacesAsync(context, nested, cancellationToken);
         await RecordAsync(new RunStepRecord { Kind = RunStepKind.Reply, Content = result.Reply, ContinueConversation = continueConversation, Artifacts = transcript.Artifacts.Count == 0 ? null : [.. transcript.Artifacts] }, cancellationToken);
         if (!nested)
-            await recorder.CompleteRunAsync(runId, new RunCompletion(result.Outcome, result.Reason, context.Taint.Sources), cancellationToken);
+            await recorder.CompleteRunAsync(runId, new RunCompletion(result.Outcome, result.Reason, context.Taint.Sources) { TimeToFirstDeltaMs = transcript.FirstDeltaMs }, cancellationToken);
         LogRunCompleted(logger, runId.Value, result.Outcome, result.Reason);
-        return new AgentRunResult(runId, result.Reply, continueConversation, result.Outcome, result.Reason, result.Pending);
+        return new AgentRunResult(runId, result.Reply, continueConversation, result.Outcome, result.Reason, result.Pending) { Data = result.Data };
+    }
+
+    // Later turns of the session keep what this turn loaded; the core namespaces load anyway.
+    private async Task SaveLoadedNamespacesAsync(MarshalExecutionContext context, bool nested, CancellationToken ct)
+    {
+        if (nested || sessionTools is null || context.SessionId is not { } session || !context.LoadedTools.RetrievalActive)
+            return;
+
+        await sessionTools.SaveAsync(session, [.. context.LoadedTools.All.Where(item => item.Reason != LoadReasons.Core).Select(item => item.Name)], ct);
     }
 
     private static async Task<LoopResult> TooLongAsync(AgentRunRequest request, MarshalExecutionContext context, CancellationToken cancellationToken)
@@ -268,8 +283,9 @@ public sealed partial class AgentRunner(
     }
 
     private async Task<(string Text, PendingActionRecord? Frozen)> HandleCallAsync(
-        FunctionCallContent call, MarshalExecutionContext context, IReadOnlySet<string> offered, PendingActionRecord? pending, Transcript transcript, CancellationToken ct)
+        FunctionCallContent call, MarshalExecutionContext context, HashSet<string> offered, PendingActionRecord? pending, Transcript transcript, CancellationToken ct)
     {
+        int loadMark = context.LoadedTools.All.Count;
         JsonElement arguments = JsonSerializer.SerializeToElement(call.Arguments ?? new Dictionary<string, object?>(), _argumentJson);
         string argumentSummary = _summarizer.Arguments(arguments);
         if (pending is not null)
@@ -282,6 +298,7 @@ public sealed partial class AgentRunner(
             return (ErrorText(notNow), null);
         }
 
+        await LoadOnCallAsync(call.Name, context, offered, ct);
         GuardVerdict verdict = await guard.EvaluateAsync(new GuardRequest(call.Name, arguments, context, offered), ct);
         string toolName = verdict.Tool?.Id.ToString() ?? GuessId(call.Name)?.ToString() ?? call.Name;
         LogToolDecision(logger, toolName, verdict.Decision);
@@ -289,7 +306,7 @@ public sealed partial class AgentRunner(
         switch (verdict.Outcome)
         {
             case GuardOutcome.Deny:
-                await RecordToolStepAsync(verdict.Tool, call.Name, arguments, verdict.Tier, GuardDecision.Denied, [], null, verdict.Denial, 0, ct);
+                await RecordToolStepAsync(verdict.Tool, call.Name, arguments, verdict.Tier, GuardDecision.Denied, [], null, verdict.Denial, 0, ct, LoadNotes(context, loadMark));
                 await transcript.EmitAsync(new ToolEvent(call.CallId, toolName, argumentSummary, ToolEventState.Denied, 0, verdict.Denial?.Code), ct);
                 return (ErrorText(verdict.Denial!), null);
 
@@ -308,34 +325,77 @@ public sealed partial class AgentRunner(
                     context.TaskId,
                     context.RunId,
                     context.Taint.Sources);
-                PendingActionRecord frozen = Suspends(context)
+                PendingActionRecord frozen = Queues(context)
                     ? await approvals!.EnqueueAsync(freeze, ct)
                     : await pendingActions.FreezeAsync(freeze, ct);
-                await RecordToolStepAsync(confirmTool, call.Name, arguments, verdict.Tier, verdict.Decision, verdict.Reasons, null, null, 0, ct);
+                await RecordToolStepAsync(confirmTool, call.Name, arguments, verdict.Tier, verdict.Decision, verdict.Reasons, null, null, 0, ct, LoadNotes(context, loadMark));
                 await transcript.EmitAsync(new ToolEvent(call.CallId, toolName, argumentSummary, ToolEventState.Pending, 0), ct);
+
+                // Nobody in a run without a task can confirm: the action waits in the queue and the run goes on.
+                if (Queues(context) && context.TaskId is null)
+                    return (QueuedText(frozen), null);
+
                 return (PendingText(frozen), frozen);
 
             default:
-                return (await ExecuteAsync(verdict.Tool!, call, arguments, argumentSummary, verdict, context, transcript, ct), null);
+                return (await ExecuteAsync(verdict.Tool!, call, arguments, argumentSummary, verdict, context, transcript, loadMark, ct), null);
         }
     }
 
-    private async Task<string> ExecuteAsync(
-        RegisteredTool tool, FunctionCallContent call, JsonElement arguments, string argumentSummary, GuardVerdict verdict, MarshalExecutionContext context, Transcript transcript, CancellationToken ct)
+    // A visible tool of a namespace the run has not loaded (the model may know it from earlier sessions) loads the
+    // namespace. Retrieval saves tokens; it is not a boundary, so refusing would only cost a round trip.
+    private async Task LoadOnCallAsync(string modelName, MarshalExecutionContext context, HashSet<string> offered, CancellationToken ct)
     {
+        if (selector is null || !context.LoadedTools.RetrievalActive || offered.Contains(modelName))
+            return;
+
+        RegisteredTool? tool = (context.Tools ?? registry.Current).FindByModelName(modelName);
+        if (tool is null || tool.Id == NamespaceToolSelector.FindToolsId || context.LoadedTools.Contains(tool.Id.Namespace))
+            return;
+
+        if (!(await visibility.CheckAsync(tool, context, ct)).IsVisible)
+            return;
+
+        context.LoadedTools.Load(tool.Id.Namespace, LoadReasons.Call);
+        offered.Add(modelName);
+    }
+
+    private static IReadOnlyList<ContextNote> LoadNotes(MarshalExecutionContext context, int mark) =>
+        [.. context.LoadedTools.All.Skip(mark).Select(item => new ContextNote(LoadReasons.NoteKind, item.Name, item.Reason, item.Score))];
+
+    // In a voice turn nothing has been said yet and a slow tool is next: speak its filler so the user hears something.
+    private async Task SpeakFillerAsync(RegisteredTool tool, MarshalExecutionContext context, Transcript transcript, CancellationToken ct)
+    {
+        if (context.InputMode != InputMode.Voice || transcript.DeltaSent || !tool.Descriptor.Fillers.TryGetValue(context.Language, out string? line))
+            return;
+
+        int threshold = voiceOptions?.Value.FillerThresholdMs ?? new VoiceOptions().FillerThresholdMs;
+        TimeSpan? expected = latency is null ? null : await latency.ExpectedDurationAsync(tool.Id, ct);
+        if ((expected?.TotalMilliseconds ?? threshold + 1) <= threshold)
+            return;
+
+        transcript.Filler = line;
+        await transcript.EmitAsync(new DeltaEvent(line), ct);
+    }
+
+    private async Task<string> ExecuteAsync(
+        RegisteredTool tool, FunctionCallContent call, JsonElement arguments, string argumentSummary, GuardVerdict verdict, MarshalExecutionContext context, Transcript transcript, int loadMark, CancellationToken ct)
+    {
+        await SpeakFillerAsync(tool, context, transcript, ct);
         long started = timeProvider.GetTimestamp();
         Result<ToolOutput> result = await InvokeAsync(tool, arguments, context, ct);
         int duration = (int)timeProvider.GetElapsedTime(started).TotalMilliseconds;
-        string text = await CompleteToolCallAsync(tool, call.Name, arguments, verdict.Tier, verdict.Decision, result, duration, context, transcript, ct);
+        string text = await CompleteToolCallAsync(tool, call.Name, arguments, verdict.Tier, verdict.Decision, result, duration, context, transcript, ct, loadMark);
         string? summary = _summarizer.Result(tool.Id, tool.Descriptor.Sensitive, result.IsSuccess ? result.Value.Content : null, result.IsFailure ? result.Error.Code : null);
         await transcript.EmitAsync(new ToolEvent(call.CallId, tool.Id.ToString(), argumentSummary, result.IsSuccess ? ToolEventState.Ok : ToolEventState.Error, duration, summary), ct);
         return text;
     }
 
     private async Task<string> CompleteToolCallAsync(
-        RegisteredTool tool, string modelName, JsonElement arguments, RiskTier? tier, GuardDecision decision, Result<ToolOutput> result, int duration, MarshalExecutionContext context, Transcript transcript, CancellationToken ct)
+        RegisteredTool tool, string modelName, JsonElement arguments, RiskTier? tier, GuardDecision decision, Result<ToolOutput> result, int duration, MarshalExecutionContext context, Transcript transcript, CancellationToken ct, int? loadMark = null)
     {
-        int step = await RecordToolStepAsync(tool, modelName, arguments, tier, decision, [], result.IsSuccess ? result.Value : null, result.IsFailure ? result.Error : null, duration, ct);
+        int step = await RecordToolStepAsync(
+            tool, modelName, arguments, tier, decision, [], result.IsSuccess ? result.Value : null, result.IsFailure ? result.Error : null, duration, ct, loadMark is { } mark ? LoadNotes(context, mark) : null);
         if (result.IsFailure)
             return ErrorText(result.Error);
 
@@ -396,9 +456,10 @@ public sealed partial class AgentRunner(
 
     private async Task<int> RecordToolStepAsync(
         RegisteredTool? tool, string modelName, JsonElement arguments, RiskTier? tier, GuardDecision decision,
-        IReadOnlyList<ConfirmationReason> reasons, ToolOutput? output, Error? error, int duration, CancellationToken ct) =>
+        IReadOnlyList<ConfirmationReason> reasons, ToolOutput? output, Error? error, int duration, CancellationToken ct, IReadOnlyList<ContextNote>? notes = null) =>
         await RecordAsync(new RunStepRecord
         {
+            Notes = notes ?? [],
             Kind = RunStepKind.ToolCall,
             Tool = tool?.Id ?? GuessId(modelName),
             RiskTier = tier,
@@ -469,8 +530,19 @@ public sealed partial class AgentRunner(
 
         public void Update(List<ChatMessage> messages) => Messages = [.. messages.Skip(1)];
 
+        /// <summary>The filler line spoken before a slow tool, if any.</summary>
+        public string? Filler { get; set; }
+
+        /// <summary>True once a <c>delta</c> was sent (model text, filler or a fixed reply).</summary>
+        public bool DeltaSent => FirstDeltaMs is not null;
+
+        /// <summary>Milliseconds from the request to the first <c>delta</c>.</summary>
+        public int? FirstDeltaMs { get; private set; }
+
         public async ValueTask EmitAsync(TurnEvent turnEvent, CancellationToken ct)
         {
+            if (turnEvent is DeltaEvent && FirstDeltaMs is null)
+                FirstDeltaMs = (int)time.GetElapsedTime(requestStarted).TotalMilliseconds;
             if (events is not null)
                 await events.WriteAsync(turnEvent, ct);
         }

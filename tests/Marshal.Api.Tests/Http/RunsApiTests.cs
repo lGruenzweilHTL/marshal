@@ -79,6 +79,67 @@ public sealed class RunsApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Runs_TimeToFirstDelta_ListedAndSortedSlowestFirst()
+    {
+        _factory.Model.ThenText("one").ThenText("two").ThenText("three");
+        (HttpClient browser, Abstractions.Identity.OwnerId owner) = await Browser.SignInAsync(_factory, "user");
+        await TurnAsync(browser, "first");
+        await TurnAsync(browser, "second");
+        await TurnAsync(browser, "third");
+        List<JsonElement> listed = (await browser.GetFromJsonAsync<List<JsonElement>>("/api/v1/runs", Ct))!;
+        Assert.All(listed, run => Assert.True(run.GetProperty("timeToFirstDeltaMs").GetInt32() >= 0));
+        string slow = listed[1].GetProperty("id").GetString()!;
+        await _factory.WithDatabaseAsync(owner, async db =>
+        {
+            List<Data.Conversations.Run> rows = [.. db.Runs];
+            foreach (Data.Conversations.Run run in rows)
+                run.TimeToFirstDeltaMs = run.Id.ToString() == slow ? 1600 : 300;
+            rows.First(run => run.Id.ToString() != slow).TimeToFirstDeltaMs = null;
+            return await db.SaveChangesAsync(Ct);
+        });
+
+        List<JsonElement> sorted = (await browser.GetFromJsonAsync<List<JsonElement>>("/api/v1/runs?sort=timeToFirstDelta", Ct))!;
+
+        Assert.Equal(slow, sorted[0].GetProperty("id").GetString());
+        Assert.Equal(2, sorted.Count);
+    }
+
+    [Fact]
+    public async Task Runs_UnknownSort_Returns400()
+    {
+        (HttpClient browser, _) = await Browser.SignInAsync(_factory, "user");
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await browser.GetAsync("/api/v1/runs?sort=cost", Ct)).StatusCode);
+    }
+
+    [Fact]
+    public async Task RunDetail_ListsLoadedNamespacesWithReasons()
+    {
+        Dictionary<string, string?> settings = AuthFactory.Local().ToSettings(0);
+        settings["tools:retrieval:enabled"] = "true";
+        settings["tools:retrieval:minTools"] = "0";
+        await using var factory = new MarshalApiFactory(settings);
+        factory.Model.ThenText("hello");
+        (HttpClient browser, _) = await Browser.SignInAsync(factory, "user");
+        await TurnAsync(browser, "hi");
+        string id = (await browser.GetFromJsonAsync<List<JsonElement>>("/api/v1/runs", Ct))![0].GetProperty("id").GetString()!;
+
+        JsonElement detail = await browser.GetFromJsonAsync<JsonElement>($"/api/v1/runs/{id}", Ct);
+
+        JsonElement agent = detail.GetProperty("loadedNamespaces").EnumerateArray().First();
+        Assert.Equal(("agent", "core"), (agent.GetProperty("name").GetString(), agent.GetProperty("reason").GetString()));
+    }
+
+    [Fact]
+    public async Task OpenApi_RunFieldsForLatencyAndToolRetrieval()
+    {
+        string document = await _factory.CreateClient().GetStringAsync("/openapi/v1.json", Ct);
+
+        Assert.Contains("\"timeToFirstDeltaMs\"", document, StringComparison.Ordinal);
+        Assert.Contains("\"loadedNamespaces\"", document, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Runs_UnknownFilterValue_Returns400()
     {
         (HttpClient browser, _) = await Browser.SignInAsync(_factory, "user");

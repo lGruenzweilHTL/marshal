@@ -132,6 +132,7 @@ public sealed class PrinterCameraTools(
             Description = "Takes a webcam snapshot of the 3D printer and returns it as a Markdown image to show the user.",
             ParametersSchema = Schema(owner._directory, []),
             DefaultTier = RiskTier.Safe,
+            Fillers = ToolFillers.Lines("Ich schaue mir den Drucker an.", "Let me look at the printer."),
         };
 
         public ValueTask<bool> IsAvailableAsync(MarshalExecutionContext context, CancellationToken cancellationToken) => owner.AnyWebcamAsync(cancellationToken);
@@ -161,6 +162,7 @@ public sealed class PrinterCameraTools(
             Description = "Looks at the 3D printer's webcam and answers a question about what is visible, e.g. whether the print looks fine.",
             ParametersSchema = Schema(owner._directory, new JsonObject { ["question"] = new JsonObject { ["type"] = "string", ["description"] = "What to look for." } }),
             DefaultTier = RiskTier.Safe,
+            Fillers = ToolFillers.Lines("Ich schaue mir den Drucker an.", "Let me look at the printer."),
         };
 
         public async ValueTask<bool> IsAvailableAsync(MarshalExecutionContext context, CancellationToken cancellationToken) =>

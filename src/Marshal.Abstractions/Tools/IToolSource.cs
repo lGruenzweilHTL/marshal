@@ -11,6 +11,9 @@ public interface IToolSource
     /// <summary>True for Marshal's own tools, which may use reserved namespaces.</summary>
     bool IsBuiltIn { get; }
 
+    /// <summary>Description of every namespace this source's tools use.</summary>
+    IReadOnlyList<ToolNamespace> Namespaces { get; }
+
     /// <summary>The tools currently offered by this source.</summary>
     Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken);
 }

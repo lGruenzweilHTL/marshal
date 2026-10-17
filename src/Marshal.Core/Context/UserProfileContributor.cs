@@ -9,6 +9,8 @@ namespace Marshal.Core.Context;
 /// </summary>
 public sealed class UserProfileContributor(IUserProfileProvider profiles) : IContextContributor
 {
+    public ContextStability Stability => ContextStability.Session;
+
     public int Order => 100;
 
     public async Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken)

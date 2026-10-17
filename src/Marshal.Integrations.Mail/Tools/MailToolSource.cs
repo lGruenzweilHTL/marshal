@@ -13,5 +13,8 @@ public sealed class MailToolSource(IMailAccountStore accounts, IEnumerable<IMail
 
     public bool IsBuiltIn => true;
 
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [new("mail", "Email: searching and reading mail, mailboxes, drafting replies")];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) => Task.FromResult(_tools);
 }

@@ -68,12 +68,44 @@ internal sealed class LoopHarness
     /// <summary>Background handoffs of the runner; refuses until <see cref="RecordingHandoff.Accepts"/> is set.</summary>
     public RecordingHandoff Handoff { get; } = new();
 
+    /// <summary>Tool retrieval settings; with the defaults, the harness's few tools fall under <c>minTools</c> and retrieval is skipped.</summary>
+    public ToolsOptions ToolsOptions { get; } = new();
+
+    public VoiceOptions VoiceOptions { get; } = new();
+
+    public FakeEmbeddingGenerator Embeddings { get; } = new(dimensions: 4);
+
+    /// <summary>The turn embedding tool retrieval sees; none unless set.</summary>
+    public FixedTurnEmbedding TurnEmbedding { get; } = new();
+
+    /// <summary>Namespace hints; add to make a turn load a namespace deterministically.</summary>
+    public List<IToolNamespaceHints> Hints { get; } = [];
+
+    public InMemorySessionToolNamespaces SessionTools { get; } = new();
+
+    public FixedToolLatency Latency { get; } = new();
+
+    public NamespaceToolSelector Selector { get; private set; } = null!;
+
+    public ToolVisibilityFilter Visibility { get; private set; } = null!;
+
+    /// <summary>Approval queue of non-interactive runs; freezes into <see cref="Store"/> and records what it queued.</summary>
+    public QueueingApprovals Approvals { get; private set; } = null!;
+
     public static async Task<LoopHarness> CreateAsync(string rules = "risk: []", SatelliteProfile? kitchen = null, bool withAdvisor = true, Func<LoopHarness, ITool[]>? builtIns = null, IContextContributor[]? contributors = null, params ITool[] tools)
     {
         var harness = new LoopHarness();
         harness.Store = new InMemoryPendingActionStore(harness.Time);
+        harness.Approvals = new QueueingApprovals(harness.Store);
         harness.Router = new SingleModelRouter(harness.Model, withAdvisor ? harness.Advisor : null);
         harness.DelegateTool = new DelegateTool(() => harness.Runner, harness.Templates, Microsoft.Extensions.Options.Options.Create(harness.Options));
+        harness.Selector = new NamespaceToolSelector(
+            Microsoft.Extensions.Options.Options.Create(harness.ToolsOptions),
+            harness.Hints,
+            new CachedNamespaceEmbeddings(harness.Embeddings),
+            harness.Embeddings,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<NamespaceToolSelector>.Instance,
+            harness.TurnEmbedding);
         ITool[] all = [.. tools, .. builtIns?.Invoke(harness) ?? []];
         harness.Source = new FakeToolSource("test", true, all);
         harness.Registry = new ToolRegistry([harness.Source]);
@@ -81,7 +113,9 @@ internal sealed class LoopHarness
         RuleBasedRiskEngine engine = GuardTestKit.Engine(rules);
         var satellites = new FixedSatellites("assist_satellite.kitchen", kitchen ?? SatelliteProfile.Default);
         var visibility = new ToolVisibilityFilter(harness.Registry, engine, satellites, harness.Templates);
+        harness.Visibility = visibility;
         var guard = new ToolCallGuard(harness.Registry, visibility, engine, satellites);
+        var costs = new PriceTableCostCalculator(Microsoft.Extensions.Options.Options.Create(harness.Routing));
         harness.Runner = new AgentRunner(
             harness.Router,
             harness.Registry,
@@ -111,6 +145,60 @@ internal sealed class LoopHarness
 
         return events;
     }
+}
+
+internal sealed class QueueingApprovals(InMemoryPendingActionStore store) : IApprovalQueue
+{
+    public List<PendingActionRecord> Queued { get; } = [];
+
+    public async Task<PendingActionRecord> EnqueueAsync(FreezeRequest request, CancellationToken cancellationToken)
+    {
+        PendingActionRecord frozen = await store.FreezeAsync(request with { Queued = true }, cancellationToken);
+        Queued.Add(frozen);
+        return frozen;
+    }
+
+    public Task<IReadOnlyList<PendingActionRecord>> ListPendingAsync(CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<PendingActionRecord>>(Queued);
+
+    public Task<Marshal.Abstractions.Result<PendingActionRecord>> DecideAsync(PendingActionId id, bool approve, DecidedBy decidedBy, CancellationToken cancellationToken) =>
+        throw new NotSupportedException();
+}
+
+internal sealed class FixedTurnEmbedding : ITurnEmbedding
+{
+    public float[]? Vector { get; set; }
+
+    public Task<ReadOnlyMemory<float>?> GetAsync(ContextRequest request, CancellationToken cancellationToken) =>
+        Task.FromResult<ReadOnlyMemory<float>?>(Vector);
+}
+
+internal sealed class FixedHints(params string[] names) : IToolNamespaceHints
+{
+    public Task<IReadOnlyList<string>> GetHintsAsync(string turnText, Marshal.Abstractions.Execution.MarshalExecutionContext context, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<string>>(names);
+}
+
+internal sealed class InMemorySessionToolNamespaces : Marshal.Abstractions.Sessions.ISessionToolNamespaces
+{
+    public Dictionary<Marshal.Abstractions.Sessions.SessionId, IReadOnlyList<string>> Saved { get; } = [];
+
+    public Task<IReadOnlyList<string>> GetAsync(Marshal.Abstractions.Sessions.SessionId sessionId, CancellationToken cancellationToken) =>
+        Task.FromResult(Saved.GetValueOrDefault(sessionId) ?? []);
+
+    public Task SaveAsync(Marshal.Abstractions.Sessions.SessionId sessionId, IReadOnlyList<string> namespaces, CancellationToken cancellationToken)
+    {
+        Saved[sessionId] = namespaces;
+        return Task.CompletedTask;
+    }
+}
+
+internal sealed class FixedToolLatency : Marshal.Abstractions.Runs.IToolLatencyStats
+{
+    public Dictionary<ToolId, TimeSpan?> Expected { get; } = [];
+
+    public Task<TimeSpan?> ExpectedDurationAsync(ToolId tool, CancellationToken cancellationToken) =>
+        Task.FromResult(Expected.GetValueOrDefault(tool));
 }
 
 internal sealed class RunnerSpy(IAgentRunner inner) : IAgentRunner

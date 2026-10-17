@@ -26,13 +26,13 @@ internal sealed class ProviderChatClientFactory : IChatClientFactory
         _ => throw new InvalidOperationException($"models.{key}.provider '{options.Provider}' is not supported."),
     };
 
-    private static IChatClient CreateAnthropic(ModelOptions options)
+    private static AnthropicPromptCaching CreateAnthropic(ModelOptions options)
     {
         var client = new AnthropicClient
         {
             ApiKey = options.ApiKey ?? throw new InvalidOperationException("Anthropic API key was not resolved."),
             BaseUrl = options.Endpoint?.ToString() ?? "https://api.anthropic.com",
         };
-        return client.AsIChatClient(options.Model);
+        return new AnthropicPromptCaching(client.AsIChatClient(options.Model));
     }
 }

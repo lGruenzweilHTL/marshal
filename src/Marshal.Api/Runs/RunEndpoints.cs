@@ -19,7 +19,7 @@ internal static class RunEndpoints
     public static RouteGroupBuilder MapRunEndpoints(this RouteGroupBuilder group)
     {
         group.MapGet("/runs", ListAsync).RequireAuthorization(Policies.Human).WithTags("Runs").WithName("ListRuns")
-            .WithSummary("The user's runs (voice, web, task, api), newest first; filter by source, outcome and minimum cost, page with before.");
+            .WithSummary("The user's runs (voice, web, task, api), newest first or slowest time to first delta first (sort=timeToFirstDelta); filter by source, outcome and minimum cost, page with before.");
         group.MapGet("/runs/{id}", GetAsync).RequireAuthorization(Policies.Human).WithTags("Runs").WithName("GetRun")
             .WithSummary("One run: context build, model calls, tool calls with guard decisions, taint sources and the reply.");
         group.MapGet("/cost", CostAsync).RequireAuthorization(Policies.Human).WithTags("Runs").WithName("GetCost")
@@ -28,13 +28,22 @@ internal static class RunEndpoints
     }
 
     private static async Task<Results<Ok<IReadOnlyList<RunSummary>>, ProblemHttpResult>> ListAsync(
-        string? source, string? outcome, decimal? minCost, DateTimeOffset? before, int? limit, IRunQueries runs, CancellationToken ct)
+        string? source, string? outcome, decimal? minCost, DateTimeOffset? before, int? limit, string? sort, IRunQueries runs, CancellationToken ct)
     {
         // Query values use the same camelCase names as the JSON (voice, web, ok, error, ...).
         if (!TryParse(source, out SessionSource? sourceFilter) || !TryParse(outcome, out RunOutcome? outcomeFilter))
             return new Error("runs.invalid_filter", "Unknown source or outcome.", ErrorType.Validation).ToProblem();
 
-        return TypedResults.Ok(await runs.ListAsync(new RunFilter(sourceFilter, outcomeFilter, minCost, before, limit ?? 50), ct));
+        RunSort? order = sort switch
+        {
+            null or "newest" => RunSort.Newest,
+            "timeToFirstDelta" => RunSort.SlowestFirstDelta,
+            _ => null,
+        };
+        if (order is null)
+            return new Error("runs.invalid_sort", "sort must be newest or timeToFirstDelta.", ErrorType.Validation).ToProblem();
+
+        return TypedResults.Ok(await runs.ListAsync(new RunFilter(sourceFilter, outcomeFilter, minCost, before, limit ?? 50) { Sort = order.Value }, ct));
     }
 
     private static bool TryParse<TEnum>(string? value, out TEnum? parsed)

@@ -11,6 +11,8 @@ namespace Marshal.Core.Context;
 /// </summary>
 public sealed class SatelliteContextContributor(ISatelliteContextProvider satellites, ISpeakerDirectory speakers) : IContextContributor
 {
+    public ContextStability Stability => ContextStability.Session;
+
     public int Order => 300;
 
     public async Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken)

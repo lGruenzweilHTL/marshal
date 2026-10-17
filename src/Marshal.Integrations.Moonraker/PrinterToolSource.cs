@@ -12,5 +12,8 @@ public sealed class PrinterToolSource(IPrinterDirectory directory, IPrinterClien
 
     public bool IsBuiltIn => true;
 
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [new("printer", "3D printers: print status, progress, temperatures, camera snapshots, starting, pausing and cancelling prints")];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) => Task.FromResult(_tools);
 }

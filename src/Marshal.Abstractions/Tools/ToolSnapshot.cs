@@ -9,10 +9,11 @@ public sealed class ToolSnapshot
     private readonly Dictionary<string, RegisteredTool> _byModelName;
     private readonly Dictionary<ToolId, RegisteredTool> _byId;
 
-    public ToolSnapshot(IReadOnlyList<RegisteredTool> tools, IReadOnlyList<ToolSourceError> errors)
+    public ToolSnapshot(IReadOnlyList<RegisteredTool> tools, IReadOnlyList<ToolSourceError> errors, IReadOnlyList<ToolNamespace>? namespaces = null)
     {
         Tools = tools;
         Errors = errors;
+        Namespaces = namespaces ?? [];
         _byModelName = tools.ToDictionary(tool => tool.ModelName, StringComparer.Ordinal);
         _byId = tools.ToDictionary(tool => tool.Id);
     }
@@ -22,6 +23,9 @@ public sealed class ToolSnapshot
 
     /// <summary>Accepted tools.</summary>
     public IReadOnlyList<RegisteredTool> Tools { get; }
+
+    /// <summary>Descriptions of the namespaces of the accepted sources, one per namespace.</summary>
+    public IReadOnlyList<ToolNamespace> Namespaces { get; }
 
     /// <summary>Sources rejected by this refresh.</summary>
     public IReadOnlyList<ToolSourceError> Errors { get; }

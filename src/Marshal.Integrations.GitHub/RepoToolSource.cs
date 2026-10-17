@@ -33,6 +33,9 @@ public sealed partial class RepoToolSource(IGitHubClient client, IArtifactStore 
 
     public bool IsBuiltIn => true;
 
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [new("repos", "GitHub repositories: pull requests, issues, commits, workflow runs and failed builds")];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken)
     {
         IReadOnlyList<GitHubRepo> repos = options.Value.Repositories();
@@ -64,6 +67,7 @@ public sealed partial class RepoToolSource(IGitHubClient client, IArtifactStore 
                 DefaultTier = RiskTier.Safe,
                 UntrustedOutput = true,
                 TaintKind = "github",
+                Fillers = ToolFillers.Lines("Ich sehe auf GitHub nach.", "Let me check GitHub."),
             };
         }
 

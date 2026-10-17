@@ -37,4 +37,7 @@ public sealed class Session : IOwned
 
     /// <summary>Newest turn or background result the memory summarizer has read; later ones are summarized next.</summary>
     public DateTimeOffset? SummarizedUntil { get; set; }
+
+    /// <summary>JSON array of tool namespaces the session loaded beyond the core ones, in load order; null = core only.</summary>
+    public string? LoadedToolNamespaces { get; set; }
 }

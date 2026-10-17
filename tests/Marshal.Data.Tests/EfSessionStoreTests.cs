@@ -34,6 +34,50 @@ public sealed class EfSessionStoreTests
     }
 
     [Fact]
+    public async Task LoadedToolNamespaces_RoundTripInLoadOrder()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        await using MarshalDbContext context = database.CreateContext(OwnerA);
+        var store = new EfSessionStore(database.Factory, database.Accessor, _time);
+        SessionRecord session = await store.CreateAsync(new NewSession(SessionSource.Web, null, null, _evidence, "principal"), Ct);
+
+        await store.SaveAsync(session.Id, ["printer", "music"], Ct);
+
+        Assert.Equal(["printer", "music"], await store.GetAsync(session.Id, Ct));
+    }
+
+    [Fact]
+    public async Task LoadedToolNamespaces_NewSession_EmptyMeansCoreOnly()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        await using MarshalDbContext context = database.CreateContext(OwnerA);
+        var store = new EfSessionStore(database.Factory, database.Accessor, _time);
+        SessionRecord session = await store.CreateAsync(new NewSession(SessionSource.Web, null, null, _evidence, "principal"), Ct);
+
+        await store.SaveAsync(session.Id, [], Ct);
+
+        Assert.Empty(await store.GetAsync(session.Id, Ct));
+        Assert.Null((await context.Sessions.SingleAsync(Ct)).LoadedToolNamespaces);
+    }
+
+    [Fact]
+    public async Task LoadedToolNamespaces_OtherOwner_NotVisible()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        var store = new EfSessionStore(database.Factory, database.Accessor, _time);
+        SessionRecord session;
+        await using (database.CreateContext(OwnerA))
+        {
+            session = await store.CreateAsync(new NewSession(SessionSource.Web, null, null, _evidence, "principal"), Ct);
+            await store.SaveAsync(session.Id, ["printer"], Ct);
+        }
+
+        await using MarshalDbContext other = database.CreateContext(OwnerB);
+
+        Assert.Empty(await store.GetAsync(session.Id, Ct));
+    }
+
+    [Fact]
     public async Task FindOpenByToken_SameIdOtherToken_NotFound()
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();

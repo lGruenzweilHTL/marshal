@@ -34,9 +34,17 @@ Every view works at phone width. The views you act on (Home, Inbox, Chat, Printe
 | Settings | Preferences | Language, time zone, appearance, quiet hours, notification targets, do-not-disturb. |
 | Settings | Security | API tokens, passkeys and secrets. |
 | Settings | System | Health and the kill switch. In demo mode, also the list of simulated integrations. |
-| Settings | Configuration | Read-only view of loaded configuration. Admins only. |
+| Settings | Configuration | Read-only view of loaded configuration, and approval of changed MCP tools. Admins only. |
 
 ![Marshal memory view showing remembered chunks](../../images/memory.png)
+
+## Runs view
+
+The runs list shows every run with its source, trigger, outcome, cost and "first words": the time from the request to the first spoken or streamed text. Select "Slowest first words" to sort by that time, slowest first, and find the voice turns that felt slow. Runs without any streamed text are left out of that order.
+
+A run's detail lists its steps. The context step shows "Tools loaded": the tool namespaces the run offered the model and why each was loaded (`core`, `session`, `hint`, `retrieval` with its similarity score, `find_tools` or `call`). Loads during the run appear on the tool step that caused them. A namespace that should have been loaded but was not points to a description or a threshold to tune; see [tool retrieval](../../concepts/tool-visibility.md#tool-retrieval).
+
+A voice run also gets a timeline above the steps: context build, model calls (with a mark at the first token) and tool calls, laid end to end from the request to the end of the run, with the first words marked.
 
 ## Approvals from a push notification
 

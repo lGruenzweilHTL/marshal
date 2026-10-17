@@ -20,5 +20,8 @@ public sealed class PlacesToolSource(
 
     public bool IsBuiltIn => true;
 
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [new("places", "Where people are: home, work, zones, distances and travel times")];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) => Task.FromResult(_tools);
 }

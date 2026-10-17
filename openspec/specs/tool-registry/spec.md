@@ -17,7 +17,7 @@ Every tool SHALL have an internal id `<namespace>.<name>` used in risk rules, sa
 - **THEN** the call is denied, nothing is executed, and the model receives an error result
 
 ### Requirement: Reserved namespaces
-The namespaces `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra`, `repos`, `media` and `music` SHALL be reserved for built-in tools. Built-in namespaces SHALL name capabilities, never providers.
+The namespaces `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra`, `repos`, `media`, `music` and `system` SHALL be reserved for built-in tools. Built-in namespaces SHALL name capabilities, never providers.
 
 #### Scenario: Reserved namespace used by another tool source
 - **WHEN** a non-built-in tool source registers a tool in namespace `mail`
@@ -69,3 +69,59 @@ External tools that no risk rule matches SHALL default to `confirm`. Built-in to
 #### Scenario: Unmatched MCP tool
 - **WHEN** a new MCP server's tool matches no rule in `risk.yaml`
 - **THEN** calling it creates a pending action with reason `rule`
+
+### Requirement: Namespace descriptions
+Every tool namespace SHALL have a one-line English description used for tool retrieval. Built-in tool sources SHALL declare the description of their namespaces. An MCP server MAY set `description` in its `/config/mcp/<id>.yaml`; without it, the description SHALL be built from the server id and the names of its tools.
+
+#### Scenario: MCP description from config
+- **WHEN** `/config/mcp/paperless.yaml` sets `description: "Scanned documents, letters and bills"`
+- **THEN** retrieval matches the `paperless` namespace against that text
+
+#### Scenario: MCP description fallback
+- **WHEN** an MCP server has no `description`
+- **THEN** its namespace description is built from its id and tool names
+
+### Requirement: Tool retrieval
+After the visibility filter, the system SHALL reduce the tool list to the loaded namespaces of the session. The namespaces in `tools.core` (default `agent`, `memory`, `tasks`, `notifications`, `timers`, `places`) SHALL always be loaded. Before each turn's first model call, the system SHALL load further namespaces whose description matches the turn text above `tools.retrieval.threshold` (at most `tools.retrieval.maxPerTurn`, default 3, best first) and every namespace a deterministic hint names. Loaded namespaces SHALL stay loaded for the rest of the session. Retrieval SHALL be skipped, and all visible tools shown, when `tools.retrieval.enabled` is false or the visible tool list has at most `tools.retrieval.minTools` tools (default 24). Retrieval SHALL never make a tool visible that the visibility filter removed.
+
+#### Scenario: Printer question
+- **WHEN** a session has only the core namespaces loaded and the turn is "how far is the print?"
+- **THEN** the `printer` namespace is loaded and the model call includes the printer tools
+
+#### Scenario: Loaded namespaces persist
+- **WHEN** the first turn loaded `music` and the second turn is "a bit louder"
+- **THEN** the second turn's model call still includes the music tools
+
+#### Scenario: Entity hint
+- **WHEN** the turn names the HA entity "Stehlampe" and its embedding does not match the `ha` description
+- **THEN** the `ha` namespace is loaded by the HA hint
+
+#### Scenario: Narrow template
+- **WHEN** a run's template allows only two tools
+- **THEN** retrieval is skipped and both tools are visible
+
+#### Scenario: Filtered tool stays hidden
+- **WHEN** a satellite denies `mail.*` and the turn is about mail
+- **THEN** no mail tool is in the list, whatever the retrieval score
+
+### Requirement: Finding tools
+The system SHALL provide `agent.find_tools(query)` (safe). It SHALL load the namespaces whose description best matches `query` (at most `tools.retrieval.maxPerTurn`), considering only namespaces with at least one tool that is visible in this run, and SHALL return their names and descriptions. Newly loaded tools SHALL be offered from the next model call of the same run on. The tool SHALL be hidden when retrieval is disabled or skipped for the run, or when every namespace with visible tools is already loaded. A call to a visible tool whose namespace is not loaded SHALL load the namespace and proceed through the guard as usual.
+
+#### Scenario: Model finds a missing namespace
+- **WHEN** the model calls `agent_find_tools` with "calendar"
+- **THEN** the result names `calendar` and the next model call includes the calendar tools
+
+#### Scenario: Hidden namespaces are not revealed
+- **WHEN** a satellite denies `mail.*` and the model calls `agent_find_tools` with "mail"
+- **THEN** the result does not name `mail`
+
+#### Scenario: Call to an unloaded namespace
+- **WHEN** the model calls `printer_status`, which is visible but not loaded
+- **THEN** `printer` is loaded and the call is executed after the guard allows it
+
+### Requirement: Stable tool order
+The tool list SHALL be ordered deterministically: core namespaces in the order of `tools.core`, then other namespaces in the order they were loaded in the session, and tools within a namespace by name. Loading a namespace SHALL only append tools to the end of the list.
+
+#### Scenario: Append only
+- **WHEN** a session's list is core plus `printer` and the turn loads `music`
+- **THEN** the new list starts with exactly the previous list and ends with the music tools

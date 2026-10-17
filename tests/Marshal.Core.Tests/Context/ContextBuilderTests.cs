@@ -24,6 +24,47 @@ public sealed class ContextBuilderTests
     }
 
     [Fact]
+    public async Task Build_OrderedByStabilityThenOrder()
+    {
+        var builder = new ContextBuilder(
+        [
+            new FixedContributor(200, "time", ContextStability.Turn),
+            new FixedContributor(250, "skills", ContextStability.Static),
+            new FixedContributor(100, "profile", ContextStability.Session),
+            new FixedContributor(0, "base", ContextStability.Static),
+        ]);
+
+        string prompt = await builder.BuildSystemPromptAsync(Request(TestExecutionContext.Text()), Ct);
+
+        Assert.Equal("base\n\nskills\n\nprofile\n\ntime", prompt);
+    }
+
+    [Fact]
+    public async Task Build_StableAndTurnParts()
+    {
+        var builder = new ContextBuilder([new FixedContributor(0, "base"), new FixedContributor(160, "memory", ContextStability.Turn), new FixedContributor(100, "profile", ContextStability.Session)]);
+
+        SystemPrompt prompt = await builder.BuildAsync(Request(TestExecutionContext.Text()), Ct);
+
+        Assert.Equal(("base\n\nprofile\n\n", "memory"), (prompt.Stable, prompt.Turn));
+        Assert.Equal("base\n\nprofile\n\nmemory", prompt.Text);
+    }
+
+    [Fact]
+    public async Task Build_ConsecutiveTurns_IdenticalUpToTheFirstTurnSection()
+    {
+        ContextBuilder builder = Standard();
+
+        SystemPrompt first = await builder.BuildAsync(Request(TestExecutionContext.Voice()), Ct);
+        _time.Advance(TimeSpan.FromMinutes(7));
+        SystemPrompt second = await builder.BuildAsync(Request(TestExecutionContext.Voice()), Ct);
+
+        Assert.NotEqual(first.Text, second.Text);
+        Assert.Equal(first.Stable, second.Stable);
+        Assert.NotEmpty(first.Turn);
+    }
+
+    [Fact]
     public async Task Build_UserProfileFromOwner()
     {
         string prompt = await Standard().BuildSystemPromptAsync(Request(TestExecutionContext.Text()), Ct);
@@ -120,8 +161,10 @@ public sealed class ContextBuilderTests
         ]);
     }
 
-    private sealed class FixedContributor(int order, string? text) : IContextContributor
+    private sealed class FixedContributor(int order, string? text, ContextStability stability = ContextStability.Static) : IContextContributor
     {
+        public ContextStability Stability => stability;
+
         public int Order => order;
 
         public Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken) => Task.FromResult(text);

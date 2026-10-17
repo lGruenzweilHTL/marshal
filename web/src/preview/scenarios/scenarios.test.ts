@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { createApiSession } from '../../api/client'
 import { createPreviewServer, shiftTimes } from './index'
-import { anchor, conversationDetails, normal } from './normal'
+import { anchor, conversationDetails, normal, runDetails } from './normal'
 import { readEvents } from '../../chat/sse'
 
 const web = join(__dirname, '..', '..', '..')
@@ -88,6 +88,12 @@ describe('preview scenarios', () => {
     expect(Object.entries(conversationDetails).flatMap(([id, detail]) => check(detail, schema, id))).toEqual([])
     const turns = Object.values(conversationDetails).flatMap((detail) => detail.entries.flatMap((entry) => (entry.kind === 'turn' ? [entry] : [])))
     expect(turns.some((turn) => turn.reasoning && turn.tools.length > 0)).toBe(true)
+  })
+
+  it('matches the run detail schema and has a voice run with a latency timeline', () => {
+    const schema = openapi.paths['/api/v1/runs/{id}']!.get!.responses['200']!.content!['application/json']!.schema
+    expect(Object.entries(runDetails).flatMap(([id, detail]) => check(detail, schema, id))).toEqual([])
+    expect(Object.values(runDetails).some((detail) => detail.run.inputMode === 'voice' && detail.run.timeToFirstDeltaMs != null)).toBe(true)
   })
 
   it('streams reasoning and tool events before the reply', async () => {

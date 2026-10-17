@@ -148,6 +148,7 @@ package "Conversations & Runs" {
     closed_at : DateTimeOffset  <<token sessions after the idle TTL>>
     rested_at : DateTimeOffset  <<idle web session, cleared by its next turn>>
     summarized_until : DateTimeOffset  <<memory summarizer watermark>>
+    loaded_tool_namespaces : json  <<namespaces beyond core, load order; null = core only>>
     <<unique (api_token_id, external_id) where closed_at is null>>
   }
 
@@ -170,6 +171,7 @@ package "Conversations & Runs" {
     * tainted : bool  <<untrusted content entered context>>
     taint_sources : json  <<mail | rss | notes | web | mcp:<id>, first tainting step>>
     * cost : decimal
+    time_to_first_delta_ms : int  <<null when no delta was sent>>
   }
 
   entity RunStep {

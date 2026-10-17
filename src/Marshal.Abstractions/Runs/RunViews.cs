@@ -15,7 +15,21 @@ namespace Marshal.Abstractions.Runs;
 /// <param name="Before">Only runs started before this time (paging).</param>
 /// <param name="Limit">Maximum number of runs (1-200).</param>
 /// <param name="TaskId">Only runs of this task.</param>
-public sealed record RunFilter(SessionSource? Source = null, RunOutcome? Outcome = null, decimal? MinCost = null, DateTimeOffset? Before = null, int Limit = 50, TaskId? TaskId = null);
+public sealed record RunFilter(SessionSource? Source = null, RunOutcome? Outcome = null, decimal? MinCost = null, DateTimeOffset? Before = null, int Limit = 50, TaskId? TaskId = null)
+{
+    /// <summary>Order of the list; newest first by default.</summary>
+    public RunSort Sort { get; init; } = RunSort.Newest;
+}
+
+/// <summary>Order of the runs list.</summary>
+public enum RunSort
+{
+    /// <summary>Newest start first.</summary>
+    Newest,
+
+    /// <summary>Longest time to first delta first; runs without a delta are left out.</summary>
+    SlowestFirstDelta,
+}
 
 /// <summary>
 /// A run in the runs list.
@@ -44,7 +58,11 @@ public sealed record RunSummary(
     RunOutcome Outcome,
     string? OutcomeReason,
     bool Tainted,
-    decimal Cost);
+    decimal Cost)
+{
+    /// <summary>Milliseconds from the request to the first streamed delta; null when the run sent none.</summary>
+    public int? TimeToFirstDeltaMs { get; init; }
+}
 
 /// <summary>
 /// A run with its steps.
@@ -53,7 +71,11 @@ public sealed record RunSummary(
 /// <param name="Language">Reply language.</param>
 /// <param name="TaintSources">Why the run is tainted.</param>
 /// <param name="Steps">Context build, model calls, tool calls and reply in order.</param>
-public sealed record RunDetail(RunSummary Run, string? Language, IReadOnlyList<TaintSource> TaintSources, IReadOnlyList<RunStepDetail> Steps);
+public sealed record RunDetail(RunSummary Run, string? Language, IReadOnlyList<TaintSource> TaintSources, IReadOnlyList<RunStepDetail> Steps)
+{
+    /// <summary>Tool namespaces the run loaded, in load order, with why (<c>core</c>, <c>retrieval</c> with its score, ...).</summary>
+    public IReadOnlyList<Tools.LoadedToolNamespace> LoadedNamespaces { get; init; } = [];
+}
 
 /// <summary>
 /// One step of a run as recorded (sensitive tool results only as <paramref name="Reference"/>).

@@ -58,7 +58,58 @@ async function mountDetail() {
   return wrapper
 }
 
+async function mountVoice(inputMode: 'voice' | 'text') {
+  const voice = {
+    run: runSummary({ id: 'r-7', inputMode, startedAt: '2026-09-28T08:00:00Z', endedAt: '2026-09-28T08:00:04Z', timeToFirstDeltaMs: 1600 }),
+    language: 'de',
+    taintSources: [],
+    loadedNamespaces: [{ name: 'agent', reason: 'core', score: null }, { name: 'printer', reason: 'retrieval', score: 0.71 }],
+    steps: [
+      runStep({
+        sequence: 0,
+        kind: 'context',
+        durationMs: 300,
+        notes: [
+          { kind: 'tool_namespace', label: 'agent', detail: 'core', score: null },
+          { kind: 'tool_namespace', label: 'printer', detail: 'retrieval', score: 0.71 },
+        ],
+      }),
+      runStep({ sequence: 1, kind: 'modelCall', durationMs: 1200, firstTokenMs: 250 }),
+      runStep({ sequence: 2, kind: 'toolCall', tool: 'printer.snapshot', durationMs: 2000 }),
+      runStep({ sequence: 3, kind: 'reply', content: 'Läuft.' }),
+    ],
+  }
+  const fake = new FakeServer().on('GET', '/api/v1/me', 200, me).on('GET', '/api/v1/runs/r-7', 200, voice)
+  const { options } = await mountOptions(fake, '/runs/r-7')
+  const wrapper = mount(RunDetailView, options)
+  await flushPromises()
+  return wrapper
+}
+
 describe('RunDetailView', () => {
+  it('shows a voice run timeline with the first words marked', async () => {
+    const wrapper = await mountVoice('voice')
+
+    const timeline = wrapper.get('[data-test="voice-timeline"]')
+    expect(timeline.findAll('[data-segment]')).toHaveLength(3)
+    expect(timeline.get('[data-test="first-delta"]').text()).toContain('1.6 s')
+    expect(wrapper.text()).toContain('First words')
+  })
+
+  it('shows no timeline for text runs', async () => {
+    const wrapper = await mountVoice('text')
+
+    expect(wrapper.find('[data-test="voice-timeline"]').exists()).toBe(false)
+  })
+
+  it('lists the loaded tool namespaces with their reasons in the context step', async () => {
+    const wrapper = await mountVoice('voice')
+
+    const notes = wrapper.get('[data-notes="tool_namespace"]')
+    expect(notes.text()).toContain('Tools loaded')
+    expect(notes.text()).toContain('printer – retrieval (0.71)')
+  })
+
   it('shows the guard decision escalated by taint with the taint source', async () => {
     const wrapper = await mountDetail()
 

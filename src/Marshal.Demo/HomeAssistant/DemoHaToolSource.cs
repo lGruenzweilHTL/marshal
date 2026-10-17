@@ -41,6 +41,9 @@ public sealed class DemoHaToolSource(DemoWorld world, IMcpServerCatalog servers)
 
     public bool IsBuiltIn => false;
 
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [new("ha", "Home control: lights, switches, covers, climate, locks and other devices and their state")];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) =>
         Task.FromResult(servers.Servers.Any(server => server.Namespace == Namespace) ? [] : _tools);
 

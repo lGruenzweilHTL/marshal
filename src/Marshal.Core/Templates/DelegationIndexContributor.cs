@@ -16,6 +16,9 @@ public sealed class DelegationIndexContributor(ITemplateCatalog templates, IOpti
 {
     private static readonly ToolId _delegate = new("agent", "delegate");
 
+    public ContextStability Stability => ContextStability.Static;
+
+
     public int Order => 260;
 
     public Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken)

@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Marshal.Abstractions.Context;
 
 namespace Marshal.Integrations.HomeAssistant;
@@ -14,7 +13,9 @@ public sealed class HaAreaContextContributor(IHomeAssistantCache cache) : IConte
 {
     private const int MaxAreaEntities = 40;
     private const int MaxMentionedEntities = 20;
-    private const int MinNameLength = 3;
+
+    public ContextStability Stability => ContextStability.Turn;
+
 
     public int Order => 350;
 
@@ -61,15 +62,8 @@ public sealed class HaAreaContextContributor(IHomeAssistantCache cache) : IConte
         return Task.FromResult<string?>(text.ToString());
     }
 
-    private static bool IsMentioned(HaEntity entity, HaSnapshot snapshot, string userText)
-    {
-        IEnumerable<string> names = entity.Aliases.Prepend(entity.Name);
-        if (snapshot.States.GetValueOrDefault(entity.EntityId)?.FriendlyName is { } friendly)
-            names = names.Append(friendly);
-
-        return names.Any(name => name.Length >= MinNameLength
-            && Regex.IsMatch(userText, $@"(?<!\w){Regex.Escape(name)}(?!\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100)));
-    }
+    private static bool IsMentioned(HaEntity entity, HaSnapshot snapshot, string userText) =>
+        HaNames.AnyMentioned(HaNames.Of(entity, snapshot), userText);
 
     private static string State(HaSnapshot snapshot, HaEntity entity)
     {

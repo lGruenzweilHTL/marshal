@@ -88,6 +88,7 @@ internal static class NotesTools
             UntrustedOutput = true,
             TaintKind = Taint,
             Sensitive = true,
+            Fillers = name == "search" ? ToolFillers.Lines("Ich sehe in deinen Notizen nach.", "Let me check your notes.") : ToolFillers.None,
         };
 
         public ValueTask<bool> IsAvailableAsync(MarshalExecutionContext executionContext, CancellationToken cancellationToken) =>

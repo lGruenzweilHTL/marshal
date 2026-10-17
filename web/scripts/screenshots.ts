@@ -35,6 +35,7 @@ const routes: Route[] = [
   { name: 'task', path: `/tasks/${ids.printTask}` },
   { name: 'runs', path: '/runs' },
   { name: 'run', path: `/runs/${ids.run(6)}` },
+  { name: 'run-voice', path: `/runs/${ids.run(1)}` },
   { name: 'artifacts', path: '/artifacts' },
   { name: 'cost', path: '/cost' },
   { name: 'memory', path: '/memory' },

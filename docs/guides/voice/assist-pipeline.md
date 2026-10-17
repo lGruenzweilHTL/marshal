@@ -38,6 +38,7 @@ Open the satellite's device settings in Home Assistant and select the pipeline. 
 | Behavior | Detail |
 |---|---|
 | Streaming | Marshal streams the reply, so Home Assistant starts speaking before the reply is complete. Status messages are never spoken. |
+| Spoken filler | Before a slow tool, such as a printer snapshot, Marshal speaks one short line ("Let me look at the printer.") when nothing was said yet. At most one per turn. Tune the threshold with `voice.fillerThresholdMs`; see [`tools`](../../configuration/marshal-yaml/tools.md). |
 | Voice or text | Marshal treats turns that went through speech-to-text as voice, typed turns as text. |
 | Latency cap | A voice turn that exceeds `agent.voiceLatencyCap` (default 8 seconds) gets a short "working on it" reply. The work continues as a background task and the result arrives by notification. See [`agent`](../../configuration/marshal-yaml/agent.md). |
 | Questions | When Marshal asks you something (a confirmation, a clarification), the satellite keeps listening. |

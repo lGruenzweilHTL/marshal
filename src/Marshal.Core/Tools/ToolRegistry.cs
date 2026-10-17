@@ -39,6 +39,7 @@ public sealed class ToolRegistry(IEnumerable<IToolSource> sources, IEnumerable<I
         var errors = new List<ToolSourceError>();
         var byModelName = new Dictionary<string, RegisteredTool>(StringComparer.Ordinal);
         var namespaceOwners = new Dictionary<string, string>(StringComparer.Ordinal);
+        var descriptions = new Dictionary<string, ToolNamespace>(StringComparer.Ordinal);
 
         IEnumerable<IToolSource> all = _sources.Concat(_providers.SelectMany(provider => provider.Sources));
         foreach (IToolSource source in all.OrderByDescending(source => source.IsBuiltIn))
@@ -69,9 +70,12 @@ public sealed class ToolRegistry(IEnumerable<IToolSource> sources, IEnumerable<I
                 if (!source.IsBuiltIn)
                     namespaceOwners[registered.Id.Namespace] = source.Name;
             }
+
+            foreach (ToolNamespace described in source.Namespaces)
+                descriptions.TryAdd(described.Name, described);
         }
 
-        var snapshot = new ToolSnapshot(tools, errors);
+        var snapshot = new ToolSnapshot(tools, errors, [.. descriptions.Values]);
         _snapshot = snapshot;
         return snapshot;
     }

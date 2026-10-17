@@ -27,6 +27,12 @@ public sealed class TaskToolSource(
 
     public bool IsBuiltIn => true;
 
+
+    /// <summary>The <c>tasks</c> namespace description.</summary>
+    public static ToolNamespace Namespace { get; } = new("tasks", "Background tasks: reminders, schedules, recurring jobs, watches on events, coding executors and their status");
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [Namespace];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) => Task.FromResult(_tools);
 }
 

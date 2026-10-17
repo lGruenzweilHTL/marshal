@@ -27,7 +27,10 @@ public static class DataServiceCollectionExtensions
         services.AddOptions<RecordingOptions>().Bind(configuration.GetSection("recording"));
 
         services.AddSingleton<IPendingActionStore, EfPendingActionStore>();
-        services.AddSingleton<ISessionStore, EfSessionStore>();
+        services.AddSingleton<EfSessionStore>();
+        services.AddSingleton<ISessionStore>(provider => provider.GetRequiredService<EfSessionStore>());
+        services.AddSingleton<ISessionToolNamespaces>(provider => provider.GetRequiredService<EfSessionStore>());
+        services.AddSingleton<IToolLatencyStats, RecordedToolLatencyStats>();
         services.AddSingleton<IConversationHistory, EfConversationHistory>();
         services.AddSingleton<IConversationReader, EfConversationReader>();
         services.AddSingleton<ISummaryWatermark, EfSummaryWatermark>();

@@ -13,6 +13,14 @@ public sealed class FakeToolSource(string name, bool isBuiltIn, params ITool[] t
     /// <inheritdoc />
     public bool IsBuiltIn => isBuiltIn;
 
+    /// <summary>Descriptions to declare; when empty, each tool namespace gets <c>Test tools of &lt;namespace&gt;</c>.</summary>
+    public List<ToolNamespace> Descriptions { get; } = [];
+
+    /// <inheritdoc />
+    public IReadOnlyList<ToolNamespace> Namespaces => Descriptions.Count > 0
+        ? [.. Descriptions]
+        : [.. Tools.Select(tool => tool.Descriptor.Id.Namespace).Distinct().Select(name => new ToolNamespace(name, $"Test tools of {name}"))];
+
     /// <summary>Tools offered; may be changed between registry refreshes.</summary>
     public List<ITool> Tools { get; } = [.. tools];
 

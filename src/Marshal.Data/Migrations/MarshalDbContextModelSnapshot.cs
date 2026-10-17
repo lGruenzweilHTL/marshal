@@ -15,7 +15,7 @@ namespace Marshal.Data.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
 
             modelBuilder.Entity("Marshal.Data.Artifacts.StoredArtifact", b =>
                 {
@@ -338,6 +338,10 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("task_id");
 
+                    b.Property<int?>("TimeToFirstDeltaMs")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("time_to_first_delta_ms");
+
                     b.Property<string>("Trigger")
                         .IsRequired()
                         .HasColumnType("TEXT")
@@ -478,6 +482,10 @@ namespace Marshal.Data.Migrations
                     b.Property<long>("LastTurnAt")
                         .HasColumnType("INTEGER")
                         .HasColumnName("last_turn_at");
+
+                    b.Property<string>("LoadedToolNamespaces")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("loaded_tool_namespaces");
 
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("TEXT")

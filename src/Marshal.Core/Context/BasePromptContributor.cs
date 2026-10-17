@@ -15,6 +15,9 @@ public sealed class BasePromptContributor : IContextContributor
         If a tool returns an error, explain the problem briefly instead of retrying endlessly.
         """;
 
+    public ContextStability Stability => ContextStability.Static;
+
+
     public int Order => 0;
 
     public Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken) => Task.FromResult<string?>(Prompt);

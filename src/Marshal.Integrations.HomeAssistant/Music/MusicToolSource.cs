@@ -39,6 +39,9 @@ public sealed partial class MusicToolSource(IMusicPlayer player, ISpeakerDirecto
 
     public bool IsBuiltIn => true;
 
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [new("music", "Music playback on speakers: songs, albums, artists, playlists, radio, volume and the queue")];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) =>
         Task.FromResult(options.Value.Url is null || speakers.Names.Count == 0 ? [] : _tools);
 
@@ -61,6 +64,7 @@ public sealed partial class MusicToolSource(IMusicPlayer player, ISpeakerDirecto
         DefaultTier = RiskTier.Safe,
         UntrustedOutput = untrusted,
         TaintKind = untrusted ? "music" : null,
+        Fillers = name == "search" ? ToolFillers.Lines("Ich suche die Musik.", "Let me find that music.") : ToolFillers.None,
     };
 
     private static Error Invalid(string message) => new("music.invalid_arguments", message, ErrorType.Validation);

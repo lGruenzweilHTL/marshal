@@ -21,6 +21,9 @@ const tones: Record<Schemas['RunOutcome'], Tone> = { ok: 'success', error: 'dang
     <template #title>{{ [t(`runs.source.${run.source}`), run.satelliteId && satelliteName(run.satelliteId)].filter(Boolean).join(' · ') }}</template>
     <template #subtitle>
       {{ run.trigger }} · <span class="num">{{ dated ? format.dateTime(run.startedAt) : format.time(run.startedAt) }}</span>
+      <template v-if="run.inputMode === 'voice' && run.timeToFirstDeltaMs != null">
+        · <span class="num" data-test="first-delta">{{ t('runs.firstDelta', { time: format.duration(run.timeToFirstDeltaMs) }) }}</span>
+      </template>
       <template v-if="run.tainted"> · <TaintFlag /></template>
     </template>
     <template #trail>

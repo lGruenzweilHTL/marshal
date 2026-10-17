@@ -21,5 +21,8 @@ public sealed class EnergyToolSource(
 
     public bool IsBuiltIn => true;
 
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [new("energy", "Energy: electricity, gas and water usage, solar production, consumption per device")];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) => Task.FromResult(_tools);
 }

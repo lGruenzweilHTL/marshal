@@ -28,7 +28,10 @@ public sealed class EfRunQueries(IDbContextFactory<MarshalDbContext> contexts) :
         if (filter.TaskId is { } task)
             runs = runs.Where(run => run.TaskId == task);
 
-        List<Run> rows = await runs.OrderByDescending(run => run.StartedAt).Take(Math.Clamp(filter.Limit, 1, MaxLimit)).ToListAsync(cancellationToken);
+        IOrderedQueryable<Run> ordered = filter.Sort == RunSort.SlowestFirstDelta
+            ? runs.Where(run => run.TimeToFirstDeltaMs != null).OrderByDescending(run => run.TimeToFirstDeltaMs).ThenByDescending(run => run.StartedAt)
+            : runs.OrderByDescending(run => run.StartedAt);
+        List<Run> rows = await ordered.Take(Math.Clamp(filter.Limit, 1, MaxLimit)).ToListAsync(cancellationToken);
         return [.. rows.Select(Summary)];
     }
 
@@ -41,7 +44,16 @@ public sealed class EfRunQueries(IDbContextFactory<MarshalDbContext> contexts) :
 
         List<RunStep> steps = await db.RunSteps.AsNoTracking().Where(step => step.RunId == id).OrderBy(step => step.Sequence).ToListAsync(cancellationToken);
         IReadOnlyList<TaintSource> taint = run.TaintSources is null ? [] : JsonSerializer.Deserialize<List<TaintSource>>(run.TaintSources, DbRunRecorder.StepPayload.Json) ?? [];
-        return new RunDetail(Summary(run), run.Language, taint, [.. steps.Select(Step)]);
+        RunStepDetail[] details = [.. steps.Select(Step)];
+        return new RunDetail(Summary(run), run.Language, taint, details)
+        {
+            LoadedNamespaces =
+            [
+                .. details.Where(step => step.Depth == 0).SelectMany(step => step.Notes)
+                    .Where(note => note.Kind == "tool_namespace")
+                    .Select(note => new Abstractions.Tools.LoadedToolNamespace(note.Label, note.Detail ?? "", note.Score)),
+            ],
+        };
     }
 
     public async Task<CostReport> CostAsync(DateOnly from, DateOnly to, TimeZoneInfo timeZone, CancellationToken cancellationToken)
@@ -93,7 +105,10 @@ public sealed class EfRunQueries(IDbContextFactory<MarshalDbContext> contexts) :
     }
 
     private static RunSummary Summary(Run run) => new(
-        run.Id, run.SessionId, run.Source, run.InputMode, run.Trigger, run.SatelliteId, run.StartedAt, run.EndedAt, run.Outcome, run.OutcomeReason, run.Tainted, run.Cost);
+        run.Id, run.SessionId, run.Source, run.InputMode, run.Trigger, run.SatelliteId, run.StartedAt, run.EndedAt, run.Outcome, run.OutcomeReason, run.Tainted, run.Cost)
+    {
+        TimeToFirstDeltaMs = run.TimeToFirstDeltaMs,
+    };
 
     private static RunStepDetail Step(RunStep step)
     {

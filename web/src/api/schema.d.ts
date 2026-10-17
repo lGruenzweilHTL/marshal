@@ -216,7 +216,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The user's runs (voice, web, task, api), newest first; filter by source, outcome and minimum cost, page with before. */
+        /** The user's runs (voice, web, task, api), newest first or slowest time to first delta first (sort=timeToFirstDelta); filter by source, outcome and minimum cost, page with before. */
         get: operations["ListRuns"];
         put?: never;
         post?: never;
@@ -1801,6 +1801,12 @@ export interface components {
             /** @description Topic-specific data (see `web/src/live/events.ts`). */
             payload: unknown;
         };
+        LoadedToolNamespace: {
+            name: string;
+            reason: string;
+            /** Format: double */
+            score?: null | number;
+        };
         /** @description Password login. */
         LocalLoginRequest: {
             userName: string;
@@ -2299,6 +2305,7 @@ export interface components {
             language: null | string;
             taintSources: components["schemas"]["TaintSource"][];
             steps: components["schemas"]["RunStepDetail"][];
+            loadedNamespaces?: components["schemas"]["LoadedToolNamespace"][];
         };
         /** Format: uuid */
         RunId: string;
@@ -2356,6 +2363,8 @@ export interface components {
             tainted: boolean;
             /** Format: double */
             cost: number;
+            /** Format: int32 */
+            timeToFirstDeltaMs?: null | number;
         };
         /** @description A satellite profile. */
         SatelliteSummary: {
@@ -2967,6 +2976,7 @@ export interface operations {
                 minCost?: number;
                 before?: string;
                 limit?: number;
+                sort?: string;
             };
             header?: never;
             path?: never;

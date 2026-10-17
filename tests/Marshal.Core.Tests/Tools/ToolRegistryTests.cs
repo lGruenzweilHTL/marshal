@@ -204,6 +204,18 @@ public sealed class ToolRegistryTests
         Assert.Equal("broken", Assert.Single(registry.Errors).Source);
     }
 
+    [Fact]
+    public async Task Refresh_NamespaceDescriptionsOfAcceptedSourcesOnly()
+    {
+        var printer = new FakeToolSource("printers", true, new FakeTool("printer.status")) { Descriptions = { new ToolNamespace("printer", "3D printers") } };
+        var clash = new FakeToolSource("bad", false, new FakeTool("printer.other")) { Descriptions = { new ToolNamespace("printer", "Something else") } };
+
+        ToolRegistry registry = await RegistryAsync(printer, clash);
+
+        ToolNamespace described = Assert.Single(registry.Current.Namespaces);
+        Assert.Equal(new ToolNamespace("printer", "3D printers"), described);
+    }
+
     private static async Task<ToolRegistry> RegistryAsync(params IToolSource[] sources)
     {
         var registry = new ToolRegistry(sources);
@@ -216,6 +228,8 @@ public sealed class ToolRegistryTests
         public string Name => "broken";
 
         public bool IsBuiltIn => false;
+
+        public IReadOnlyList<ToolNamespace> Namespaces => [];
 
         public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) =>
             throw new InvalidOperationException("server down");

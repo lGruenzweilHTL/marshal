@@ -58,6 +58,8 @@ The terms Marshal's documentation and specifications use, each with one meaning.
 
 ## F
 
+**Filler.** A short line a slow built-in tool declares per language. In a voice turn Marshal speaks it before the tool runs when nothing was spoken yet. See [tool visibility](../concepts/tool-visibility.md#spoken-filler).
+
 **Forbidden tier.** The risk tier whose calls never run. The tool is hidden from the model.
 
 **Frozen action.** The stored tool, arguments, nonce and expiry of a pending action. Confirmation runs exactly this, and the model cannot change it.
@@ -91,6 +93,8 @@ The terms Marshal's documentation and specifications use, each with one meaning.
 **Model tier.** A named class of models: `fast`, `standard` or `advisor`. Marshal routes each model call by tier.
 
 ## N
+
+**Namespace.** The first part of a tool id, such as `printer` in `printer.status`. Tool retrieval loads tools by namespace; core namespaces are always loaded.
 
 **Nonce.** A one-time value stored with a pending action. A push action counts only with the valid, unexpired nonce.
 

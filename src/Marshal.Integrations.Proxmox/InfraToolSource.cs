@@ -29,6 +29,9 @@ public sealed class InfraToolSource(IProxmoxClient client, IOptions<ProxmoxOptio
 
     public bool IsBuiltIn => true;
 
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [new("infra", "Home lab infrastructure: Proxmox nodes, virtual machines, containers, storage and backups")];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) =>
         Task.FromResult(options.Value.IsConfigured ? _tools : []);
 
@@ -38,6 +41,7 @@ public sealed class InfraToolSource(IProxmoxClient client, IOptions<ProxmoxOptio
         Description = description,
         ParametersSchema = JsonDocument.Parse(schema).RootElement.Clone(),
         DefaultTier = RiskTier.Safe,
+        Fillers = ToolFillers.Lines("Ich sehe auf dem Server nach.", "Let me check the server."),
     };
 
     private static ToolOutput Json(object value) => new(JsonSerializer.Serialize(value, _json));

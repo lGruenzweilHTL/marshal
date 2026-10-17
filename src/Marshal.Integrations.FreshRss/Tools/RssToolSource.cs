@@ -12,5 +12,8 @@ public sealed class RssToolSource(IRssClient client, IFullTextExtractor extracto
 
     public bool IsBuiltIn => true;
 
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [new("rss", "News and RSS feeds: articles, headlines, unread items and digests")];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) => Task.FromResult(_tools);
 }

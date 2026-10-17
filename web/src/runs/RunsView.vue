@@ -28,6 +28,7 @@ const { t } = useI18n()
 const text = (key: string) => (typeof route.query[key] === 'string' ? (route.query[key] as string) : '')
 const source = computed(() => text('source'))
 const outcome = computed(() => text('outcome'))
+const sort = computed(() => text('sort'))
 const minCost = shallowRef(text('minCost'))
 
 const runs = usePagedLoad(
@@ -39,7 +40,9 @@ const runs = usePagedLoad(
             source: source.value || undefined,
             outcome: outcome.value || undefined,
             minCost: text('minCost') ? Number(text('minCost')) : undefined,
-            before,
+            sort: sort.value || undefined,
+            // Paging by start time does not apply to the latency order.
+            before: sort.value ? undefined : before,
             limit,
           },
         },
@@ -57,7 +60,7 @@ watch(
 useLiveEvent('runs', 'run.completed', () => runs.load.refresh())
 
 function apply(change: Record<string, string>) {
-  const query: Record<string, string> = { source: source.value, outcome: outcome.value, minCost: text('minCost'), ...change }
+  const query: Record<string, string> = { source: source.value, outcome: outcome.value, minCost: text('minCost'), sort: sort.value, ...change }
   void router.replace({ query: Object.fromEntries(Object.entries(query).filter(([, value]) => value)) })
 }
 
@@ -66,6 +69,7 @@ const columns = computed(() => [
   { key: 'source', label: t('runs.columns.source') },
   { key: 'trigger', label: t('runs.columns.trigger') },
   { key: 'outcome', label: t('runs.columns.outcome') },
+  { key: 'firstDelta', label: t('runs.columns.firstDelta'), align: 'right' as const },
   { key: 'cost', label: t('runs.columns.cost'), align: 'right' as const },
 ])
 </script>
@@ -88,6 +92,7 @@ const columns = computed(() => [
           @update:model-value="apply({ outcome: outcome === value ? '' : value })"
         />
       </div>
+      <Chip :label="t('runs.slowestFirst')" :model-value="sort === 'timeToFirstDelta'" data-sort="timeToFirstDelta" @update:model-value="apply({ sort: sort ? '' : 'timeToFirstDelta' })" />
       <Field v-model="minCost" kind="number" name="minCost" :label="t('runs.minCost')" class="cost" @change="apply({ minCost: String(minCost ?? '') })" />
     </div>
 
@@ -104,11 +109,14 @@ const columns = computed(() => [
           <Badge :tone="tones[row.outcome]" :label="t(`runs.outcome.${row.outcome}`)" />
           <span v-if="row.outcomeReason" class="reason">{{ row.outcomeReason }}</span>
         </template>
+        <template #cell-firstDelta="{ row }">
+          <span class="num t-mono-s">{{ row.timeToFirstDeltaMs != null ? format.duration(row.timeToFirstDeltaMs) : '–' }}</span>
+        </template>
         <template #cell-cost="{ row }"><span class="num t-mono-s">{{ format.cost(row.cost) }}</span></template>
       </DataTable>
       <ListCard v-else><RunRow v-for="run in runs.items.value" :key="run.id" :run="run" dated /></ListCard>
       <ErrorBanner v-if="runs.more.error.value" :error="runs.more.error.value" />
-      <AppButton v-if="runs.hasMore.value" variant="ghost" block data-test="more" :loading="runs.more.busy.value" @click="runs.more.submit()">{{ t('runs.more') }}</AppButton>
+      <AppButton v-if="runs.hasMore.value && !sort" variant="ghost" block data-test="more" :loading="runs.more.busy.value" @click="runs.more.submit()">{{ t('runs.more') }}</AppButton>
     </LoadBoundary>
   </Page>
 </template>

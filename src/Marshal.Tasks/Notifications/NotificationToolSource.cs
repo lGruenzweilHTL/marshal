@@ -30,6 +30,9 @@ internal sealed class NotificationToolSource(
 
     public bool IsBuiltIn => true;
 
+
+    public IReadOnlyList<ToolNamespace> Namespaces { get; } = [new("notifications", "Notifications to the user: push messages, inbox items and spoken announcements")];
+
     public Task<IReadOnlyList<ITool>> GetToolsAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<ITool>>(
     [
         new NotificationTool("notify", "Notifies the user now: spoken where they are (or on a satellite), pushed or put in the inbox. Low priority goes to the inbox.", """

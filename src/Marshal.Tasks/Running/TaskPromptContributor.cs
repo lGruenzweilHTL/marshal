@@ -14,6 +14,9 @@ public sealed class TaskPromptContributor : IContextContributor
         When the goal is reached, reply with the result: first one or two short sentences that can be spoken aloud (no markdown), then a blank line, then the details in markdown if there are any.
         """;
 
+    public ContextStability Stability => ContextStability.Turn;
+
+
     public int Order => 450;
 
     public Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken) =>

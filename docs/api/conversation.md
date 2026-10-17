@@ -37,7 +37,7 @@ A turn that carries `satelliteId`, `deviceId` or `haUserId` is recorded as a voi
 
 | Event | Data | When |
 |---|---|---|
-| `delta` | `{ "text": "…" }` | Zero or more times. A chunk of the reply text. |
+| `delta` | `{ "text": "…" }` | Zero or more times. A chunk of the reply text. In a voice turn the first delta can be a short spoken filler sent before a slow tool runs; it is part of `speech`. |
 | `status` | `{ "text": "…" }` | Optional. A progress message, for example when a turn is moving to the background. Do not speak it. |
 | `artifact` | `{ "id", "name", "kind", "url" }` | Once per artifact the turn shows. `url` is the content URL. |
 | `reasoning` | `{ "text": "…" }` | Browser sessions only. Zero or more times. A chunk of the model's reasoning. |

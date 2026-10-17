@@ -18,6 +18,9 @@ public sealed class McpServerFile
 
     public string? ToolPrefix { get; set; }
 
+    /// <summary>One-line English description of the server's tools, used for tool retrieval.</summary>
+    public string? Description { get; set; }
+
     public string? AuthTokenSecret { get; set; }
 
     /// <summary>Environment variables of a stdio server taken from secrets.</summary>

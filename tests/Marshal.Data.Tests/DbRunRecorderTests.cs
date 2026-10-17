@@ -299,6 +299,22 @@ public sealed class DbRunRecorderTests
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
+    [Fact]
+    public async Task Complete_TimeToFirstDelta_StoredOrNull()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        await using MarshalDbContext context = database.CreateContext(OwnerA);
+        DbRunRecorder recorder = Recorder(database);
+        RunId spoken = await recorder.StartRunAsync(new RunStart(Voice(OwnerA), "turn"), Ct);
+        RunId silent = await recorder.StartRunAsync(new RunStart(Voice(OwnerA), "turn"), Ct);
+
+        await recorder.CompleteRunAsync(spoken, new RunCompletion(RunOutcome.Ok, null, []) { TimeToFirstDeltaMs = 900 }, Ct);
+        await recorder.CompleteRunAsync(silent, new RunCompletion(RunOutcome.Ok, null, []), Ct);
+
+        Assert.Equal(900, (await context.Runs.SingleAsync(run => run.Id == spoken, Ct)).TimeToFirstDeltaMs);
+        Assert.Null((await context.Runs.SingleAsync(run => run.Id == silent, Ct)).TimeToFirstDeltaMs);
+    }
+
     private DbRunRecorder Recorder(TestDatabase database, RecordingOptions? options = null) =>
         new(database.Factory, [_observer], Options.Create(options ?? new RecordingOptions()), _time);
 

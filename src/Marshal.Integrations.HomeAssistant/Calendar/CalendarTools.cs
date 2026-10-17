@@ -243,6 +243,7 @@ internal static class CalendarTools
             DefaultTier = tier,
             UntrustedOutput = untrusted,
             TaintKind = untrusted ? Taint : null,
+            Fillers = name == "list_events" ? ToolFillers.Lines("Ich sehe im Kalender nach.", "Let me check the calendar.") : ToolFillers.None,
         };
 
         public ValueTask<bool> IsAvailableAsync(MarshalExecutionContext executionContext, CancellationToken cancellationToken)

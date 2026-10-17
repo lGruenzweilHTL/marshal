@@ -117,6 +117,18 @@ agent:
     maxCallsPerRun: 2
     dailyCostCap: 1.0
 
+# Tool retrieval: only the core namespaces plus the namespaces a session needs reach the model.
+tools:
+  core: [agent, memory, tasks, notifications, timers, places]
+  retrieval:
+    enabled: true
+    threshold: 0.30         # cosine similarity turn ↔ namespace description; depends on the embedding model
+    maxPerTurn: 3
+    minTools: 24            # skip retrieval when this few tools are visible anyway
+
+voice:
+  fillerThresholdMs: 700    # speak a tool's filler line first when it usually takes longer
+
 confirmation:
   ttl: "00:01:00"
   judgeTimeout: "00:00:03"

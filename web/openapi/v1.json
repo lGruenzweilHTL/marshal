@@ -314,7 +314,7 @@
         "tags": [
           "Runs"
         ],
-        "summary": "The user\u0027s runs (voice, web, task, api), newest first; filter by source, outcome and minimum cost, page with before.",
+        "summary": "The user\u0027s runs (voice, web, task, api), newest first or slowest time to first delta first (sort=timeToFirstDelta); filter by source, outcome and minimum cost, page with before.",
         "operationId": "ListRuns",
         "parameters": [
           {
@@ -358,6 +358,14 @@
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -4330,6 +4338,28 @@
         },
         "description": "One live update."
       },
+      "LoadedToolNamespace": {
+        "required": [
+          "name",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "score": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          }
+        }
+      },
       "LocalLoginRequest": {
         "required": [
           "userName",
@@ -6009,6 +6039,12 @@
             "items": {
               "$ref": "#/components/schemas/RunStepDetail"
             }
+          },
+          "loadedNamespaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoadedToolNamespace"
+            }
           }
         }
       },
@@ -6286,6 +6322,13 @@
           "cost": {
             "type": "number",
             "format": "double"
+          },
+          "timeToFirstDeltaMs": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         }
       },

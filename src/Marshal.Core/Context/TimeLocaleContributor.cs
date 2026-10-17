@@ -10,6 +10,8 @@ namespace Marshal.Core.Context;
 /// </summary>
 public sealed class TimeLocaleContributor(IUserProfileProvider profiles, TimeProvider timeProvider) : IContextContributor
 {
+    public ContextStability Stability => ContextStability.Turn;
+
     public int Order => 200;
 
     public async Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken)
