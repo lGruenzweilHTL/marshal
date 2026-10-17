@@ -14,7 +14,7 @@ namespace Marshal.Core.Templates;
 
 /// <summary>
 /// Agent templates from <c>/config/templates/*.md</c> (one per file, named like the file) plus the built-in
-/// <c>default</c>, which a <c>default.md</c> replaces. Each file is validated and secret-scanned on its own.
+/// <c>default</c> and <c>ai_task</c>, which a <c>default.md</c> / <c>ai_task.md</c> replaces. Each file is validated and secret-scanned on its own.
 /// </summary>
 public sealed partial class FileTemplateCatalog : ITemplateCatalog, IDisposable
 {
@@ -64,7 +64,11 @@ public sealed partial class FileTemplateCatalog : ITemplateCatalog, IDisposable
 
     private State Read()
     {
-        var templates = new Dictionary<string, AgentTemplate>(StringComparer.Ordinal) { [AgentTemplate.DefaultName] = AgentTemplate.BuiltInDefault };
+        var templates = new Dictionary<string, AgentTemplate>(StringComparer.Ordinal) 
+        {
+            [AgentTemplate.DefaultName] = AgentTemplate.BuiltInDefault,
+            [AgentTemplate.AiTaskName] = AgentTemplate.BuiltInAiTask,
+        };
         var errors = new List<ConfigFileError>();
         if (Directory.Exists(_directory))
         {
@@ -123,7 +127,7 @@ public sealed partial class FileTemplateCatalog : ITemplateCatalog, IDisposable
     {
         string expected = Path.GetFileNameWithoutExtension(file);
         if (string.IsNullOrWhiteSpace(frontmatter.Name) || !NamePattern().IsMatch(frontmatter.Name))
-            return Invalid(file, $"name '{frontmatter.Name}' must be lowercase letters, digits and hyphens.");
+            return Invalid(file, $"name '{frontmatter.Name}' must be lowercase letters, digits, hyphens and underscores.");
         if (frontmatter.Name != expected)
             return Invalid(file, $"name '{frontmatter.Name}' must match the file name '{expected}'.");
         if (string.IsNullOrWhiteSpace(frontmatter.Description))
@@ -173,7 +177,7 @@ public sealed partial class FileTemplateCatalog : ITemplateCatalog, IDisposable
         Reload();
     }
 
-    [GeneratedRegex("^[a-z0-9]+(?:-[a-z0-9]+)*$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^[a-z0-9]+(?:[-_][a-z0-9]+)*$", RegexOptions.CultureInvariant)]
     private static partial Regex NamePattern();
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Template {File} rejected: {Error}")]

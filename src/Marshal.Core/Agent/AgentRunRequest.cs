@@ -10,6 +10,15 @@ namespace Marshal.Core.Agent;
 /// </summary>
 public sealed record AgentRunRequest
 {
+    /// <summary>Taint source kind of user attachments.</summary>
+    public const string AttachmentTaintKind = "attachment";
+
+    /// <summary>Run end reason when attachments need a vision model and the tier has none.</summary>
+    public const string NoVisionModelReason = "no_vision_model";
+
+    /// <summary>Run end reason when the reply could not be shaped into <see cref="Structure"/>.</summary>
+    public const string InvalidOutputReason = "invalid_output";
+
     public required MarshalExecutionContext Context { get; init; }
 
     public string Trigger { get; init; } = "turn";
@@ -18,6 +27,18 @@ public sealed record AgentRunRequest
     public IReadOnlyList<ChatMessage> History { get; init; } = [];
 
     public string? UserText { get; init; }
+
+    /// <summary>
+    /// Images sent with <see cref="UserText"/> in the first user message. They require a vision model and taint the
+    /// run (<see cref="AttachmentTaintKind"/>) before the first model call.
+    /// </summary>
+    public IReadOnlyList<DataContent> UserAttachments { get; init; } = [];
+
+    /// <summary>
+    /// JSON Schema the final reply is shaped into after the loop (<see cref="AgentRunResult.Data"/>); null = plain
+    /// text. The loop itself runs without a response format, so the model may call tools first.
+    /// </summary>
+    public System.Text.Json.JsonElement? Structure { get; init; }
 
     /// <summary>Decision on the session's pending action made at the start of the turn, if any.</summary>
     public ConfirmationStep? Confirmation { get; init; }

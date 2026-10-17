@@ -1,9 +1,12 @@
 using System.Collections;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Mcp;
+using Marshal.Abstractions.Models;
 using Marshal.Abstractions.Templates;
 using Marshal.Api.Configuration;
 using Marshal.Artifacts;
+using Marshal.Core.Agent;
+using Marshal.Core.AiTasks;
 using Marshal.Core.Configuration;
 using Marshal.Core.Displays;
 using Marshal.Core.Guard;
@@ -102,6 +105,21 @@ public sealed class ExampleConfigTests
         Assert.Contains("hooks:seerr", File.ReadAllText(Path.Combine(_directory, "marshal.yaml")), StringComparison.Ordinal);
         Assert.Contains("# media:", File.ReadAllText(Path.Combine(_directory, "marshal.yaml")), StringComparison.Ordinal);
         Assert.Contains("# github:", File.ReadAllText(Path.Combine(_directory, "marshal.yaml")), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ExampleMarshalYaml_BindsToolVoiceAndAiTaskOptions()
+    {
+        IConfiguration configuration = new ConfigurationBuilder().AddMarshalConfiguration(_directory, new Hashtable()).Build();
+
+        ToolsOptions tools = configuration.GetSection("tools").Get<ToolsOptions>()!;
+        VoiceOptions voice = configuration.GetSection("voice").Get<VoiceOptions>()!;
+        AiTaskOptions aiTasks = configuration.GetSection(AiTaskOptions.Section).Get<AiTaskOptions>()!;
+
+        Assert.Equal(ToolsOptions.DefaultCore, tools.CoreNamespaces);
+        Assert.Equal((true, 0.30, 3, 24), (tools.Retrieval.Enabled, tools.Retrieval.Threshold, tools.Retrieval.MaxPerTurn, tools.Retrieval.MinTools));
+        Assert.Equal(700, voice.FillerThresholdMs);
+        Assert.Equal((60, 4, 10_485_760), (aiTasks.TimeoutSeconds, aiTasks.MaxAttachments, aiTasks.MaxAttachmentBytes));
     }
 
     [Fact]

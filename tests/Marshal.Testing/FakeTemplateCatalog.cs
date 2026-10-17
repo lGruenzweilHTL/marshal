@@ -5,16 +5,16 @@ using Marshal.Abstractions.Templates;
 namespace Marshal.Testing;
 
 /// <summary>
-/// Template catalog over a mutable list; always contains the built-in <c>default</c> unless replaced.
+/// Template catalog over a mutable list; always contains the built-in <c>default</c> and <c>ai_task</c> unless replaced.
 /// </summary>
 public sealed class FakeTemplateCatalog : ITemplateCatalog
 {
-    /// <summary>Templates offered (besides <c>default</c>).</summary>
+    /// <summary>Templates offered (besides the built-ins).</summary>
     public List<AgentTemplate> Items { get; } = [];
 
     /// <inheritdoc />
     public IReadOnlyList<AgentTemplate> Templates =>
-        [.. Items.Any(template => template.Name == AgentTemplate.DefaultName) ? Items : Items.Prepend(AgentTemplate.BuiltInDefault)];
+        [.. new[] { AgentTemplate.BuiltInAiTask, AgentTemplate.BuiltInDefault }.Where(builtIn => Items.All(template => template.Name != builtIn.Name)), .. Items];
 
     /// <inheritdoc />
     public IReadOnlyList<ConfigFileError> Errors { get; set; } = [];

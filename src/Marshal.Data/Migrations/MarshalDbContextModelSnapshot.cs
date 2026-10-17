@@ -206,6 +206,10 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("owner_id");
 
+                    b.Property<bool>("Queued")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("queued");
+
                     b.Property<string>("Reasons")
                         .IsRequired()
                         .HasColumnType("TEXT")
@@ -265,7 +269,7 @@ namespace Marshal.Data.Migrations
 
                     b.HasIndex("Status", "ExpiresAt")
                         .HasDatabaseName("ix_pending_actions_status_expires_at")
-                        .HasFilter("task_id IS NOT NULL");
+                        .HasFilter("queued = 1");
 
                     b.ToTable("pending_actions", (string)null);
                 });

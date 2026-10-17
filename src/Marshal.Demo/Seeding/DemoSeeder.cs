@@ -269,7 +269,8 @@ public sealed class DemoSeeder(
             [new ConfirmationReason(ConfirmationReasonCode.Rule, "Cancelling a print cannot be undone.")],
             "en",
             seed.Now.AddDays(30),
-            TaskId: babysit), ct);
+            TaskId: babysit,
+            Queued: true), ct);
         seed.Add("pending_actions", frozen.Id.ToString());
     }
 

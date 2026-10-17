@@ -16,7 +16,7 @@ public sealed class EfConversationReader(IDbContextFactory<MarshalDbContext> con
     public async Task<IReadOnlyList<ConversationSummary>> ListAsync(DateTimeOffset? before, int limit, CancellationToken cancellationToken)
     {
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
-        IQueryable<Session> query = db.Sessions.AsNoTracking().Where(session => session.Source != SessionSource.Task);
+        IQueryable<Session> query = db.Sessions.AsNoTracking().Where(session => session.Source != SessionSource.Task && session.Source != SessionSource.Automation);
         if (before is { } cursor)
             query = query.Where(session => session.LastTurnAt < cursor);
 
@@ -40,7 +40,7 @@ public sealed class EfConversationReader(IDbContextFactory<MarshalDbContext> con
     public async Task<ConversationDetail?> GetAsync(SessionId id, CancellationToken cancellationToken)
     {
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
-        Session? session = await db.Sessions.AsNoTracking().SingleOrDefaultAsync(candidate => candidate.Id == id && candidate.Source != SessionSource.Task, cancellationToken);
+        Session? session = await db.Sessions.AsNoTracking().SingleOrDefaultAsync(candidate => candidate.Id == id && candidate.Source != SessionSource.Task && candidate.Source != SessionSource.Automation, cancellationToken);
         if (session is null)
             return null;
 

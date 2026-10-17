@@ -19,7 +19,7 @@ public sealed class InMemoryPendingActionStore(TimeProvider timeProvider) : IPen
 
     public Task<PendingActionRecord> FreezeAsync(FreezeRequest request, CancellationToken cancellationToken)
     {
-        foreach (PendingActionRecord previous in _actions.Where(action => action.SessionId == request.SessionId && IsPending(action)).ToList())
+        foreach (PendingActionRecord previous in _actions.Where(action => !request.Queued && !action.Queued && action.SessionId == request.SessionId && IsPending(action)).ToList())
             Decisions[previous.Id] = (PendingActionStatus.Superseded, DecidedBy.System);
 
         var record = new PendingActionRecord
@@ -29,6 +29,7 @@ public sealed class InMemoryPendingActionStore(TimeProvider timeProvider) : IPen
             SessionId = request.SessionId,
             SatelliteId = request.SatelliteId,
             TaskId = request.TaskId,
+            Queued = request.Queued,
             RunId = request.RunId,
             Taint = request.Taint ?? [],
             Tool = request.Tool,
@@ -50,10 +51,10 @@ public sealed class InMemoryPendingActionStore(TimeProvider timeProvider) : IPen
             : null);
 
     public Task<PendingActionRecord?> GetPendingAsync(SessionId sessionId, CancellationToken cancellationToken) =>
-        Task.FromResult(_actions.LastOrDefault(action => action.SessionId == sessionId && IsPending(action)));
+        Task.FromResult(_actions.LastOrDefault(action => action.SessionId == sessionId && !action.Queued && IsPending(action)));
 
-    public Task<IReadOnlyList<PendingActionRecord>> ListTaskApprovalsAsync(CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyList<PendingActionRecord>>([.. _actions.Where(action => action.TaskId is not null && IsPending(action))]);
+    public Task<IReadOnlyList<PendingActionRecord>> ListQueuedAsync(CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<PendingActionRecord>>([.. _actions.Where(action => action.Queued && IsPending(action))]);
 
     public Task<Result> DecideAsync(PendingActionId id, PendingActionStatus status, DecidedBy decidedBy, CancellationToken cancellationToken)
     {
@@ -66,7 +67,7 @@ public sealed class InMemoryPendingActionStore(TimeProvider timeProvider) : IPen
 
     public Task DropForSessionAsync(SessionId sessionId, CancellationToken cancellationToken)
     {
-        foreach (PendingActionRecord action in _actions.Where(action => action.SessionId == sessionId && IsPending(action)).ToList())
+        foreach (PendingActionRecord action in _actions.Where(action => action.SessionId == sessionId && !action.Queued && IsPending(action)).ToList())
             Decisions[action.Id] = (PendingActionStatus.Dropped, DecidedBy.System);
 
         return Task.CompletedTask;

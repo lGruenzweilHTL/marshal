@@ -22,7 +22,9 @@ namespace Marshal.Tasks.Approvals;
 /// <see cref="IApprovalQueue"/>: a background run's confirm-tier call is frozen for <see cref="TaskOptions.ApprovalTtl"/>
 /// and sent to the owner as an actionable push (reasons verbatim). A decision from the review queue or a
 /// nonce-verified push action executes exactly the frozen action as the task's owner and resumes the waiting task
-/// with a payload saying what was decided and what came of it. Expiry counts as rejection.
+/// with a payload saying what was decided and what came of it. Expiry counts as rejection. An approval of a run
+/// without a task (an AI task) has nothing to resume: approving executes the frozen action and sends the owner a
+/// <c>low</c> notification with the result.
 /// </summary>
 public sealed partial class ApprovalQueue(
     IPendingActionStore store,
@@ -49,14 +51,19 @@ public sealed partial class ApprovalQueue(
     /// <summary>Key of the payload's taint kind, present when the executed action returned untrusted content.</summary>
     public const string TaintKey = "taint";
 
+    /// <summary>Notification source of approvals that belong to no task.</summary>
+    public const string TasklessSource = "approval";
+
+    private const int MaxResultLength = 300;
+
     public async Task<PendingActionRecord> EnqueueAsync(FreezeRequest request, CancellationToken cancellationToken)
     {
-        PendingActionRecord frozen = await store.FreezeAsync(request with { ExpiresAt = time.GetUtcNow() + options.Value.ApprovalTtl }, cancellationToken);
+        PendingActionRecord frozen = await store.FreezeAsync(request with { ExpiresAt = time.GetUtcNow() + options.Value.ApprovalTtl, Queued = true }, cancellationToken);
         bool german = frozen.Language == "de";
         Result<Guid> sent = await notifications.SendAsync(new NotificationRequest
         {
             Owner = frozen.OwnerId,
-            Source = $"task:{frozen.TaskId}",
+            Source = frozen.TaskId is { } task ? $"task:{task}" : TasklessSource,
             Priority = NotificationPriority.Normal,
             Channel = DeliveryChannel.Push,
             Text = $"{frozen.Summary}. {string.Join(" ", frozen.Reasons.Select(reason => reason.Sentence))}",
@@ -76,15 +83,17 @@ public sealed partial class ApprovalQueue(
     }
 
     public Task<IReadOnlyList<PendingActionRecord>> ListPendingAsync(CancellationToken cancellationToken) =>
-        store.ListTaskApprovalsAsync(cancellationToken);
+        store.ListQueuedAsync(cancellationToken);
 
     public async Task<Result<PendingActionRecord>> DecideAsync(PendingActionId id, bool approve, DecidedBy decidedBy, CancellationToken cancellationToken)
     {
         PendingActionRecord? action = await store.GetAsync(id, cancellationToken);
-        if (action?.TaskId is not { } taskId)
+        if (action is not { Queued: true })
             return ApprovalErrors.NotFound();
         if (action.Status != PendingActionStatus.Pending)
             return ApprovalErrors.AlreadyDecided();
+        if (action.TaskId is not { } taskId)
+            return await DecideTasklessAsync(action, approve, decidedBy, cancellationToken);
 
         Result<TaskRecord> task = await tasks.GetAsync(taskId, cancellationToken);
         if (task.IsSuccess && task.Value.Status == AgentTaskStatus.Running)
@@ -130,7 +139,7 @@ public sealed partial class ApprovalQueue(
         {
             await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
             owned = await db.PendingActions.IgnoreQueryFilters().AsNoTracking()
-                .Where(row => row.Nonce == nonce && row.TaskId != null)
+                .Where(row => row.Nonce == nonce && row.Queued)
                 .Select(row => new Owned(row.Id, row.OwnerId))
                 .SingleOrDefaultAsync(cancellationToken);
         }
@@ -158,7 +167,7 @@ public sealed partial class ApprovalQueue(
         {
             DateTimeOffset now = time.GetUtcNow();
             overdue = await db.PendingActions.IgnoreQueryFilters().AsNoTracking()
-                .Where(row => row.TaskId != null && row.Status == PendingActionStatus.Pending && row.ExpiresAt <= now)
+                .Where(row => row.Queued && row.Status == PendingActionStatus.Pending && row.ExpiresAt <= now)
                 .Select(row => new Owned(row.Id, row.OwnerId))
                 .ToListAsync(cancellationToken);
         }
@@ -168,8 +177,14 @@ public sealed partial class ApprovalQueue(
             using (executionContext.Use(BackgroundTaskScheduler.SystemContext(approval.OwnerId)))
             {
                 PendingActionRecord? action = await store.GetAsync(approval.Id, cancellationToken);
-                if (action?.TaskId is not { } taskId)
+                if (action is null)
                     continue;
+
+                if (action.TaskId is not { } taskId)
+                {
+                    await ExpireAsync(action, cancellationToken);
+                    continue;
+                }
 
                 // The asking run is still finishing; the next pass expires it.
                 Result<TaskRecord> task = await tasks.GetAsync(taskId, cancellationToken);
@@ -187,10 +202,69 @@ public sealed partial class ApprovalQueue(
         if (expired.IsFailure)
             return;
 
+        LogDecided(action.Id, "expired", DecidedBy.System);
+        if (action.TaskId is not { } taskId)
+            return;
+
         JsonObject payload = Payload(action, "rejected");
         payload["reason"] = "expired";
-        await ResumeAsync(action.TaskId!.Value, payload, null, cancellationToken);
-        LogDecided(action.Id, "expired", DecidedBy.System);
+        await ResumeAsync(taskId, payload, null, cancellationToken);
+    }
+
+    // No task waits: rejection ends it; approval executes the frozen action and tells the owner what came of it.
+    private async Task<Result<PendingActionRecord>> DecideTasklessAsync(PendingActionRecord action, bool approve, DecidedBy decidedBy, CancellationToken cancellationToken)
+    {
+        if (time.GetUtcNow() >= action.ExpiresAt)
+        {
+            await ExpireAsync(action, cancellationToken);
+            return ApprovalErrors.Expired();
+        }
+
+        Result decided = await store.DecideAsync(action.Id, approve ? PendingActionStatus.Approved : PendingActionStatus.Rejected, decidedBy, cancellationToken);
+        if (decided.IsFailure)
+            return decided.Error.Type == ErrorType.Conflict ? ApprovalErrors.AlreadyDecided() : ApprovalErrors.NotFound();
+
+        LogDecided(action.Id, approve ? "approved" : "rejected", decidedBy);
+        if (!approve)
+            return action with { Status = PendingActionStatus.Rejected };
+
+        var context = new MarshalExecutionContext
+        {
+            OwnerId = action.OwnerId,
+            Source = SessionSource.Task,
+            InputMode = InputMode.Text,
+            Language = action.Language,
+            SatelliteId = action.SatelliteId,
+            IsInteractive = false,
+            RunId = action.RunId,
+        };
+
+        Result<ToolOutput> result;
+        using (executionContext.Use(context))
+            (_, result) = await FrozenActions.ExecuteAsync(registry, riskEngine, action, context, cancellationToken);
+
+        Result<Guid> sent = await notifications.SendAsync(new NotificationRequest
+        {
+            Owner = action.OwnerId,
+            Source = TasklessSource,
+            Priority = NotificationPriority.Low,
+            Text = ResultText(action, result),
+            PendingActionId = action.Id,
+            Link = $"review/{action.Id}",
+        }, cancellationToken);
+        if (sent.IsFailure)
+            LogNotifyFailed(action.Id, sent.Error.Message);
+        return action with { Status = PendingActionStatus.Approved };
+    }
+
+    private static string ResultText(PendingActionRecord action, Result<ToolOutput> result)
+    {
+        bool german = action.Language == "de";
+        if (result.IsFailure)
+            return german ? $"Freigegeben: {action.Summary}. Das ist fehlgeschlagen: {result.Error.Message}" : $"Approved: {action.Summary}. It failed: {result.Error.Message}";
+
+        string content = result.Value.Content.Length > MaxResultLength ? result.Value.Content[..MaxResultLength] + "…" : result.Value.Content;
+        return german ? $"Freigegeben: {action.Summary}. Ergebnis: {content}" : $"Approved: {action.Summary}. Result: {content}";
     }
 
     // Exactly the frozen tool and arguments, as the task's owner in a background context. Untrusted output taints the

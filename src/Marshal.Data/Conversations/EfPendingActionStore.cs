@@ -27,9 +27,9 @@ public sealed class EfPendingActionStore(IDbContextFactory<MarshalDbContext> con
             ?? throw new InvalidOperationException("Freezing an action requires an execution context.");
         DateTimeOffset now = timeProvider.GetUtcNow();
 
-        if (request.SessionId is { } sessionId)
+        if (request.SessionId is { } sessionId && !request.Queued)
         {
-            foreach (PendingAction previous in await db.PendingActions.Where(action => action.SessionId == sessionId && action.Status == PendingActionStatus.Pending).ToListAsync(cancellationToken))
+            foreach (PendingAction previous in await db.PendingActions.Where(action => action.SessionId == sessionId && !action.Queued && action.Status == PendingActionStatus.Pending).ToListAsync(cancellationToken))
             {
                 previous.Status = PendingActionStatus.Superseded;
                 previous.DecidedBy = DecidedBy.System;
@@ -44,6 +44,7 @@ public sealed class EfPendingActionStore(IDbContextFactory<MarshalDbContext> con
             SessionId = request.SessionId,
             SatelliteId = request.SatelliteId,
             TaskId = request.TaskId,
+            Queued = request.Queued,
             RunId = request.RunId,
             Taint = JsonSerializer.Serialize(request.Taint ?? [], _json),
             Tool = request.Tool.ToString(),
@@ -71,17 +72,17 @@ public sealed class EfPendingActionStore(IDbContextFactory<MarshalDbContext> con
     {
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         PendingAction? row = await db.PendingActions.AsNoTracking()
-            .Where(action => action.SessionId == sessionId && action.Status == PendingActionStatus.Pending)
+            .Where(action => action.SessionId == sessionId && !action.Queued && action.Status == PendingActionStatus.Pending)
             .OrderByDescending(action => action.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
         return row is null ? null : ToRecord(row);
     }
 
-    public async Task<IReadOnlyList<PendingActionRecord>> ListTaskApprovalsAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<PendingActionRecord>> ListQueuedAsync(CancellationToken cancellationToken)
     {
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         List<PendingAction> rows = await db.PendingActions.AsNoTracking()
-            .Where(action => action.TaskId != null && action.Status == PendingActionStatus.Pending)
+            .Where(action => action.Queued && action.Status == PendingActionStatus.Pending)
             .OrderBy(action => action.CreatedAt)
             .ToListAsync(cancellationToken);
         return [.. rows.Select(ToRecord)];
@@ -111,7 +112,7 @@ public sealed class EfPendingActionStore(IDbContextFactory<MarshalDbContext> con
     {
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         DateTimeOffset now = timeProvider.GetUtcNow();
-        foreach (PendingAction row in await db.PendingActions.Where(action => action.SessionId == sessionId && action.Status == PendingActionStatus.Pending).ToListAsync(cancellationToken))
+        foreach (PendingAction row in await db.PendingActions.Where(action => action.SessionId == sessionId && !action.Queued && action.Status == PendingActionStatus.Pending).ToListAsync(cancellationToken))
         {
             row.Status = PendingActionStatus.Dropped;
             row.DecidedBy = DecidedBy.System;
@@ -128,6 +129,7 @@ public sealed class EfPendingActionStore(IDbContextFactory<MarshalDbContext> con
         SessionId = row.SessionId,
         SatelliteId = row.SatelliteId,
         TaskId = row.TaskId,
+        Queued = row.Queued,
         RunId = row.RunId,
         Taint = JsonSerializer.Deserialize<List<TaintSource>>(row.Taint, _json) ?? [],
         Tool = ToolId.Parse(row.Tool).Value,

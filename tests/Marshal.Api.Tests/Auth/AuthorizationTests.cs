@@ -46,6 +46,15 @@ public sealed class AuthorizationTests : IAsyncLifetime
     }
 
     [Fact]
+    public void AiTasksScope_KnownAndGrantedToAdminAndUser()
+    {
+        Assert.Equal("aitasks:write", ApiScopes.AiTasksWrite);
+        Assert.Contains(ApiScopes.AiTasksWrite, ApiScopes.All);
+        Assert.Contains(ApiScopes.AiTasksWrite, Roles.ScopesOf(["admin"]));
+        Assert.Contains(ApiScopes.AiTasksWrite, Roles.ScopesOf(["user"]));
+    }
+
+    [Fact]
     public void HookScopes_ExistForEveryWebhookSource()
     {
         IWebhookIngest ingest = _factory.Services.GetRequiredService<IWebhookIngest>();

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MessageSquare, Mic, Plug } from 'lucide-vue-next'
+import { House, MessageSquare, Mic, Plug } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import type { Schemas } from '../api/client'
 import { useApi } from '../api/inject'
@@ -16,7 +16,7 @@ defineProps<{ activeId?: string | null }>()
 const api = useApi()
 const format = useFormat()
 const { t } = useI18n()
-const icons = { voice: Mic, web: MessageSquare, task: MessageSquare, api: Plug }
+const icons = { voice: Mic, web: MessageSquare, task: MessageSquare, api: Plug, automation: House }
 
 const conversations = usePagedLoad(
   (before, limit) => api.call((client) => client.GET('/api/v1/conversations', { params: { query: { before, limit } } })),

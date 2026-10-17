@@ -72,6 +72,20 @@ describe('RunsView', () => {
     )
   })
 
+  it('filters automation runs and labels them', async () => {
+    const fake = new FakeServer()
+      .on('GET', '/api/v1/me', 200, me)
+      .on('GET', '/api/v1/runs', 200, [runSummary({ id: 'r-9', source: 'automation', trigger: 'ai_task:doorbell' })])
+    const { wrapper, router } = await mountRuns(fake)
+
+    expect(wrapper.text()).toContain('Automation')
+    await wrapper.get('[data-source="automation"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ source: 'automation' })
+    expect(new URLSearchParams(fake.request('GET', '/api/v1/runs')!.search).get('source')).toBe('automation')
+  })
+
   it('loads older runs before the last one shown when the page was full', async () => {
     const page = Array.from({ length: 50 }, (_, index) => runSummary({ id: `r-${index}`, startedAt: `2026-09-28T08:${String(59 - index).padStart(2, '0')}:00Z` }))
     const fake = new FakeServer()

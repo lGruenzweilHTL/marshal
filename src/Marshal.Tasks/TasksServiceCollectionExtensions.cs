@@ -10,6 +10,7 @@ using Marshal.Abstractions.Secrets;
 using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
 using Marshal.Core.Agent;
+using Marshal.Core.AiTasks;
 using Marshal.Core.Conversation;
 using Marshal.Tasks.Approvals;
 using Marshal.Tasks.Control;
@@ -57,6 +58,7 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton(new LiveTopic(ConversationLiveEvents.Conversations));
         services.AddSingleton<ITaskSpending, EfTaskSpending>();
         services.AddSingleton<TaskBudgets>();
+        services.AddSingleton<IDailyCostCap>(provider => provider.GetRequiredService<TaskBudgets>());
         services.AddSingleton<TaskPauses>();
         services.AddSingleton<IKillSwitch, EfKillSwitch>();
         services.AddSingleton<ITaskControl, TaskControl>();

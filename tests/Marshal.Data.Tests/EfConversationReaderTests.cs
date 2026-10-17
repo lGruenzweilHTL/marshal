@@ -11,6 +11,7 @@ using Marshal.Abstractions.Tools;
 using Marshal.Data.Conversations;
 using Marshal.Data.Tasks;
 using Marshal.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
@@ -45,6 +46,32 @@ public sealed class EfConversationReaderTests
         Assert.Equal([voice, web], all.Select(conversation => conversation.Id));
         Assert.Equal([voice], first.Select(conversation => conversation.Id));
         Assert.Equal([web], next.Select(conversation => conversation.Id));
+    }
+
+    [Fact]
+    public async Task ListAndGet_AutomationSessions_Hidden()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        SessionId automation = await SessionAsync(database, OwnerA, SessionSource.Automation);
+        await TurnAsync(database, automation, Text(OwnerA) with { Source = SessionSource.Automation }, "describe the camera", "A parcel.");
+        EfConversationReader reader = Reader(database, OwnerA);
+
+        Assert.Empty(await reader.ListAsync(null, 50, Ct));
+        Assert.Null(await reader.GetAsync(automation, Ct));
+    }
+
+    [Fact]
+    public async Task Session_AutomationSource_StoredAsSnakeCase()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        SessionId automation = await SessionAsync(database, OwnerA, SessionSource.Automation);
+
+        await using MarshalDbContext context = database.CreateContext(OwnerA);
+        string stored = await context.Database.SqlQueryRaw<string>("SELECT source AS \"Value\" FROM sessions").SingleAsync(Ct);
+        Session loaded = await context.Sessions.SingleAsync(session => session.Id == automation, Ct);
+
+        Assert.Equal("automation", stored);
+        Assert.Equal(SessionSource.Automation, loaded.Source);
     }
 
     [Fact]

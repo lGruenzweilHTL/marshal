@@ -78,7 +78,9 @@ web/                         Vue + Vite + TypeScript SPA (API client generated f
                              built into Marshal.Api's wwwroot by the Dockerfile; preview mode with a fake API
                              (src/preview/scenarios: normal, demo, empty, failing, offline), Playwright screenshot sweep
                              in scripts/screenshots.ts
-ha/                          custom_components/marshal (Python HA integration, HACS; may move to its own repo); uv project, tests in ha/tests
+ha/                          custom_components/marshal (Python HA integration, HACS; may move to its own repo): Assist
+                             conversation entity, AI Task entity (POST /api/v1/ai-tasks), reauth flow; uv project (Python
+                             3.14 via .python-version), tests in ha/tests
 deploy/                      docker-compose.yml, config.example/ (example /config files: marshal.yaml, risk.yaml,
                              satellites.yaml, mcp/, skills/, templates/, tasks/ with the example briefing task);
                              Dockerfile at repo root

@@ -3,7 +3,7 @@ import type { Catalog } from '../i18n/catalog'
 export const en = {
   title: 'Runs',
   subtitle: 'Every turn Marshal ran: voice, chat, tasks and API calls, with outcome and cost.',
-  source: { voice: 'Voice', web: 'Web', task: 'Task', api: 'API' },
+  source: { voice: 'Voice', web: 'Web', task: 'Task', api: 'API', automation: 'Automation' },
   tier: { fast: 'Fast', standard: 'Standard', advisor: 'Advisor' },
   outcome: { ok: 'ok', error: 'error', backgrounded: 'backgrounded', cancelled: 'cancelled' },
   all: 'All',
@@ -66,14 +66,14 @@ export const en = {
     input: 'Input',
     result: 'Result',
     reference: 'Result stored as reference only:',
-    facts: { source: 'Source', trigger: 'Trigger', started: 'Started', duration: 'Duration', outcome: 'Outcome', cost: 'Cost', language: 'Language', session: 'Session', satellite: 'Satellite' },
+    facts: { source: 'Source', trigger: 'Trigger', started: 'Started', duration: 'Duration', outcome: 'Outcome', cost: 'Cost', language: 'Language', session: 'Session', satellite: 'Satellite', firstDelta: 'First words' },
   },
 }
 
 export const de: Catalog<typeof en> = {
   title: 'Läufe',
   subtitle: 'Jeder Durchlauf von Marshal: Sprache, Chat, Aufgaben und API-Aufrufe, mit Ergebnis und Kosten.',
-  source: { voice: 'Sprache', web: 'Web', task: 'Aufgabe', api: 'API' },
+  source: { voice: 'Sprache', web: 'Web', task: 'Aufgabe', api: 'API', automation: 'Automation' },
   tier: { fast: 'Schnell', standard: 'Standard', advisor: 'Advisor' },
   outcome: { ok: 'ok', error: 'Fehler', backgrounded: 'im Hintergrund', cancelled: 'abgebrochen' },
   all: 'Alle',

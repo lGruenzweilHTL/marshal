@@ -16,4 +16,7 @@ public enum SessionSource
 
     /// <summary>Another API client with a machine token.</summary>
     Api,
+
+    /// <summary>An AI task from a Home Assistant automation: one session per task, hidden from the chat history.</summary>
+    Automation,
 }

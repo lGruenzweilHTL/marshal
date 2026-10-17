@@ -19,6 +19,9 @@ public sealed class PendingAction : IOwned
 
     public TaskId? TaskId { get; init; }
 
+    /// <summary>In the approval queue (with or without a task); never confirmed by input in its session.</summary>
+    public bool Queued { get; init; }
+
     public string? SatelliteId { get; init; }
 
     /// <summary>The run that asked (no foreign key: runs are purged by retention).</summary>

@@ -10,7 +10,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import MarshalClient
 from .const import CONF_TOKEN, CONF_URL
 
-PLATFORMS: list[Platform] = [Platform.CONVERSATION]
+PLATFORMS: list[Platform] = [Platform.AI_TASK, Platform.CONVERSATION]
 
 type MarshalConfigEntry = ConfigEntry[MarshalClient]
 

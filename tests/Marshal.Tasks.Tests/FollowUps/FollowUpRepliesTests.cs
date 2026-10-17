@@ -207,7 +207,7 @@ public sealed class FollowUpRepliesTests : IAsyncLifetime
     {
         TaskRecord task = await TaskAsync(AgentTaskStatus.Waiting);
         return await Actions().FreezeAsync(new FreezeRequest(
-            null, null, new ToolId("printer", "start_print"), """{"file":"benchy.gcode"}""", "Druck starten", [], "de", _time.GetUtcNow().AddMinutes(10), task.Id), Ct);
+            null, null, new ToolId("printer", "start_print"), """{"file":"benchy.gcode"}""", "Druck starten", [], "de", _time.GetUtcNow().AddMinutes(10), task.Id, Queued: true), Ct);
     }
 
     private FollowUpReplies Replies() => new(

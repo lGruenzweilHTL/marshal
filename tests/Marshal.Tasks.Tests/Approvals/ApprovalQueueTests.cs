@@ -4,9 +4,11 @@ using Marshal.Abstractions.Events;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Notifications;
+using Marshal.Abstractions.Sessions;
 using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
 using Marshal.Core.Tools;
+using Marshal.Data;
 using Marshal.Data.Conversations;
 using Marshal.Tasks.Approvals;
 using Marshal.Tasks.Scheduling;
@@ -329,6 +331,86 @@ public sealed class ApprovalQueueTests : IAsyncLifetime, IDisposable
         Assert.Equal(_reasons, pending[0].Reasons);
     }
 
+    [Fact]
+    public async Task Taskless_Enqueue_QueuedNotHeldInTheSession()
+    {
+        SessionId session = await SessionAsync();
+
+        PendingActionRecord queued = await EnqueueTasklessAsync(session);
+
+        Assert.Equal(((TaskId?)null, true, (SessionId?)session), (queued.TaskId, queued.Queued, queued.SessionId));
+        Assert.Null(await Store().GetPendingAsync(session, Ct));
+        Assert.Equal([queued.Id], (await Queue().ListPendingAsync(Ct)).Select(action => action.Id));
+        NotificationRequest push = Assert.Single(_sender.Sent);
+        Assert.Equal(("approval", (TaskId?)null, (PendingActionId?)queued.Id), (push.Source, push.TaskId, push.PendingActionId));
+    }
+
+    [Fact]
+    public async Task Taskless_Approve_ExecutesOnceAndSendsLowResultNotification()
+    {
+        PendingActionRecord queued = await EnqueueTasklessAsync();
+
+        Result<PendingActionRecord> decided = await Queue().DecideAsync(queued.Id, approve: true, DecidedBy.Ui, Ct);
+        Result<PendingActionRecord> again = await Queue().DecideAsync(queued.Id, approve: true, DecidedBy.Ui, Ct);
+
+        Assert.Equal(PendingActionStatus.Approved, decided.Value.Status);
+        Assert.Equal(ErrorType.Conflict, again.Error.Type);
+        ToolInvocation invocation = Assert.Single(_start.Invocations);
+        Assert.Equal((OwnerA, (TaskId?)null, false), (invocation.Context.OwnerId, invocation.Context.TaskId, invocation.Context.IsInteractive));
+        NotificationRequest result = _sender.Sent.Last();
+        Assert.Equal((NotificationPriority.Low, "approval"), (result.Priority, result.Source));
+        Assert.Contains("Start printing benchy.gcode", result.Text, StringComparison.Ordinal);
+        Assert.Contains("Print started.", result.Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Taskless_ApproveToolFails_NotificationNamesTheError()
+    {
+        PendingActionRecord queued = await EnqueueTasklessAsync();
+        _start.Fails("printer.busy", "The printer is busy.");
+
+        await Queue().DecideAsync(queued.Id, approve: true, DecidedBy.Ui, Ct);
+
+        Assert.Contains("The printer is busy.", _sender.Sent.Last().Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Taskless_Reject_NothingExecutes()
+    {
+        PendingActionRecord queued = await EnqueueTasklessAsync();
+
+        Result<PendingActionRecord> decided = await Queue().DecideAsync(queued.Id, approve: false, DecidedBy.Ui, Ct);
+
+        Assert.Equal(PendingActionStatus.Rejected, decided.Value.Status);
+        Assert.Empty(_start.Invocations);
+        Assert.Single(_sender.Sent);
+    }
+
+    [Fact]
+    public async Task Taskless_Expired_NothingExecutes()
+    {
+        PendingActionRecord queued = await EnqueueTasklessAsync();
+        _time.Advance(TimeSpan.FromMinutes(11));
+        _database.Accessor.Current = null;
+
+        await Queue().ExpireDueAsync(Ct);
+
+        _database.Accessor.Current = Text(OwnerA);
+        Assert.Equal(PendingActionStatus.Expired, (await Store().GetAsync(queued.Id, Ct))!.Status);
+        Assert.Empty(_start.Invocations);
+    }
+
+    [Fact]
+    public async Task Taskless_PushAction_Decided()
+    {
+        PendingActionRecord queued = await EnqueueTasklessAsync();
+        _database.Accessor.Current = null;
+
+        Assert.True(await Queue().HandlePushActionAsync($"MARSHAL_APPROVE_{queued.Nonce}", Ct));
+
+        Assert.Single(_start.Invocations);
+    }
+
     private async Task AssertResumedExpiredAsync(TaskId taskId, PendingActionId approvalId)
     {
         Assert.Equal(PendingActionStatus.Expired, (await Store().GetAsync(approvalId, Ct))!.Status);
@@ -355,6 +437,30 @@ public sealed class ApprovalQueueTests : IAsyncLifetime, IDisposable
     {
         using (_database.Accessor.Use(Text(OwnerA, language) with { Source = SessionSource.Task, IsInteractive = false, TaskId = task.Id }))
             return await Queue().EnqueueAsync(Freeze(task.Id, tool, language), Ct);
+    }
+
+    private async Task<SessionId> SessionAsync()
+    {
+        await using MarshalDbContext context = _database.CreateContext(OwnerA);
+        var id = SessionId.New();
+        context.Sessions.Add(new Session
+        {
+            Id = id,
+            OwnerId = OwnerA,
+            Source = SessionSource.Automation,
+            IdentityEvidence = "{}",
+            ResolvedBy = "token",
+            CreatedAt = _time.GetUtcNow(),
+            LastTurnAt = _time.GetUtcNow(),
+        });
+        await context.SaveChangesAsync(Ct);
+        return id;
+    }
+
+    private async Task<PendingActionRecord> EnqueueTasklessAsync(SessionId? session = null)
+    {
+        using (_database.Accessor.Use(Text(OwnerA) with { Source = SessionSource.Automation, IsInteractive = false, SessionId = session }))
+            return await Queue().EnqueueAsync(Freeze(null) with { SessionId = session }, Ct);
     }
 
     private FreezeRequest Freeze(TaskId? taskId, FakeTool? tool = null, string language = "en") => new(

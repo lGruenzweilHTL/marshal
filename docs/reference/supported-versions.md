@@ -26,7 +26,7 @@ The image build needs Docker with Compose and builds the image from source; ther
 | Python for the component tests | 3.14.2 or newer | `requires-python` in `ha/pyproject.toml`. |
 | Marshal custom component | 0.1.0 | `ha/custom_components/marshal/manifest.json` |
 
-The component has no Python requirements of its own. It needs the `conversation` integration and uses `assist_pipeline` when present.
+The component has no Python requirements of its own. It needs the `conversation` and `ai_task` integrations and uses `assist_pipeline` when present.
 
 Marshal talks to Home Assistant's REST and websocket APIs and to its MCP server (server id `ha`). Music uses Music Assistant players exposed as Home Assistant `media_player` entities.
 

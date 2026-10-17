@@ -3,13 +3,23 @@
     "step": {
       "user": {
         "title": "Mit Marshal verbinden",
-        "description": "Gib die Adresse deiner Marshal-Instanz und ein API-Token mit dem Scope conversation:write ein (in Marshal unter Sicherheit oder mit `marshal tokens create --name home-assistant --scope conversation:write` erstellen).",
+        "description": "Gib die Adresse deiner Marshal-Instanz und ein API-Token mit den Scopes conversation:write und aitasks:write ein (in Marshal unter Sicherheit oder mit `marshal tokens create --name home-assistant --scope conversation:write --scope aitasks:write` erstellen).",
         "data": {
           "url": "URL",
           "token": "API-Token"
         },
         "data_description": {
           "url": "Zum Beispiel http://marshal.local:8080",
+          "token": "Wird nur einmal beim Erstellen angezeigt."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Neues API-Token für Marshal",
+        "description": "Marshal hat das Token abgelehnt oder ihm fehlt ein Scope. Gib ein neues API-Token mit den Scopes conversation:write und aitasks:write ein.",
+        "data": {
+          "token": "API-Token"
+        },
+        "data_description": {
           "token": "Wird nur einmal beim Erstellen angezeigt."
         }
       }
@@ -19,10 +29,44 @@
       "cannot_connect": "Marshal ist unter dieser Adresse nicht erreichbar",
       "invalid_auth": "Marshal hat das API-Token abgelehnt",
       "invalid_url": "Gib eine vollständige http://- oder https://-Adresse ein",
-      "unknown": "Unerwartete Antwort von Marshal; siehe Protokoll"
+      "unknown": "Unerwartete Antwort von Marshal; siehe Protokoll",
+      "missing_scope": "Dem API-Token fehlt der Scope aitasks:write"
     },
     "abort": {
-      "already_configured": "Diese Marshal-Instanz ist bereits eingerichtet"
+      "already_configured": "Diese Marshal-Instanz ist bereits eingerichtet",
+      "reauth_successful": "Das neue API-Token ist gespeichert"
+    }
+  },
+  "exceptions": {
+    "missing_scope": {
+      "message": "Dem Marshal-API-Token fehlt der Scope {scope}. Erstelle ein Token mit conversation:write und {scope} und gib es bei der erneuten Anmeldung ein."
+    },
+    "invalid_auth": {
+      "message": "Marshal hat das API-Token abgelehnt. Gib bei der erneuten Anmeldung ein neues Token ein."
+    },
+    "cannot_connect": {
+      "message": "Marshal ist nicht erreichbar."
+    },
+    "timeout": {
+      "message": "Marshal hat die Aufgabe nicht rechtzeitig erledigt."
+    },
+    "not_supported": {
+      "message": "Marshal unterstützt keine KI-Aufgaben; aktualisiere Marshal."
+    },
+    "daily_cap": {
+      "message": "Das tägliche Kostenlimit von Marshal ist erreicht."
+    },
+    "no_vision_model": {
+      "message": "Marshal hat für diese Aufgabe kein Modell, das Bilder ansehen kann."
+    },
+    "invalid_output": {
+      "message": "Die Antwort von Marshal passte nicht zur gewünschten Struktur."
+    },
+    "request_rejected": {
+      "message": "Marshal hat die Aufgabe abgelehnt (HTTP {status}, {code})."
+    },
+    "server_error": {
+      "message": "Marshal konnte die Aufgabe nicht ausführen (HTTP {status})."
     }
   }
 }

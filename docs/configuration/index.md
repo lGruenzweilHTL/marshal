@@ -105,9 +105,11 @@ Users without the `admin` role get 403 and see no link. The view does not show t
 | `models` | [models.md](marshal-yaml/models.md) |
 | `embedding`, `memory` | [embedding.md](marshal-yaml/embedding.md) |
 | `agent` | [agent.md](marshal-yaml/agent.md) |
+| `tools`, `voice` | [tools.md](marshal-yaml/tools.md) |
 | `confirmation` | [confirmation.md](marshal-yaml/confirmation.md) |
 | `sessions` | [sessions.md](marshal-yaml/sessions.md) |
 | `tasks` | [tasks.md](marshal-yaml/tasks.md) |
+| `aiTasks` | [ai-tasks.md](marshal-yaml/ai-tasks.md) |
 | `maintenance` | [maintenance.md](marshal-yaml/maintenance.md) |
 | `notifications` | [notifications.md](marshal-yaml/notifications.md) |
 | `artifacts` | [artifacts.md](marshal-yaml/artifacts.md) |

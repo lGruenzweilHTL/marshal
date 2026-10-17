@@ -3,13 +3,23 @@
     "step": {
       "user": {
         "title": "Connect to Marshal",
-        "description": "Enter the address of your Marshal instance and an API token with the scope conversation:write (create one in Marshal under Security or with `marshal tokens create --name home-assistant --scope conversation:write`).",
+        "description": "Enter the address of your Marshal instance and an API token with the scopes conversation:write and aitasks:write (create one in Marshal under Security or with `marshal tokens create --name home-assistant --scope conversation:write --scope aitasks:write`).",
         "data": {
           "url": "URL",
           "token": "API token"
         },
         "data_description": {
           "url": "For example http://marshal.local:8080",
+          "token": "Shown once when the token is created."
+        }
+      },
+      "reauth_confirm": {
+        "title": "New API token for Marshal",
+        "description": "Marshal rejected the token or it lacks a scope. Enter a new API token with the scopes conversation:write and aitasks:write.",
+        "data": {
+          "token": "API token"
+        },
+        "data_description": {
           "token": "Shown once when the token is created."
         }
       }
@@ -19,10 +29,44 @@
       "cannot_connect": "Marshal is not reachable at this address",
       "invalid_auth": "Marshal rejected the API token",
       "invalid_url": "Enter a full http:// or https:// address",
-      "unknown": "Unexpected answer from Marshal; see the log"
+      "unknown": "Unexpected answer from Marshal; see the log",
+      "missing_scope": "The API token lacks the scope aitasks:write"
     },
     "abort": {
-      "already_configured": "This Marshal instance is already configured"
+      "already_configured": "This Marshal instance is already configured",
+      "reauth_successful": "The new API token is saved"
+    }
+  },
+  "exceptions": {
+    "missing_scope": {
+      "message": "The Marshal API token lacks the scope {scope}. Create a token with conversation:write and {scope} and enter it in the reauthentication step."
+    },
+    "invalid_auth": {
+      "message": "Marshal rejected the API token. Enter a new token in the reauthentication step."
+    },
+    "cannot_connect": {
+      "message": "Marshal is not reachable."
+    },
+    "timeout": {
+      "message": "Marshal did not finish the task in time."
+    },
+    "not_supported": {
+      "message": "Marshal does not support AI tasks; update Marshal."
+    },
+    "daily_cap": {
+      "message": "Marshal's daily cost cap is reached."
+    },
+    "no_vision_model": {
+      "message": "Marshal has no model that can look at images for this task."
+    },
+    "invalid_output": {
+      "message": "Marshal's answer did not match the requested structure."
+    },
+    "request_rejected": {
+      "message": "Marshal rejected the task (HTTP {status}, {code})."
+    },
+    "server_error": {
+      "message": "Marshal failed to run the task (HTTP {status})."
     }
   }
 }

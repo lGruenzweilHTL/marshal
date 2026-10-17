@@ -14,8 +14,8 @@ Every conversation turn and every headless task run is recorded as a run.
 | Page | Shows |
 |---|---|
 | **Home** | Widgets for recent runs, today's cost and system health. A health warning moves the health widget up. |
-| **Runs** | All runs (voice, web, task, api) with filters by source, outcome and cost. |
-| **Run detail** | The context build (including active projects and why), each model call (model, tier, tokens, latency, time to first token, cost, reasoning collapsed or a note that it was not kept), each tool call (arguments, truncated or redacted result, risk tier, guard decision, confirmation reasons, taint sources) and the reply. |
+| **Runs** | All runs (voice, web, task, api, automation) with filters by source, outcome and cost, and the time to first delta ("first words"), sortable slowest first. |
+| **Run detail** | The context build (including active projects and the loaded tool namespaces, each with why), a timeline for voice runs (context build, model calls, tool calls, first words, end), each model call (model, tier, tokens, latency, time to first token, cost, reasoning collapsed or a note that it was not kept), each tool call (arguments, truncated or redacted result, risk tier, guard decision, confirmation reasons, taint sources) and the reply. |
 | **Cost** | Cost per turn, per day and per tier, with the advisor on its own line. These are the numbers the budgets use. |
 | **System** | Health details, app and supported API versions, the kill switch, and a link to the configuration view for admins. |
 

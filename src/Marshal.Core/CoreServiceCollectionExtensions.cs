@@ -15,6 +15,7 @@ using Marshal.Abstractions.Skills;
 using Marshal.Abstractions.Templates;
 using Marshal.Abstractions.Tools;
 using Marshal.Core.Agent;
+using Marshal.Core.AiTasks;
 using Marshal.Core.Configuration;
 using Marshal.Core.Context;
 using Marshal.Core.Displays;
@@ -60,6 +61,9 @@ public static class CoreServiceCollectionExtensions
         services.AddOptions<PathsOptions>().Bind(configuration.GetSection("paths"));
         services.AddOptions<AgentOptions>().Bind(configuration.GetSection("agent")).ValidateAttributes().ValidateOnStart();
         services.AddOptions<ConfirmationOptions>().Bind(configuration.GetSection("confirmation")).ValidateAttributes().ValidateOnStart();
+        services.AddOptions<ToolsOptions>().Bind(configuration.GetSection("tools")).ValidateAttributes().ValidateOnStart();
+        services.AddOptions<VoiceOptions>().Bind(configuration.GetSection("voice")).ValidateAttributes().ValidateOnStart();
+        services.AddOptions<AiTaskOptions>().Bind(configuration.GetSection(AiTaskOptions.Section)).ValidateAttributes().ValidateOnStart();
         services.AddOptions<SessionOptions>().Bind(configuration.GetSection("sessions")).ValidateAttributes().ValidateOnStart();
         services.AddOptions<ModelRoutingOptions>().Bind(configuration).ValidateOnStart();
         services.AddSingleton<IValidateOptions<ModelRoutingOptions>, ModelRoutingOptionsValidator>();
@@ -148,6 +152,8 @@ public static class CoreServiceCollectionExtensions
         services.TryAddSingleton<IToolRedaction, SensitiveToolRedaction>();
         services.AddSingleton<IToolCallSummarizer, DefaultToolCallSummarizer>();
         services.AddSingleton<IAgentRunner, AgentRunner>();
+        services.AddSingleton<IStructuredOutputShaper, ModelStructuredOutputShaper>();
+        services.AddSingleton<IAiTaskRunner, AiTaskRunner>();
         services.AddSingleton<IIdentityResolver, InstanceOwnerIdentityResolver>();
         services.AddOptions<InstanceOptions>().Bind(configuration.GetSection("instance"))
             .Validate(options => options.TimeZone is null || UserPreferencesRules.IsIanaTimeZone(options.TimeZone), "instance.timeZone is not an IANA time zone.")

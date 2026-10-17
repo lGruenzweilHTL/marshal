@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Mic, MessageSquare, Plug, Zap } from 'lucide-vue-next'
+import { House, Mic, MessageSquare, Plug, Zap } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import type { Schemas } from '../api/client'
 import { satelliteName } from '../format'
@@ -11,7 +11,7 @@ import TaintFlag from './TaintFlag.vue'
 withDefaults(defineProps<{ run: Schemas['RunSummary']; dated?: boolean }>(), { dated: false })
 const { t } = useI18n()
 const format = useFormat()
-const icons = { voice: Mic, web: MessageSquare, task: Zap, api: Plug }
+const icons = { voice: Mic, web: MessageSquare, task: Zap, api: Plug, automation: House }
 const tones: Record<Schemas['RunOutcome'], Tone> = { ok: 'success', error: 'danger', backgrounded: 'warning', cancelled: 'neutral' }
 </script>
 

@@ -88,3 +88,49 @@ async def test_same_instance_twice_aborts(hass: HomeAssistant, aioclient_mock: A
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "already_configured"
+
+
+async def start_reauth(hass: HomeAssistant) -> tuple[MockConfigEntry, dict]:
+    entry = MockConfigEntry(domain=DOMAIN, unique_id=URL, data={CONF_URL: URL, CONF_TOKEN: "old_token"})
+    entry.add_to_hass(hass)
+    result = await entry.start_reauth_flow(hass)
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reauth_confirm"
+    return entry, result
+
+
+async def test_reauth_valid_token_with_scope_updates_entry(hass: HomeAssistant, aioclient_mock: AiohttpClientMocker) -> None:
+    entry, result = await start_reauth(hass)
+    aioclient_mock.get(f"{URL}/api/versions", json={"supported": ["1.0"], "deprecated": []})
+    aioclient_mock.get(f"{URL}/api/v1/me", json={**ME, "scopes": ["conversation:write", "aitasks:write"]})
+
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_TOKEN: "new_token"})
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reauth_successful"
+    assert entry.data == {CONF_URL: URL, CONF_TOKEN: "new_token"}
+    assert aioclient_mock.mock_calls[-1][3]["Authorization"] == "Bearer new_token"
+
+
+@pytest.mark.parametrize("status", [401, 403])
+async def test_reauth_rejected_token_shows_invalid_auth(hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, status: int) -> None:
+    entry, result = await start_reauth(hass)
+    aioclient_mock.get(f"{URL}/api/versions", json={"supported": ["1.0"], "deprecated": []})
+    aioclient_mock.get(f"{URL}/api/v1/me", status=status)
+
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_TOKEN: "bad_token"})
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "invalid_auth"}
+    assert entry.data[CONF_TOKEN] == "old_token"
+
+
+async def test_reauth_token_without_ai_task_scope_shows_missing_scope(hass: HomeAssistant, aioclient_mock: AiohttpClientMocker) -> None:
+    entry, result = await start_reauth(hass)
+    aioclient_mock.get(f"{URL}/api/versions", json={"supported": ["1.0"], "deprecated": []})
+    aioclient_mock.get(f"{URL}/api/v1/me", json=ME)
+
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_TOKEN: "narrow_token"})
+
+    assert result["errors"] == {"base": "missing_scope"}
+    assert entry.data[CONF_TOKEN] == "old_token"

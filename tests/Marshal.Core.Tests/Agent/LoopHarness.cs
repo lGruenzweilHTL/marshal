@@ -1,9 +1,11 @@
 using System.Threading.Channels;
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Conversation;
+using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Satellites;
 using Marshal.Abstractions.Tools;
 using Marshal.Core.Agent;
+using Marshal.Core.AiTasks;
 using Marshal.Core.Context;
 using Marshal.Core.Guard;
 using Marshal.Core.Models;
@@ -125,13 +127,19 @@ internal sealed class LoopHarness
             guard,
             harness.Store,
             harness.Recorder,
-            new PriceTableCostCalculator(Microsoft.Extensions.Options.Options.Create(harness.Routing)),
+            costs,
             harness.Accessor,
             Microsoft.Extensions.Options.Options.Create(harness.Options),
             Microsoft.Extensions.Options.Options.Create(new ConfirmationOptions()),
             harness.Time,
             harness.Logger,
-            handoff: harness.Handoff);
+            approvals: harness.Approvals,
+            handoff: harness.Handoff,
+            selector: harness.Selector,
+            sessionTools: harness.SessionTools,
+            latency: harness.Latency,
+            voiceOptions: Microsoft.Extensions.Options.Options.Create(harness.VoiceOptions),
+            shaper: new ModelStructuredOutputShaper(harness.Recorder, costs, harness.Time));
         harness.RunnerSpy = new RunnerSpy(harness.Runner);
         return harness;
     }

@@ -67,13 +67,16 @@ internal sealed class SingleModelRouter(IChatClient client, IChatClient? advisor
 
     public bool Unavailable { get; set; }
 
+    /// <summary>No model with the vision capability: requests that need one fail.</summary>
+    public bool NoVision { get; set; }
+
     /// <summary>Reasoning setting of the routed (non-advisor) model.</summary>
     public Marshal.Abstractions.Models.ModelReasoning Reasoning { get; set; }
 
     public Marshal.Abstractions.Result<Marshal.Abstractions.Models.RoutedModel> Route(Marshal.Abstractions.Models.ModelRequest request)
     {
         Requests.Add(request);
-        if (Unavailable)
+        if (Unavailable || (NoVision && request.Vision))
             return new Marshal.Abstractions.Error("model.not_available", "none");
 
         if (request.Tier == Marshal.Abstractions.Models.ModelTier.Advisor)

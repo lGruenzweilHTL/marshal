@@ -1,13 +1,13 @@
 # Configure the Home Assistant component
 
-The integration is set up through a config flow with two fields. It has no options.
+The integration is set up through a config flow with two fields and has a reauthentication step for a new token. It has no options.
 
 ## Config flow fields
 
 | Field | Description |
 |---|---|
 | URL | Address of Marshal, for example `http://marshal.local:8080`. Must be `http://` or `https://`. Include the path prefix if Marshal runs under one (`http.pathBase`). A trailing slash, query and fragment are dropped. |
-| API token | A Marshal API token with the scope `conversation:write`. |
+| API token | A Marshal API token with the scopes `conversation:write` (Assist) and `aitasks:write` (AI Task entity). Without `aitasks:write`, conversations work and AI tasks fail. |
 
 Before it creates the entry, the flow checks, in order:
 
@@ -30,14 +30,27 @@ None. Timeouts, tools, language and satellite behavior are configured in Marshal
 
 ## Change the URL or token
 
-The integration has no reconfigure step. Remove the entry and add it again. To rotate the token, create a new one, then revoke the old one with `marshal tokens revoke <token-id>` after the new entry works.
+To change the URL, remove the entry and add it again.
+
+To change the token, use the reauthentication step. HA starts it when an AI task gets `401` or `403` from Marshal and shows it under **Settings > Devices & services**. The step asks for the token only, checks it against `GET /api/v1/me` and requires the scope `aitasks:write`:
+
+| Error shown | Cause |
+|---|---|
+| Marshal rejected the API token | Marshal answered `401` or `403`. |
+| The API token lacks the scope aitasks:write | The token is valid but does not carry `aitasks:write`. |
+
+On success the entry keeps its URL and reloads with the new token. Revoke the old token with `marshal tokens revoke <token-id>` afterwards.
 
 ## What the integration creates
 
-One Marshal device and one conversation entity named after the device. The entity supports German and English and streaming replies.
+One Marshal device with two entities named after it:
+
+- a conversation entity (`conversation.marshal`) for Assist, with German and English and streaming replies;
+- an AI Task entity (`ai_task.marshal`) that generates data, with attachments, for automations. See [AI tasks](ai-tasks.md). It does not generate images.
 
 ## Related
 
 - [Installation](installation.md)
 - [How it works](how-it-works.md)
+- [Run AI tasks from automations](ai-tasks.md)
 - [Machine tokens](../guides/authentication/machine-tokens.md)

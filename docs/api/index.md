@@ -2,7 +2,7 @@
 
 Marshal exposes a versioned REST API under `/api/v{n}`. This page covers the base path, versioning, authentication, error format and rate limits that apply to every endpoint.
 
-The public, integration-relevant endpoints are the conversation endpoint, the live event stream, inbound webhooks and version discovery. All other endpoints exist for Marshal's own web interface; see [SPA-internal endpoints](#spa-internal-endpoints).
+The public, integration-relevant endpoints are the conversation endpoint, AI tasks, the live event stream, inbound webhooks and version discovery. All other endpoints exist for Marshal's own web interface; see [SPA-internal endpoints](#spa-internal-endpoints).
 
 ## Base path
 
@@ -13,6 +13,7 @@ JSON is camelCase. Time stamps are ISO 8601 strings.
 | Path | Versioned | Authentication | Purpose |
 |---|---|---|---|
 | `POST /api/v1/conversation/turns` | yes | token or session | [One conversation turn, streamed](conversation.md) |
+| `POST /api/v1/ai-tasks` | yes | token | [One AI task from an automation, answered as JSON](ai-tasks.md) |
 | `GET /api/v1/events` | yes | token or session | [Live update stream](live-events.md) |
 | `POST /api/v1/hooks/{source}` | yes | token | [Inbound webhooks](webhooks.md) |
 | `GET /api/v1/me` | yes | token or session | Current principal: id, display name, roles, scopes, demo mode |
@@ -76,9 +77,9 @@ Expected failures return [problem details](https://www.rfc-editor.org/rfc/rfc945
 | `403` | The credential lacks the required scope. |
 | `404` | The resource, source or API version does not exist, or belongs to another user. |
 | `409` | The request conflicts with the current state. |
-| `413` | The request body is too large (webhooks: over 64 KB). |
+| `413` | The request body is too large (webhooks: over 64 KB; AI tasks: see `aiTasks`). |
 | `422` | The request is well-formed but the operation failed. |
-| `429` | Rate limit exceeded (webhooks only). |
+| `429` | Rate limit exceeded (webhooks), or the daily cost cap is reached (AI tasks). |
 | `503` | A required dependency is unavailable. |
 
 An unhandled server error returns `500` with the code `server.unexpected`, a generic `detail` and a `traceId` extension. Quote the trace id when you look for the matching entry in the server log; the response never contains exception text.
@@ -116,6 +117,7 @@ The web interface uses the following groups. They require a logged-in person (co
 
 - [Authentication](authentication.md)
 - [Conversation endpoint](conversation.md)
+- [AI tasks](ai-tasks.md)
 - [Live events](live-events.md)
 - [Webhooks](webhooks.md)
 - [OpenAPI and client generation](openapi.md)

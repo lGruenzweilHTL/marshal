@@ -22,7 +22,7 @@ You can grant only scopes you hold yourself. A `user` cannot create an `admin` t
 The CLI works without a web login. Tokens belong to the instance owner.
 
 ```sh
-docker compose exec marshal marshal tokens create --name home-assistant --scope conversation:write
+docker compose exec marshal marshal tokens create --name home-assistant --scope conversation:write --scope aitasks:write
 docker compose exec marshal marshal tokens create --name ci --scope tasks:read --scope tasks:write --expires-in-days 90
 docker compose exec marshal marshal tokens list
 docker compose exec marshal marshal tokens revoke <token-id>
@@ -48,6 +48,7 @@ In **Settings > Security** choose **Revoke** on the token, or run `marshal token
 | Scope | Allows |
 |---|---|
 | `conversation:write` | `POST /api/v1/conversation/turns`. Needed by the Home Assistant integration. |
+| `aitasks:write` | `POST /api/v1/ai-tasks`. Needed by the Home Assistant integration's AI Task entity. |
 | `tasks:read` | Read tasks. |
 | `tasks:write` | Create and change tasks. |
 | `admin` | Admin endpoints. |

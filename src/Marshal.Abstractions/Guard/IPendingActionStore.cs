@@ -13,11 +13,11 @@ public interface IPendingActionStore
     /// <summary>A pending action of the current owner by id, in any status, or null.</summary>
     Task<PendingActionRecord?> GetAsync(PendingActionId id, CancellationToken cancellationToken);
 
-    /// <summary>The pending action of a session (status pending, expired or not), or null.</summary>
+    /// <summary>The pending action of a session (status pending, expired or not), or null. Queued approvals never count.</summary>
     Task<PendingActionRecord?> GetPendingAsync(SessionId sessionId, CancellationToken cancellationToken);
 
-    /// <summary>The current owner's undecided background approvals (pending actions of tasks), oldest first.</summary>
-    Task<IReadOnlyList<PendingActionRecord>> ListTaskApprovalsAsync(CancellationToken cancellationToken);
+    /// <summary>The current owner's undecided queued approvals (with or without a task), oldest first.</summary>
+    Task<IReadOnlyList<PendingActionRecord>> ListQueuedAsync(CancellationToken cancellationToken);
 
     /// <summary>Moves a pending action to a final status. Fails with <c>pending_action.not_pending</c> when already decided.</summary>
     Task<Result> DecideAsync(PendingActionId id, PendingActionStatus status, DecidedBy decidedBy, CancellationToken cancellationToken);

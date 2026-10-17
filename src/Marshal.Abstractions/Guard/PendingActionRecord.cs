@@ -20,8 +20,11 @@ public sealed record PendingActionRecord
 
     public string? SatelliteId { get; init; }
 
-    /// <summary>Background approvals: the waiting task.</summary>
+    /// <summary>Background approvals: the waiting task; null for queued approvals of runs without a task.</summary>
     public TaskId? TaskId { get; init; }
+
+    /// <summary>In the approval queue (background and taskless approvals), not a session's pending action.</summary>
+    public bool Queued { get; init; }
 
     /// <summary>The run that asked.</summary>
     public RunId? RunId { get; init; }

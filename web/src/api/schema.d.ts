@@ -430,6 +430,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ai-tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Runs one AI task (multipart: a 'task' JSON part with taskName, instructions, optional structure and language; optional 'attachment' image parts) and answers with its data: a string, or an object matching structure. */
+        post: operations["RunAiTask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/hooks/{source}": {
         parameters: {
             query?: never;
@@ -1349,6 +1366,23 @@ export interface components {
     schemas: {
         /** @enum {unknown} */
         AgentTaskStatus: "pending" | "running" | "waiting" | "done" | "failed" | "cancelled";
+        /** @description The multipart form of an AI task (OpenAPI description only). */
+        AiTaskForm: {
+            /** @description JSON: `taskName`, `instructions`, optional `structure` (JSON Schema object) and `language`. */
+            task: string;
+            /** @description JPEG, PNG or WebP images; repeat the part for several. */
+            attachment: null | components["schemas"]["IFormFileCollection"];
+        };
+        /** @description The answer of an AI task. */
+        AiTaskResponse: {
+            /** @description A string without structure; an object matching the structure otherwise. */
+            data: components["schemas"]["JsonElement"];
+            /**
+             * Format: uuid
+             * @description The run that answered (runs view).
+             */
+            runId: string;
+        };
         /** @description An alias phrase. */
         AliasRequest: {
             /** @description The phrase; normalized when stored. */
@@ -1406,7 +1440,7 @@ export interface components {
         ApprovalItem: {
             /** @description Pending action id. */
             id: string;
-            /** @description The task that waits for the decision. */
+            /** @description The task that waits for the decision; null for an approval of a run without a task (an AI task). */
             taskId: null | string;
             /** @description The run that asked; with a taint source's first step it links to the tool result that tainted the run. */
             runId: null | string;
@@ -2409,7 +2443,7 @@ export interface components {
         /** Format: uuid */
         SessionId: string;
         /** @enum {unknown} */
-        SessionSource: "voice" | "web" | "task" | "api";
+        SessionSource: "voice" | "web" | "task" | "api" | "automation";
         /** @description A loaded skill. */
         SkillSummary: {
             /** @description Skill name. */
@@ -3261,6 +3295,93 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ArtifactResponse"];
+                };
+            };
+        };
+    };
+    RunAiTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["AiTaskForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiTaskResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unsupported Media Type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Gateway Timeout */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
         };

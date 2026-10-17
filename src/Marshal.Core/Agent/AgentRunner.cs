@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text.Json;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Artifacts;
@@ -42,7 +43,12 @@ public sealed partial class AgentRunner(
     IApprovalQueue? approvals = null,
     IBackgroundHandoff? handoff = null,
     IToolRedaction? redaction = null,
-    IToolCallSummarizer? summarizer = null) : IAgentRunner
+    IToolCallSummarizer? summarizer = null,
+    IToolSelector? selector = null,
+    ISessionToolNamespaces? sessionTools = null,
+    IToolLatencyStats? latency = null,
+    IOptions<VoiceOptions>? voiceOptions = null,
+    IStructuredOutputShaper? shaper = null) : IAgentRunner
 {
     private static readonly JsonSerializerOptions _argumentJson = new(AIJsonUtilities.DefaultOptions) { WriteIndented = false };
 
@@ -140,18 +146,32 @@ public sealed partial class AgentRunner(
 
     private async Task<LoopResult> LoopAsync(AgentRunRequest request, MarshalExecutionContext context, Transcript transcript, CancellationToken ct)
     {
+        long contextStarted = timeProvider.GetTimestamp();
         var contextRequest = new ContextRequest(context, request.UserText);
-        string systemPrompt = await contextBuilder.BuildSystemPromptAsync(contextRequest, ct);
+        SystemPrompt prompt = await contextBuilder.BuildAsync(contextRequest, ct);
+        string systemPrompt = prompt.Text;
+        if (selector is not null && request.FixedReply is null)
+        {
+            IReadOnlyList<string> session = !context.IsSubagent && sessionTools is not null && context.SessionId is { } sessionId
+                ? await sessionTools.GetAsync(sessionId, ct)
+                : [];
+            await selector.PrepareAsync(await visibility.GetVisibleToolsAsync(context, ct), new ToolSelectionRequest(contextRequest, session), ct);
+        }
+
         await RecordAsync(new RunStepRecord
         {
-            Notes = contextRequest.Notes.All,
+            Notes = [.. contextRequest.Notes.All, .. request.UserAttachments.Select(AttachmentNote)],
             Kind = RunStepKind.Context,
             Content = systemPrompt,
+            DurationMs = (int)timeProvider.GetElapsedTime(contextStarted).TotalMilliseconds,
             Input = request.UserText,
         }, ct);
 
-        List<ChatMessage> messages = [new(ChatRole.System, systemPrompt), .. request.History];
-        if (request.UserText is not null)
+        // Two parts, so a provider adapter can cache the stable part across the session's turns.
+        List<ChatMessage> messages = [SystemMessage(prompt), .. request.History];
+        if (request.UserAttachments.Count > 0)
+            messages.Add(new ChatMessage(ChatRole.User, [.. request.UserText is null ? [] : new AIContent[] { new TextContent(request.UserText) }, .. request.UserAttachments]));
+        else if (request.UserText is not null)
             messages.Add(new ChatMessage(ChatRole.User, request.UserText));
         if (request.Confirmation is not null)
             await AppendConfirmationAsync(request.Confirmation, context, messages, transcript, ct);
@@ -490,6 +510,9 @@ public sealed partial class AgentRunner(
     private static string ErrorText(Error error) =>
         JsonSerializer.Serialize(new { error = new { code = error.Code, message = error.Message } });
 
+    private static string QueuedText(PendingActionRecord action) =>
+        $"Waiting for approval in the review queue. The action was NOT done yet and will run only if the user approves it later: {action.Summary}. Say so in your answer; do not ask for confirmation.";
+
     private static string PendingText(PendingActionRecord action)
     {
         string reasons = string.Join(" ", action.Reasons.Select(reason => reason.Sentence));
@@ -514,11 +537,14 @@ public sealed partial class AgentRunner(
     [LoggerMessage(Level = LogLevel.Error, Message = "Tool {Tool} threw an exception")]
     private static partial void LogToolCrashed(ILogger logger, Exception exception, string tool);
 
-    private sealed record LoopResult(string Reply, PendingActionRecord? Pending, RunOutcome Outcome, string? Reason);
+    private sealed record LoopResult(string Reply, PendingActionRecord? Pending, RunOutcome Outcome, string? Reason)
+    {
+        public JsonElement? Data { get; init; }
+    }
 
     // The run's messages after the system prompt as of the last completed tool round: what a background
     // continuation resumes from (never a tool call without its result).
-    private sealed class Transcript(System.Threading.Channels.ChannelWriter<TurnEvent>? events)
+    private sealed class Transcript(System.Threading.Channels.ChannelWriter<TurnEvent>? events, TimeProvider time, long requestStarted)
     {
         public IReadOnlyList<ChatMessage> Messages { get; private set; } = [];
 

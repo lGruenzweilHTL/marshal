@@ -12,4 +12,8 @@ public sealed record AgentRunResult(
     bool ContinueConversation,
     RunOutcome Outcome,
     string? OutcomeReason,
-    PendingActionRecord? PendingAction);
+    PendingActionRecord? PendingAction)
+{
+    /// <summary>The reply shaped into <see cref="AgentRunRequest.Structure"/>, when the request asked for one.</summary>
+    public System.Text.Json.JsonElement? Data { get; init; }
+}

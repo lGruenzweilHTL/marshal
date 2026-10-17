@@ -6,7 +6,7 @@ namespace Marshal.Api.Approvals;
 
 /// <summary>A background approval in the review queue.</summary>
 /// <param name="Id">Pending action id.</param>
-/// <param name="TaskId">The task that waits for the decision.</param>
+/// <param name="TaskId">The task that waits for the decision; null for an approval of a run without a task (an AI task).</param>
 /// <param name="RunId">The run that asked; with a taint source's first step it links to the tool result that tainted the run.</param>
 /// <param name="Tool">Frozen tool id.</param>
 /// <param name="Arguments">Frozen arguments; approving executes exactly these.</param>

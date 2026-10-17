@@ -1,4 +1,4 @@
-"""HTTP client for Marshal's public API: version discovery, token check and streamed conversation turns."""
+"""HTTP client for Marshal's public API: version discovery, token check, streamed conversation turns and AI tasks."""
 
 from __future__ import annotations
 
@@ -16,6 +16,8 @@ from .const import API_PREFIX
 # Marshal answers a text turn within its latency cap (60 s by default); allow a little more before giving up.
 TIMEOUT = aiohttp.ClientTimeout(total=75, connect=5)
 CHECK_TIMEOUT = aiohttp.ClientTimeout(total=10, connect=5)
+# Marshal cancels an AI task after aiTasks.timeoutSeconds (60 s by default) and answers 504; wait a little longer.
+AI_TASK_TIMEOUT = aiohttp.ClientTimeout(total=75, connect=5)
 
 
 class MarshalError(Exception):
@@ -26,8 +28,17 @@ class MarshalConnectionError(MarshalError):
     """Marshal is unreachable or did not answer in time."""
 
 
+class MarshalTimeoutError(MarshalConnectionError):
+    """Marshal did not answer in time."""
+
+
 class MarshalAuthError(MarshalError):
-    """The API token was rejected (401 / 403)."""
+    """The API token was rejected (401) or lacks a scope (403)."""
+
+    def __init__(self, message: str, status: int | None = None) -> None:
+        """Initialize with the HTTP status."""
+        super().__init__(message)
+        self.status = status
 
 
 class MarshalResponseError(MarshalError):
@@ -78,6 +89,15 @@ class Final:
 type TurnEvent = TextDelta | Status | Final
 
 
+@dataclass(frozen=True, slots=True)
+class AiTaskFile:
+    """An attachment of an AI task."""
+
+    filename: str
+    mime_type: str
+    content: bytes
+
+
 class MarshalClient:
     """Talks to one Marshal instance with one API token."""
 
@@ -95,9 +115,11 @@ class MarshalClient:
         except (KeyError, TypeError) as err:
             raise MarshalResponseError("Unexpected /api/versions response") from err
 
-    async def check_token(self) -> None:
-        """Raise MarshalAuthError unless Marshal accepts the token."""
-        await self._get_json(f"{API_PREFIX}/me", authenticated=True)
+    async def check_token(self) -> list[str]:
+        """Return the token's scopes; raise MarshalAuthError unless Marshal accepts the token."""
+        body = await self._get_json(f"{API_PREFIX}/me", authenticated=True)
+        scopes = body.get("scopes") if isinstance(body, dict) else None
+        return [str(scope) for scope in scopes] if isinstance(scopes, list) else []
 
     async def stream_turn(self, request: dict[str, Any]) -> AsyncIterator[TurnEvent]:
         """Send one turn and yield its events; the last one is always a Final."""
@@ -120,6 +142,28 @@ class MarshalClient:
             raise MarshalConnectionError(str(err) or type(err).__name__) from err
         raise MarshalResponseError("The turn stream ended without a final event")
 
+    async def generate_data(self, task: dict[str, Any], files: list[AiTaskFile]) -> Any:
+        """Run one AI task (`task` JSON part plus `attachment` parts) and return Marshal's `data`."""
+        with aiohttp.MultipartWriter("form-data") as writer:
+            writer.append_json(task).set_content_disposition("form-data", name="task")
+            for file in files:
+                part = writer.append(file.content, {"Content-Type": file.mime_type})
+                part.set_content_disposition("form-data", name="attachment", filename=file.filename)
+        try:
+            async with self._session.post(
+                f"{self._base_url}{API_PREFIX}/ai-tasks", data=writer, headers=self._auth(), timeout=AI_TASK_TIMEOUT
+            ) as response:
+                await self._raise_for_status(response)
+                try:
+                    body = await response.json(content_type=None)
+                    return body["data"]
+                except (ValueError, KeyError, TypeError) as err:
+                    raise MarshalResponseError("Unexpected AI task response", response.status) from err
+        except TimeoutError as err:
+            raise MarshalTimeoutError("Marshal did not answer in time") from err
+        except aiohttp.ClientError as err:
+            raise MarshalConnectionError(str(err) or type(err).__name__) from err
+
     async def _get_json(self, path: str, *, authenticated: bool) -> Any:
         try:
             async with self._session.get(
@@ -139,7 +183,7 @@ class MarshalClient:
     @staticmethod
     async def _raise_for_status(response: aiohttp.ClientResponse) -> None:
         if response.status in (HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN):
-            raise MarshalAuthError(f"Marshal rejected the token ({response.status})")
+            raise MarshalAuthError(f"Marshal rejected the token ({response.status})", response.status)
         if response.status >= HTTPStatus.BAD_REQUEST:
             code = None
             try:

@@ -20,6 +20,9 @@ namespace Marshal.Abstractions.Guard;
 /// <param name="TaskId">Background runs: the task that waits for the decision.</param>
 /// <param name="RunId">The run that asked (the review queue links to its steps).</param>
 /// <param name="Taint">Untrusted sources of the run, with the step that brought each in.</param>
+/// <param name="Queued">
+/// In the approval queue: decided only from the review queue or a push action, never by input in the session.
+/// </param>
 public sealed record FreezeRequest(
     SessionId? SessionId,
     string? SatelliteId,
@@ -31,4 +34,5 @@ public sealed record FreezeRequest(
     DateTimeOffset ExpiresAt,
     TaskId? TaskId = null,
     RunId? RunId = null,
-    IReadOnlyList<TaintSource>? Taint = null);
+    IReadOnlyList<TaintSource>? Taint = null,
+    bool Queued = false);

@@ -12,9 +12,11 @@ The terms Marshal's documentation and specifications use, each with one meaning.
 
 **Agent template.** A named configuration of a run: prompt, allowed tools and skills, model tier and limits. A subagent runs a template. See [agent templates](../guides/agent-templates.md).
 
+**AI task.** A one-off request from a Home Assistant automation (`ai_task.generate_data`) that Marshal answers as JSON in one headless run with the `ai_task` template. Its session has the source `automation`. See [AI tasks](../home-assistant-component/ai-tasks.md).
+
 **API token.** A scoped, revocable credential for a machine client, sent as `Authorization: Bearer`. Marshal stores only its hash. Also called a machine token. See [CLI](cli.md#marshal-tokens).
 
-**Approval.** A user's decision on a pending action that a background task raised. Approvals sit in the approval queue and expire after `tasks.approvalTtl`. See [approvals](../guides/tasks/approvals.md).
+**Approval.** A user's decision on a pending action that a background task or another non-interactive run, such as an AI task, raised. Approvals sit in the approval queue and expire after `tasks.approvalTtl`. See [approvals](../guides/tasks/approvals.md).
 
 **Artifact.** A file Marshal stores for you: an upload, executor output, a kept snapshot, a diff or a saved mail attachment. Each has a kind, a source and an owner. See [artifacts](../guides/artifacts.md).
 

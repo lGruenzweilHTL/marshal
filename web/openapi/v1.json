@@ -790,6 +790,107 @@
         }
       }
     },
+    "/api/v1/ai-tasks": {
+      "post": {
+        "tags": [
+          "AI tasks"
+        ],
+        "summary": "Runs one AI task (multipart: a \u0027task\u0027 JSON part with taskName, instructions, optional structure and language; optional \u0027attachment\u0027 image parts) and answers with its data: a string, or an object matching structure.",
+        "operationId": "RunAiTask",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/AiTaskForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiTaskResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/hooks/{source}": {
       "post": {
         "tags": [
@@ -2951,6 +3052,50 @@
           "cancelled"
         ]
       },
+      "AiTaskForm": {
+        "required": [
+          "task",
+          "attachment"
+        ],
+        "type": "object",
+        "properties": {
+          "task": {
+            "type": "string",
+            "description": "JSON: \u0060taskName\u0060, \u0060instructions\u0060, optional \u0060structure\u0060 (JSON Schema object) and \u0060language\u0060."
+          },
+          "attachment": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IFormFileCollection"
+              }
+            ],
+            "description": "JPEG, PNG or WebP images; repeat the part for several."
+          }
+        },
+        "description": "The multipart form of an AI task (OpenAPI description only)."
+      },
+      "AiTaskResponse": {
+        "required": [
+          "data",
+          "runId"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "A string without structure; an object matching the structure otherwise.",
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "runId": {
+            "type": "string",
+            "description": "The run that answered (runs view).",
+            "format": "uuid"
+          }
+        },
+        "description": "The answer of an AI task."
+      },
       "AliasRequest": {
         "required": [
           "phrase"
@@ -3101,7 +3246,7 @@
               "null",
               "string"
             ],
-            "description": "The task that waits for the decision."
+            "description": "The task that waits for the decision; null for an approval of a run without a task (an AI task)."
           },
           "runId": {
             "type": [
@@ -6460,7 +6605,8 @@
           "voice",
           "web",
           "task",
-          "api"
+          "api",
+          "automation"
         ]
       },
       "SkillSummary": {
@@ -7266,6 +7412,9 @@
     },
     {
       "name": "Printers"
+    },
+    {
+      "name": "AI tasks"
     },
     {
       "name": "Hooks"

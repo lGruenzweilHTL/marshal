@@ -13,7 +13,7 @@ import { AppButton, Badge, Chip, DataTable, ErrorBanner, Field, ListCard, LoadBo
 import RunRow from './RunRow.vue'
 import TaintFlag from './TaintFlag.vue'
 
-const sources: Schemas['SessionSource'][] = ['voice', 'web', 'task', 'api']
+const sources: Schemas['SessionSource'][] = ['voice', 'web', 'task', 'api', 'automation']
 const outcomes: Schemas['RunOutcome'][] = ['ok', 'error', 'backgrounded', 'cancelled']
 const tones: Record<Schemas['RunOutcome'], Tone> = { ok: 'success', error: 'danger', backgrounded: 'warning', cancelled: 'neutral' }
 

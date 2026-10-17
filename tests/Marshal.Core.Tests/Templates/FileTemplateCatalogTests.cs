@@ -80,7 +80,38 @@ public sealed class FileTemplateCatalogTests : IDisposable
 
         Assert.Equal(AgentTemplate.BuiltInDefault, template);
         Assert.True(template.Allows(new ToolId("mail", "search")));
-        Assert.Equal(["default"], catalog.Templates.Select(candidate => candidate.Name));
+        Assert.Equal(["ai_task", "default"], catalog.Templates.Select(candidate => candidate.Name));
+    }
+
+    [Fact]
+    public void AiTask_BuiltInFastTierNoTools()
+    {
+        using FileTemplateCatalog catalog = Load();
+
+        AgentTemplate template = catalog.Find(AgentTemplate.AiTaskName)!;
+
+        Assert.Equal(AgentTemplate.BuiltInAiTask, template);
+        Assert.Equal(ModelTier.Fast, template.ModelTier);
+        Assert.Empty(template.Tools);
+        Assert.False(template.Allows(new ToolId("calendar", "list_events")));
+        Assert.Contains("nobody can answer", template.Prompt, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AiTask_FileReplacesBuiltInOnReload()
+    {
+        using FileTemplateCatalog catalog = Load(watch: true);
+
+        Write("ai_task.md", "---\nname: ai_task\ndescription: Automations.\nmodelTier: standard\ntools: [calendar.list_events]\n---\nKeep it short.");
+
+        DateTime deadline = DateTime.UtcNow.AddSeconds(10);
+        while (catalog.Find(AgentTemplate.AiTaskName)!.Tools.Count == 0 && DateTime.UtcNow < deadline)
+            await Task.Delay(50, Ct);
+
+        AgentTemplate template = catalog.Find(AgentTemplate.AiTaskName)!;
+        Assert.Equal(["calendar.list_events"], template.Tools);
+        Assert.Equal(ModelTier.Standard, template.ModelTier);
+        Assert.Equal("Keep it short.", template.Prompt);
     }
 
     [Fact]

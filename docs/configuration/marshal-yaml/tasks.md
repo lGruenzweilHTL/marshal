@@ -20,7 +20,7 @@ tasks:
 |---|---|---|---|
 | `tasks.workers` | integer | `2` | Task runs that execute at the same time. Due tasks beyond it wait in order of run time. Range 1 to 16. |
 | `tasks.approvalTtl` | duration | `00:10:00` | A background approval waits this long; afterwards it expires and counts as rejected. At least one minute. |
-| `tasks.dailyCostCap` | decimal | `2` | Cost of all background runs of an owner per local day. No new run starts once reached. Not negative. |
+| `tasks.dailyCostCap` | decimal | `2` | Cost of all background runs and [AI tasks](ai-tasks.md) of an owner per local day. No new run starts once reached. Not negative. |
 | `tasks.maxDepth` | integer | `3` | Deepest child task (a top-level task has depth 0). Range 0 to 10. |
 | `tasks.maxActiveChildren` | integer | `5` | Unfinished child tasks a task may have at once. Not negative. |
 | `tasks.minWakeupInterval` | duration | `00:05:00` | Shortest wakeup delay and cron period. Templates can set their own. At least one minute. |

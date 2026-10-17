@@ -26,6 +26,7 @@ A tool declares `untrustedOutput` in its descriptor. These sources are untrusted
 | Artifact listing and inspection (names and contents can come from mail or executors) | `artifact` |
 | Tools of an MCP server with `untrusted: true`, or matching its `untrustedTools` | `mcp:<id>` |
 | Payloads of events from untrusted sources | `event` |
+| Image attachments of an [AI task](../home-assistant-component/ai-tasks.md) (images can carry text) | `attachment` |
 
 Some sources are trusted by design. Proxmox tool output carries no guest notes or descriptions. Webhook sources such as Uptime Kuma, Proxmox and Seerr publish trusted events whose payloads contain only fixed fields and no free text. Skills are operator-written configuration and do not taint. Trust is declared in code; it cannot be set from configuration or from an event's content. An event payload that contains `trusted: true` is still untrusted.
 

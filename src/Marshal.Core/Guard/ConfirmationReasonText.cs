@@ -42,6 +42,7 @@ public static class ConfirmationReasonText
         "notifications" => german ? "Benachrichtigungen" : "notifications",
         "web" => german ? "Webseiten" : "web pages",
         "event" => german ? "Ereignisdaten" : "event data",
+        "attachment" => german ? "angehängten Bildern" : "attached images",
         _ when kind.StartsWith("mcp:", StringComparison.Ordinal) => german ? $"dem Tool-Server {kind[4..]}" : $"the tool server {kind[4..]}",
         _ => kind,
     };

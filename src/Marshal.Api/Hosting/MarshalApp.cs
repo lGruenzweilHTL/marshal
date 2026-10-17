@@ -1,5 +1,6 @@
 using System.Collections;
 using Marshal.Api.Approvals;
+using Marshal.Api.AiTasks;
 using Marshal.Api.Artifacts;
 using Marshal.Api.Auth;
 using Marshal.Api.Configuration;
@@ -123,6 +124,7 @@ public static class MarshalApp
         v1.MapProposalEndpoints();
         v1.MapExecutorCallbackEndpoints();
         v1.MapArtifactEndpoints();
+        v1.MapAiTaskEndpoints();
         v1.MapDisplayEndpoints();
         v1.MapHookEndpoints();
         app.MapMailOAuthCallback();

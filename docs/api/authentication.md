@@ -21,6 +21,7 @@ A token is authorized by its own scopes only. A token with `tasks:read` that cal
 | `conversation:write` | `POST /api/v1/conversation/turns` |
 | `tasks:read` | Reading tasks |
 | `tasks:write` | Changing tasks |
+| `aitasks:write` | `POST /api/v1/ai-tasks` ([AI tasks](ai-tasks.md)) |
 | `admin` | Administrative endpoints |
 | `hooks:uptime-kuma` | Posting Uptime Kuma [webhooks](webhooks.md) |
 | `hooks:proxmox` | Posting Proxmox VE webhooks |
@@ -28,14 +29,14 @@ A token is authorized by its own scopes only. A token with `tasks:read` that cal
 
 Any valid token can call `GET /api/v1/me` and `GET /api/v1/events`. Most other endpoints are for the web interface and need a cookie session; a token never reaches them regardless of its scopes. See [API overview](index.md#spa-internal-endpoints).
 
-Grant a token only the scopes its client needs. The Home Assistant component needs `conversation:write` and nothing else.
+Grant a token only the scopes its client needs. The Home Assistant component needs `conversation:write` for Assist and `aitasks:write` for its AI Task entity, and nothing else.
 
 ### Create a token
 
 On the Marshal host, in the directory of your `docker-compose.yml`:
 
 ```sh
-docker compose exec marshal marshal tokens create --name home-assistant --scope conversation:write
+docker compose exec marshal marshal tokens create --name home-assistant --scope conversation:write --scope aitasks:write
 ```
 
 The command works without a web login, creates the token for the instance owner and prints the plaintext once. Repeat `--scope` for more scopes and add `--expires-in-days <days>` for an expiring token.

@@ -1,8 +1,9 @@
-"""Config flow: Marshal URL and API token, checked before the entry is created."""
+"""Config flow: Marshal URL and API token, checked before the entry is created; reauth for a new token."""
 
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from typing import Any
 
 import voluptuous as vol
@@ -12,7 +13,7 @@ from homeassistant.helpers.selector import TextSelector, TextSelectorConfig, Tex
 from yarl import URL
 
 from .api import MarshalAuthError, MarshalClient, MarshalConnectionError, MarshalError
-from .const import API_VERSION, CONF_TOKEN, CONF_URL, DOMAIN
+from .const import AI_TASK_SCOPE, API_VERSION, CONF_TOKEN, CONF_URL, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,6 +23,8 @@ SCHEMA = vol.Schema(
         vol.Required(CONF_TOKEN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
     }
 )
+
+REAUTH_SCHEMA = vol.Schema({vol.Required(CONF_TOKEN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))})
 
 
 class MarshalConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -49,12 +52,29 @@ class MarshalConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="user", data_schema=self.add_suggested_values_to_schema(SCHEMA, user_input), errors=errors
         )
 
-    async def _check(self, url: str, token: str) -> dict[str, str]:
+    async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:
+        """Start reauthentication when Marshal rejects the token or it lacks a scope."""
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Ask for a new token; it must carry the AI task scope, since that is what reauth is for."""
+        errors: dict[str, str] = {}
+        entry = self._get_reauth_entry()
+        if user_input is not None:
+            errors = await self._check(entry.data[CONF_URL], user_input[CONF_TOKEN], required_scope=AI_TASK_SCOPE)
+            if not errors:
+                return self.async_update_reload_and_abort(entry, data_updates={CONF_TOKEN: user_input[CONF_TOKEN]})
+
+        return self.async_show_form(step_id="reauth_confirm", data_schema=REAUTH_SCHEMA, errors=errors)
+
+    async def _check(self, url: str, token: str, required_scope: str | None = None) -> dict[str, str]:
         client = MarshalClient(async_get_clientsession(self.hass), url, token)
         try:
             if not (await client.get_versions()).supports(API_VERSION):
                 return {"base": "unsupported_version"}
-            await client.check_token()
+            scopes = await client.check_token()
+            if required_scope is not None and required_scope not in scopes:
+                return {"base": "missing_scope"}
         except MarshalAuthError:
             return {"base": "invalid_auth"}
         except MarshalConnectionError:

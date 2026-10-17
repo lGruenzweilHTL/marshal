@@ -11,4 +11,7 @@ CONF_TOKEN: Final = "token"
 API_VERSION: Final = "1.0"
 API_PREFIX: Final = "/api/v1"
 
+# Scope the token needs for the AI Task entity (besides conversation:write for Assist).
+AI_TASK_SCOPE: Final = "aitasks:write"
+
 SUPPORTED_LANGUAGES: Final = ["de", "en"]

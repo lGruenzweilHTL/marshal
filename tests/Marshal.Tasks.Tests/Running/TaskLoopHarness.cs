@@ -107,7 +107,7 @@ internal sealed class TaskLoopHarness
 
         public async Task<PendingActionRecord> EnqueueAsync(FreezeRequest request, CancellationToken cancellationToken)
         {
-            PendingActionRecord frozen = await store.FreezeAsync(request, cancellationToken);
+            PendingActionRecord frozen = await store.FreezeAsync(request with { Queued = true }, cancellationToken);
             Queued.Add(frozen);
             return frozen;
         }

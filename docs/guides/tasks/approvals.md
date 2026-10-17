@@ -49,5 +49,6 @@ Ask for a task that needs confirmation, for example a watch created after readin
 
 ## Related
 
-- [Risk rules](../risk-rules.md), [scheduled tasks](scheduled-tasks.md)
+- [Risk rules](../risk-rules.md), [scheduled tasks](scheduled-tasks.md), [AI tasks](../../home-assistant-component/ai-tasks.md)
+- [MCP servers](../../configuration/mcp-servers.md)
 - [Risk and confirmation](../../concepts/risk-and-confirmation.md), [risk tiers](../../reference/risk-tiers.md)

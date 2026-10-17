@@ -4,6 +4,15 @@ A template is a Markdown file in `/config/templates/` that sets what a run may s
 
 Conversation turns use the built-in `default` template (every tool, every skill, no extra prompt). A `default.md` file replaces it. Tasks name a template in their `template` field; `agent_delegate(template, task)` runs a subagent with one.
 
+## Built-in templates
+
+| Name | Used for | Built-in settings | Replace with |
+|---|---|---|---|
+| `default` | conversation turns | every tool, every skill, no extra prompt | `default.md` |
+| `ai_task` | [AI tasks](../home-assistant-component/ai-tasks.md) from Home Assistant automations | `modelTier: fast`, no tools, prompt: "You run inside a home automation. Answer the instructions; do not ask questions; nobody can answer them." | `ai_task.md` |
+
+`agent_delegate` never offers the built-in templates or the files that replace them. AI task runs are non-interactive: a confirm-tier tool you allow in `ai_task.md` does not run during the task. The call waits in the approval queue and runs only if you approve it. `deploy/config.example/templates/ai_task.md` is an example with read-only tools.
+
 ## Example
 
 ```markdown
@@ -26,7 +35,7 @@ Keys are camelCase. Unknown keys are errors.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `name` | string | required | Lower-case letters, digits and hyphens. Must equal the file name without `.md`. |
+| `name` | string | required | Lower-case letters, digits, hyphens and underscores (not at the start or end). Must equal the file name without `.md`. |
 | `description` | string | required | When to use the template. Shown to callers of `agent_delegate`. |
 | `modelTier` | `fast` or `standard` | by input mode (voice `fast`, otherwise `standard`) | Model tier of runs. |
 | `tools` | list of globs | `[]` | Allowlist of tool id globs (for example `printer.*`, `agent.load_skill`). An empty list means no tools. |
@@ -46,7 +55,7 @@ Inside a subagent, confirm-tier tools are hidden and the guard denies every call
 A rejected file is skipped with an error; other templates load.
 
 - `<file>: has no YAML frontmatter (--- name / description / tools ---).`
-- `<file>: name '<x>' must be lowercase letters, digits and hyphens.`
+- `<file>: name '<x>' must be lowercase letters, digits, hyphens and underscores.`
 - `<file>: name '<x>' must match the file name '<file-name>'.`
 - `<file>: description is required.`
 - `<file>: modelTier '<x>' must be 'fast' or 'standard'.`

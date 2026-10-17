@@ -92,6 +92,24 @@ public sealed class EfPendingActionStoreTests
     }
 
     [Fact]
+    public async Task Queued_NotTheSessionsPendingAction_NeitherSupersededNorDropped()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        SessionId session = await SeedSessionAsync(database, OwnerA);
+        await using MarshalDbContext context = database.CreateContext(OwnerA);
+        var store = new EfPendingActionStore(database.Factory, database.Accessor, _time);
+        PendingActionRecord queued = await store.FreezeAsync(Request(session, "{}") with { Queued = true }, Ct);
+
+        PendingActionRecord? found = await store.GetPendingAsync(session, Ct);
+        await store.FreezeAsync(Request(session, """{"n":2}"""), Ct);
+        await store.DropForSessionAsync(session, Ct);
+
+        Assert.Null(found);
+        Assert.Equal(PendingActionStatus.Pending, (await store.GetAsync(queued.Id, Ct))!.Status);
+        Assert.Equal([queued.Id], (await store.ListQueuedAsync(Ct)).Select(action => action.Id));
+    }
+
+    [Fact]
     public async Task GetPending_OtherOwner_SeesNothing()
     {
         await using TestDatabase database = await TestDatabase.CreateAsync();
@@ -131,11 +149,11 @@ public sealed class EfPendingActionStoreTests
         var store = new EfPendingActionStore(database.Factory, database.Accessor, _time);
         var run = RunId.New();
 
-        PendingActionRecord frozen = await store.FreezeAsync(Request(null, "{}") with { TaskId = task, RunId = run, Taint = [new TaintSource("mail", 3)] }, Ct);
+        PendingActionRecord frozen = await store.FreezeAsync(Request(null, "{}") with { TaskId = task, RunId = run, Taint = [new TaintSource("mail", 3)], Queued = true }, Ct);
 
         PendingActionRecord? loaded = await store.GetAsync(frozen.Id, Ct);
         Assert.NotNull(loaded);
-        Assert.Equal((task, run, PendingActionStatus.Pending), (loaded.TaskId, loaded.RunId, loaded.Status));
+        Assert.Equal((task, run, PendingActionStatus.Pending, true), (loaded.TaskId, loaded.RunId, loaded.Status, loaded.Queued));
         Assert.Equal([new TaintSource("mail", 3)], loaded.Taint);
         database.Accessor.Current = Text(OwnerB);
         Assert.Null(await new EfPendingActionStore(database.Factory, database.Accessor, _time).GetAsync(frozen.Id, Ct));

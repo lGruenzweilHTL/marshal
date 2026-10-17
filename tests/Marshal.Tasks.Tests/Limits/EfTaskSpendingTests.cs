@@ -29,6 +29,19 @@ public sealed class EfTaskSpendingTests
         Assert.Equal(0.75m, cost);
     }
 
+    [Fact]
+    public async Task CostSince_AutomationRunsCount()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        await AddRunAsync(database, OwnerA, SessionSource.Task, _since.AddHours(1), 0.25m);
+        await AddRunAsync(database, OwnerA, SessionSource.Automation, _since.AddHours(1), 0.5m);
+        database.Accessor.Current = Text(OwnerA);
+
+        decimal cost = await new EfTaskSpending(database.Factory).GetCostSinceAsync(_since, TestContext.Current.CancellationToken);
+
+        Assert.Equal(0.75m, cost);
+    }
+
     private static async Task AddRunAsync(TestDatabase database, OwnerId owner, SessionSource source, DateTimeOffset started, decimal cost)
     {
         await using MarshalDbContext context = database.CreateContext(owner);

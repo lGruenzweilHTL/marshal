@@ -53,7 +53,7 @@ Each completed run exports one trace. The root span is `marshal.run`. It has one
 | Tag | Description |
 |---|---|
 | `marshal.run_id` | The run id. Matches the run in the web UI. |
-| `marshal.source` | `voice`, `web`, `task` or `api`. |
+| `marshal.source` | `voice`, `web`, `task`, `api` or `automation`. |
 | `marshal.input_mode` | `text` or `voice`. |
 | `marshal.trigger` | What started the run, for example `task`, `continuation`, `confirmation`, `delegate` or `memory_summarizer`. |
 | `marshal.outcome` | `ok`, `error`, `backgrounded` or `cancelled`. |

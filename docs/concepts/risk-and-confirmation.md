@@ -98,6 +98,8 @@ The server writes these sentences, so the explanation exists even if the model l
 
 A task run has nobody to ask in the moment. A confirm-tier call there creates the same kind of frozen action, with a 10-minute TTL (`tasks.approvalTtl`), and sends it to the approval queue with an actionable push. The run ends instead of holding a worker. See [tasks and scheduling](tasks-and-scheduling.md) and [approvals](../guides/tasks/approvals.md).
 
+An [AI task](../home-assistant-component/ai-tasks.md) is non-interactive too, but it has no task to resume. Its confirm-tier calls, and `persists` calls escalated by taint, go to the approval queue the same way, and the run continues with a tool result saying the action waits. Approving later runs exactly the frozen call and sends a `low` notification with the result. These approvals never sit in the session as a pending action, so no later input in that session can confirm them.
+
 ## Satellites and subagents
 
 On a satellite with `denyConfirm` for a tool, a call that resolves to `confirm` is denied with "not allowed from this device", and no pending action is created. A subagent's confirm-tier call is denied with a message telling it to report the needed action to its caller.

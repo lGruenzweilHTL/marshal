@@ -3,6 +3,7 @@ using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Templates;
 using Marshal.Core.Agent;
+using Marshal.Core.AiTasks;
 using Microsoft.Extensions.Options;
 
 namespace Marshal.Tasks.Limits;
@@ -18,7 +19,7 @@ public sealed class TaskBudgets(
     IUserProfileProvider profiles,
     ITemplateCatalog templates,
     IOptions<TaskOptions> options,
-    TimeProvider time)
+    TimeProvider time) : IDailyCostCap
 {
     private const int DrawDownAttempts = 5;
 
@@ -38,12 +39,18 @@ public sealed class TaskBudgets(
         if (remaining.IsUsedUp)
             return TaskErrors.BudgetExceeded();
 
-        DateTimeOffset today = await StartOfDayAsync(task.OwnerId, 0, cancellationToken);
-        decimal leftToday = options.Value.DailyCostCap - await spending.GetCostSinceAsync(today, cancellationToken);
+        decimal leftToday = await LeftTodayAsync(task.OwnerId, cancellationToken);
         if (leftToday <= 0)
             return TaskErrors.DailyCap();
 
         return new RunLimits(Math.Min(remaining.Cost, leftToday), remaining.Tokens, remaining.Steps, remaining.WallTime);
+    }
+
+    /// <summary>What is left of the daily cost cap today; AI tasks draw from the same cap.</summary>
+    public async Task<decimal> LeftTodayAsync(OwnerId owner, CancellationToken cancellationToken)
+    {
+        DateTimeOffset today = await StartOfDayAsync(owner, 0, cancellationToken);
+        return options.Value.DailyCostCap - await spending.GetCostSinceAsync(today, cancellationToken);
     }
 
     /// <summary>Adds a run's spend to every ancestor of <paramref name="task"/> (the task itself is updated by the scheduler).</summary>

@@ -143,6 +143,11 @@ tasks:
   workers: 2                # background task runs at the same time
   approvalTtl: "00:10:00"   # background approvals expire (as rejected) after this
 
+aiTasks:                    # Home Assistant AI Task entity (POST /api/v1/ai-tasks, token scope aitasks:write)
+  timeoutSeconds: 60        # a task still running after this is cancelled (504); HA waits a little longer
+  maxAttachments: 4         # images per task (JPEG, PNG, WebP)
+  maxAttachmentBytes: 10485760  # per image, at most 25 MB; tasks with images need a vision model in the template's tier
+
 maintenance:                # system tasks, seeded for the instance owner (cron in the owner's time zone)
   backupSchedule: "0 3 * * *"         # database copy + /data/keys + memory exports into /data/backups/<stamp>
   backupCopies: 7

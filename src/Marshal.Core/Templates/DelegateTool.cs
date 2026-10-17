@@ -37,7 +37,7 @@ public sealed class DelegateTool(Func<IAgentRunner> runner, ITemplateCatalog tem
     public static IReadOnlyList<AgentTemplate> Delegable(ITemplateCatalog templates, AgentOptions options, MarshalExecutionContext context) =>
         context.Depth >= options.MaxDelegationDepth
             ? []
-            : [.. templates.Templates.Where(template => template.Name != AgentTemplate.DefaultName)];
+            : [.. templates.Templates.Where(template => !template.IsBuiltInRole)];
 
     public ValueTask<bool> IsAvailableAsync(MarshalExecutionContext context, CancellationToken cancellationToken) =>
         ValueTask.FromResult(Delegable(templates, options.Value, context).Count > 0);

@@ -33,6 +33,23 @@ public sealed record AgentTemplate(
     /// <summary>The built-in default: every tool, every skill, no extra prompt.</summary>
     public static AgentTemplate BuiltInDefault { get; } = new(DefaultName, "General assistant for conversation turns.", null, ["*"], null, null, null, "");
 
+    /// <summary>Name of the template used for AI task runs from Home Assistant automations.</summary>
+    public const string AiTaskName = "ai_task";
+
+    /// <summary>The built-in AI task template: fast tier, no tools, a prompt that rules out questions.</summary>
+    public static AgentTemplate BuiltInAiTask { get; } = new(
+        AiTaskName,
+        "Answers a Home Assistant automation's instructions.",
+        Models.ModelTier.Fast,
+        [],
+        null,
+        null,
+        null,
+        "You run inside a home automation. Answer the instructions; do not ask questions; nobody can answer them.");
+
+    /// <summary>True for the templates Marshal itself uses for a kind of run (<c>default</c>, <c>ai_task</c>); never a delegation target.</summary>
+    public bool IsBuiltInRole => Name is DefaultName or AiTaskName;
+
     /// <summary>True when the allowlist admits <paramref name="tool"/>.</summary>
     public bool Allows(ToolId tool) => Tools.Any(pattern => ToolGlob.Matches(pattern, tool));
 

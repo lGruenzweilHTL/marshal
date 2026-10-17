@@ -45,7 +45,7 @@ Marshal is a self-hosted AI agent for Home Assistant. This page maps the documen
 | [Getting started](getting-started/overview.md) | Tutorial | Install Marshal and have a first conversation |
 | [Installation](installation/docker-compose.md) | How-to | Deploy, secure, upgrade and remove Marshal |
 | [Guides](guides/troubleshooting.md) | How-to | Connect integrations, set up tasks, notifications, displays and more |
-| [Home Assistant component](home-assistant-component/installation.md) | How-to | Install and configure the Assist conversation agent |
+| [Home Assistant component](home-assistant-component/installation.md) | How-to | Install and configure the Assist conversation agent and the AI Task entity |
 | [Configuration](configuration/index.md) | Reference | Look up every key in `marshal.yaml`, `risk.yaml` and the other `/config` files |
 | [Reference](reference/tools.md) | Reference | Look up tools, risk tiers, events, CLI, endpoints and the [glossary](reference/glossary.md) |
 | [API](api/index.md) | Reference | Call Marshal from your own code |
