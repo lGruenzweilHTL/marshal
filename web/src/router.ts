@@ -10,6 +10,7 @@ import ChatView from './chat/ChatView.vue'
 import ConfigView from './config/ConfigView.vue'
 import HomeView from './home/HomeView.vue'
 import ApprovalView from './inbox/ApprovalView.vue'
+import InputRequestView from './inbox/InputRequestView.vue'
 import InboxView from './inbox/InboxView.vue'
 import NotificationView from './inbox/NotificationView.vue'
 import ProposalView from './inbox/ProposalView.vue'
@@ -60,6 +61,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'chat/:id?', name: 'chat', component: ChatView, meta: { title: 'shell.nav.chat', nav: 'chat' } },
       { path: 'inbox', name: 'inbox', component: InboxView, meta: { title: 'shell.nav.inbox', nav: 'inbox' } },
       { path: 'inbox/approvals/:id', name: 'approval', component: ApprovalView, meta: { title: 'inbox.approval', nav: 'inbox' } },
+      { path: 'inbox/inputs/:id', name: 'input-request', component: InputRequestView, meta: { title: 'inbox.input.title', nav: 'inbox' } },
       { path: 'inbox/proposals/:id', name: 'proposal', component: ProposalView, meta: { title: 'inbox.proposals', nav: 'inbox' } },
       { path: 'inbox/notifications/:id', name: 'notification', component: NotificationView, meta: { title: 'inbox.notification.title', nav: 'inbox' } },
       { path: 'printers/:name?', name: 'printers', component: PrinterView, meta: { title: 'shell.nav.printer', nav: 'printer' } },

@@ -5,6 +5,7 @@ using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Executors;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.InputRequests;
 using Marshal.Abstractions.Mail;
 using Marshal.Abstractions.Memory;
 using Marshal.Abstractions.Notifications;
@@ -19,7 +20,9 @@ using Marshal.Data.Auth;
 using Marshal.Data.Conversations;
 using Marshal.Data.Demo;
 using Marshal.Data.Identity;
+using Marshal.Data.InputRequests;
 using Marshal.Data.Mail;
+using Marshal.Data.Mcp;
 using Marshal.Data.Memory;
 using Marshal.Data.Notes;
 using Marshal.Data.Notifications;
@@ -91,6 +94,14 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
 
     public DbSet<DemoSeed> DemoSeeds => Set<DemoSeed>();
 
+    public DbSet<PendingInputRequest> PendingInputRequests => Set<PendingInputRequest>();
+
+    /// <summary>Pinned MCP tool definitions; instance configuration without an owner column.</summary>
+    public DbSet<McpToolPinRow> McpToolPins => Set<McpToolPinRow>();
+
+    /// <summary>Server tasks of MCP tool calls that are polled until they end.</summary>
+    public DbSet<McpTaskHandle> McpTaskHandles => Set<McpTaskHandle>();
+
     /// <summary>The current owner. Throws when there is no execution context (fail closed).</summary>
     internal OwnerId CurrentOwnerId =>
         executionContext.Current?.OwnerId
@@ -123,6 +134,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         configurationBuilder.Properties<SessionId>().HaveConversion<GuidIdConverter<SessionId>>();
         configurationBuilder.Properties<RunId>().HaveConversion<GuidIdConverter<RunId>>();
         configurationBuilder.Properties<PendingActionId>().HaveConversion<GuidIdConverter<PendingActionId>>();
+        configurationBuilder.Properties<InputRequestId>().HaveConversion<GuidIdConverter<InputRequestId>>();
         configurationBuilder.Properties<ApiTokenId>().HaveConversion<GuidIdConverter<ApiTokenId>>();
         configurationBuilder.Properties<ProjectId>().HaveConversion<GuidIdConverter<ProjectId>>();
         configurationBuilder.Properties<MailAccountId>().HaveConversion<GuidIdConverter<MailAccountId>>();
@@ -160,6 +172,9 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         configurationBuilder.Properties<NotificationOutcome>().HaveConversion<SnakeCaseEnumConverter<NotificationOutcome>>();
         configurationBuilder.Properties<ArtifactKind>().HaveConversion<SnakeCaseEnumConverter<ArtifactKind>>();
         configurationBuilder.Properties<ArtifactSource>().HaveConversion<SnakeCaseEnumConverter<ArtifactSource>>();
+        configurationBuilder.Properties<InputRequestMode>().HaveConversion<SnakeCaseEnumConverter<InputRequestMode>>();
+        configurationBuilder.Properties<InputRequestStatus>().HaveConversion<SnakeCaseEnumConverter<InputRequestStatus>>();
+        configurationBuilder.Properties<ToolPinState>().HaveConversion<SnakeCaseEnumConverter<ToolPinState>>();
 
         // SQLite cannot compare or order DateTimeOffset / decimal values natively; binary and REAL storage keeps
         // range queries and sums on the server.
@@ -267,6 +282,19 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             OwnerFilter(action);
         });
 
+        builder.Entity<PendingInputRequest>(request =>
+        {
+            request.ToTable("pending_input_requests");
+            request.HasKey(entity => entity.Id);
+            request.HasIndex(entity => new { entity.Status, entity.ExpiresAt });
+            request.HasIndex(entity => entity.Nonce).IsUnique();
+            request.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            request.HasOne<Session>().WithMany().HasForeignKey(entity => entity.SessionId);
+            request.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.TaskId);
+            request.Property(entity => entity.Status).IsConcurrencyToken();
+            OwnerFilter(request);
+        });
+
         builder.Entity<AuditEvent>(audit =>
         {
             audit.HasKey(entity => entity.Id);
@@ -310,6 +338,25 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             seed.HasIndex(entity => new { entity.OwnerId, entity.Entity });
             seed.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
             OwnerFilter(seed);
+        });
+
+        // Instance configuration, like the MCP server files: no owner, no filter.
+        builder.Entity<McpToolPinRow>(pin =>
+        {
+            pin.ToTable("mcp_tool_pins");
+            pin.HasKey(entity => new { entity.ServerId, entity.ToolName });
+            pin.HasIndex(entity => entity.State);
+        });
+
+        builder.Entity<McpTaskHandle>(handle =>
+        {
+            handle.ToTable("mcp_task_handles");
+            handle.HasKey(entity => entity.Id);
+            handle.HasIndex(entity => entity.NextPollAt);
+            handle.HasIndex(entity => new { entity.ServerId, entity.ServerTaskId }).IsUnique();
+            handle.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            handle.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.TaskId);
+            OwnerFilter(handle);
         });
 
         builder.Entity<StoredMailAccount>(account =>

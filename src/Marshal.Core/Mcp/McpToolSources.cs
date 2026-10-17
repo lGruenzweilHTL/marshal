@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using Marshal.Abstractions;
+using Marshal.Abstractions.InputRequests;
 using Marshal.Abstractions.Mcp;
 using Marshal.Abstractions.Secrets;
 using Marshal.Abstractions.Tools;
@@ -11,7 +13,7 @@ namespace Marshal.Core.Mcp;
 /// added starts a source, a removed one stops it, a changed one replaces it. Sources of unchanged servers keep
 /// their connection. The registry reads <see cref="IToolSourceProvider.Sources"/> on every refresh.
 /// </summary>
-public sealed partial class McpToolSources : IToolSourceProvider, IAsyncDisposable
+public sealed partial class McpToolSources : IToolSourceProvider, IMcpTaskClient, IAsyncDisposable
 {
     private static readonly TimeSpan _reloadWait = TimeSpan.FromSeconds(10);
 
@@ -21,6 +23,9 @@ public sealed partial class McpToolSources : IToolSourceProvider, IAsyncDisposab
     private readonly ILogger _logger;
     private readonly McpReconnectPolicy _reconnect;
     private readonly TimeProvider _time;
+    private readonly McpToolPinner? _pinner;
+    private readonly Func<IInputRequestQueue?>? _inputs;
+    private readonly Func<IMcpTaskTracker?>? _tasks;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Lock _lock = new();
     private readonly IDisposable _subscription;
@@ -29,8 +34,11 @@ public sealed partial class McpToolSources : IToolSourceProvider, IAsyncDisposab
     private volatile bool _started;
     private int _disposed;
 
-    public McpToolSources(IMcpServerCatalog catalog, IMcpTransportFactory transports, ILoggerFactory loggers, McpReconnectPolicy reconnect, TimeProvider time)
+    public McpToolSources(IMcpServerCatalog catalog, IMcpTransportFactory transports, ILoggerFactory loggers, McpReconnectPolicy reconnect, TimeProvider time, McpToolPinner? pinner = null, Func<IInputRequestQueue?>? inputs = null, Func<IMcpTaskTracker?>? tasks = null)
     {
+        _pinner = pinner;
+        _inputs = inputs;
+        _tasks = tasks;
         _catalog = catalog;
         _transports = transports;
         _loggers = loggers;
@@ -44,6 +52,25 @@ public sealed partial class McpToolSources : IToolSourceProvider, IAsyncDisposab
 
     /// <summary>State of every configured server, ordered by id.</summary>
     public IReadOnlyList<McpServerStatus> Statuses => [.. _sources.Values.Select(source => source.Status)];
+
+    public Task<Result<McpTaskSnapshot>> GetTaskAsync(string serverId, string taskId, CancellationToken cancellationToken) =>
+        _sources.TryGetValue(serverId, out McpToolSource? source)
+            ? source.GetTaskAsync(taskId, cancellationToken)
+            : Task.FromResult<Result<McpTaskSnapshot>>(UnknownServer(serverId));
+
+    public Task<Result> AnswerInputAsync(string serverId, string taskId, string inputKey, bool accept, System.Text.Json.JsonElement? content, CancellationToken cancellationToken) =>
+        _sources.TryGetValue(serverId, out McpToolSource? source)
+            ? source.AnswerInputAsync(taskId, inputKey, accept, content, cancellationToken)
+            : Task.FromResult<Result>(UnknownServer(serverId));
+
+    public Task<Result> CancelTaskAsync(string serverId, string taskId, CancellationToken cancellationToken) =>
+        _sources.TryGetValue(serverId, out McpToolSource? source)
+            ? source.CancelTaskAsync(taskId, cancellationToken)
+            : Task.FromResult<Result>(UnknownServer(serverId));
+
+    // A removed server's tasks are gone for Marshal; a server that is only down is a configured source.
+    private static Error UnknownServer(string serverId) =>
+        new("mcp.server_unknown", $"There is no configured MCP server '{serverId}'.", ErrorType.NotFound);
 
     /// <summary>Starts a source per configured server and waits up to <paramref name="maxWait"/> for their first connection attempts.</summary>
     public async Task StartAsync(TimeSpan maxWait, CancellationToken cancellationToken)
@@ -138,7 +165,7 @@ public sealed partial class McpToolSources : IToolSourceProvider, IAsyncDisposab
                 if (existing is not null)
                     stopped.Add(existing);
 
-                var source = new McpToolSource(server, _catalog, _transports, _loggers, _reconnect, _time);
+                var source = new McpToolSource(server, _catalog, _transports, _loggers, _reconnect, _time, _pinner, _inputs, _tasks);
                 started.Add(source);
                 next[server.Id] = source;
             }

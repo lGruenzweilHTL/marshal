@@ -720,6 +720,128 @@ namespace Marshal.Data.Migrations
                     b.ToTable("user_preferences", (string)null);
                 });
 
+            modelBuilder.Entity("Marshal.Data.InputRequests.PendingInputRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Args")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("args");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<long?>("DecidedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("decided_at");
+
+                    b.Property<long>("ExpiresAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("language");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("message");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("mode");
+
+                    b.Property<string>("Nonce")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("nonce");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("PreviousAnswers")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("previous_answers");
+
+                    b.Property<string>("RequestedSchema")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("requested_schema");
+
+                    b.Property<Guid?>("RunId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("run_id");
+
+                    b.Property<string>("SatelliteId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("satellite_id");
+
+                    b.Property<string>("ServerId")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("server_id");
+
+                    b.Property<string>("ServerTaskId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("server_task_id");
+
+                    b.Property<string>("ServerTaskInputKey")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("server_task_input_key");
+
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("session_id");
+
+                    b.Property<string>("Status")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("TaskId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("task_id");
+
+                    b.Property<string>("Tool")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tool");
+
+                    b.Property<string>("Url")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("url");
+
+                    b.HasKey("Id")
+                        .HasName("pk_pending_input_requests");
+
+                    b.HasIndex("Nonce")
+                        .IsUnique()
+                        .HasDatabaseName("ix_pending_input_requests_nonce");
+
+                    b.HasIndex("OwnerId")
+                        .HasDatabaseName("ix_pending_input_requests_owner_id");
+
+                    b.HasIndex("SessionId")
+                        .HasDatabaseName("ix_pending_input_requests_session_id");
+
+                    b.HasIndex("TaskId")
+                        .HasDatabaseName("ix_pending_input_requests_task_id");
+
+                    b.HasIndex("Status", "ExpiresAt")
+                        .HasDatabaseName("ix_pending_input_requests_status_expires_at");
+
+                    b.ToTable("pending_input_requests", (string)null);
+                });
+
             modelBuilder.Entity("Marshal.Data.Mail.StoredMailAccount", b =>
                 {
                     b.Property<Guid>("Id")
@@ -785,6 +907,139 @@ namespace Marshal.Data.Migrations
                         .HasDatabaseName("ix_mail_accounts_owner_id_alias");
 
                     b.ToTable("mail_accounts", (string)null);
+                });
+
+            modelBuilder.Entity("Marshal.Data.Mcp.McpTaskHandle", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AskedInputs")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("asked_inputs");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("language");
+
+                    b.Property<long>("NextPollAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("next_poll_at");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<long?>("PollIntervalMs")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("poll_interval_ms");
+
+                    b.Property<int>("Polls")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("polls");
+
+                    b.Property<string>("ServerId")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("server_id");
+
+                    b.Property<string>("ServerTaskId")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("server_task_id");
+
+                    b.Property<string>("TaintKind")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("taint_kind");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("task_id");
+
+                    b.Property<string>("Tool")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tool");
+
+                    b.HasKey("Id")
+                        .HasName("pk_mcp_task_handles");
+
+                    b.HasIndex("NextPollAt")
+                        .HasDatabaseName("ix_mcp_task_handles_next_poll_at");
+
+                    b.HasIndex("OwnerId")
+                        .HasDatabaseName("ix_mcp_task_handles_owner_id");
+
+                    b.HasIndex("TaskId")
+                        .HasDatabaseName("ix_mcp_task_handles_task_id");
+
+                    b.HasIndex("ServerId", "ServerTaskId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_mcp_task_handles_server_id_server_task_id");
+
+                    b.ToTable("mcp_task_handles", (string)null);
+                });
+
+            modelBuilder.Entity("Marshal.Data.Mcp.McpToolPinRow", b =>
+                {
+                    b.Property<string>("ServerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("server_id");
+
+                    b.Property<string>("ToolName")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tool_name");
+
+                    b.Property<string>("ApprovedFingerprint")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("approved_fingerprint");
+
+                    b.Property<string>("CurrentDefinitionJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("current_definition_json");
+
+                    b.Property<long?>("DecidedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("decided_at");
+
+                    b.Property<Guid?>("DecidedBy")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("decided_by");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("fingerprint");
+
+                    b.Property<long>("FirstSeen")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("first_seen");
+
+                    b.Property<string>("PreviousDefinitionJson")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("previous_definition_json");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("state");
+
+                    b.HasKey("ServerId", "ToolName")
+                        .HasName("pk_mcp_tool_pins");
+
+                    b.HasIndex("State")
+                        .HasDatabaseName("ix_mcp_tool_pins_state");
+
+                    b.ToTable("mcp_tool_pins", (string)null);
                 });
 
             modelBuilder.Entity("Marshal.Data.Memory.Chunk", b =>
@@ -1969,6 +2224,26 @@ namespace Marshal.Data.Migrations
                         .HasConstraintName("fk_user_preferences_users_user_id");
                 });
 
+            modelBuilder.Entity("Marshal.Data.InputRequests.PendingInputRequest", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_pending_input_requests_users_owner_id");
+
+                    b.HasOne("Marshal.Data.Conversations.Session", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .HasConstraintName("fk_pending_input_requests_sessions_session_id");
+
+                    b.HasOne("Marshal.Data.Tasks.AgentTask", null)
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .HasConstraintName("fk_pending_input_requests_agent_tasks_task_id");
+                });
+
             modelBuilder.Entity("Marshal.Data.Mail.StoredMailAccount", b =>
                 {
                     b.HasOne("Marshal.Data.Identity.User", null)
@@ -1977,6 +2252,23 @@ namespace Marshal.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_mail_accounts_users_owner_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Mcp.McpTaskHandle", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_mcp_task_handles_users_owner_id");
+
+                    b.HasOne("Marshal.Data.Tasks.AgentTask", null)
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_mcp_task_handles_agent_tasks_task_id");
                 });
 
             modelBuilder.Entity("Marshal.Data.Memory.Chunk", b =>

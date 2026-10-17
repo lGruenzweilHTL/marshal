@@ -35,6 +35,13 @@ public sealed record TurnTool(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? DurationMs,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Result);
 
+/// <summary>
+/// An MCP server asked the user for input (<c>input_request</c> event, cookie clients only); the chat loads the request
+/// from <c>/api/v1/approvals/inputs/{id}</c> and shows its form or link.
+/// </summary>
+/// <param name="Id">Input request id.</param>
+public sealed record TurnInputRequest(string Id);
+
 /// <summary>The last event of a turn (<c>final</c> event).</summary>
 /// <param name="Speech">Full reply text.</param>
 /// <param name="ContinueConversation">True when Marshal asked something and the client should keep listening.</param>

@@ -33,6 +33,11 @@ export const en = {
   user: 'user',
   demo: 'Demo',
   demoHint: 'Demo mode: unconfigured integrations are simulated and the history is sample data.',
+  health: {
+    title: '{count} warnings need attention | {count} warning needs attention | {count} warnings need attention',
+    details: 'Details',
+    open: 'Open',
+  },
 }
 
 export const de: Catalog<typeof en> = {
@@ -68,4 +73,9 @@ export const de: Catalog<typeof en> = {
   user: 'Benutzer',
   demo: 'Demo',
   demoHint: 'Demomodus: nicht konfigurierte Integrationen sind simuliert, der Verlauf besteht aus Beispieldaten.',
+  health: {
+    title: '{count} Warnungen brauchen Aufmerksamkeit | {count} Warnung braucht Aufmerksamkeit | {count} Warnungen brauchen Aufmerksamkeit',
+    details: 'Details',
+    open: 'Öffnen',
+  },
 }

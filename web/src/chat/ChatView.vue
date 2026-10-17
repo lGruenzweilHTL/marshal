@@ -13,9 +13,10 @@ import { renderMarkdown } from './markdown'
 import { readEvents } from './sse'
 import ArtifactCard from '../artifacts/ArtifactCard.vue'
 import ConversationList from './ConversationList.vue'
+import InputRequestCard from './InputRequestCard.vue'
 import ReasoningBlock from './ReasoningBlock.vue'
 import ToolTimeline from './ToolTimeline.vue'
-import { applyTool, type ToolStep, type TurnArtifact, type TurnDelta, type TurnFinal, type TurnReasoning, type TurnStatus, type TurnTool } from './turnEvents'
+import { applyTool, type ToolStep, type TurnArtifact, type TurnDelta, type TurnFinal, type TurnInputRequest, type TurnReasoning, type TurnStatus, type TurnTool } from './turnEvents'
 
 interface Message {
   id: number
@@ -31,6 +32,8 @@ interface Message {
   reasoningWithheld?: boolean
   /** Artifacts the turn showed: images inline, every other kind as a card. */
   artifacts: TurnArtifact[]
+  /** Input requests MCP servers sent during the reply, answered in the chat. */
+  inputs: string[]
   /** A spoken user turn: the satellite (or area) it came from, '' when unknown. */
   spoken?: string
   /** The result of a background task this conversation handed off. */
@@ -94,13 +97,13 @@ function newChat() {
   if (routeId.value) void router.push('/chat')
 }
 
-function empty(): Pick<Message, 'steps' | 'artifacts' | 'reasoning' | 'reasoningOpen'> {
-  return { steps: [], artifacts: [], reasoning: '', reasoningOpen: false }
+function empty(): Pick<Message, 'steps' | 'artifacts' | 'inputs' | 'reasoning' | 'reasoningOpen'> {
+  return { steps: [], artifacts: [], inputs: [], reasoning: '', reasoningOpen: false }
 }
 
 /** No event of the reply arrived yet: the only time "Thinking…" shows. */
 function waiting(message: Message) {
-  return !message.text && !message.reasoning && message.steps.length === 0 && message.artifacts.length === 0
+  return !message.text && !message.reasoning && message.steps.length === 0 && message.artifacts.length === 0 && message.inputs.length === 0
 }
 
 function toMessages(entry: Entry): Message[] {
@@ -234,6 +237,7 @@ async function send(text = draft.value.trim()) {
         live.value = text
         reply.steps.push({ kind: 'status', text })
       } else if (event === 'artifact') reply.artifacts.push(JSON.parse(payload) as TurnArtifact)
+      else if (event === 'input_request') reply.inputs.push((JSON.parse(payload) as TurnInputRequest).id)
       else if (event === 'final') {
         const final = JSON.parse(payload) as TurnFinal
         reply.text = final.speech
@@ -319,6 +323,7 @@ onBeforeUnmount(() => running?.abort())
               <span v-else-if="busy && message === messages[messages.length - 1] && waiting(message)" class="thinking">{{ t('chat.thinking') }}</span>
               <span v-else-if="message.noReply" class="thinking">{{ t('chat.noReply') }}</span>
               <ArtifactCard v-for="artifact in message.artifacts" :key="artifact.id" :artifact="artifact" />
+              <InputRequestCard v-for="input in message.inputs" :key="input" :id="input" />
             </div>
           </template>
         </li>

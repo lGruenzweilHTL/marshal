@@ -32,9 +32,10 @@ Every tool the model can get, grouped by integration, with its risk tier, argume
 | `infra` | `overview`, `guests`, `storage`, `tasks` | Built in (Proxmox VE) |
 | `repos` | `prs`, `pr`, `issues`, `issue`, `runs`, `run_log` | Built in (GitHub) |
 | `artifacts` | `list`, `show`, `inspect` | Built in |
+| `system` | `health` | Built in |
 | `ha` and others | Whatever the server reports | [MCP servers](#mcp-server-tools) |
 
-The namespaces `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra`, `repos`, `media` and `music` are reserved for built-in tools. An MCP server with one of these ids is rejected.
+The namespaces `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra`, `repos`, `media`, `music` and `system` are reserved for built-in tools. An MCP server with one of these ids is rejected.
 
 Marshal has no tool that sends mail, no tool that sends raw G-code and no tool that deletes mail, files or calendar events. These capabilities do not exist as code paths.
 
@@ -235,13 +236,20 @@ All repos tools are safe and untrusted (taint source `github`). Every tool takes
 | `artifacts.show` | safe | `id`, `page?` | In a web turn, shows the artifact in the chat. In a satellite turn, plays its rendition on the display in the room (`page` selects the page, default 1). The model cannot choose another display. | The turn is not a web turn and the satellite has no display. |
 | `artifacts.inspect` | safe, untrusted (`artifact`) | `id`, `question`, `page?` | The answer of a vision model about one rendition page, and the page count. Fails with `artifacts.no_rendition` when the rendition is not an image. | Neither the run's tier nor `standard` has a vision model. |
 
+## System (`system`)
+
+| Tool id | Tier | Arguments | Returns | Hidden when |
+|---|---|---|---|---|
+| `system.health` | safe | none | The current [health warnings](health-endpoints.md#health-warnings): component, code, severity, the message in the run's language and since when. Trusted output: the messages are Marshal's own. | There are no warnings. |
+
 ## MCP server tools
 
 Tools from [MCP servers](../configuration/mcp-servers.md) use the server id (or `toolPrefix`) as namespace, without an `mcp.` prefix. Names are kept as the server reports them, with characters outside `[a-zA-Z0-9_-]` replaced by `_`. A model-facing name longer than 64 characters is shortened and ends in a hash. For example, the Home Assistant MCP server (id `ha`) reports `intent__HassTurnOn`, which becomes the id `ha.intent__HassTurnOn` and the model name `ha_intent__HassTurnOn`.
 
 - **Tier.** External tools default to `confirm`. Add rules to `risk.yaml` to change that, for example `{ tool: "ha.*" } -> safe`. The example `risk.yaml` keeps locks, alarm panels and garage doors, doors and gates on `confirm`.
 - **Untrusted.** Tools of a server with `untrusted: true`, and tools matching `untrustedTools`, taint the run with source `mcp:<server id>`. Other tools do not.
-- **Hidden when.** The server is down, failed discovery or was rejected. The tools reappear after Marshal reconnects. `/health` shows a warning while a server is down.
+- **Hidden when.** The server is down, failed discovery or was rejected. The tools reappear after Marshal reconnects. `/health` shows a warning while a server is down. A tool that is new or changed after the server's first discovery is hidden until an admin approves it ([tool pinning](../configuration/mcp-servers.md#tool-pinning)).
+- **Input and server tasks.** A server's input request never reaches the model; the tool result says the user was asked in the web UI. A call the server continues as a server task returns a result saying the work continues in the background; the outcome arrives later through a waiting task. See [input requests](../configuration/mcp-servers.md#input-requests) and [server tasks](../configuration/mcp-servers.md#server-tasks).
 - **Home Assistant.** `ha.*` tools resolve their targets (name, area, floor, domain, device class) to concrete entities, so rules can match on `domain` and `deviceClass`. A call whose targets cannot be resolved is `confirm` with reason `unresolved_target`. The context builder gives the model the states of nearby entities; the model calls `ha.homeassistant__GetLiveContext` for more.
 - **Demo mode.** When Home Assistant is simulated and no MCP server `ha` is configured, [demo mode](../guides/demo-mode.md) offers `ha.intent__HassTurnOn`, `ha.intent__HassTurnOff`, `ha.intent__HassLightSet`, `ha.intent__HassClimateSetTemperature` and `ha.homeassistant__GetLiveContext` itself, backed by the simulated states. They default to `confirm` like the server's tools, so the same `risk.yaml` rules apply.
 

@@ -47,3 +47,7 @@ public enum ToolEventState
     /// <summary>The call waits for the user's confirmation.</summary>
     Pending,
 }
+
+/// <summary>An MCP server asked the user for input; the web chat shows the request's form or link (web clients only).</summary>
+/// <param name="Id">The pending input request.</param>
+public sealed record InputRequestEvent(Marshal.Abstractions.InputRequests.InputRequestId Id) : TurnEvent;

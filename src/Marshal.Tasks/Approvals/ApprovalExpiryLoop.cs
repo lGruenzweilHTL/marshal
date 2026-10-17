@@ -1,12 +1,13 @@
+using Marshal.Tasks.InputRequests;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Marshal.Tasks.Approvals;
 
 /// <summary>
-/// Expires overdue background approvals and resumes their tasks with a rejection.
+/// Expires overdue background approvals and input requests and resumes their tasks with a rejection.
 /// </summary>
-public sealed partial class ApprovalExpiryLoop(ApprovalQueue approvals, TimeProvider time, ILogger<ApprovalExpiryLoop> logger) : BackgroundService
+public sealed partial class ApprovalExpiryLoop(ApprovalQueue approvals, InputRequestQueue inputs, TimeProvider time, ILogger<ApprovalExpiryLoop> logger) : BackgroundService
 {
     /// <summary>How often overdue approvals are looked for.</summary>
     public static readonly TimeSpan CheckInterval = TimeSpan.FromSeconds(30);
@@ -21,6 +22,7 @@ public sealed partial class ApprovalExpiryLoop(ApprovalQueue approvals, TimeProv
                 try
                 {
                     await approvals.ExpireDueAsync(stoppingToken);
+                    await inputs.ExpireDueAsync(stoppingToken);
                 }
                 catch (Exception exception) when (exception is not OperationCanceledException)
                 {

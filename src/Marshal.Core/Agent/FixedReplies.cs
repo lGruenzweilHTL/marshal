@@ -13,6 +13,14 @@ public static class FixedReplies
         ? "Wartet auf deine Freigabe."
         : "Waiting for your approval.";
 
+    public static string AwaitingInput(string language) => German(language)
+        ? "Wartet auf deine Eingabe in der Marshal-Web-App."
+        : "Waiting for your input in the Marshal web app.";
+
+    public static string InputInWebUi(string language) => German(language)
+        ? "Dafür brauche ich noch eine Angabe von dir. Bitte mach in der Marshal-Web-App weiter, ich habe dir einen Link geschickt."
+        : "I need one more answer from you for that. Please continue in the Marshal web app; I sent you a link.";
+
     public static string BudgetExceeded(string language) => German(language)
         ? "Abgebrochen: Das Budget dieser Aufgabe ist aufgebraucht."
         : "Stopped: this task's budget is used up.";

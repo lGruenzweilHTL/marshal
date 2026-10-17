@@ -75,6 +75,19 @@ public sealed class YamlMcpServerCatalogTests : IDisposable
     }
 
     [Fact]
+    public void Load_PinTools_DefaultsToTrue()
+    {
+        Write("ha.yaml", "id: ha\ntransport: http\nurl: http://ha/api/mcp\npinTools: false\n");
+        Write("other.yaml", "id: other\ntransport: http\nurl: http://other/mcp\n");
+
+        using YamlMcpServerCatalog catalog = Load();
+
+        Assert.Empty(catalog.Errors);
+        Assert.False(catalog.Servers.Single(server => server.Id == "ha").PinTools);
+        Assert.True(catalog.Servers.Single(server => server.Id == "other").PinTools);
+    }
+
+    [Fact]
     public void Load_UntrustedWithUntrustedTools_RejectedNamingBothKeys()
     {
         Write("bad.yaml", "id: ha\ntransport: http\nurl: http://ha/api/mcp\nuntrusted: true\nuntrustedTools: [todo__get_items]\n");

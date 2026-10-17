@@ -64,6 +64,31 @@ A request to an unknown `/api/...` route or an unsupported version returns `404`
 
 Requires authentication. Returns the application `version`, `supportedApiVersions`, `deprecatedApiVersions`, `eventSources` and `simulatedIntegrations`. `eventSources` lists, for each event source, its `source` name, `connected` state, whether it is a `webhook` source and `lastReceivedAt`. For webhook sources, `connected` means a webhook arrived in the last 24 hours. See [events](events.md). `simulatedIntegrations` lists the integrations [demo mode](../guides/demo-mode.md) simulates (`home_assistant`, `printers`, `mail`, `rss`, `notes`); it is empty without demo mode.
 
+### `GET /api/v1/system/health`
+
+Requires a signed-in user or a token with the `admin` scope. Returns `warnings`: the current health warnings, errors first, then by component and code. The list is empty when everything is fine. Changes are published on the live topic `health` (event `health.changed`, see [live events](../api/live-events.md)). `/health` is unchanged.
+
+#### Health warnings
+
+Each warning has a `component` (for example `database`, `mcp:paperless`), a stable `code`, a `severity` (`warning` or `error`), a `message` in German and English, an optional `link` into the web UI and `since`, when it first appeared. Messages are written by Marshal and never contain secret values or text from external systems; error details stay in the log and the config view.
+
+| Code | Severity | Meaning |
+|---|---|---|
+| `database.unreachable` | error | The database does not answer. |
+| `memory.vector_search_unavailable` | error | Memory vector search is unavailable. |
+| `secrets.missing` | warning | A secret that `/config` references does not resolve. |
+| `config.reload_failed` | warning | A file in `/config` failed to reload; the previous version stays active. |
+| `config.skill_rejected` | warning | A skill was rejected. |
+| `config.template_rejected` | warning | A template was rejected. |
+| `homeassistant.disconnected` | warning | The Home Assistant websocket is disconnected. |
+| `mcp.unreachable` | warning | An MCP server is down; its tools are hidden. |
+| `mcp.config_rejected` | warning | An MCP server file was rejected. |
+| `mcp.untrusted_tools_unmatched` | warning | An `untrustedTools` glob matches no tool of the server. |
+| `mcp.tool_pending` | warning | A tool of an MCP server waits for approval ([tool pinning](../configuration/mcp-servers.md#tool-pinning)). |
+| `tools.unknown_core_namespace` | warning | `tools.core` names a namespace no tool source has. |
+
+The web UI shows the warnings in a banner on every page, and the model can read them with `system.health` (see [tools](tools.md)).
+
 ### Other unversioned paths
 
 `/openapi/{document}.json`, authentication callbacks and the web UI routes are unversioned too. See [OpenAPI](../api/openapi.md).

@@ -1,6 +1,7 @@
 /**
- * Payloads of the turn endpoint's server-sent events (`delta`, `status`, `artifact`, `reasoning`, `tool`, `final`); not
- * described by OpenAPI. `reasoning` and `tool` come only to the web UI (cookie sessions).
+ * Payloads of the turn endpoint's server-sent events (`delta`, `status`, `artifact`, `reasoning`, `tool`,
+ * `input_request`, `final`); not described by OpenAPI. `reasoning`, `tool` and `input_request` come only to the web UI
+ * (cookie sessions).
  */
 export interface TurnDelta {
   text: string
@@ -28,6 +29,11 @@ export interface TurnArtifact {
 /** A chunk of the model's reasoning. */
 export interface TurnReasoning {
   text: string
+}
+
+/** An MCP server asked the user for input; load it from `/api/v1/approvals/inputs/{id}`. */
+export interface TurnInputRequest {
+  id: string
 }
 
 export type ToolState = 'running' | 'ok' | 'error' | 'denied' | 'pending'

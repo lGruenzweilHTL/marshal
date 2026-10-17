@@ -1,6 +1,6 @@
 # Events
 
-The event bus carries normalized events from Home Assistant, printers, mail, executors and webhook sources. This page lists the event envelope, every source and event type with its payload fields, and the filter syntax that watches use.
+The event bus carries normalized events from Home Assistant, printers, mail, executors, MCP server tasks and webhook sources. This page lists the event envelope, every source and event type with its payload fields, and the filter syntax that watches use.
 
 ## Envelope
 
@@ -27,6 +27,7 @@ Event payloads are untrusted by default. A run started by an event gets the payl
 | `printer` | No |
 | `mail` | No |
 | `executor` | No |
+| `mcp` | No |
 | `uptime-kuma` | Yes |
 | `proxmox` | Yes |
 | `seerr` | Yes |
@@ -88,6 +89,16 @@ Marshal publishes one event when an executor session ends. The entity is the ses
 | `cancelled` | The session was cancelled. |
 
 Payload fields: `session`, `executor`, `status`, `target`, `branch` and `proposal`, where present.
+
+## MCP server tasks (`mcp`)
+
+Marshal publishes one event when a server task that an MCP tool call started ends. The entity is `<server>/<task id>`. The event carries the owner of the call.
+
+| Type | Meaning |
+|---|---|
+| `task_finished` | The server reported the task completed, failed or cancelled, or no longer knows it. |
+
+Payload fields: `server`, `tool`, `task` and `status` (`completed`, `failed` or `cancelled`). The payload never contains the server's result or error text; the waiting task receives those.
 
 ## Webhook sources
 

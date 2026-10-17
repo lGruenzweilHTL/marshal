@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Text.Json;
 using Marshal.Abstractions.Events;
+using Marshal.Abstractions.Health;
+using Marshal.Api.Auth;
 using Marshal.Api.Versioning;
 using Marshal.Demo;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -8,7 +10,8 @@ using Microsoft.AspNetCore.Http.HttpResults;
 namespace Marshal.Api.Health;
 
 /// <summary>
-/// <c>/system</c>: version information for the system view. Health details stay on the unversioned <c>/health</c>.
+/// <c>/system</c>: version information for the system view; <c>/system/health</c>: coded health warnings for the
+/// banner. The unversioned <c>/health</c> stays the probe for orchestrators.
 /// </summary>
 internal static class SystemEndpoints
 {
@@ -19,6 +22,8 @@ internal static class SystemEndpoints
     {
         group.MapGet("/system", GetSystem).RequireAuthorization().WithTags("System").WithName("GetSystem")
             .WithSummary("The app version, the supported and deprecated API versions and the event sources.");
+        group.MapGet("/system/health", GetHealthAsync).RequireAuthorization(Policies.HumanOrAdmin).WithTags("System").WithName("GetSystemHealth")
+            .WithSummary("The current health warnings (codes, components, messages in German and English). Changes are published on the health live topic.");
         return group;
     }
 
@@ -29,6 +34,9 @@ internal static class SystemEndpoints
             [.. ApiVersions.Deprecated.Select(version => version.ToString())],
             [.. sources.OrderBy(source => source.Source, StringComparer.Ordinal).Select(source => new EventSourceInfo(source.Source, source.IsConnected, webhooks.Sources.Contains(source.Source, StringComparer.Ordinal), source.LastReceivedAt))],
             [.. demo.SimulatedAtStartup.Select(integration => JsonNamingPolicy.SnakeCaseLower.ConvertName(integration.ToString()))]));
+
+    private static async Task<Ok<SystemHealthView>> GetHealthAsync(ISystemHealth health, CancellationToken cancellationToken) =>
+        TypedResults.Ok(SystemHealthView.From(await health.GetWarningsAsync(cancellationToken)));
 }
 
 /// <summary>Version information.</summary>

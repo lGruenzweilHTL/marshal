@@ -3,9 +3,17 @@
 id: ha                        # tools become ha.<name>, e.g. ha.intent__HassTurnOn (model-facing: ha_intent__HassTurnOn)
 transport: http               # streamable HTTP; use "stdio" with command / args for local servers
 url: http://homeassistant.local:8123/api/mcp
+# What the tools are about, for tool retrieval (which namespaces a turn loads). Without it, Marshal builds one
+# from the id and the tool names.
+description: "Home control: lights, switches, covers, climate, locks, media players and the state of devices and areas"
 authTokenSecret: ha_token     # secret NAME of a long-lived access token; never the token itself
 untrusted: false              # true: tool output is third-party data and taints the run
 # To-do lists synced from other apps (Bring, Todoist, Google Tasks, CalDAV) hold text other people typed.
 # Mark only the list read tool as third-party data, so reading a list taints the run but home control does
 # not. Globs on the tool name HA reports; one that matches no tool shows as a warning on /health.
 untrustedTools: ["todo__get_items"]
+# Tool pinning: Marshal pins each tool's definition at first discovery; a changed or new tool later waits for an
+# admin's approval under System > Configuration and stays hidden until then. HA's tool list changes whenever entities
+# or intents are exposed, so every such change asks for approval. Set false to trust HA's list as it is (a server
+# that is malicious from the start is not caught by pinning anyway).
+pinTools: true

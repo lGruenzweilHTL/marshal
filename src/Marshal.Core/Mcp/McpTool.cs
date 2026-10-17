@@ -10,9 +10,11 @@ internal sealed class McpTool(McpToolSource source, ToolDescriptor descriptor, s
 {
     public ToolDescriptor Descriptor => descriptor;
 
+    public ToolPinState PinState => source.PinStateOf(name);
+
     /// <summary>The tool name as the server reports it.</summary>
     public string Name => name;
 
     public Task<Result<ToolOutput>> InvokeAsync(ToolInvocation invocation, CancellationToken cancellationToken) =>
-        source.CallAsync(name, invocation.Arguments, cancellationToken);
+        source.CallAsync(name, invocation.Arguments, invocation.Context, cancellationToken);
 }

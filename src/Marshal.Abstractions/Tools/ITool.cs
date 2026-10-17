@@ -19,6 +19,12 @@ public interface ITool
         ValueTask.FromResult(true);
 
     /// <summary>
+    /// Pin approval of the tool's current definition (MCP tools). Anything but <see cref="ToolPinState.Approved"/>
+    /// hides the tool and makes the guard deny it.
+    /// </summary>
+    ToolPinState PinState => ToolPinState.Approved;
+
+    /// <summary>
     /// Argument checks that must hold before any tier applies (e.g. an allowlist). The guard denies a failing call
     /// without asking for confirmation.
     /// </summary>

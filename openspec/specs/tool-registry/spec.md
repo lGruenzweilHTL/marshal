@@ -39,14 +39,18 @@ Characters outside `[a-zA-Z0-9_-]` in external tool names SHALL be replaced with
 - **THEN** the second source is rejected with an error naming both, and the first keeps working
 
 ### Requirement: Tool descriptors
-Each tool SHALL declare its default risk tier, whether its output is untrusted (`untrustedOutput`), and whether it persists state the agent acts on later (`persists`).
+Each tool SHALL declare its default risk tier, whether its output is untrusted (`untrustedOutput`), and whether it persists state the agent acts on later (`persists`). A built-in tool MAY declare a short filler line per supported language (German and English) that is spoken while it runs.
 
 #### Scenario: Descriptor flags are read by the guard
 - **WHEN** a tool declared with `untrustedOutput` returns a result
 - **THEN** the run is marked tainted (see `risk-guard`)
 
+#### Scenario: Filler line declared
+- **WHEN** `printer.snapshot` declares the fillers "Ich schaue mir den Drucker an." and "Let me look at the printer."
+- **THEN** a German voice turn that calls it can speak the German line
+
 ### Requirement: Visibility filter
-Before every model call the system SHALL remove from the tool list every tool that is forbidden, not in the active template's allowlist, denied for the satellite (`denyTools`), confirm-tier on a satellite that denies confirmation for it (`denyConfirm`), confirm-tier inside a subagent, or hidden by the tool's own visibility condition (e.g. the advisor in voice turns). Tools whose tier depends on arguments SHALL stay visible. The guard SHALL enforce the same rules on every call.
+Before every model call the system SHALL remove from the tool list every tool that is forbidden, not in the active template's allowlist, denied for the satellite (`denyTools`), confirm-tier on a satellite that denies confirmation for it (`denyConfirm`), confirm-tier inside a subagent, waiting for MCP pin approval, or hidden by the tool's own visibility condition (e.g. the advisor in voice turns). Tools whose tier depends on arguments SHALL stay visible. The guard SHALL enforce the same rules on every call.
 
 #### Scenario: Forbidden tool is invisible
 - **WHEN** a risk rule marks a tool `forbidden`
@@ -55,6 +59,10 @@ Before every model call the system SHALL remove from the tool list every tool th
 #### Scenario: Arg-aware tool stays visible
 - **WHEN** a tool is safe for some arguments and confirm for others on a satellite with `denyConfirm` for it
 - **THEN** the tool is visible, and only calls that resolve to confirm are denied
+
+#### Scenario: Tool awaiting pin approval
+- **WHEN** an MCP tool's description changed and is not approved
+- **THEN** the tool is not in the tool list, and a call to it is denied by the guard
 
 ### Requirement: External tool sources
 The registry SHALL accept tools from MCP servers and skills in addition to built-in tools. Each source SHALL register and unregister as a unit on reload.

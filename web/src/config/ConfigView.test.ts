@@ -71,7 +71,7 @@ const summary = {
 }
 
 async function mountConfig(status = 200, body: unknown = summary, language: 'en' | 'de' = 'en') {
-  const fake = new FakeServer().on('GET', '/api/v1/me', 200, admin).on('GET', '/api/v1/config', status, body)
+  const fake = new FakeServer().on('GET', '/api/v1/me', 200, admin).on('GET', '/api/v1/config', status, body).on('GET', '/api/v1/config/mcp-tools/pending', 200, [])
   const { options } = await mountOptions(fake, '/system/config', { language })
   const wrapper = mount(ConfigView, options)
   await flushPromises()
@@ -124,7 +124,7 @@ describe('ConfigView', () => {
     expect(wrapper.get('[data-error="skills/broken/SKILL.md"]').text()).toContain('skipped')
   })
 
-  it('has no editing controls', async () => {
+  it('has no editing controls without tools waiting for approval', async () => {
     const wrapper = await mountConfig()
 
     expect(wrapper.findAll('input, textarea, select, button')).toHaveLength(0)

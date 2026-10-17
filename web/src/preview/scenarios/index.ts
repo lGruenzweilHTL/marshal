@@ -31,6 +31,7 @@ function emptied(path: string, body: unknown): unknown {
   if (Array.isArray(body)) return []
   if (path === '/api/v1/me/secrets') return { secrets: [], unresolved: [] }
   if (path === '/api/v1/memory/graph') return { nodes: [], edges: [] }
+  if (path === '/api/v1/system/health') return { warnings: [] }
   if (path === '/api/v1/memory/audit') return { stale: [], contradictions: [], orphans: [], danglingEdges: [] }
   if (path === '/api/v1/artifacts') return { ...(body as object), items: [], usedBytes: 0 }
   if (path === '/api/v1/cost') return { ...(body as object), days: [], total: 0, byTier: {}, advisor: 0 }

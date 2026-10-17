@@ -55,7 +55,7 @@ An embedding model is required. Anthropic offers none; see [models setup](../ins
 | Proxmox VE | REST API `/api2/json` with an API token (role `PVEAuditor`) | None stated. |
 | GitHub | REST API with the version header `X-GitHub-Api-Version: 2026-03-10` | Pinned in code. |
 | Uptime Kuma | Webhook notification (JSON or form `data`) | None stated. |
-| MCP servers | Model Context Protocol, stdio and streamable HTTP, through `ModelContextProtocol.Core` 2.2.0 | |
+| MCP servers | Model Context Protocol revisions 2026-07-28, 2025-11-25 and 2025-06-18, stdio and streamable HTTP, through `ModelContextProtocol.Core` 2.2.0 | |
 | OpenTelemetry | OTLP over gRPC | |
 
 ## Related

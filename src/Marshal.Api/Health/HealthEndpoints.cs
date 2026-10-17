@@ -1,22 +1,37 @@
 using System.Text.Json;
+using Marshal.Abstractions.Health;
+using Marshal.Abstractions.LiveEvents;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Marshal.Api.Health;
 
 /// <summary>
-/// <c>/health</c>: liveness and readiness (database, configuration, secrets, MCP servers, memory vector search), unauthenticated, without values.
+/// <c>/health</c>: liveness and readiness (database, configuration, secrets, MCP servers, memory vector search, core tool namespaces), unauthenticated, without values.
 /// </summary>
 internal static class HealthEndpoints
 {
-    public static IHealthChecksBuilder AddMarshalHealthChecks(this IServiceCollection services) =>
-        services.AddHealthChecks()
+    public static IHealthChecksBuilder AddMarshalHealthChecks(this IServiceCollection services)
+    {
+        services.AddSingleton<ISystemHealth, AggregatedSystemHealth>();
+        services.AddSingleton(new LiveTopic(AggregatedSystemHealth.Topic));
+        services.AddHostedService<SystemHealthMonitor>();
+        services.AddSingleton<IHealthWarningProvider, DatabaseWarnings>();
+        services.AddSingleton<IHealthWarningProvider, ConfigurationWarnings>();
+        services.AddSingleton<IHealthWarningProvider, SecretWarnings>();
+        services.AddSingleton<IHealthWarningProvider, McpWarnings>();
+        services.AddSingleton<IHealthWarningProvider, MemoryWarnings>();
+        services.AddSingleton<IHealthWarningProvider, ToolsWarnings>();
+        services.AddSingleton<IHealthWarningProvider, HomeAssistantWarnings>();
+        return services.AddHealthChecks()
             .AddCheck<DatabaseHealthCheck>("database")
             .AddCheck<ConfigurationHealthCheck>("config")
             .AddCheck<SecretsHealthCheck>("secrets")
             .AddCheck<McpHealthCheck>("mcp")
             .AddCheck<MemoryHealthCheck>("memory")
+            .AddCheck<ToolsHealthCheck>("tools")
             .AddCheck<HomeAssistantHealthCheck>("homeassistant");
+    }
 
     public static IEndpointRouteBuilder MapMarshalHealth(this IEndpointRouteBuilder app)
     {

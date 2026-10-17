@@ -10,6 +10,7 @@ import { useInboxCountOptional } from '../layout/inboxCount'
 import { AppButton, Chip, ErrorBanner, IconTile, ListCard, ListRow, LoadBoundary, LoadState, Page, PageHeader, Section, Segmented, useDesktop, useNow, useToasts } from '../ui'
 import ApprovalTicket, { type TicketResult } from './ApprovalTicket.vue'
 import ApprovalContext from './ApprovalContext.vue'
+import InputRequestForm from './InputRequestForm.vue'
 import NotificationRow from './NotificationRow.vue'
 import ProposalRow from './ProposalRow.vue'
 
@@ -25,6 +26,7 @@ const { t } = useI18n()
 
 // Three loads, so one failing list keeps the other two on screen.
 const approvals = useLoad(() => api.call((client) => client.GET('/api/v1/approvals')))
+const inputs = useLoad(() => api.call((client) => client.GET('/api/v1/approvals/inputs')))
 const proposals = useLoad(() => api.call((client) => client.GET('/api/v1/proposals')))
 const pageSize = 50
 const outcome = shallowRef<Outcome | null>(null)
@@ -58,13 +60,13 @@ const filters = computed(() => {
   const count = (items: readonly unknown[] | null) => (items?.length ? ` ${items.length}` : '')
   return [
     { value: 'all' as const, label: t('inbox.filters.all') },
-    { value: 'approvals' as const, label: t('inbox.filters.approvals') + count(approvals.data.value) },
+    { value: 'approvals' as const, label: t('inbox.filters.approvals') + count([...(approvals.data.value ?? []), ...(inputs.data.value ?? [])]) },
     { value: 'changes' as const, label: t('inbox.filters.changes') + count(proposals.data.value) },
     { value: 'alerts' as const, label: t('inbox.filters.alerts') + count(notifications.data.value) },
   ]
 })
 const show = (kind: Exclude<Filter, 'all'>) => filter.value === 'all' || filter.value === kind
-const allEmpty = computed(() => !outcome.value && [approvals, proposals, notifications].every((load) => load.state.value === 'empty'))
+const allEmpty = computed(() => !outcome.value && [approvals, inputs, proposals, notifications].every((load) => load.state.value === 'empty'))
 
 const outcomes: Outcome[] = ['pending', 'delivered', 'coalesced', 'held', 'inboxed', 'expired', 'fallback']
 const shownNotifications = computed(() => [...(notifications.data.value ?? []), ...older.value])
@@ -129,6 +131,12 @@ onMounted(() => inbox?.markSeen())
               </div>
             </template>
           </LoadBoundary>
+        </Section>
+
+        <Section v-if="show('approvals') && inputs.data.value?.length" :title="t('inbox.inputs')" :count="inputs.data.value.length" data-section="inputs">
+          <div class="tickets">
+            <InputRequestForm v-for="request in inputs.data.value" :key="request.id" :request="request" density="compact" @settled="inputs.refresh()" />
+          </div>
         </Section>
 
         <Section v-if="show('changes')" :title="t('inbox.proposals')" :count="proposals.data.value?.length" data-section="proposals">

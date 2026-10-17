@@ -80,6 +80,9 @@ export interface ConversationResultPayload {
 }
 
 /** Event type → payload. Later changes add their topics' events here. */
+/** `health.changed` on topic `health`: the current health warnings (`SystemHealthView`). */
+export type HealthChangedPayload = Schemas['SystemHealthView']
+
 export interface LiveEventMap {
   'run.started': RunStartedPayload
   'run.completed': RunCompletedPayload
@@ -90,6 +93,7 @@ export interface LiveEventMap {
   'artifact.created': ArtifactCreatedPayload
   'artifact.deleted': ArtifactDeletedPayload
   'conversation.result': ConversationResultPayload
+  'health.changed': HealthChangedPayload
 }
 
 export type LiveEventType = keyof LiveEventMap

@@ -31,6 +31,19 @@ public sealed class HealthApiTests
         Assert.Equal("healthy", checks.GetProperty("secrets").GetProperty("status").GetString());
         Assert.Equal("healthy", checks.GetProperty("mcp").GetProperty("status").GetString());
         Assert.Equal("healthy", checks.GetProperty("memory").GetProperty("status").GetString());
+        Assert.Equal("healthy", checks.GetProperty("tools").GetProperty("status").GetString());
+    }
+
+    [Fact]
+    public async Task Health_UnknownCoreNamespace_WarnsWithoutFailingStartup()
+    {
+        using var factory = new MarshalApiFactory(new Dictionary<string, string?> { ["tools:core:0"] = "agent", ["tools:core:1"] = "printr" });
+
+        JsonElement body = await factory.CreateClient().GetFromJsonAsync<JsonElement>("/health", Ct);
+
+        JsonElement tools = body.GetProperty("checks").GetProperty("tools");
+        Assert.Equal("degraded", tools.GetProperty("status").GetString());
+        Assert.Equal(["tools.core: unknown namespace 'printr'"], tools.GetProperty("warnings").EnumerateArray().Select(warning => warning.GetString()));
     }
 
     [Fact]

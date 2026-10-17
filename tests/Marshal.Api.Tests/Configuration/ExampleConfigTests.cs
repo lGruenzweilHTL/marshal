@@ -144,6 +144,8 @@ public sealed class ExampleConfigTests
         Assert.Empty(servers.Errors);
         McpServerDefinition ha = Assert.Single(servers.Servers);
         Assert.Equal(("ha", "ha_token"), (ha.Namespace, ha.AuthTokenSecret?.Value));
+        Assert.StartsWith("Home control:", ha.Description, StringComparison.Ordinal);
+        Assert.True(ha.PinTools);
         Assert.Empty(skills.Errors);
         Assert.NotEmpty(skills.Skills);
         Assert.Empty(templates.Errors);
@@ -181,6 +183,20 @@ public sealed class ExampleConfigTests
         AgentTemplate briefing = Assert.Single(templates.Templates, template => template.Name == "briefing");
         Assert.Equal(["briefing-format", "rss-digest"], briefing.Skills);
         Assert.Contains("rss.mark_read", briefing.Tools);
+        Assert.Contains("system.health", briefing.Tools);
+        Assert.Contains("system_health", format.Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AiTaskTemplate_Loads_ReplacesTheBuiltInWithReadOnlyTools()
+    {
+        using var templates = new FileTemplateCatalog(Path.Combine(_directory, "templates"), null, "templates/*.md", new ConfigSecretScanner(), NullLogger<FileTemplateCatalog>.Instance);
+
+        Assert.Empty(templates.Errors);
+        AgentTemplate aiTask = Assert.Single(templates.Templates, template => template.Name == AgentTemplate.AiTaskName);
+        Assert.NotEqual(AgentTemplate.BuiltInAiTask, aiTask);
+        Assert.Equal(["calendar.list_events", "printer.status", "memory.recall"], aiTask.Tools);
+        Assert.Equal(ModelTier.Fast, aiTask.ModelTier);
     }
 
     private static string RepositoryRoot()

@@ -247,11 +247,13 @@ public sealed partial class YamlMcpServerCatalog : IMcpServerCatalog, IDisposabl
         {
             Id = raw.Id,
             Namespace = ns,
+            Description = string.IsNullOrWhiteSpace(raw.Description) ? null : raw.Description.Trim(),
             Transport = McpTransportKind.Http,
             AuthTokenSecret = authToken,
             EnvironmentSecrets = environment,
             Untrusted = raw.Untrusted,
             UntrustedTools = [.. raw.UntrustedTools],
+            PinTools = raw.PinTools,
             File = file,
         };
 

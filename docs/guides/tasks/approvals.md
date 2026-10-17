@@ -1,6 +1,6 @@
 # Approvals
 
-Review and decide the actions that background tasks are not allowed to run without you.
+Review and decide the actions that background tasks and automations are not allowed to run without you, and answer input requests of MCP servers.
 
 ## Before you start
 
@@ -20,6 +20,16 @@ Why you are asked appears verbatim in the push and in the queue, for example:
 - `This conversation included content from your mail, and such content can contain hidden instructions.` (taint)
 - `This would notify you during your quiet hours.` (quiet hours override)
 
+### Runs without a task
+
+An [AI task](../../home-assistant-component/ai-tasks.md) from a Home Assistant automation has no task to resume and nobody to confirm during the run. A confirm-tier call, or a call that writes memory or tasks after the run read untrusted content, goes to the review queue the same way, with the same TTL, push and reasons. The run does not wait: it continues with a tool result saying the action waits for approval, and its data says so.
+
+On approval the server executes exactly the frozen action and sends you a `low` notification with the result. On rejection or expiry nothing runs. A later message in the same session never confirms the action.
+
+### Input requests
+
+An MCP server can ask you for input during a tool call, for example a form field or a login page. Marshal freezes the call and shows the request in the Inbox (and in the chat of a web turn) as a form or as a link with **Done**. Only the web UI answers it; the push carries a link and no buttons. The model never sees the request or your answer. See [input requests](../../configuration/mcp-servers.md#input-requests).
+
 ## Steps
 
 ### 1. Decide in the web UI
@@ -28,7 +38,7 @@ Open **Inbox**; each approval is a ticket with the action, the task, the reasons
 
 ### 2. Decide from the push
 
-Tap **Approve** or **Reject** on the notification. The action carries a nonce, Marshal accepts only a matching nonce of a pending background approval, and everything else is ignored.
+Tap **Approve** or **Reject** on the notification. The action carries a nonce, Marshal accepts only a matching nonce of a pending background approval, and everything else is ignored. Input requests have no push actions; tap the notification to open the request in the web UI.
 
 ### 3. Decide by voice
 

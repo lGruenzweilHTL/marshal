@@ -1,6 +1,8 @@
 using Marshal.Abstractions.Audit;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.InputRequests;
+using Marshal.Abstractions.Mcp;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Secrets;
 using Marshal.Abstractions.Sessions;
@@ -8,6 +10,8 @@ using Marshal.Abstractions.Tokens;
 using Marshal.Data.Audit;
 using Marshal.Data.Conversations;
 using Marshal.Data.Identity;
+using Marshal.Data.InputRequests;
+using Marshal.Data.Mcp;
 using Marshal.Data.Persistence;
 using Marshal.Data.Secrets;
 using Marshal.Data.Tokens;
@@ -43,6 +47,8 @@ public static class DataServiceCollectionExtensions
         services.AddSingleton<IUserPreferencesStore, EfUserPreferencesStore>();
         services.AddSingleton<IInstanceOwner, EfInstanceOwner>();
         services.AddSingleton<IUserDirectory, EfUserDirectory>();
+        services.AddSingleton<IMcpToolPins, EfMcpToolPins>();
+        services.AddSingleton<IInputRequestStore, EfInputRequestStore>();
         services.AddSingleton<IApiTokenService, ApiTokenService>();
         services.AddSingleton<IExecutorCallbackTokens, ExecutorCallbackTokens>();
         services.AddSingleton<DatabaseSecretSource>();

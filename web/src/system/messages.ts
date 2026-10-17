@@ -63,6 +63,16 @@ export const en = {
     no: 'no',
     files: 'files: {files}',
     empty: { skills: 'No skills.', mcp: 'No MCP servers.', satellites: 'No satellite profiles.' },
+    approvals: {
+      title: '{count} tool waits for approval | {count} tool waits for approval | {count} tools wait for approval',
+      hint: 'These tools are new or changed since they were last approved. They stay hidden from the assistant until you approve them. Read the description: it goes into every prompt.',
+      change: { new: 'new', changed: 'changed' },
+      before: 'Approved',
+      after: 'Now',
+      definition: 'Definition',
+      approve: 'Approve',
+      reject: 'Reject',
+    },
     state: { connected: 'connected', connecting: 'connecting', down: 'down' },
     columns: {
       key: 'Key',
@@ -160,6 +170,16 @@ export const de: Catalog<typeof en> = {
     no: 'nein',
     files: 'Dateien: {files}',
     empty: { skills: 'Keine Skills.', mcp: 'Keine MCP-Server.', satellites: 'Keine Satellitenprofile.' },
+    approvals: {
+      title: '{count} Werkzeug wartet auf Freigabe | {count} Werkzeug wartet auf Freigabe | {count} Werkzeuge warten auf Freigabe',
+      hint: 'Diese Werkzeuge sind neu oder haben sich seit der letzten Freigabe geändert. Der Assistent sieht sie erst nach deiner Freigabe. Lies die Beschreibung: Sie steht in jedem Prompt.',
+      change: { new: 'neu', changed: 'geändert' },
+      before: 'Freigegeben',
+      after: 'Jetzt',
+      definition: 'Definition',
+      approve: 'Freigeben',
+      reject: 'Ablehnen',
+    },
     state: { connected: 'verbunden', connecting: 'verbindet', down: 'ausgefallen' },
     columns: {
       key: 'Schlüssel',

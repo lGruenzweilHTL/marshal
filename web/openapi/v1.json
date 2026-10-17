@@ -480,6 +480,27 @@
         }
       }
     },
+    "/api/v1/system/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "The current health warnings (codes, components, messages in German and English). Changes are published on the health live topic.",
+        "operationId": "GetSystemHealth",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemHealthView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/config": {
       "get": {
         "tags": [
@@ -1258,6 +1279,61 @@
         "responses": {
           "204": {
             "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/config/mcp-tools/pending": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "MCP tools that are new or changed since the last approval, with the previous and current definitions.",
+        "operationId": "ListPendingMcpTools",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/McpToolApproval"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/config/mcp-tools/decisions": {
+      "post": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Approves (the current definition becomes trusted) or rejects (hidden until it changes again) a waiting MCP tool.",
+        "operationId": "DecideMcpTool",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/McpToolDecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpToolApproval"
+                }
+              }
+            }
           }
         }
       }
@@ -2563,6 +2639,134 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApprovalDecision"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals/inputs": {
+      "get": {
+        "tags": [
+          "Approvals"
+        ],
+        "summary": "Pending input requests of MCP servers, oldest first.",
+        "operationId": "ListInputRequests",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InputRequestItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals/inputs/{id}": {
+      "get": {
+        "tags": [
+          "Approvals"
+        ],
+        "summary": "One input request in any status.",
+        "operationId": "GetInputRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InputRequestItem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Approvals"
+        ],
+        "summary": "Answers an input request (form fields, or null when a URL request is done), repeats the frozen call once and resumes the waiting task with its outcome.",
+        "operationId": "AnswerInputRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InputAnswerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InputRequestItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals/inputs/{id}/decline": {
+      "post": {
+        "tags": [
+          "Approvals"
+        ],
+        "summary": "Declines an input request; nothing is sent to the server and the waiting task resumes with the refusal.",
+        "operationId": "DeclineInputRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InputRequestItem"
                 }
               }
             }
@@ -4383,6 +4587,72 @@
           null
         ]
       },
+      "HealthMessageView": {
+        "required": [
+          "de",
+          "en"
+        ],
+        "type": "object",
+        "properties": {
+          "de": {
+            "type": "string",
+            "description": "German."
+          },
+          "en": {
+            "type": "string",
+            "description": "English."
+          }
+        },
+        "description": "A message in Marshal\u0027s two languages."
+      },
+      "HealthSeverity": {
+        "enum": [
+          "warning",
+          "error"
+        ]
+      },
+      "HealthWarningView": {
+        "required": [
+          "component",
+          "code",
+          "severity",
+          "message",
+          "link",
+          "since"
+        ],
+        "type": "object",
+        "properties": {
+          "component": {
+            "type": "string",
+            "description": "What is affected, e.g. \u0060database\u0060, \u0060mcp:paperless\u0060, \u0060config:risk.yaml\u0060."
+          },
+          "code": {
+            "type": "string",
+            "description": "Stable code, e.g. \u0060mcp.unreachable\u0060, \u0060mcp.tool_pending\u0060."
+          },
+          "severity": {
+            "description": "\u0060warning\u0060 or \u0060error\u0060.",
+            "$ref": "#/components/schemas/HealthSeverity"
+          },
+          "message": {
+            "description": "Marshal-authored message in German and English; never text from external systems.",
+            "$ref": "#/components/schemas/HealthMessageView"
+          },
+          "link": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Path in the web UI with details (e.g. \u0060/system/config\u0060), if any."
+          },
+          "since": {
+            "type": "string",
+            "description": "When the warning first appeared.",
+            "format": "date-time"
+          }
+        },
+        "description": "One health warning."
+      },
       "HeaterState": {
         "required": [
           "temperature",
@@ -4409,11 +4679,141 @@
         "type": "string",
         "format": "binary"
       },
+      "IFormFileCollection": {
+        "type": [
+          "null",
+          "array"
+        ],
+        "items": {
+          "$ref": "#/components/schemas/IFormFile"
+        }
+      },
+      "InputAnswerRequest": {
+        "required": [
+          "content"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JsonElement"
+              }
+            ],
+            "description": "Form mode: an object with the requested fields. URL mode: null once the page is done."
+          }
+        },
+        "description": "The user\u0027s answer to an input request."
+      },
       "InputMode": {
         "enum": [
           "text",
           "voice",
           null
+        ]
+      },
+      "InputRequestItem": {
+        "required": [
+          "id",
+          "serverId",
+          "tool",
+          "mode",
+          "message",
+          "requestedSchema",
+          "url",
+          "sessionId",
+          "taskId",
+          "status",
+          "createdAt",
+          "expiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Input request id."
+          },
+          "serverId": {
+            "type": "string",
+            "description": "MCP server that asks."
+          },
+          "tool": {
+            "type": "string",
+            "description": "The interrupted tool; answering repeats exactly this call once."
+          },
+          "mode": {
+            "description": "\u0060form\u0060 (answer the requested fields) or \u0060url\u0060 (open the page, then say done).",
+            "$ref": "#/components/schemas/InputRequestMode"
+          },
+          "message": {
+            "type": "string",
+            "description": "What the server asks."
+          },
+          "requestedSchema": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JsonElement"
+              }
+            ],
+            "description": "Form mode: object schema with string, number, integer, boolean and enum properties."
+          },
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "URL mode: the page to open."
+          },
+          "sessionId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Conversation the request came from, if any."
+          },
+          "taskId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The task that resumes with the outcome."
+          },
+          "status": {
+            "description": "\u0060pending\u0060, \u0060answered\u0060, \u0060declined\u0060, \u0060expired\u0060 or \u0060dropped\u0060.",
+            "$ref": "#/components/schemas/InputRequestStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the server asked.",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "When the request expires (nothing is sent to the server then).",
+            "format": "date-time"
+          }
+        },
+        "description": "An MCP server\u0027s request for the user\u0027s input, with the interrupted call frozen. Message, schema and URL are the\nserver\u0027s text: show them as plain text, and open the URL only when the user chooses to."
+      },
+      "InputRequestMode": {
+        "enum": [
+          "form",
+          "url"
+        ]
+      },
+      "InputRequestStatus": {
+        "enum": [
+          "pending",
+          "answered",
+          "declined",
+          "expired",
+          "dropped"
         ]
       },
       "JobQueueStatus": {
@@ -4760,6 +5160,86 @@
           }
         },
         "description": "A configured MCP server."
+      },
+      "McpToolApproval": {
+        "required": [
+          "serverId",
+          "toolName",
+          "change",
+          "state",
+          "previous",
+          "current",
+          "firstSeen"
+        ],
+        "type": "object",
+        "properties": {
+          "serverId": {
+            "type": "string",
+            "description": "MCP server id."
+          },
+          "toolName": {
+            "type": "string",
+            "description": "Tool name as the server reports it."
+          },
+          "change": {
+            "description": "\u0060new\u0060 or \u0060changed\u0060.",
+            "$ref": "#/components/schemas/McpToolChange"
+          },
+          "state": {
+            "description": "\u0060approved\u0060, \u0060pending\u0060 or \u0060rejected\u0060.",
+            "$ref": "#/components/schemas/ToolPinState"
+          },
+          "previous": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JsonElement"
+              }
+            ],
+            "description": "The last approved definition (name, title, description, inputSchema, outputSchema, annotations); null for a new tool."
+          },
+          "current": {
+            "description": "The definition the server reports now. Untrusted server text: show it, never render it as HTML.",
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "firstSeen": {
+            "type": "string",
+            "description": "When the server first reported the current definition.",
+            "format": "date-time"
+          }
+        },
+        "description": "An MCP tool pin with its definitions."
+      },
+      "McpToolChange": {
+        "enum": [
+          "new",
+          "changed"
+        ]
+      },
+      "McpToolDecisionRequest": {
+        "required": [
+          "serverId",
+          "toolName",
+          "approve"
+        ],
+        "type": "object",
+        "properties": {
+          "serverId": {
+            "type": "string",
+            "description": "MCP server id."
+          },
+          "toolName": {
+            "type": "string",
+            "description": "Tool name as the server reports it."
+          },
+          "approve": {
+            "type": "boolean",
+            "description": "True approves the current definition, false rejects it."
+          }
+        },
+        "description": "A decision on a waiting MCP tool."
       },
       "MemoryAuditReport": {
         "required": [
@@ -6718,6 +7198,22 @@
         },
         "description": "Where the browser goes to sign in with the provider."
       },
+      "SystemHealthView": {
+        "required": [
+          "warnings"
+        ],
+        "type": "object",
+        "properties": {
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HealthWarningView"
+            },
+            "description": "Errors first, then by component and code; empty when everything is fine."
+          }
+        },
+        "description": "The current health warnings."
+      },
       "SystemInfo": {
         "required": [
           "version",
@@ -7283,6 +7779,13 @@
           "error",
           "denied",
           "pending"
+        ]
+      },
+      "ToolPinState": {
+        "enum": [
+          "approved",
+          "pending",
+          "rejected"
         ]
       },
       "TurnToolStep": {

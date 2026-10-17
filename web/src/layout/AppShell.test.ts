@@ -11,6 +11,7 @@ function server(user = me) {
     .on('GET', '/api/v1/approvals', 200, [{ id: 'a-1' }, { id: 'a-2' }])
     .on('GET', '/api/v1/proposals', 200, [{ id: 'p-1', status: 'open' }, { id: 'p-2', status: 'merged' }])
     .on('GET', '/api/v1/notifications', 200, [{ id: 'n-1', priority: 'critical', createdAt: new Date().toISOString() }, { id: 'n-2', priority: 'normal', createdAt: new Date().toISOString() }])
+    .on('GET', '/api/v1/system/health', 200, { warnings: [] })
     .antiforgery('t-9')
 }
 
@@ -26,6 +27,17 @@ describe('AppShell', () => {
     vi.restoreAllMocks()
     localStorage.clear()
     document.body.innerHTML = ''
+  })
+
+  it('shows health warnings above every page', async () => {
+    useViewport('desktop')
+    const fake = server({ ...me, roles: ['user', 'admin'] }).on('GET', '/api/v1/system/health', 200, {
+      warnings: [{ component: 'mcp:paperless', code: 'mcp.tool_pending', severity: 'warning', message: { de: 'Wartet auf Freigabe.', en: 'Waits for approval.' }, link: '/system/config', since: '2026-10-17T08:00:00Z' }],
+    })
+    const { wrapper } = await shell('/chat', fake)
+
+    expect(wrapper.get('.main [data-test=health-banner]').text()).toContain('Waits for approval.')
+    expect(wrapper.get('[data-test=health-open]').attributes('href')).toBe('/system/config')
   })
 
   it('shows the grouped side navigation from 900 px', async () => {

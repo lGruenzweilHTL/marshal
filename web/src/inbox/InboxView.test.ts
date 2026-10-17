@@ -16,6 +16,7 @@ function server() {
       approvalItem({ expiresAt: future }),
       approvalItem({ id: 'a-2', summary: 'Start the print', tool: 'printer.start_print', taint: [], expiresAt: future }),
     ])
+    .on('GET', '/api/v1/approvals/inputs', 200, [])
     .on('GET', '/api/v1/proposals', 200, [proposal()])
     .on('GET', '/api/v1/notifications', 200, [
       notificationEntry(),
@@ -121,10 +122,37 @@ describe('InboxView', () => {
     const fake = new FakeServer()
       .on('GET', '/api/v1/me', 200, me)
       .on('GET', '/api/v1/approvals', 200, [])
+      .on('GET', '/api/v1/approvals/inputs', 200, [])
       .on('GET', '/api/v1/proposals', 200, [])
       .on('GET', '/api/v1/notifications', 200, [])
     const { wrapper } = await mountInbox(fake)
 
     expect(wrapper.text()).toContain('Nothing needs you')
+  })
+
+  it('lists input requests with their forms next to the approvals', async () => {
+    useViewport('phone')
+    const fake = server().on('GET', '/api/v1/approvals/inputs', 200, [
+      {
+        id: 'i-1',
+        serverId: 'paperless',
+        tool: 'paperless.upload',
+        mode: 'url',
+        message: 'Log in to Paperless.',
+        requestedSchema: null,
+        url: 'https://paperless.example/login',
+        sessionId: null,
+        taskId: 't-1',
+        status: 'pending',
+        createdAt: '2026-10-16T08:00:00Z',
+        expiresAt: future,
+      },
+    ])
+    const { wrapper } = await mountInbox(fake)
+
+    const sections = wrapper.findAll('[data-section]').map((section) => section.attributes('data-section'))
+    expect(sections.slice(0, 2)).toEqual(['approvals', 'inputs'])
+    expect(wrapper.get('[data-input="i-1"]').text()).toContain('Log in to Paperless.')
+    expect(wrapper.get('[data-test="filter"]').text()).toContain('Approvals 3')
   })
 })

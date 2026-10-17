@@ -8,6 +8,7 @@ import { useLiveEvents } from '../live/liveEvents'
 import { useUserSession } from '../session'
 import { AppButton, Avatar, Badge, ListCard, ListRow, Logo, Sheet, SideNav, TabBar, useDesktop, type NavGroup, type TabItem } from '../ui'
 import AppIcon from '../ui/AppIcon.vue'
+import HealthBanner from './HealthBanner.vue'
 import { createInboxCount, inboxCountKey } from './inboxCount'
 import { groups, moreIcon, visibleDestinations } from './navigation'
 
@@ -103,6 +104,7 @@ async function logout() {
     </SideNav>
     <main class="main">
       <div v-if="demoBadge && !desktop" class="demo-phone"><span class="demo" :title="t('shell.demoHint')" data-test="demo-badge"><Badge tone="warning" :label="t('shell.demo')" /></span></div>
+      <HealthBanner />
       <RouterView />
     </main>
     <template v-if="!desktop">

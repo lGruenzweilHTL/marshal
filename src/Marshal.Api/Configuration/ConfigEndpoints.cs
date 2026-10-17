@@ -19,7 +19,7 @@ namespace Marshal.Api.Configuration;
 
 /// <summary>
 /// <c>/config</c>: read-only summary of the loaded configuration for admins. Secret names only, never values;
-/// nothing here edits files.
+/// nothing here edits files. The only write action is deciding MCP tool approvals (<see cref="McpToolApprovalEndpoints"/>).
 /// </summary>
 internal static class ConfigEndpoints
 {
@@ -27,6 +27,7 @@ internal static class ConfigEndpoints
     {
         group.MapGet("/config", GetSummary).RequireAuthorization(Policies.Admin).WithTags("Config").WithName("GetConfigSummary")
             .WithSummary("Loaded skills, templates, MCP servers, risk rules, models and satellites, plus the last load error per file.");
+        group.MapMcpToolApprovalEndpoints();
         return group;
     }
 

@@ -7,7 +7,8 @@ using Marshal.Abstractions.Tools;
 namespace Marshal.Core.Tools;
 
 /// <summary>
-/// The model can't use it → the model can't see it. Hides tools outside the run template's allowlist, forbidden tools, tools denied for the satellite,
+/// The model can't use it → the model can't see it. Hides tools outside the run template's allowlist, MCP tools waiting for pin approval (or
+/// rejected), forbidden tools, tools denied for the satellite,
 /// confirm-only tools inside subagents and on satellites that deny confirmation (taint escalation included), and tools whose own
 /// visibility condition fails. Tools whose tier depends on arguments stay visible; the guard decides per call.
 /// </summary>
@@ -31,6 +32,9 @@ public sealed class ToolVisibilityFilter(IToolRegistry registry, IRiskEngine ris
     {
         if (!templates.For(context).Allows(tool.Id))
             return VisibilityVerdict.Hidden("template_denied");
+
+        if (tool.Tool.PinState != ToolPinState.Approved)
+            return VisibilityVerdict.Hidden("pin_pending");
 
         HashSet<RiskTier> tiers = [.. riskEngine.GetProfile(tool).PossibleTiers];
         if (context.Taint.IsTainted && tool.Descriptor.Persists && tiers.Remove(RiskTier.Safe))

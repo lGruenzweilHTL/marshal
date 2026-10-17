@@ -218,6 +218,32 @@ package "Conversations & Runs" {
     decided_at : DateTimeOffset
   }
 
+  entity PendingInputRequest <<pending_input_requests>> {
+    * id : InputRequestId <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    session_id : SessionId <<FK>>
+    task_id : TaskId <<FK>>  <<task resumed with the outcome>>
+    satellite_id : string
+    run_id : RunId  <<run that asked; no FK (retention)>>
+    * server_id : string  <<MCP server>>
+    * tool : string
+    * args : json  <<frozen>>
+    * previous_answers : json  <<answers to earlier requests of the same call>>
+    * mode : form | url
+    * message : string  <<server text, web UI only>>
+    requested_schema : json  <<form mode>>
+    url : string  <<url mode>>
+    server_task_id : string  <<asking server task; answered with tasks/update>>
+    server_task_input_key : string
+    * nonce : string  <<unique>>
+    * language : de | en
+    * created_at : DateTimeOffset
+    * expires_at : DateTimeOffset  <<approval TTL>>
+    * status : pending | answered | declined | expired | dropped
+    decided_at : DateTimeOffset
+  }
+
   entity FollowUp {
     * id : Guid <<PK>>
     --
@@ -439,6 +465,41 @@ package "Integrations & Secrets" {
     <<unique (owner_id, name) where owner_id is not null>>
   }
 
+  entity McpToolPin <<mcp_tool_pins>> {
+    * server_id : string <<PK>>
+    * tool_name : string <<PK>>
+    --
+    * fingerprint : string  <<SHA-256 of the latest definition>>
+    * state : approved | pending | rejected
+    approved_fingerprint : string  <<null for a new tool>>
+    previous_definition_json : string  <<last approved definition while a change waits>>
+    * current_definition_json : string  <<canonical JSON>>
+    * first_seen : DateTimeOffset
+    decided_at : DateTimeOffset
+    decided_by : OwnerId  <<no FK>>
+    <<index (state)>>
+    <<instance configuration: no owner column>>
+  }
+
+  entity McpTaskHandle <<mcp_task_handles>> {
+    * id : Guid <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    * server_id : string  <<MCP server>>
+    * server_task_id : string  <<the server's task id>>
+    * tool : string
+    * task_id : TaskId <<FK>>  <<waiting task resumed with the outcome>>
+    * language : de | en  <<of the calling turn>>
+    taint_kind : string  <<null when the tool is trusted>>
+    poll_interval_ms : long  <<server's suggestion>>
+    * asked_inputs : json  <<input request keys already asked>>
+    * polls : int  <<backoff>>
+    * next_poll_at : DateTimeOffset
+    * created_at : DateTimeOffset
+    <<unique (server_id, server_task_id)>>
+    <<index (next_poll_at)>>
+  }
+
   entity MailAccount <<mail_accounts>> {
     * id : MailAccountId <<PK>>
     --
@@ -513,6 +574,11 @@ User ||--|| UserPreferences
 User ||--o{ Session
 User ||--o{ Run
 User ||--o{ PendingAction
+User ||--o{ PendingInputRequest
+Session |o--o{ PendingInputRequest
+AgentTask |o--o{ PendingInputRequest
+User ||--o{ McpTaskHandle
+AgentTask ||--o{ McpTaskHandle
 User ||--o{ Project
 User ||--o{ Chunk
 User ||--o{ AgentTask

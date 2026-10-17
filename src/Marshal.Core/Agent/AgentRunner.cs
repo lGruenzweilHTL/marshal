@@ -7,13 +7,17 @@ using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Conversation;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
+using Marshal.Abstractions.InputRequests;
 using Marshal.Abstractions.Models;
 using Marshal.Abstractions.Runs;
+using Marshal.Abstractions.Sessions;
 using Marshal.Abstractions.Templates;
 using Marshal.Abstractions.Tools;
+using Marshal.Core.AiTasks;
 using Marshal.Core.Context;
 using Marshal.Core.Guard;
 using Marshal.Core.Models;
+using Marshal.Core.Tools;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -179,31 +183,35 @@ public sealed partial class AgentRunner(
 
         if (request.FixedReply is not null)
         {
-            if (request.Events is not null)
-                await request.Events.WriteAsync(new DeltaEvent(request.FixedReply), ct);
-
+            await transcript.EmitAsync(new DeltaEvent(request.FixedReply), ct);
             return new LoopResult(request.FixedReply, null, RunOutcome.Ok, null);
         }
 
         AgentTemplate template = templates.For(context);
         ModelTier tier = template.ModelTier ?? (context.InputMode == InputMode.Voice ? ModelTier.Fast : ModelTier.Standard);
         int maxSteps = template.MaxSteps ?? agentOptions.Value.MaxSteps;
-        Result<RoutedModel> routed = router.Route(new ModelRequest(tier, Tools: true));
+        bool vision = request.UserAttachments.Count > 0;
+        Result<RoutedModel> routed = router.Route(new ModelRequest(tier, Vision: vision, Tools: true));
         if (routed.IsFailure)
-            return new LoopResult(FixedReplies.ModelUnavailable(context.Language), null, RunOutcome.Error, "model_unavailable");
+            return new LoopResult(FixedReplies.ModelUnavailable(context.Language), null, RunOutcome.Error, vision ? AgentRunRequest.NoVisionModelReason : "model_unavailable");
+
+        // Images are untrusted input: the guard sees the taint from the first tool call on.
+        if (vision)
+            context.Taint.Mark(AgentRunRequest.AttachmentTaintKind, 0);
 
         RoutedModel model = routed.Value;
         PendingActionRecord? pending = null;
         int rounds = 0;
+        int inputMark = context.Control.InputRequests.Count;
         while (true)
         {
-            IReadOnlyList<RegisteredTool> visible = pending is null ? await visibility.GetVisibleToolsAsync(context, ct) : [];
+            IReadOnlyList<RegisteredTool> visible = pending is null ? await OfferAsync(context, ct) : [];
             ChatResponse response = await CallModelAsync(model, messages, visible, context, transcript, ct);
             messages.AddRange(response.Messages);
 
             List<FunctionCallContent> calls = [.. response.Messages.SelectMany(message => message.Contents).OfType<FunctionCallContent>()];
             if (calls.Count == 0)
-                return new LoopResult(response.Text, pending, RunOutcome.Ok, null);
+                return await FinishAsync(request, model, response.Text, pending, context, ct);
 
             if (request.Limits is { } limits && Exceeds(limits, context.Usage))
                 return BudgetExceeded(context);
@@ -233,10 +241,56 @@ public sealed partial class AgentRunner(
             // A background task run does not wait for its approval: it ends, and the decision resumes the task.
             if (pending is not null && Suspends(context))
                 return new LoopResult(FixedReplies.AwaitingApproval(context.Language), pending, RunOutcome.Ok, "awaiting_approval");
+
+            // A server asked the user for input: a background run waits for the answer like for an approval; a voice
+            // turn cannot show the form, so it sends the user to the web UI.
+            if (context.Control.InputRequests.Count > inputMark)
+            {
+                foreach (InputRequestId id in context.Control.InputRequests.Skip(inputMark))
+                    await transcript.EmitAsync(new InputRequestEvent(id), ct);
+                inputMark = context.Control.InputRequests.Count;
+                if (Suspends(context))
+                    return new LoopResult(FixedReplies.AwaitingInput(context.Language), null, RunOutcome.Ok, "awaiting_input");
+                if (context.InputMode == InputMode.Voice)
+                    return new LoopResult(FixedReplies.InputInWebUi(context.Language), null, RunOutcome.Ok, "awaiting_input");
+            }
         }
     }
 
-    private bool Suspends(MarshalExecutionContext context) => approvals is not null && context.TaskId is not null && !context.IsInteractive;
+    // A requested structure is shaped from the final reply with the run's model; those calls are steps of this run.
+    private async Task<LoopResult> FinishAsync(AgentRunRequest request, RoutedModel model, string reply, PendingActionRecord? pending, MarshalExecutionContext context, CancellationToken ct)
+    {
+        if (request.Structure is not { } structure)
+            return new LoopResult(reply, pending, RunOutcome.Ok, null);
+        if (shaper is null)
+            throw new InvalidOperationException("A structured run needs an IStructuredOutputShaper.");
+
+        Result<JsonElement> shaped = await shaper.ShapeAsync(new StructuredOutputRequest(model, request.UserText ?? "", reply, structure), context, ct);
+        return shaped.IsSuccess
+            ? new LoopResult(reply, pending, RunOutcome.Ok, null) { Data = shaped.Value }
+            : new LoopResult(reply, pending, RunOutcome.Error, AgentRunRequest.InvalidOutputReason);
+    }
+
+    private async Task<IReadOnlyList<RegisteredTool>> OfferAsync(MarshalExecutionContext context, CancellationToken ct)
+    {
+        IReadOnlyList<RegisteredTool> visible = await visibility.GetVisibleToolsAsync(context, ct);
+        return selector is null ? visible : selector.Select(visible, context);
+    }
+
+    // The record keeps what was attached, never the bytes.
+    private static ContextNote AttachmentNote(DataContent attachment) => new(
+        AgentRunRequest.AttachmentTaintKind,
+        attachment.MediaType,
+        $"{attachment.Data.Length} bytes, sha256 {Convert.ToHexStringLower(SHA256.HashData(attachment.Data.Span))}");
+
+    private static ChatMessage SystemMessage(SystemPrompt prompt) => prompt.Turn.Length == 0 || prompt.Stable.Length == 0
+        ? new ChatMessage(ChatRole.System, prompt.Text)
+        : new ChatMessage(ChatRole.System, [new TextContent(prompt.Stable), new TextContent(prompt.Turn)]);
+
+    private bool Suspends(MarshalExecutionContext context) => Queues(context) && context.TaskId is not null;
+
+    // A non-interactive run never holds a pending action in its session; its confirmations go to the approval queue.
+    private bool Queues(MarshalExecutionContext context) => approvals is not null && !context.IsInteractive;
 
     // Tool calls need another model call; the budget must leave room for it.
     private static bool Exceeds(RunLimits limits, RunUsage usage) =>

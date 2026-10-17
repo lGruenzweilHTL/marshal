@@ -4,7 +4,7 @@ All notable changes to Marshal are documented here. The format follows [Keep a C
 
 ## [Unreleased]
 
-Development started on 2026-09-28. The latest work in the history is dated 2026-10-13.
+Development started on 2026-09-28. The latest work in the history is dated 2026-10-17.
 
 ### Added
 
@@ -24,6 +24,14 @@ Development started on 2026-09-28. The latest work in the history is dated 2026-
 - Chat history: web conversations rest after the idle time instead of closing and can be continued at any time. `GET /api/v1/conversations` lists them, and the web chat shows voice conversations read-only. Background results of a handoff appear in the conversation they came from.
 - Visible reasoning: per-model `reasoning: off|low|medium|high`, `reasoning` and `tool` stream events for the web UI, a reasoning block and tool timeline in the chat, and reasoning in the run detail. Voice turns never reason.
 - Demo mode (`demo.enabled`): simulated Home Assistant, printer, mail, FreshRSS and notes for unconfigured integrations, seeded sample history, `marshal demo reset` and `marshal demo seed`, and a "Demo" badge.
+- AI tasks: Home Assistant's `ai_task.generate_data` runs through Marshal. `POST /api/v1/ai-tasks` with the `aitasks:write` scope, a built-in `ai_task` template, image attachments that taint the run, structured output validated against the requested schema, and the session source `automation`. Confirm-tier calls go to the approval queue and run on approval.
+- MCP protocol revision 2026-07-28 with fallback to 2025-11-25 and 2025-06-18, and `ttlMs` on tool lists.
+- MCP tool pinning (`pinTools`): new or changed tools stay hidden until an admin approves them in the config view.
+- MCP input requests (elicitation) answered only in the web UI, and MCP server tasks that resume a waiting Marshal task.
+- Health warnings: `GET /api/v1/system/health`, a banner on every web page, the `health` live topic and the `system.health` tool, used by the example briefing.
+- Tool retrieval by namespace (`tools.core`, `tools.retrieval.*`, MCP `description`) and `agent.find_tools`.
+- Spoken fillers before slow tools in voice turns (`voice.fillerThresholdMs`).
+- Time to first delta per run, a voice timeline in the run detail and "slowest first words" sorting in the runs list.
 - Screenshot sweep (`npm run screenshots`) over every web route at phone and desktop width, with layout checks.
 - Docker image, compose file, example `/config` files and clean startup failure messages that list every configuration problem.
 

@@ -3,11 +3,14 @@ using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Displays;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
+using Marshal.Abstractions.Health;
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.InputRequests;
 using Marshal.Abstractions.LiveEvents;
 using Marshal.Abstractions.Mcp;
 using Marshal.Abstractions.Models;
 using Marshal.Abstractions.Music;
+using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Satellites;
 using Marshal.Abstractions.Secrets;
@@ -23,6 +26,7 @@ using Marshal.Core.Music;
 using Marshal.Core.Conversation;
 using Marshal.Core.Execution;
 using Marshal.Core.Guard;
+using Marshal.Core.Health;
 using Marshal.Core.Identity;
 using Marshal.Core.LiveEvents;
 using Marshal.Core.Mcp;
@@ -90,9 +94,18 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton(provider => provider.GetRequiredService<IEmbeddingGeneratorFactory>().Create(
             provider.GetRequiredService<IOptions<ModelRoutingOptions>>().Value.Embedding!));
 
+        services.AddSingleton(new ToolNamespace("agent", "Marshal itself: skills, delegating to subagents, the advisor, finding more tools, moving work to the background"));
         services.AddSingleton<ITool, AskAdvisorTool>();
+        services.AddSingleton<ITool>(provider => new SystemHealthTool(provider.GetService<ISystemHealth>()));
+        services.AddSingleton(new ToolNamespace("system", "Marshal's own health: problems with integrations, configuration and approvals that need an admin"));
         services.AddSingleton<IToolSource, BuiltInToolSource>();
         services.AddSingleton<IToolRegistry, ToolRegistry>();
+        services.AddSingleton<INamespaceEmbeddings, CachedNamespaceEmbeddings>();
+        services.AddSingleton<IToolSelector, NamespaceToolSelector>();
+        services.AddSingleton<ITool>(provider => new FindToolsTool(
+            () => provider.GetRequiredService<IToolVisibilityFilter>(),
+            provider.GetRequiredService<IToolSelector>(),
+            provider.GetRequiredService<IOptions<ToolsOptions>>()));
 
         services.AddHttpClient(McpTransportFactory.HttpClientName);
         services.AddSingleton(provider => new YamlMcpServerCatalog(
@@ -105,7 +118,25 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<IMcpServerCatalog>(provider => provider.GetRequiredService<YamlMcpServerCatalog>());
         services.AddSingleton<IMcpTransportFactory, McpTransportFactory>();
         services.AddSingleton(McpReconnectPolicy.Default);
-        services.AddSingleton<McpToolSources>();
+        services.AddSingleton(provider => new McpToolPinner(
+            provider.GetRequiredService<IMcpToolPins>(),
+            provider.GetRequiredService<TimeProvider>(),
+            provider.GetService<IInstanceOwner>(),
+            provider.GetService<INotificationSender>(),
+            provider.GetService<IUserProfileProvider>(),
+            provider.GetRequiredService<ILogger<McpToolPinner>>()));
+        services.AddSingleton(provider => new McpToolSources(
+            provider.GetRequiredService<IMcpServerCatalog>(),
+            provider.GetRequiredService<IMcpTransportFactory>(),
+            provider.GetRequiredService<ILoggerFactory>(),
+            provider.GetRequiredService<McpReconnectPolicy>(),
+            provider.GetRequiredService<TimeProvider>(),
+            provider.GetRequiredService<McpToolPinner>(),
+            // Resolved per request: the queue needs the tool registry, which needs these sources.
+            () => provider.GetService<IInputRequestQueue>(),
+            () => provider.GetService<IMcpTaskTracker>()));
+        services.AddSingleton<IMcpTaskClient>(provider => provider.GetRequiredService<McpToolSources>());
+        services.AddSingleton<IHealthWarningProvider, McpPendingToolWarnings>();
         services.AddSingleton<IToolSourceProvider>(provider => provider.GetRequiredService<McpToolSources>());
         services.AddSingleton<ISecretReferenceSource, McpSecretReferences>();
 

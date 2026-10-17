@@ -4,9 +4,13 @@ import { useI18n } from 'vue-i18n'
 import type { Schemas } from '../api/client'
 import { useApi } from '../api/inject'
 import { useLoad } from '../api/useLoad'
+import McpToolApprovals from './McpToolApprovals.vue'
 import { Badge, Banner, Card, DataTable, LoadBoundary, Page, PageHeader, Section, useDesktop, type Tone } from '../ui'
 
-/** Read-only view of `/config` and `marshal.yaml` for admins: what loaded, what was skipped and why. Secrets by name only. */
+/**
+ * Read-only view of `/config` and `marshal.yaml` for admins: what loaded, what was skipped and why. Secrets by name only.
+ * The only write action is deciding MCP tool approvals.
+ */
 type Summary = Schemas['ConfigSummary']
 
 const api = useApi()
@@ -99,6 +103,7 @@ const serverSecrets = (server: Schemas['McpServerSummary']) => list([...(server.
             </Section>
 
             <Section id="mcp" :title="t('system.config.mcp')" :count="data.mcpServers.length">
+              <McpToolApprovals @decided="summary.refresh()" />
               <p v-if="!data.mcpServers.length" class="t-body-s ink-3">{{ t('system.config.empty.mcp') }}</p>
               <Card v-else flush>
                 <DataTable :columns="columns.mcp" :rows="data.mcpServers" :row-key="(server) => server.id" :label="t('system.config.mcp')" row-attribute="server">

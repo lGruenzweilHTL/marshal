@@ -45,12 +45,12 @@ src/                         .NET projects
   Marshal.Api/               ASP.NET host: REST + SSE, auth, serves the SPA
   Marshal.Abstractions/      small shared interfaces (providers, channels, executors, ...)
   Marshal.Core/              agent harness: loop, tool registry, risk engine + guard,
-                             context builder, model router, sessions
+                             context builder, model router, sessions, AI task runner + structured output shaper
   Marshal.Memory/            memory chunks, versions and edges, hybrid retrieval, project activation,
                              consolidation (entities and migrations live in Marshal.Data)
   Marshal.Tasks/             durable tasks, scheduler + worker pool, event bus, trigger matcher, deliveries,
-                             notifications, approval queue, follow-ups, executors, system jobs,
-                             webhook ingest (Uptime Kuma and Proxmox normalizers)
+                             notifications, approval queue, input requests, MCP server task tracker, follow-ups,
+                             executors, system jobs, webhook ingest (Uptime Kuma and Proxmox normalizers)
   Marshal.Integrations.HomeAssistant/  HA REST + websocket client, registry and state cache, target resolver,
                              area context, timer, places (zone) and energy tools, time zone source, display player,
                              music (Music Assistant player and music tools)
@@ -162,7 +162,7 @@ No mocking or assertion libraries — use hand-written fakes from `Marshal.Testi
 | Package | Purpose |
 |---|---|
 | `pytest-homeassistant-custom-component` | Tests for the HA custom integration (`uv run pytest` in `ha/`); pins the HA version tested against. The component itself has no requirements (it uses HA's shared aiohttp session) |
-| `hassil`, `home-assistant-intents`, `gazetteer-matcher`, `pymicro-vad`, `pyspeex-noise`, `mutagen`, `ha-ffmpeg` (dev) | Requirements of the HA components the tests set up (`conversation`, `assist_pipeline`, `tts`); keep in step with the pinned HA release |
+| `hassil`, `home-assistant-intents`, `gazetteer-matcher`, `pymicro-vad`, `pyspeex-noise`, `mutagen`, `ha-ffmpeg`, `PyTurboJPEG` (dev) | Requirements of the HA components the tests set up (`conversation`, `assist_pipeline`, `tts`, `ai_task` with `camera`); keep in step with the pinned HA release |
 
 ## Conventions
 

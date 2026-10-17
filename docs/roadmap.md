@@ -4,21 +4,25 @@ What Marshal can do today and which ideas are deferred. This page is a summary, 
 
 ## What exists
 
-All planned features through the third roadmap wave are implemented and archived, followed by chat history, visible reasoning and demo mode. No change is currently open in `openspec/changes/`.
+All planned features through the third roadmap wave are implemented and archived, followed by chat history, visible reasoning, demo mode, Home Assistant AI tasks, MCP tool pinning with input requests and server tasks, and tool retrieval with voice latency work.
 
 | Area | Capabilities |
 |---|---|
-| Voice and chat | Assist conversation agent, streaming replies, voice follow-ups, web chat with conversation history, background results in place, reasoning and tool steps |
-| Home | Home Assistant devices, areas, timers, places, energy statistics, to-do lists through MCP, location reminders |
+| Voice and chat | Assist conversation agent, streaming replies, spoken fillers before slow tools, voice follow-ups, web chat with conversation history, background results in place, reasoning and tool steps |
+| Home | Home Assistant devices, areas, timers, places, energy statistics, to-do lists through MCP, location reminders, AI tasks for automations |
 | Printers | Moonraker state, snapshots, inspection, print babysitting |
 | Information | Mail (read and draft only), FreshRSS, git-backed notes, daily briefing |
 | Media | Seerr requests, read-only Sonarr and Radarr, Jellyfin links, Music Assistant playback |
 | Homelab | Uptime Kuma and Proxmox events, read-only Proxmox, read-only GitHub |
 | Artifacts and displays | Artifact store and viewer, code highlighting, 3D renders, show on the nearest display |
 | Memory and tasks | Hybrid memory retrieval, projects, consolidation, scheduled and event-driven tasks, approval queue |
-| Platform | Local and OIDC login, machine tokens, secret store, skills, agent templates, MCP servers, run recording, demo mode |
+| Platform | Local and OIDC login, machine tokens, secret store, skills, agent templates, MCP servers (tool pinning, input requests, server tasks), tool retrieval, health warnings, run recording with voice timelines, demo mode |
 
 See the [changelog](../CHANGELOG.md) for the full list.
+
+## In progress
+
+These changes are proposed in `openspec/changes/` and not implemented yet: CalDAV calendars, web search through SearXNG, Marshal as an MCP server, MCP Apps, quarantined extraction of untrusted content, memory with valid time and idle-time work, evals and the learning toggle, proactive suggestions and learning, and OpenTelemetry GenAI traces.
 
 ## Deferred
 

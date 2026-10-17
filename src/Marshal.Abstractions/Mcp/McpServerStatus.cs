@@ -11,4 +11,7 @@ public sealed record McpServerStatus(string ServerId, McpServerState State, stri
 {
     /// <summary>Problems that leave the server usable, e.g. an <c>untrustedTools</c> glob that matches no tool.</summary>
     public IReadOnlyList<string> Warnings { get; init; } = [];
+
+    /// <summary><c>untrustedTools</c> globs that match none of the server's tools.</summary>
+    public IReadOnlyList<string> UnmatchedUntrustedTools { get; init; } = [];
 }

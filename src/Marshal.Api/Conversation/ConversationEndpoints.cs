@@ -66,7 +66,7 @@ internal static partial class ConversationEndpoints
         await foreach (TurnEvent turnEvent in events.Reader.ReadAllAsync(ct))
         {
             // Reasoning and tool steps are for the web UI; token clients keep the v1 stream unchanged.
-            if (!webClient && turnEvent is ReasoningEvent or ToolEvent)
+            if (!webClient && turnEvent is ReasoningEvent or ToolEvent or InputRequestEvent)
                 continue;
 
             yield return turnEvent switch
@@ -76,6 +76,7 @@ internal static partial class ConversationEndpoints
                 ArtifactEvent shown => new SseItem<object>(new TurnArtifact(shown.Artifact.Id.ToString(), shown.Artifact.Name, shown.Artifact.Kind, shown.Artifact.Url), "artifact"),
                 ReasoningEvent reasoning => new SseItem<object>(new TurnReasoning(reasoning.Text), "reasoning"),
                 ToolEvent tool => new SseItem<object>(new TurnTool(tool.CallId, tool.Tool, tool.Arguments, tool.State, tool.DurationMs, tool.Result), "tool"),
+                InputRequestEvent input => new SseItem<object>(new TurnInputRequest(input.Id.ToString()), "input_request"),
                 _ => throw new InvalidOperationException($"Unknown turn event {turnEvent.GetType().Name}."),
             };
         }

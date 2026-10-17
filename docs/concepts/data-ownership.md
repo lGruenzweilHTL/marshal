@@ -19,6 +19,7 @@ Every user-owned table, child tables included, has a non-null `owner_id` of type
 - ASP.NET Identity tables (they hold the users themselves)
 - `UserPreferences`, keyed by the user's id
 - `Secret`, where a null owner means an instance-scoped secret
+- MCP tool pins, which are instance configuration and have no owner column; the MCP client reads them regardless of the execution context
 
 A null owner means "instance-scoped" only on `Secret`. Shared household data, when it arrives, will use an explicit scope column instead of a missing owner.
 

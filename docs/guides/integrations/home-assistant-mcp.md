@@ -60,6 +60,16 @@ untrustedTools: ["todo__get_items"]
 
 Reading a list then taints the run (source `mcp:ha`), while home control stays trusted. `untrustedTools` takes globs on the tool name HA reports. A glob that matches no tool shows a warning on `/health` and the config view. You cannot combine `untrusted: true` with `untrustedTools`: Marshal rejects the file. See [untrusted content](../../concepts/untrusted-content.md).
 
+### 4. Decide on tool pinning
+
+Marshal pins each HA tool's definition at first discovery. HA's tool list changes when you expose entities or add intents, and every new or changed tool then waits for your approval under System > Configuration before the model sees it. If that is too much noise, turn pinning off for this server:
+
+```yaml
+pinTools: false
+```
+
+Pinning catches a tool definition that changes after you set Marshal up; it does not judge the first definitions. See [tool pinning](../../configuration/mcp-servers.md#tool-pinning).
+
 ## Tool names
 
 Tools use the server id as namespace, without an `mcp.` prefix.

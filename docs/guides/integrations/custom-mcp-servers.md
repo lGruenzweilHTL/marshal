@@ -53,6 +53,7 @@ Home Assistant's own MCP server uses the same format, see [Home Assistant MCP](h
 | `envSecrets` | list of `variable` and `secret` | Environment variables of a `stdio` server filled from secrets. |
 | `untrusted` | boolean | Default `false`. Marks every tool's output as third-party data. |
 | `untrustedTools` | list of globs | Marks only matching tools (by the name the server reports). Not allowed together with `untrusted: true`. |
+| `pinTools` | boolean | Default `true`. A tool that is new or changed after the first discovery waits for your approval. |
 
 Unknown keys are errors. Config never holds secret values, and a literal secret in the file fails loading. See the full reference in [`mcp-servers`](../../configuration/mcp-servers.md).
 
@@ -86,6 +87,26 @@ If a server returns text that other people control, such as web search or shared
 - `untrustedTools: ["todo__get_items"]` for single tools, so home control stays trusted.
 
 A run that calls such a tool is tainted with source `mcp:<id>`, its results are wrapped as data, and memory and task writes in that run need confirmation. A glob that matches no reported tool shows a warning for that server on the config view and `/health`. See [untrusted content](../../concepts/untrusted-content.md).
+
+## Approve changed tools
+
+Marshal pins every tool definition the first time it sees the server. When the server later adds a tool or changes one, that tool is hidden until you decide:
+
+1. A notification and the health banner say that a tool waits for approval.
+2. Open System > Configuration. The pending tool shows its previous and its current definition side by side.
+3. Read the description closely. A changed description is how a compromised server would try to instruct the model.
+4. Approve or reject. The decision applies from the next turn.
+
+Set `pinTools: false` for a server whose tool list changes often by design. See [tool pinning](../../configuration/mcp-servers.md#tool-pinning).
+
+## Input and background work
+
+Some servers ask you for input during a call, or continue a long call in the background:
+
+- **Input requests** (MCP elicitation) never reach the model. Marshal asks you in the web UI and sends a push with a link. Answer in the Inbox; the call is repeated once with your answer.
+- **Server tasks** (MCP tasks extension) become a waiting task. Marshal tells you the work continues and delivers the result when the server reports it done, where you asked.
+
+Details: [input requests](../../configuration/mcp-servers.md#input-requests) and [server tasks](../../configuration/mcp-servers.md#server-tasks).
 
 ## Failure handling
 

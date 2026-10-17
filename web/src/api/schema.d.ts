@@ -277,6 +277,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The current health warnings (codes, components, messages in German and English). Changes are published on the health live topic. */
+        get: operations["GetSystemHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/config": {
         parameters: {
             query?: never;
@@ -581,6 +598,40 @@ export interface paths {
         /** Replaces the user's preferences. */
         put: operations["UpdatePreferences"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/config/mcp-tools/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** MCP tools that are new or changed since the last approval, with the previous and current definitions. */
+        get: operations["ListPendingMcpTools"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/config/mcp-tools/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approves (the current definition becomes trusted) or rejects (hidden until it changes again) a waiting MCP tool. */
+        post: operations["DecideMcpTool"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1133,6 +1184,58 @@ export interface paths {
         put?: never;
         /** Resumes the task with the rejection; nothing is executed. */
         post: operations["RejectApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/approvals/inputs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pending input requests of MCP servers, oldest first. */
+        get: operations["ListInputRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/approvals/inputs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One input request in any status. */
+        get: operations["GetInputRequest"];
+        put?: never;
+        /** Answers an input request (form fields, or null when a URL request is done), repeats the frozen call once and resumes the waiting task with its outcome. */
+        post: operations["AnswerInputRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/approvals/inputs/{id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Declines an input request; nothing is sent to the server and the waiting task resumes with the refusal. */
+        post: operations["DeclineInputRequest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1797,6 +1900,33 @@ export interface components {
         ExecutorSessionStatus: "starting" | "running" | "done" | "failed" | "cancelled";
         /** @enum {unknown} */
         GuardDecision: "safe" | "pending" | "confirmedByKeyword" | "judgePositive" | "judgeNeutral" | "judgeNegative" | "escalatedByTaint" | "denied" | "expired" | null;
+        /** @description A message in Marshal's two languages. */
+        HealthMessageView: {
+            /** @description German. */
+            de: string;
+            /** @description English. */
+            en: string;
+        };
+        /** @enum {unknown} */
+        HealthSeverity: "warning" | "error";
+        /** @description One health warning. */
+        HealthWarningView: {
+            /** @description What is affected, e.g. `database`, `mcp:paperless`, `config:risk.yaml`. */
+            component: string;
+            /** @description Stable code, e.g. `mcp.unreachable`, `mcp.tool_pending`. */
+            code: string;
+            /** @description `warning` or `error`. */
+            severity: components["schemas"]["HealthSeverity"];
+            /** @description Marshal-authored message in German and English; never text from external systems. */
+            message: components["schemas"]["HealthMessageView"];
+            /** @description Path in the web UI with details (e.g. `/system/config`), if any. */
+            link: null | string;
+            /**
+             * Format: date-time
+             * @description When the warning first appeared.
+             */
+            since: string;
+        };
         HeaterState: {
             /** Format: double */
             temperature: number;
@@ -1807,8 +1937,54 @@ export interface components {
         };
         /** Format: binary */
         IFormFile: string;
+        IFormFileCollection: null | components["schemas"]["IFormFile"][];
+        /** @description The user's answer to an input request. */
+        InputAnswerRequest: {
+            /** @description Form mode: an object with the requested fields. URL mode: null once the page is done. */
+            content: null | components["schemas"]["JsonElement"];
+        };
         /** @enum {unknown} */
         InputMode: "text" | "voice" | null;
+        /**
+         * @description An MCP server's request for the user's input, with the interrupted call frozen. Message, schema and URL are the
+         *     server's text: show them as plain text, and open the URL only when the user chooses to.
+         */
+        InputRequestItem: {
+            /** @description Input request id. */
+            id: string;
+            /** @description MCP server that asks. */
+            serverId: string;
+            /** @description The interrupted tool; answering repeats exactly this call once. */
+            tool: string;
+            /** @description `form` (answer the requested fields) or `url` (open the page, then say done). */
+            mode: components["schemas"]["InputRequestMode"];
+            /** @description What the server asks. */
+            message: string;
+            /** @description Form mode: object schema with string, number, integer, boolean and enum properties. */
+            requestedSchema: null | components["schemas"]["JsonElement"];
+            /** @description URL mode: the page to open. */
+            url: null | string;
+            /** @description Conversation the request came from, if any. */
+            sessionId: null | string;
+            /** @description The task that resumes with the outcome. */
+            taskId: null | string;
+            /** @description `pending`, `answered`, `declined`, `expired` or `dropped`. */
+            status: components["schemas"]["InputRequestStatus"];
+            /**
+             * Format: date-time
+             * @description When the server asked.
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description When the request expires (nothing is sent to the server then).
+             */
+            expiresAt: string;
+        };
+        /** @enum {unknown} */
+        InputRequestMode: "form" | "url";
+        /** @enum {unknown} */
+        InputRequestStatus: "pending" | "answered" | "declined" | "expired" | "dropped";
         JobQueueStatus: {
             state: string;
             jobs: components["schemas"]["QueuedJob"][];
@@ -1934,6 +2110,37 @@ export interface components {
             untrustedTools: string[];
             /** @description Problems that leave the server usable, e.g. an `untrustedTools` glob that matches no tool. */
             warnings: string[];
+        };
+        /** @description An MCP tool pin with its definitions. */
+        McpToolApproval: {
+            /** @description MCP server id. */
+            serverId: string;
+            /** @description Tool name as the server reports it. */
+            toolName: string;
+            /** @description `new` or `changed`. */
+            change: components["schemas"]["McpToolChange"];
+            /** @description `approved`, `pending` or `rejected`. */
+            state: components["schemas"]["ToolPinState"];
+            /** @description The last approved definition (name, title, description, inputSchema, outputSchema, annotations); null for a new tool. */
+            previous: null | components["schemas"]["JsonElement"];
+            /** @description The definition the server reports now. Untrusted server text: show it, never render it as HTML. */
+            current: components["schemas"]["JsonElement"];
+            /**
+             * Format: date-time
+             * @description When the server first reported the current definition.
+             */
+            firstSeen: string;
+        };
+        /** @enum {unknown} */
+        McpToolChange: "new" | "changed";
+        /** @description A decision on a waiting MCP tool. */
+        McpToolDecisionRequest: {
+            /** @description MCP server id. */
+            serverId: string;
+            /** @description Tool name as the server reports it. */
+            toolName: string;
+            /** @description True approves the current definition, false rejects it. */
+            approve: boolean;
         };
         MemoryAuditReport: {
             stale: components["schemas"]["MemoryChunk"][];
@@ -2477,6 +2684,11 @@ export interface components {
             /** Format: uri */
             authorizationUrl: string;
         };
+        /** @description The current health warnings. */
+        SystemHealthView: {
+            /** @description Errors first, then by component and code; empty when everything is fine. */
+            warnings: components["schemas"]["HealthWarningView"][];
+        };
         /** @description Version information. */
         SystemInfo: {
             /** @description App version (informational version, including the commit when built from source). */
@@ -2692,6 +2904,8 @@ export interface components {
         };
         /** @enum {unknown} */
         ToolEventState: "running" | "ok" | "error" | "denied" | "pending";
+        /** @enum {unknown} */
+        ToolPinState: "approved" | "pending" | "rejected";
         TurnToolStep: {
             tool: string;
             arguments: string;
@@ -3090,6 +3304,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SystemInfo"];
+                };
+            };
+        };
+    };
+    GetSystemHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemHealthView"];
                 };
             };
         };
@@ -3688,6 +3922,50 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ListPendingMcpTools: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpToolApproval"][];
+                };
+            };
+        };
+    };
+    DecideMcpTool: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpToolDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpToolApproval"];
+                };
             };
         };
     };
@@ -4581,6 +4859,96 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApprovalDecision"];
+                };
+            };
+        };
+    };
+    ListInputRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InputRequestItem"][];
+                };
+            };
+        };
+    };
+    GetInputRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InputRequestItem"];
+                };
+            };
+        };
+    };
+    AnswerInputRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InputAnswerRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InputRequestItem"];
+                };
+            };
+        };
+    };
+    DeclineInputRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InputRequestItem"];
                 };
             };
         };

@@ -12,6 +12,8 @@ using Marshal.Tasks.Approvals;
 using Marshal.Tasks.Events;
 using Marshal.Tasks.Executors;
 using Marshal.Tasks.FollowUps;
+using Marshal.Tasks.InputRequests;
+using Marshal.Tasks.Mcp;
 
 namespace Marshal.Tasks.Running;
 
@@ -98,8 +100,8 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
         return input.ToString();
     }
 
-    // Approval decisions are written by the server; they are untrusted only when the approved action returned
-    // untrusted content. A spoken reply is the user's own. Executor outcomes and event payloads can carry
+    // Approval decisions, input request and MCP server task outcomes are written by the server; they are untrusted
+    // only when the executed call returned untrusted content. A spoken reply is the user's own. Executor outcomes and event payloads can carry
     // third-party text, except events whose source declares them trusted in code.
     private static string? PayloadTaint(TaskRecord task)
     {
@@ -107,6 +109,10 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
             return null;
         if (Payload(task, ApprovalQueue.PayloadKey) is { } approval)
             return approval.TryGetProperty(ApprovalQueue.TaintKey, out JsonElement taint) && taint.ValueKind == JsonValueKind.String ? taint.GetString() : null;
+        if (Payload(task, InputRequestQueue.PayloadKey) is { } input)
+            return input.TryGetProperty(InputRequestQueue.TaintKey, out JsonElement taint) && taint.ValueKind == JsonValueKind.String ? taint.GetString() : null;
+        if (Payload(task, PollingMcpTaskTracker.PayloadKey) is { } serverTask)
+            return serverTask.TryGetProperty(PollingMcpTaskTracker.TaintKey, out JsonElement taint) && taint.ValueKind == JsonValueKind.String ? taint.GetString() : null;
         if (Payload(task, FollowUpReplies.PayloadKey) is not null)
             return null;
         if (Payload(task, ExecutorService.PayloadKey) is not null)
@@ -136,6 +142,8 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
 
     private static string Describe(TaskRecord task) =>
         Payload(task, ApprovalQueue.PayloadKey) is not null ? "an approval decision"
+        : Payload(task, InputRequestQueue.PayloadKey) is not null ? "the outcome of a tool call that waited for the user's input"
+        : Payload(task, PollingMcpTaskTracker.PayloadKey) is not null ? "the MCP server task it waited for finishing"
         : Payload(task, FollowUpReplies.PayloadKey) is not null ? "the user's spoken reply to your question"
         : Payload(task, ExecutorService.PayloadKey) is not null ? "the executor session it started finishing"
         : task.Trigger.Kind switch

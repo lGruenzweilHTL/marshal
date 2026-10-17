@@ -34,7 +34,8 @@ Before every model call, Marshal removes a tool from the list when any of these 
 | Denied for the satellite (`denyTools`) | The kids' room satellite has `denyTools: [mail.*]`. |
 | Confirm-only inside a subagent | A subagent has no user to ask, so tools that always need confirmation are hidden. |
 | Confirm-only on a satellite with `denyConfirm` for it | A hallway satellite with `denyConfirm: [printer.*]` sees no confirm-only printer tools. |
-| The tool's own visibility condition fails | `agent.ask_advisor` in voice turns; `mail.list_labels` when no account supports labels; tools of an MCP server that is down. |
+| The tool's own visibility condition fails | `agent.ask_advisor` in voice turns; `mail.list_labels` when no account supports labels; tools of an MCP server that is down; `system.health` without warnings. |
+| The MCP tool waits for approval | A tool that is new or changed after its server's first discovery, until an admin approves it ([tool pinning](../configuration/mcp-servers.md#tool-pinning)). The guard denies calls to it as well. |
 
 "Confirm-only" includes taint escalation. In a tainted run, a tool flagged `persists` that would be `safe` counts as `confirm`, so it disappears in subagents and on satellites that deny confirmation for it.
 

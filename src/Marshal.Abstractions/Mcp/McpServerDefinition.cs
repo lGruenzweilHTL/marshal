@@ -45,6 +45,11 @@ public sealed record McpServerDefinition
     /// </summary>
     public IReadOnlyList<string> UntrustedTools { get; init; } = [];
 
+    /// <summary>
+    /// Pin tool definitions (default): after the first discovery, new or changed tools wait for an admin's approval.
+    /// </summary>
+    public bool PinTools { get; init; } = true;
+
     /// <summary>File the server was loaded from.</summary>
     public required string File { get; init; }
 }

@@ -3,6 +3,8 @@ using Marshal.Abstractions.Events;
 using Marshal.Abstractions.Executors;
 using Marshal.Abstractions.FollowUps;
 using Marshal.Abstractions.Guard;
+using Marshal.Abstractions.InputRequests;
+using Marshal.Abstractions.Mcp;
 using Marshal.Abstractions.LiveEvents;
 using Marshal.Abstractions.Media;
 using Marshal.Abstractions.Notifications;
@@ -18,6 +20,8 @@ using Marshal.Tasks.Deliveries;
 using Marshal.Tasks.Events;
 using Marshal.Tasks.Executors;
 using Marshal.Tasks.FollowUps;
+using Marshal.Tasks.InputRequests;
+using Marshal.Tasks.Mcp;
 using Marshal.Tasks.KillSwitch;
 using Marshal.Tasks.Limits;
 using Marshal.Tasks.Maintenance;
@@ -93,7 +97,12 @@ public static class TasksServiceCollectionExtensions
 
         services.AddSingleton<ApprovalQueue>();
         services.AddSingleton<IApprovalQueue>(provider => provider.GetRequiredService<ApprovalQueue>());
+        services.AddSingleton<InputRequestQueue>();
+        services.AddSingleton<IInputRequestQueue>(provider => provider.GetRequiredService<InputRequestQueue>());
         services.AddSingleton<IHostedService, ApprovalExpiryLoop>();
+        services.AddSingleton<PollingMcpTaskTracker>();
+        services.AddSingleton<IMcpTaskTracker>(provider => provider.GetRequiredService<PollingMcpTaskTracker>());
+        services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<PollingMcpTaskTracker>());
         services.AddSingleton<IHostedService, ApprovalPushActions>();
 
         services.AddOptions<ExecutorOptions>().Bind(configuration.GetSection("executors"))

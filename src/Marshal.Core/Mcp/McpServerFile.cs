@@ -31,6 +31,9 @@ public sealed class McpServerFile
     /// <summary>Globs on reported tool names whose output is third-party content.</summary>
     public List<string> UntrustedTools { get; set; } = [];
 
+    /// <summary>New or changed tools wait for approval after the first discovery (default true).</summary>
+    public bool PinTools { get; set; } = true;
+
     /// <summary>A <c>variable</c> filled from a <c>secret</c> name.</summary>
     public sealed class EnvironmentSecret
     {

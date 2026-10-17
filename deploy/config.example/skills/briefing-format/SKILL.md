@@ -20,6 +20,8 @@ and less than two hours old, answer with its spoken version as it is. Otherwise 
 4. Call `ha_homeassistant__GetLiveContext` for the weather forecast and anything in the house that needs attention
    (open windows, low batteries, a finished washing machine).
 5. Call `memory_recall` with "plans and deadlines for today" for commitments that are not in the calendar.
+6. Call `system_health` when it is in your tools (it is there only while Marshal has warnings) for problems that
+   need the user, such as an MCP tool waiting for approval or an integration that is down.
 
 Leave out any part that has nothing to report; never say "no news from X".
 
@@ -30,7 +32,8 @@ Answer in the user's language, in two parts separated by one blank line.
 **First paragraph: the spoken version.** It is read aloud as it is, so it is exactly one paragraph of plain
 sentences: no lists, no markdown, no links, no ids. It takes 60 to 90 seconds to say (about 150 to 220 words).
 Put the most important thing first: the first appointment and anything with a deadline today, then mail that needs an
-answer, then the weather, then the two or three most interesting feed topics. End with one short sentence offering
+answer, then the weather, then the two or three most interesting feed topics, then one sentence on Marshal's health
+warnings if there are any. End with one short sentence offering
 more detail ("Ask me for more about any of it.").
 
 **Everything after it: the written version** for the inbox and the web UI, in markdown:
@@ -40,5 +43,6 @@ more detail ("Ask me for more about any of it.").
   recipient, subject and the first sentence as a preview.
 - **Feeds**: the long version of the RSS digest, each article with its feed name and a link to the article.
 - **House and weather**: what needs attention and the forecast.
+- **Marshal**: the health warnings, one line each, when there are any.
 
 Keep the written version under 600 words.

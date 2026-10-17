@@ -23,10 +23,10 @@ Every view works at phone width. The views you act on (Home, Inbox, Chat, Printe
 |---|---|---|
 | Act | Home | What needs you first: pending approvals with approve and reject, printer alerts, running tasks and next runs, recent notifications. The kill switch appears while background tasks run. |
 | Act | Chat | Text chat with Marshal. Replies stream in. Markdown, tables and code render; images show only from Marshal's own origin. Artifacts appear inline (images) or as cards that open the viewer. Earlier conversations, typed and spoken, are listed next to the chat. |
-| Act | Inbox | The one place for everything that waits for you: approvals (frozen action, reasons, time left), coding proposals (diff, merge or reject) and the notification history, filterable by outcome. |
+| Act | Inbox | The one place for everything that waits for you: approvals (frozen action, reasons, time left), input requests of MCP servers (a form or a link with "Done"), coding proposals (diff, merge or reject) and the notification history, filterable by outcome. |
 | Act | Printer | Live printer state. |
 | Activity | Tasks | Tasks and watches with status, trigger, next run, budget and latest result. Edit a goal, cancel a task, use the kill switch. |
-| Activity | Runs | What Marshal did, step by step, and why, including the reasoning of each model call (collapsed). |
+| Activity | Runs | What Marshal did, step by step, and why, including the reasoning of each model call (collapsed), the tools each run loaded, and how long voice turns took until the first words. See [runs view](#runs-view). |
 | Activity | Artifacts | Files Marshal produced or received. See [artifacts](../artifacts.md). |
 | Activity | Cost | Model usage and cost. |
 | Memory | Chunks, Projects, Map, Audit | See and edit everything Marshal remembers. See [memory](../memory.md). |
@@ -78,6 +78,12 @@ When a turn ends with a pending action, the chat shows the question with its rea
 ## Configuration view
 
 Admins see the loaded skills, templates, MCP servers (status and tool count), risk rules, models without secrets and satellite profiles, plus the last reload error per file. If a reload of `risk.yaml` failed, the view shows the error and that the previous rules stay active. The view does not edit files.
+
+MCP tools that are new or changed since their server's first discovery wait here for approval, with the previous and the current definition side by side. Approve or reject each one; the decision applies from the next turn. See [tool pinning](../../configuration/mcp-servers.md#tool-pinning).
+
+## Health banner
+
+While Marshal has [health warnings](../../reference/health-endpoints.md#health-warnings), every page shows a banner: in the color of the most severe warning, with the number of warnings, the first message and a link to System. For a single warning, admins also get a link to where it is fixed. Dismiss the banner with its close button; it returns when the set of warnings changes. The banner updates live.
 
 ## Errors
 

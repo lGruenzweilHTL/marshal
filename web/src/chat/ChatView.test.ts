@@ -478,3 +478,32 @@ describe('ChatView', () => {
     })
   })
 })
+
+describe('ChatView input requests', () => {
+  it('shows the form of an input request the reply asked for', async () => {
+    const request = {
+      id: 'i-1',
+      serverId: 'paperless',
+      tool: 'paperless.upload',
+      mode: 'form',
+      message: 'Which correspondent?',
+      requestedSchema: { type: 'object', properties: { correspondent: { type: 'string' } }, required: ['correspondent'] },
+      url: null,
+      sessionId: 's-1',
+      taskId: 't-1',
+      status: 'pending',
+      createdAt: '2026-10-16T08:00:00Z',
+      expiresAt: '2026-10-16T08:10:00Z',
+    }
+    const server = new FakeServer()
+      .handle('POST', turns, () => eventStream([sse('input_request', { id: 'i-1' }), sse('delta', { text: 'Please answer above.' }), final('Please answer above.')]))
+      .on('GET', '/api/v1/approvals/inputs/i-1', 200, request)
+    const wrapper = await mountChat(server)
+
+    await send(wrapper, 'file the letter')
+    await flushPromises()
+
+    expect(wrapper.get('[data-input="i-1"]').text()).toContain('Which correspondent?')
+    expect(wrapper.find('[data-input="i-1"] input[name="correspondent"]').exists()).toBe(true)
+  })
+})

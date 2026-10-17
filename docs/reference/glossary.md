@@ -70,9 +70,15 @@ The terms Marshal's documentation and specifications use, each with one meaning.
 
 **Guard.** The server-side check that decides, for every tool call, whether it runs, needs confirmation or is denied. It repeats the rules that hide tools.
 
+## H
+
+**Health warning.** A problem Marshal reports about itself, with a component, a stable code, a severity and a message Marshal wrote. The web UI shows a banner and `system.health` returns the list. See [health endpoints](health-endpoints.md#health-warnings).
+
 ## I
 
 **Inbox.** Your list of unread notifications. `notifications.inbox_list` and `notifications.inbox_consume` read and clear it.
+
+**Input request.** A question an MCP server asks the user during a tool call (MCP elicitation, a form or a URL). Marshal freezes the call and only the web UI answers; the model never sees the request. See [MCP servers](../configuration/mcp-servers.md#input-requests).
 
 **Instance owner.** The user the instance belongs to. Webhook and CLI actions run as this owner.
 
@@ -154,7 +160,13 @@ The terms Marshal's documentation and specifications use, each with one meaning.
 
 **Taint.** The state of a run that has read untrusted content. It is never cleared within the run, and it raises `persists` tools to the confirm tier.
 
+**Time to first delta.** The time from a turn's request to the first streamed reply text. The runs view calls it "first words".
+
 **Tool.** A function the model can call. It has an id `<namespace>.<name>` and a model name `<namespace>_<name>`. See [tools](tools.md).
+
+**Tool pin.** The stored fingerprint of an MCP tool's definition. A new or changed tool stays hidden until an admin approves it. See [tool pinning](../configuration/mcp-servers.md#tool-pinning).
+
+**Tool retrieval.** Offering the model only the tools of the namespaces a session has loaded, by embedding match, hints or `agent.find_tools`. See [tool visibility](../concepts/tool-visibility.md#tool-retrieval).
 
 **Tool source.** A provider of tools that registers and unregisters as a unit: the built-in tools, an MCP server or a skill.
 
