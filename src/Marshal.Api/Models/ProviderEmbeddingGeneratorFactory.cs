@@ -13,7 +13,9 @@ internal sealed class ProviderEmbeddingGeneratorFactory : IEmbeddingGeneratorFac
 {
     private static readonly Uri _defaultOllama = new("http://localhost:11434");
 
-    public IEmbeddingGenerator<string, Embedding<float>> Create(EmbeddingModelOptions options) => options.Provider switch
+    public IEmbeddingGenerator<string, Embedding<float>> Create(EmbeddingModelOptions options) => ModelTelemetry.Instrument(CreateProvider(options));
+
+    private static IEmbeddingGenerator<string, Embedding<float>> CreateProvider(EmbeddingModelOptions options) => options.Provider switch
     {
         ModelProviders.Ollama => new OllamaApiClient(options.Endpoint ?? _defaultOllama, options.Model),
         ModelProviders.OpenAiCompatible => new OpenAIClient(

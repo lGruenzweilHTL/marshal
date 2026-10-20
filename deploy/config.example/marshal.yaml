@@ -273,6 +273,7 @@ recording:
 
 # telemetry:
 #   otlpEndpoint: "http://otel-collector:4317"
+#   captureContent: false   # true adds inputs, tool arguments, results and replies to spans (personal data)
 
 # Demo mode: simulates Home Assistant, a printer, mail, FreshRSS and notes where they are not configured above, and
 # seeds sample history (conversations, runs, tasks, notifications, an approval, memory) for the owner. Configured

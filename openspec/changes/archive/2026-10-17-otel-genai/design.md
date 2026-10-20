@@ -39,6 +39,8 @@ A constant `GenAiConventions.Version` (the version M.E.AI implements), set as `g
 
 Check first whether the SDK's client already injects `traceparent` into `_meta` from `Activity.Current`. If yes, a test proves it with an in-process server; if not, `McpToolSource` adds `_meta` entries through the SDK's request options using `DistributedContextPropagator.Current`.
 
+Result (task 4.1): `ModelContextProtocol.Core` 2.2.0 injects `traceparent` and `tracestate` into `_meta` of every request, but only from its own client span (activity source `Experimental.ModelContextProtocol`), which exists only while that source is listened to. Without a listener the test failed (no `_meta.traceparent`). Marshal therefore registers the SDK's source in tracing instead of injecting by hand: every request (calls, listing, discovery) carries the context, and the parent of a call's `traceparent` is the SDK's `tools/call` client span, a child of the `execute_tool` span. `McpToolSource` needs no change (task 4.2).
+
 ### 5. Configuration
 
 `telemetry: { otlpEndpoint, captureContent: false }`. The existing key stays; `captureContent` is new, validated as bool, warning logged at startup when true.

@@ -574,6 +574,30 @@ public sealed class McpToolSourceTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Invoke_InToolSpan_RequestMetaCarriesTraceContext()
+    {
+        // The SDK injects the context of its own client span, a child of the tool call's span.
+        using var collector = new ActivityCollector(RunTracing.SourceName, McpToolSource.TracingSourceName);
+        _server.WithTool("intent__HassTurnOn");
+        ITool tool = Assert.Single(await (await StartAsync(FakeMcpServerCatalog.Server("ha"))).GetToolsAsync(Ct));
+
+        System.Diagnostics.ActivitySpanId toolSpan;
+        System.Diagnostics.ActivityTraceId traceId;
+        using (System.Diagnostics.Activity span = RunTracing.StartTool("ha_intent__HassTurnOn", "call-1")!)
+        {
+            span.TraceStateString = "marshal=1";
+            (traceId, toolSpan) = (span.TraceId, span.SpanId);
+            await tool.InvokeAsync(Invocation("{}"), Ct);
+        }
+
+        System.Diagnostics.Activity client = Assert.Single(collector.Trace(traceId), activity => activity.Source.Name == McpToolSource.TracingSourceName && activity.Kind == System.Diagnostics.ActivityKind.Client);
+        Assert.Equal(toolSpan, client.ParentSpanId);
+        CallToolRequestParams request = Assert.Single(_server.CallRequests);
+        Assert.Equal($"00-{traceId}-{client.SpanId}-01", request.Meta?["traceparent"]?.GetValue<string>());
+        Assert.Equal("marshal=1", request.Meta?["tracestate"]?.GetValue<string>());
+    }
+
+    [Fact]
     public async Task Invoke_ToolError_IsFailedResult()
     {
         _server.WithTool("run");

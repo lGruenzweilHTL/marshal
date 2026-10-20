@@ -54,8 +54,14 @@ Marshal exports over OTLP gRPC. Leave the key unset to export nothing. The same 
 
 ### 2. What you get
 
-- Traces from the activity source `Marshal.Runs`: one trace per run named `marshal.run`, with one child span per step (`marshal.context`, `marshal.model_call`, `marshal.tool_call`, `marshal.reply`). Spans carry ids and metadata only (run id, source, input mode, trigger, outcome, tainted flag, model, tier, tool, guard decision, token counts), never content.
-- Metrics from the meter `Marshal`:
+Traces follow the OpenTelemetry GenAI semantic conventions, version 1.41 (the version `Microsoft.Extensions.AI` implements). The resource attribute `marshal.genai_semconv_version` names it. Spans exist while the run executes:
+
+- `invoke_agent <template>`: one per run, from the source `Marshal.Runs`.
+- `chat` and `embeddings`: one per model or embedding call, from `Experimental.Microsoft.Extensions.AI`, with provider, model and token usage.
+- `execute_tool <tool>`: one per tool call, with the risk tier and guard decision.
+- MCP client spans from `Experimental.ModelContextProtocol`. MCP requests carry the trace context, so an MCP server that traces joins the run's trace.
+
+Backends with GenAI views (Langfuse, Arize Phoenix, Grafana) show the runs without custom mapping. Marshal's own metrics come from the meter `Marshal`; the standard `gen_ai.client.token.usage` and `gen_ai.client.operation.duration` come from the M.E.AI meter:
 
 | Metric | Type | Attributes |
 |---|---|---|
@@ -64,7 +70,53 @@ Marshal exports over OTLP gRPC. Leave the key unset to export nothing. The same 
 | `marshal.tool.calls` | counter | `decision` (guard decision) |
 | `marshal.run.cost` | histogram | none |
 
-### 3. Alert on something useful
+All names and attributes: [metrics and traces](../reference/metrics-and-traces.md).
+
+### 3. Send traces to Langfuse or Phoenix
+
+Marshal exports OTLP gRPC only. Langfuse accepts only OTLP over HTTP, so put an OpenTelemetry Collector in between. This collector config sends traces to Langfuse Cloud (EU) and to a self-hosted Phoenix:
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+exporters:
+  otlphttp/langfuse:
+    endpoint: https://cloud.langfuse.com/api/public/otel
+    headers:
+      # base64 of "<public key>:<secret key>"
+      Authorization: "Basic ${env:LANGFUSE_AUTH}"
+  otlp/phoenix:
+    endpoint: phoenix:4317
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [otlphttp/langfuse, otlp/phoenix]
+```
+
+Then set `telemetry.otlpEndpoint: "http://otel-collector:4317"`. Use one exporter if you run only one backend. Phoenix serves OTLP gRPC on port 4317 and its UI on port 6006.
+
+### 4. Content capture (off by default)
+
+Without content capture, spans carry ids and metadata only. To see inputs and outputs in the backend, turn it on:
+
+```yaml
+telemetry:
+  captureContent: true
+```
+
+> **Warning:** With content capture on, your telemetry backend stores personal data: what you said, tool arguments, tool results and replies. Marshal logs a warning at startup while it is on.
+
+Spans then carry exactly what run recording stores: the user input and the reply on `invoke_agent`, and the arguments and result on `execute_tool`. Contents are truncated, results of sensitive tools appear only as their reference, and withheld reasoning stays withheld. System prompts and the full messages sent to the model never appear on any span.
+
+### 5. Alert on something useful
 
 Examples: a rise in `marshal.runs{outcome="error"}`, many `marshal.tool.calls{decision="denied"}` after a config change, or `marshal.run.cost` above your daily cap.
 
@@ -78,7 +130,7 @@ curl -s http://<marshal>:8080/health
 
 ## Check that it works
 
-Send a chat message, open **Runs** and the new run. With OTLP configured, find the trace `marshal.run` in your backend.
+Send a chat message, open **Runs** and the new run. With OTLP configured, find the trace `invoke_agent default` in your backend.
 
 ## Related
 

@@ -14,6 +14,7 @@ using Marshal.Api.Printers;
 using Marshal.Api.Problems;
 using Marshal.Api.Versioning;
 using Marshal.Core.Configuration;
+using Marshal.Core.Mcp;
 using Marshal.Core.Models;
 using Marshal.Core.Recording;
 using Microsoft.AspNetCore.DataProtection;
@@ -22,6 +23,7 @@ using Microsoft.AspNetCore.DataProtection.Repositories;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 using OpenTelemetry;
+using OpenTelemetry.Resources;
 
 namespace Marshal.Api.Hosting;
 
@@ -105,8 +107,9 @@ public static class ApiServiceCollectionExtensions
         services.AddHostedService<MarshalStartup>();
 
         OpenTelemetryBuilder telemetry = services.AddOpenTelemetry()
-            .WithTracing(tracing => tracing.AddSource(OpenTelemetryRunObserver.SourceName))
-            .WithMetrics(metrics => metrics.AddMeter(OpenTelemetryRunObserver.MeterName));
+            .ConfigureResource(resource => resource.AddAttributes([new("marshal.genai_semconv_version", GenAiConventions.Version)]))
+            .WithTracing(tracing => tracing.AddSource(RunTracing.SourceName, ModelTelemetry.SourceName, McpToolSource.TracingSourceName))
+            .WithMetrics(metrics => metrics.AddMeter(OpenTelemetryRunObserver.MeterName, ModelTelemetry.SourceName));
         if (!string.IsNullOrWhiteSpace(configuration["telemetry:otlpEndpoint"]))
             telemetry.UseOtlpExporter(OpenTelemetry.Exporter.OtlpExportProtocol.Grpc, new Uri(configuration["telemetry:otlpEndpoint"]!));
 

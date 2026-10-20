@@ -30,6 +30,7 @@ Development started on 2026-09-28. The latest work in the history is dated 2026-
 - MCP input requests (elicitation) answered only in the web UI, and MCP server tasks that resume a waiting Marshal task.
 - Health warnings: `GET /api/v1/system/health`, a banner on every web page, the `health` live topic and the `system.health` tool, used by the example briefing.
 - Tool retrieval by namespace (`tools.core`, `tools.retrieval.*`, MCP `description`) and `agent.find_tools`.
+- `telemetry.captureContent`: opt-in content on spans, redacted like run recording.
 - Spoken fillers before slow tools in voice turns (`voice.fillerThresholdMs`).
 - Time to first delta per run, a voice timeline in the run detail and "slowest first words" sorting in the runs list.
 - Screenshot sweep (`npm run screenshots`) over every web route at phone and desktop width, with layout checks.
@@ -37,6 +38,7 @@ Development started on 2026-09-28. The latest work in the history is dated 2026-
 
 ### Changed
 
+- Traces follow the OpenTelemetry GenAI semantic conventions (version 1.41) and are emitted while a run executes. Model and embedding calls get `chat` and `embeddings` spans, and MCP requests carry the trace context. Rename dashboards and queries: `marshal.run` is now `invoke_agent`, `marshal.model_call` is now `chat`, and `marshal.tool_call` is now `execute_tool`. The step spans `marshal.context` and `marshal.reply` are gone; with `telemetry.captureContent: true`, the input and reply are attributes of `invoke_agent`. Step attributes moved to convention names (`marshal.model` and `marshal.tier` to `gen_ai.request.model`, `marshal.tokens_in` and `marshal.tokens_out` to `gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens`).
 - Startup failures list each problem with its file and key instead of failing on the first one.
 - Web UI alignment pass: the chat composer's text line and send button share one centre, and controls in one row share the control heights.
 - Reply steps are recorded in full, so the chat history shows the whole reply.

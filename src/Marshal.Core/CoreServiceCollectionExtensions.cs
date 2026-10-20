@@ -204,6 +204,7 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<SecretBinder>();
         services.AddSingleton<SecretHealth>();
 
+        services.AddOptions<TelemetryOptions>().Bind(configuration.GetSection("telemetry")).ValidateOnStart();
         services.AddSingleton<OpenTelemetryRunObserver>();
         services.AddSingleton<IRunObserver>(provider => provider.GetRequiredService<OpenTelemetryRunObserver>());
 

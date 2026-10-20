@@ -1,38 +1,39 @@
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Text.Json;
 using Marshal.Abstractions.Runs;
+using Microsoft.Extensions.Options;
 
 namespace Marshal.Core.Recording;
 
 /// <summary>
-/// Emits one trace per run (a span per step) and run metrics from the data the recorder stores. Spans carry ids
-/// and metadata only, never content.
+/// Emits run metrics from the data the recorder stores. The spans come from the runner (<see cref="RunTracing"/>)
+/// and from the model clients while the run executes; with <c>telemetry.captureContent</c> this observer adds the
+/// recorded content to them.
 /// </summary>
 public sealed class OpenTelemetryRunObserver : IRunObserver, IDisposable
 {
-    public const string SourceName = "Marshal.Runs";
     public const string MeterName = "Marshal";
 
-    private readonly ActivitySource _source = new(SourceName);
     private readonly Meter _meter = new(MeterName);
     private readonly Counter<long> _runs;
     private readonly Counter<long> _tokens;
     private readonly Counter<long> _toolCalls;
     private readonly Histogram<double> _cost;
-    private readonly ConcurrentDictionary<RunId, RunTrace> _open = new();
+    private readonly bool _captureContent;
 
-    public OpenTelemetryRunObserver()
+    public OpenTelemetryRunObserver(IOptions<TelemetryOptions>? options = null)
     {
+        _captureContent = options?.Value.CaptureContent ?? false;
         _runs = _meter.CreateCounter<long>("marshal.runs", description: "Completed runs by outcome.");
         _tokens = _meter.CreateCounter<long>("marshal.model.tokens", unit: "{token}", description: "Model tokens by direction.");
         _toolCalls = _meter.CreateCounter<long>("marshal.tool.calls", description: "Tool calls by guard decision.");
         _cost = _meter.CreateHistogram<double>("marshal.run.cost", description: "Cost per run.");
     }
 
-    public void RunStarted(RunId runId, RunStart start, DateTimeOffset startedAt) =>
-        _open[runId] = new RunTrace(start, startedAt);
+    public void RunStarted(RunId runId, RunStart start, DateTimeOffset startedAt)
+    {
+    }
 
     public void StepRecorded(RunId runId, int sequence, RunStepRecord step, DateTimeOffset recordedAt)
     {
@@ -42,64 +43,40 @@ public sealed class OpenTelemetryRunObserver : IRunObserver, IDisposable
             _tokens.Add(output, new KeyValuePair<string, object?>("direction", "output"));
         if (step.GuardDecision is { } decision)
             _toolCalls.Add(1, new KeyValuePair<string, object?>("decision", Snake(decision.ToString())));
-
-        if (_open.TryGetValue(runId, out RunTrace? trace))
-        {
-            lock (trace.Steps)
-            {
-                trace.Steps.Add((sequence, step, recordedAt));
-            }
-        }
+        if (_captureContent)
+            Capture(step);
     }
 
     public void RunCompleted(RunId runId, RunCompletion completion, decimal cost, DateTimeOffset endedAt)
     {
-        string outcome = Snake(completion.Outcome.ToString());
-        _runs.Add(1, new KeyValuePair<string, object?>("outcome", outcome));
+        _runs.Add(1, new KeyValuePair<string, object?>("outcome", Snake(completion.Outcome.ToString())));
         _cost.Record((double)cost);
-        if (!_open.TryRemove(runId, out RunTrace? trace))
-            return;
-
-        using Activity? root = _source.StartActivity("marshal.run", ActivityKind.Internal, default(ActivityContext), startTime: trace.StartedAt);
-        if (root is null)
-            return;
-
-        root.SetTag("marshal.run_id", runId.ToString());
-        root.SetTag("marshal.source", Snake(trace.Start.Context.Source.ToString()));
-        root.SetTag("marshal.input_mode", Snake(trace.Start.Context.InputMode.ToString()));
-        root.SetTag("marshal.trigger", trace.Start.Trigger);
-        root.SetTag("marshal.outcome", outcome);
-        root.SetTag("marshal.outcome_reason", completion.Reason);
-        root.SetTag("marshal.tainted", completion.TaintSources.Count > 0);
-        foreach ((int sequence, RunStepRecord step, DateTimeOffset recordedAt) in trace.Steps.OrderBy(entry => entry.Sequence))
-        {
-            using Activity? span = _source.StartActivity($"marshal.{Snake(step.Kind.ToString())}", ActivityKind.Internal, root.Context, startTime: recordedAt - TimeSpan.FromMilliseconds(step.DurationMs));
-            if (span is null)
-                continue;
-
-            span.SetTag("marshal.sequence", sequence);
-            span.SetTag("marshal.model", step.Model);
-            span.SetTag("marshal.tier", step.Tier);
-            span.SetTag("marshal.tool", step.Tool?.ToString());
-            span.SetTag("marshal.guard_decision", step.GuardDecision is { } decision ? Snake(decision.ToString()) : null);
-            span.SetTag("marshal.tokens_in", step.TokensIn);
-            span.SetTag("marshal.tokens_out", step.TokensOut);
-            span.SetEndTime(recordedAt.UtcDateTime);
-        }
-
-        root.SetEndTime(endedAt.UtcDateTime);
     }
 
-    public void Dispose()
+    public void Dispose() => _meter.Dispose();
+
+    // The recorder calls observers inside the step's span with the redacted step: content is what the runs view
+    // shows (truncated, sensitive results as references, withheld reasoning gone). The system prompt (the context
+    // step's content) and model output other than the reply never become attributes.
+    private static void Capture(RunStepRecord step)
     {
-        _source.Dispose();
-        _meter.Dispose();
+        if (Activity.Current is not { } activity)
+            return;
+
+        switch (step.Kind)
+        {
+            case RunStepKind.ToolCall when RunTracing.IsTool(activity):
+                activity.SetTag("gen_ai.tool.call.arguments", step.Arguments);
+                activity.SetTag("gen_ai.tool.call.result", step.Content ?? step.Reference);
+                break;
+            case RunStepKind.Context when RunTracing.IsRun(activity):
+                activity.SetTag("marshal.input", step.Input);
+                break;
+            case RunStepKind.Reply when RunTracing.IsRun(activity):
+                activity.SetTag("marshal.reply", step.Content);
+                break;
+        }
     }
 
     private static string Snake(string name) => JsonNamingPolicy.SnakeCaseLower.ConvertName(name);
-
-    private sealed record RunTrace(RunStart Start, DateTimeOffset StartedAt)
-    {
-        public List<(int Sequence, RunStepRecord Step, DateTimeOffset RecordedAt)> Steps { get; } = [];
-    }
 }

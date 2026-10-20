@@ -5,6 +5,7 @@ using Marshal.Abstractions.Tools;
 using Marshal.Api.Configuration;
 using Marshal.Core.Configuration;
 using Marshal.Core.Mcp;
+using Marshal.Core.Recording;
 using Marshal.Core.Secrets;
 using Marshal.Data;
 using Marshal.Data.Persistence;
@@ -37,6 +38,9 @@ internal sealed partial class MarshalStartup(
 
     public async Task StartingAsync(CancellationToken cancellationToken)
     {
+        if (services.GetRequiredService<IOptions<TelemetryOptions>>().Value.CaptureContent)
+            LogContentCapture(loggers.CreateLogger<MarshalStartup>());
+
         Directory.CreateDirectory(paths.Value.Data);
         await using (MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken))
         {
@@ -86,6 +90,9 @@ internal sealed partial class MarshalStartup(
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
     public Task StoppedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "telemetry.captureContent is on: spans carry user input, tool arguments, tool results and replies, so the telemetry backend holds personal data")]
+    private static partial void LogContentCapture(ILogger logger);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Tool source {Source} rejected: {Reason}")]
     private static partial void LogToolSourceRejected(ILogger logger, string source, string reason);

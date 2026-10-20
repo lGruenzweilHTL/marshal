@@ -14,7 +14,9 @@ internal sealed class ProviderChatClientFactory : IChatClientFactory
 {
     private static readonly Uri _defaultOllama = new("http://localhost:11434");
 
-    public IChatClient Create(string key, ModelOptions options) => options.Provider switch
+    public IChatClient Create(string key, ModelOptions options) => ModelTelemetry.Instrument(CreateProvider(key, options));
+
+    private static IChatClient CreateProvider(string key, ModelOptions options) => options.Provider switch
     {
         ModelProviders.Ollama => new OllamaApiClient(options.Endpoint ?? _defaultOllama, options.Model),
         ModelProviders.OpenAiCompatible => new OpenAIClient(

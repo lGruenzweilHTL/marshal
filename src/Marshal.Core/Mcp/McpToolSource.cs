@@ -26,6 +26,12 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
     /// <summary>Identifier of the MCP tasks extension (SEP-2663).</summary>
     public const string TasksExtension = "io.modelcontextprotocol/tasks";
 
+    /// <summary>
+    /// Activity source of the SDK's client spans. While it is listened to, the SDK puts the W3C trace context of
+    /// each request's span (a child of the current <c>execute_tool</c> span) into <c>_meta</c>.
+    /// </summary>
+    public const string TracingSourceName = "Experimental.ModelContextProtocol";
+
     private readonly McpServerDefinition _server;
     private readonly IMcpServerCatalog _catalog;
     private readonly IMcpTransportFactory _transports;

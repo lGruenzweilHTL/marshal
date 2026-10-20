@@ -63,6 +63,7 @@ public sealed partial class AgentRunner(
     {
         // A subagent records its steps in its caller's run, marked with its depth.
         bool nested = request.Context is { IsSubagent: true, RunId: not null };
+        using Activity? span = RunTracing.StartRun(request.Context, request.Context.Template ?? AgentTemplate.DefaultName, request.Trigger);
         RunId runId;
         if (nested)
         {
@@ -112,6 +113,13 @@ public sealed partial class AgentRunner(
             await recorder.CompleteRunAsync(runId, new RunCompletion(result.Outcome, result.Reason, context.Taint.Sources) { TimeToFirstDeltaMs = transcript.FirstDeltaMs }, cancellationToken);
         LogRunCompleted(logger, runId.Value, result.Outcome, result.Reason);
         return new AgentRunResult(runId, result.Reply, continueConversation, result.Outcome, result.Reason, result.Pending) { Data = result.Data };
+    }
+
+    // Marks the run span failed and lets the exception pass.
+    private static bool Traced(Activity? span, Exception exception)
+    {
+        RunTracing.Fail(span, exception);
+        return false;
     }
 
     // Later turns of the session keep what this turn loaded; the core namespaces load anyway.
@@ -359,6 +367,20 @@ public sealed partial class AgentRunner(
     private async Task<(string Text, PendingActionRecord? Frozen)> HandleCallAsync(
         FunctionCallContent call, MarshalExecutionContext context, HashSet<string> offered, PendingActionRecord? pending, Transcript transcript, CancellationToken ct)
     {
+        using Activity? span = RunTracing.StartTool(call.Name, call.CallId);
+        try
+        {
+            return await HandleTracedCallAsync(call, context, offered, pending, transcript, ct);
+        }
+        catch (Exception exception) when (Traced(span, exception))
+        {
+            throw new UnreachableException();
+        }
+    }
+
+    private async Task<(string Text, PendingActionRecord? Frozen)> HandleTracedCallAsync(
+        FunctionCallContent call, MarshalExecutionContext context, HashSet<string> offered, PendingActionRecord? pending, Transcript transcript, CancellationToken ct)
+    {
         int loadMark = context.LoadedTools.All.Count;
         JsonElement arguments = JsonSerializer.SerializeToElement(call.Arguments ?? new Dictionary<string, object?>(), _argumentJson);
         string argumentSummary = _summarizer.Arguments(arguments);
@@ -502,6 +524,8 @@ public sealed partial class AgentRunner(
     private async Task AppendConfirmationAsync(ConfirmationStep confirmation, MarshalExecutionContext context, List<ChatMessage> messages, Transcript transcript, CancellationToken ct)
     {
         string modelName = confirmation.Tool?.ModelName ?? confirmation.Action.Tool.ToString();
+        string callId = $"confirmed_{confirmation.Action.Id.Value:N}";
+        using Activity? span = RunTracing.StartTool(modelName, callId);
         using var document = JsonDocument.Parse(confirmation.Action.ArgumentsJson);
         JsonElement arguments = document.RootElement.Clone();
         if (confirmation.Result is not { } result)
