@@ -50,6 +50,7 @@ public sealed class BriefingEndToEndTests : IAsyncLifetime
     private const string Occupancy = "binary_sensor.kitchen_occupancy";
     private const string Speech = "Guten Morgen! Um neun hast du den Zahnarzt, Anna wartet auf deine Antwort, und in den Feeds geht es um den Bahnstreik und die neue Klipper-Version.";
     private const string Details = "## Feeds\n1. Bahnstreik ab Donnerstag (ORF)\n2. Klipper 0.13 mit Input Shaping (Voron News)";
+    private const string PreparedNotes = "Termine: 09:00 Zahnarzt. Feeds: Bahnstreik ab Donnerstag (ORF), Klipper 0.13 mit Input Shaping (Voron News).";
 
     private static readonly TimeSpan _patience = TimeSpan.FromSeconds(10);
     private static readonly string _examples = Path.Combine(RepositoryRoot(), "deploy", "config.example");
@@ -131,9 +132,11 @@ public sealed class BriefingEndToEndTests : IAsyncLifetime
         IReadOnlyList<ChatMessage> seen = _harness.Model.Requests[^1].Messages;
         Assert.Contains(seen, message => message.Role == ChatRole.System && message.Text.Contains("Klipper 0.13 mit Input Shaping", StringComparison.Ordinal));
         Assert.Contains(seen, message => message.Role == ChatRole.Assistant && message.Text == Speech);
-        // The briefing itself ran once, at six; the reply did not run it again.
-        Assert.Single(_harness.Recorder.Runs, run => run.Start.Context.Source == SessionSource.Task);
-        Assert.Equal(2, _harness.Model.Requests.Count);
+        // The preparation ran at three and the briefing once, at six, with the prepared notes; the reply did not run it again.
+        Assert.Equal(2, _harness.Recorder.Runs.Count(run => run.Start.Context.Source == SessionSource.Task));
+        Assert.Equal(3, _harness.Model.Requests.Count);
+        Assert.Contains(_harness.Model.Requests[1].Messages, message => message.Role == ChatRole.User && message.Text.Contains(PreparedNotes, StringComparison.Ordinal));
+        Assert.Null((await Store().FindAsync("briefing", Ct)).Value.Prepared);
     }
 
     [Fact]
@@ -190,11 +193,17 @@ public sealed class BriefingEndToEndTests : IAsyncLifetime
         }
     }
 
+    // The example's preparation run collects at 03:00 (01:00 UTC); the briefing runs at 06:00 and sees its notes.
     private async Task PrepareAtSixAsync()
     {
-        _harness.Model.ThenText($"{Speech}\n\n{Details}");
+        _harness.Model.ThenText(PreparedNotes);
         await _scheduler.StartAsync(Ct);
         await WaitIdleAsync();
+        _harness.Time.SetUtcNow(new DateTimeOffset(2026, 9, 30, 1, 0, 0, TimeSpan.Zero));
+        await WaitForAsync(async () => (await Store().FindAsync("briefing", Ct)).Value.Prepared is not null);
+        await WaitIdleAsync();
+
+        _harness.Model.ThenText($"{Speech}\n\n{Details}");
         _harness.Time.SetUtcNow(new DateTimeOffset(2026, 9, 30, 4, 0, 0, TimeSpan.Zero));
         await WaitForAsync(async () => (await HistoryAsync()).Count > 0);
         await WaitIdleAsync();

@@ -84,6 +84,9 @@ public sealed record TaskSpendView(long Tokens, decimal Cost, int Steps, double 
 /// <param name="Runs">Its runs, newest first.</param>
 /// <param name="Notifications">What it sent and what the router did, newest first.</param>
 /// <param name="ExecutorSessions">External work it started, newest first.</param>
+/// <param name="ToolPolicy">Tool id globs the task's runs are limited to; null = every tool its template allows.</param>
+/// <param name="AvailableTools">Tool ids the task's template allows (what a policy may contain), sorted.</param>
+/// <param name="Preparation">The preparation run of a cron task; null without one.</param>
 public sealed record TaskDetail(
     TaskItem Task,
     string? Notes,
@@ -92,7 +95,25 @@ public sealed record TaskDetail(
     DateTimeOffset? OverrideQuietHoursUntil,
     IReadOnlyList<RunSummary> Runs,
     IReadOnlyList<NotificationEntry> Notifications,
-    IReadOnlyList<ExecutorSessionRecord> ExecutorSessions);
+    IReadOnlyList<ExecutorSessionRecord> ExecutorSessions,
+    IReadOnlyList<string>? ToolPolicy,
+    IReadOnlyList<string> AvailableTools,
+    TaskPreparationInfo? Preparation);
+
+/// <summary>A cron task's preparation run.</summary>
+/// <param name="Before">How long before each scheduled run the preparation runs.</param>
+/// <param name="Goal">What the preparation run collects.</param>
+/// <param name="NextAt">When the next preparation run is due.</param>
+/// <param name="PreparedAt">When the prepared notes waiting for the next run were collected, if any.</param>
+public sealed record TaskPreparationInfo(TimeSpan Before, string Goal, DateTimeOffset? NextAt, DateTimeOffset? PreparedAt)
+{
+    public static TaskPreparationInfo? From(TaskRecord task) =>
+        task.Preparation is { } preparation ? new(preparation.Before, preparation.Goal, task.NextPrepareAt, task.Prepared?.At) : null;
+}
+
+/// <summary>A new tool policy for a task.</summary>
+/// <param name="Tools">Tool ids or globs (e.g. <c>printer.*</c>) inside the task's template allowlist.</param>
+public sealed record TaskToolPolicyUpdate(IReadOnlyList<string>? Tools);
 
 /// <summary>A new goal for a task.</summary>
 /// <param name="Goal">The goal the next run works on.</param>

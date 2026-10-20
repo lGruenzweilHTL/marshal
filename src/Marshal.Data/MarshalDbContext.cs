@@ -72,6 +72,8 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
 
     public DbSet<ChunkVersion> ChunkVersions => Set<ChunkVersion>();
 
+    public DbSet<MemoryProposal> MemoryProposals => Set<MemoryProposal>();
+
     public DbSet<ChunkEdge> ChunkEdges => Set<ChunkEdge>();
 
     public DbSet<Project> Projects => Set<Project>();
@@ -177,6 +179,8 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         configurationBuilder.Properties<ChunkScope>().HaveConversion<SnakeCaseEnumConverter<ChunkScope>>();
         configurationBuilder.Properties<ChunkType>().HaveConversion<SnakeCaseEnumConverter<ChunkType>>();
         configurationBuilder.Properties<ChunkEdgeKind>().HaveConversion<SnakeCaseEnumConverter<ChunkEdgeKind>>();
+        configurationBuilder.Properties<MemoryProposalKind>().HaveConversion<SnakeCaseEnumConverter<MemoryProposalKind>>();
+        configurationBuilder.Properties<MemoryProposalStatus>().HaveConversion<SnakeCaseEnumConverter<MemoryProposalStatus>>();
         configurationBuilder.Properties<ChunkAuthor>().HaveConversion<SnakeCaseEnumConverter<ChunkAuthor>>();
         configurationBuilder.Properties<ProjectAliasStatus>().HaveConversion<SnakeCaseEnumConverter<ProjectAliasStatus>>();
         configurationBuilder.Properties<ProjectFeedbackKind>().HaveConversion<SnakeCaseEnumConverter<ProjectFeedbackKind>>();
@@ -475,6 +479,19 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             OwnerFilter(version);
         });
 
+        builder.Entity<MemoryProposal>(proposal =>
+        {
+            proposal.HasKey(entity => entity.Id);
+            proposal.Property(entity => entity.ChunkA).HasMaxLength(ChunkId.Length);
+            proposal.Property(entity => entity.ChunkB).HasMaxLength(ChunkId.Length);
+            proposal.HasIndex(entity => new { entity.OwnerId, entity.Kind, entity.ChunkA, entity.ChunkB }).IsUnique();
+            proposal.HasIndex(entity => new { entity.OwnerId, entity.Status });
+            proposal.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            proposal.HasOne<Chunk>().WithMany().HasForeignKey(entity => entity.ChunkA).OnDelete(DeleteBehavior.Cascade);
+            proposal.HasOne<Chunk>().WithMany().HasForeignKey(entity => entity.ChunkB).OnDelete(DeleteBehavior.Cascade);
+            OwnerFilter(proposal);
+        });
+
         builder.Entity<ChunkEdge>(edge =>
         {
             edge.HasKey(entity => new { entity.FromId, entity.ToId, entity.Kind });
@@ -491,6 +508,7 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             task.HasKey(entity => entity.Id);
             task.HasIndex(entity => new { entity.OwnerId, entity.Name }).IsUnique().HasFilter("name IS NOT NULL");
             task.HasIndex(entity => new { entity.Status, entity.NextRunAt });
+            task.HasIndex(entity => entity.NextPrepareAt).HasFilter("next_prepare_at IS NOT NULL");
             task.HasIndex(entity => entity.ParentId);
             task.HasIndex(entity => entity.DeliveriesPending).HasFilter("deliveries_pending");
             task.HasIndex(entity => entity.OriginSessionId);

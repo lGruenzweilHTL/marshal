@@ -41,6 +41,16 @@ internal static class TaskTools
           "fallback":{"type":"string","enum":["voice","push","inbox","silent"]}},"required":["channel"]}}
         """;
 
+    private const string ToolsSchema = """
+        {"type":"array","items":{"type":"string"},"description":"Optional: the only tools the task may use (tool ids or globs like printer.*), within its template's tools. Default: the core tools plus the tools loaded in this conversation."}
+        """;
+
+    private const string PrepareSchema = """
+        {"type":["object","null"],"description":"Cron tasks only: a preparation run before each scheduled run whose result the run then sees, e.g. collecting appointments and news at night for a morning briefing. Null removes it.","properties":{
+          "before":{"type":"string","description":"How long before each run, at most 12 hours, e.g. 3h."},
+          "goal":{"type":"string","description":"What the preparation run collects."}},"required":["before","goal"]}
+        """;
+
     private const string OverrideSchema = """
         {"type":"string","description":"Local time until which this task may notify during quiet hours. Needs the user's confirmation."}
         """;
@@ -55,6 +65,8 @@ internal static class TaskTools
               "template":{"type":"string"},
               "notes":{"type":"string"},
               "deliver":{{DeliverSchema}},
+              "tools":{{ToolsSchema}},
+              "prepare":{{PrepareSchema}},
               "{{OverrideArgument}}":{{OverrideSchema}}},"required":["goal"],"additionalProperties":false}
             """, CreateAsync) { Persists = true, Confirming = true, Available = CanStartAsync },
         new TaskTool(context, "schedule_wakeup", "Ends this background run and runs the task again later with its goal and notes (not this conversation). Write everything you need to remember into notes.", """
@@ -70,9 +82,10 @@ internal static class TaskTools
               "name":{"type":"string"},
               "once":{"type":"boolean","description":"Fire on the first matching event only, then end (one-off reminders)."},
               "deliver":{{DeliverSchema}},
+              "tools":{{ToolsSchema}},
               "{{OverrideArgument}}":{{OverrideSchema}}},"required":["filter","goal"],"additionalProperties":false}
             """, WatchAsync) { Persists = true, Confirming = true, Available = CanStartAsync },
-        new TaskTool(context, "update", "Changes a task's goal, schedule, deliveries, template or name.", $$"""
+        new TaskTool(context, "update", "Changes a task's goal, schedule, deliveries, preparation, template or name.", $$"""
             {"type":"object","properties":{
               "task":{"type":"string","description":"Task id or name."},
               "goal":{"type":"string"},
@@ -80,6 +93,7 @@ internal static class TaskTools
               "deliver":{{DeliverSchema}},
               "template":{"type":"string"},
               "name":{"type":"string"},
+              "prepare":{{PrepareSchema}},
               "{{OverrideArgument}}":{{OverrideSchema}}},"required":["task"],"additionalProperties":false}
             """, UpdateAsync) { Persists = true, Confirming = true, Available = AnyTaskAsync },
         new TaskTool(context, "run_now", "Runs an existing task now, with its normal budget and deliveries.", """
@@ -142,6 +156,17 @@ internal static class TaskTools
         Result<DateTimeOffset?> overrideUntil = Override(arguments, zone);
         if (overrideUntil.IsFailure)
             return overrideUntil.Error;
+        Result<IReadOnlyList<string>?> policy = Policy(context, arguments, run);
+        if (policy.IsFailure)
+            return policy.Error;
+        TaskPreparation? preparation = null;
+        if (TaskArguments.Has(arguments, "prepare"))
+        {
+            Result<TaskPreparation> parsed = TaskArguments.Preparation(arguments);
+            if (parsed.IsFailure)
+                return parsed.Error;
+            preparation = parsed.Value;
+        }
 
         Result<TaskRecord> created = await context.Store.CreateAsync(new NewTask
         {
@@ -152,6 +177,8 @@ internal static class TaskTools
             Notes = TaskArguments.Text(arguments, "notes"),
             Deliveries = deliveries.Value,
             OverrideQuietHoursUntil = overrideUntil.Value,
+            ToolPolicy = policy.Value,
+            Preparation = preparation,
             // Inside a task run the new task is its child; the origin satellite and project carry over.
             ParentId = run.TaskId,
             CreatedBy = run.TaskId is null ? TaskCreator.User : TaskCreator.Task,
@@ -244,6 +271,20 @@ internal static class TaskTools
             if (deliveries.IsFailure)
                 return deliveries.Error;
             updated = updated with { Deliveries = deliveries.Value };
+        }
+
+        if (arguments.TryGetProperty("prepare", out JsonElement prepare))
+        {
+            TaskPreparation? preparation = null;
+            if (prepare.ValueKind != JsonValueKind.Null)
+            {
+                Result<TaskPreparation> parsed = TaskArguments.Preparation(arguments);
+                if (parsed.IsFailure)
+                    return parsed.Error;
+                preparation = parsed.Value;
+            }
+
+            updated = updated with { Preparation = preparation };
         }
 
         Result<DateTimeOffset?> overrideUntil = Override(arguments, zone);

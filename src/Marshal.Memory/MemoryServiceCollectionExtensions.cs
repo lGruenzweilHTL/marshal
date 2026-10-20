@@ -5,6 +5,7 @@ using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
 using Marshal.Memory.Browsing;
 using Marshal.Memory.Consolidation;
+using Marshal.Memory.Idle;
 using Marshal.Memory.Projects;
 using Marshal.Memory.Retrieval;
 using Marshal.Memory.Tools;
@@ -24,7 +25,9 @@ public static class MemoryServiceCollectionExtensions
 
     public static IServiceCollection AddMarshalMemory(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddOptions<MemoryOptions>().Bind(configuration.GetSection(Section));
+        services.AddOptions<MemoryOptions>().Bind(configuration.GetSection(Section))
+            .Validate(options => options.DuplicateThreshold is > 0 and <= 1, "memory.duplicateThreshold must be greater than 0 and at most 1.")
+            .ValidateOnStart();
 
         services.AddSingleton<IMemoryStore, SqliteMemoryStore>();
         services.AddSingleton<IMemoryExporter, NdjsonMemoryExporter>();
@@ -46,6 +49,7 @@ public static class MemoryServiceCollectionExtensions
         services.AddSingleton<ITurnEmbedding>(provider => provider.GetRequiredService<TurnMemory>());
 
         services.AddSingleton<IContextContributor, PinnedMemoryContributor>();
+        services.AddSingleton<IContextContributor, ProjectSummaryContributor>();
         services.AddSingleton<IContextContributor, RetrievedMemoryContributor>();
         services.AddSingleton(new ToolNamespace("memory", "Long-term memory: remembering and recalling facts, preferences, decisions and projects"));
         services.AddSingleton<ITool, MemoryRememberTool>();
@@ -57,6 +61,11 @@ public static class MemoryServiceCollectionExtensions
         services.AddSingleton<ISessionCloseListener>(provider => provider.GetRequiredService<SessionSummaryInbox>());
         services.AddSingleton<IHostedService, SessionSummaryWorker>();
         services.AddSingleton<ISystemJob, ConsolidationJob>();
+        services.AddSingleton<IMemoryProposals, EfMemoryProposals>();
+        services.AddSingleton<IdleModelCalls>();
+        services.AddSingleton<IIdleMemoryJob, ContradictionProposalJob>();
+        services.AddSingleton<IIdleMemoryJob, DuplicateProposalJob>();
+        services.AddSingleton<IIdleMemoryJob, ProjectSummaryJob>();
         return services;
     }
 }

@@ -9,7 +9,7 @@ namespace Marshal.Memory.Browsing;
 /// Chunk lists and histories for the memory view. Searches run through the hybrid retriever without marking chunks
 /// as retrieved.
 /// </summary>
-public sealed class MemoryBrowser(IDbContextFactory<MarshalDbContext> contexts, IMemoryRetriever retriever) : IMemoryBrowser
+public sealed class MemoryBrowser(IDbContextFactory<MarshalDbContext> contexts, IMemoryRetriever retriever, TimeProvider timeProvider) : IMemoryBrowser
 {
     // Browsing ranks everything that matches; the prompt budget does not apply.
     private const int SearchTokenBudget = 1_000_000;
@@ -39,6 +39,11 @@ public sealed class MemoryBrowser(IDbContextFactory<MarshalDbContext> contexts, 
             query = query.Where(chunk => chunk.ProjectId == projectId);
         if (filter.Pinned is { } pinned)
             query = query.Where(chunk => chunk.Pinned == pinned);
+        DateTimeOffset now = timeProvider.GetUtcNow();
+        if (filter.Closed is true)
+            query = query.Where(chunk => chunk.ValidTo != null && chunk.ValidTo <= now);
+        else if (filter.Closed is false)
+            query = query.Where(chunk => chunk.ValidTo == null || chunk.ValidTo > now);
 
         // Timestamps are sorted in memory: SQLite cannot order by DateTimeOffset.
         List<Chunk> chunks = await query.ToListAsync(cancellationToken);
@@ -74,15 +79,11 @@ public sealed class MemoryBrowser(IDbContextFactory<MarshalDbContext> contexts, 
         var entries = new List<MemoryHistoryEntry>();
         foreach (Chunk chunk in chain.OrderBy(chunk => chunk.CreatedAt))
         {
-            DateTimeOffset validFrom = chunk.CreatedAt;
             foreach (ChunkVersion version in versions.Where(version => version.ChunkId == chunk.Id).OrderBy(version => version.ReplacedAt))
-            {
-                entries.Add(new MemoryHistoryEntry(chunk.Id, MemoryHistoryKind.Version, chunk.Title, version.Content, version.Importance, validFrom));
-                validFrom = version.ReplacedAt;
-            }
+                entries.Add(new MemoryHistoryEntry(chunk.Id, MemoryHistoryKind.Version, chunk.Title, version.Content, version.Importance, version.ValidFrom, version.ValidTo));
 
             MemoryHistoryKind kind = chunk.Id == id ? MemoryHistoryKind.Current : MemoryHistoryKind.Predecessor;
-            entries.Add(new MemoryHistoryEntry(chunk.Id, kind, chunk.Title, chunk.Content, chunk.Importance, validFrom));
+            entries.Add(new MemoryHistoryEntry(chunk.Id, kind, chunk.Title, chunk.Content, chunk.Importance, chunk.ValidFrom, chunk.ValidTo));
         }
 
         return entries;

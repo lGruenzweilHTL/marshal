@@ -89,6 +89,41 @@ public sealed partial class MemoryIndexRebuilder(
         return true;
     }
 
+    /// <summary>
+    /// Adds keyword entries for chunk versions that have none (versions written before the version index existed);
+    /// returns how many were added.
+    /// </summary>
+    public async Task<int> IndexVersionsAsync(CancellationToken cancellationToken)
+    {
+        int added = 0;
+        foreach (OwnerId owner in await users.ListAsync(cancellationToken))
+        {
+            using IDisposable scope = executionContext.Use(new MarshalExecutionContext { OwnerId = owner, Source = SessionSource.Task, IsInteractive = false });
+            await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+            HashSet<string> indexed = [];
+            await using (System.Data.Common.DbCommand command = MemoryIndexes.Command(db, "SELECT version_id FROM chunk_versions_fts WHERE owner_id = $owner", ("$owner", MemoryIndexes.OwnerKey(owner))))
+            await using (System.Data.Common.DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken))
+            {
+                while (await reader.ReadAsync(cancellationToken))
+                    indexed.Add(reader.GetString(0));
+            }
+
+            foreach (ChunkVersion version in await db.ChunkVersions.AsNoTracking().ToListAsync(cancellationToken))
+            {
+                if (indexed.Contains(version.Id.ToString("D")))
+                    continue;
+
+                await MemoryIndexes.PutVersionAsync(db, version, cancellationToken);
+                added++;
+            }
+        }
+
+        if (added > 0)
+            LogVersionsIndexed(logger, added);
+
+        return added;
+    }
+
     private async Task<IReadOnlyList<float[]>> EmbedAsync(IEnumerable<string> texts, CancellationToken cancellationToken) =>
         [.. (await embeddings.GenerateAsync(texts, cancellationToken: cancellationToken)).Select(embedding => embedding.Vector.ToArray())];
 
@@ -98,12 +133,16 @@ public sealed partial class MemoryIndexRebuilder(
     [LoggerMessage(Level = LogLevel.Warning, Message = "Memory index was built with {OldModel}; re-embedding memory with {NewModel}")]
     private static partial void LogRebuilding(ILogger logger, string oldModel, string newModel);
 
+    [LoggerMessage(Level = LogLevel.Information, Message = "Added {Count} chunk versions to the version keyword index")]
+    private static partial void LogVersionsIndexed(ILogger logger, int count);
+
     [LoggerMessage(Level = LogLevel.Information, Message = "Re-embedded {Count} memory chunks with {Model}")]
     private static partial void LogRebuilt(ILogger logger, int count, string model);
 }
 
 /// <summary>
-/// Runs <see cref="MemoryIndexRebuilder"/> once at startup (after the database is migrated). A failure (e.g. the
+/// Runs <see cref="MemoryIndexRebuilder"/> once at startup (after the database is migrated), then indexes versions
+/// missing from the version keyword index. A failure (e.g. the
 /// embedding server is down) is logged; the rebuild runs again on the next start.
 /// </summary>
 public sealed partial class MemoryIndexStartup(MemoryIndexRebuilder rebuilder, ILogger<MemoryIndexStartup> logger) : IHostedService
@@ -113,6 +152,7 @@ public sealed partial class MemoryIndexStartup(MemoryIndexRebuilder rebuilder, I
         try
         {
             await rebuilder.RebuildIfStaleAsync(cancellationToken);
+            await rebuilder.IndexVersionsAsync(cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {

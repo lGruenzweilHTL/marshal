@@ -176,6 +176,55 @@ public sealed class TaskToolsTests : IAsyncLifetime
     }
 
     [Theory]
+    [InlineData("3h")]
+    [InlineData("180m")]
+    [InlineData("PT3H")]
+    [InlineData("03:00:00")]
+    public async Task Create_WithPreparation_Stored(string before)
+    {
+        Result<ToolOutput> created = await InvokeAsync("create", new
+        {
+            goal = "Briefing.",
+            name = "briefing",
+            trigger = new { kind = "cron", expression = "0 6 * * *" },
+            prepare = new { before, goal = "Collect today's appointments." },
+        });
+
+        Assert.True(created.IsSuccess);
+        TaskRecord task = (await Store().FindAsync("briefing", Ct)).Value;
+        Assert.Equal(new TaskPreparation(TimeSpan.FromHours(3), "Collect today's appointments."), task.Preparation);
+        Assert.Contains("\"prepare\":{\"before\":\"03:00\"", created.Value.Content, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("""{"goal":"x","trigger":{"kind":"cron","expression":"0 6 * * *"},"prepare":{"before":"13h","goal":"y"}}""")]
+    [InlineData("""{"goal":"x","trigger":{"kind":"cron","expression":"0 6 * * *"},"prepare":{"before":"soon","goal":"y"}}""")]
+    [InlineData("""{"goal":"x","trigger":{"kind":"cron","expression":"0 6 * * *"},"prepare":{"before":"3h"}}""")]
+    [InlineData("""{"goal":"x","trigger":{"kind":"now"},"prepare":{"before":"3h","goal":"y"}}""")]
+    public async Task Create_InvalidPreparation_ValidationErrorNothingStored(string arguments)
+    {
+        Result<ToolOutput> created = await InvokeAsync("create", JsonDocument.Parse(arguments).RootElement);
+
+        Assert.Equal(ErrorType.Validation, created.Error.Type);
+        Assert.Empty(await Store().ListAsync(new TaskFilter(), Ct));
+    }
+
+    [Fact]
+    public async Task Update_SetsAndRemovesThePreparation()
+    {
+        await InvokeAsync("create", new { goal = "Briefing.", name = "briefing", trigger = new { kind = "cron", expression = "0 6 * * *" } });
+
+        await InvokeAsync("update", new { task = "briefing", prepare = new { before = "2h", goal = "Collect." } });
+        TaskRecord prepared = (await Store().FindAsync("briefing", Ct)).Value;
+        await InvokeAsync("update", JsonDocument.Parse("""{"task":"briefing","prepare":null}""").RootElement);
+        TaskRecord removed = (await Store().FindAsync("briefing", Ct)).Value;
+
+        Assert.Equal(new TaskPreparation(TimeSpan.FromHours(2), "Collect."), prepared.Preparation);
+        Assert.Equal(new DateTimeOffset(2026, 9, 30, 2, 0, 0, TimeSpan.Zero), prepared.NextPrepareAt);
+        Assert.Equal(((TaskPreparation?)null, (DateTimeOffset?)null), (removed.Preparation, removed.NextPrepareAt));
+    }
+
+    [Theory]
     [InlineData("""{"goal":"x","trigger":{"kind":"cron","expression":"not cron"}}""")]
     [InlineData("""{"goal":"x","trigger":{"kind":"at","time":"tomorrow"}}""")]
     [InlineData("""{"goal":"x","trigger":{"kind":"sometime"}}""")]
@@ -400,7 +449,7 @@ public sealed class TaskToolsTests : IAsyncLifetime
         Store(),
         _scheduler,
         KillSwitch(),
-        new TaskBudgets(Store(), new NoSpending(), new ViennaProfiles(), new FakeTemplateCatalog(), Options.Create(_options), _time),
+        new TaskBudgets(Store(), new NoSpending(), new ViennaProfiles(), _templates, Options.Create(_options), _time),
         _runs,
         new ViennaProfiles(),
         Options.Create(_options),

@@ -13,7 +13,8 @@ namespace Marshal.Memory;
 /// <summary>
 /// <see cref="IMemoryStore"/> on the main SQLite database. Chunk rows go through EF Core (owner-scoped); the keyword
 /// (<c>chunks_fts</c>) and vector (<c>chunk_vectors</c>) indexes are written with raw SQL in the same transaction.
-/// Embeddings are computed before the transaction from title and content.
+/// Embeddings are computed before the transaction from title and content. Valid time: a new chunk or new content is
+/// valid from the draft's time, else from now; the replaced version, or a superseded chunk, is closed at that time.
 /// </summary>
 public sealed class SqliteMemoryStore(
     IDbContextFactory<MarshalDbContext> contexts,
@@ -60,8 +61,48 @@ public sealed class SqliteMemoryStore(
         await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         ChunkWriteResult result = await WriteCoreAsync(db, prepared.Value, author, cancellationToken);
         await AddEdgeAsync(db, result.Id, old, ChunkEdgeKind.Supersedes, cancellationToken);
+        Chunk replaced = await db.Chunks.SingleAsync(chunk => chunk.Id == old, cancellationToken);
+        if (replaced.ValidTo is null)
+        {
+            DateTimeOffset successorFrom = await db.Chunks.Where(chunk => chunk.Id == result.Id).Select(chunk => chunk.ValidFrom).SingleAsync(cancellationToken);
+            (replaced.ValidFrom, replaced.ValidTo) = Closed(replaced.ValidFrom, successorFrom);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
         await transaction.CommitAsync(cancellationToken);
         return result;
+    }
+
+    public async Task<Result> CloseAsync(ChunkId id, DateTimeOffset validTo, CancellationToken cancellationToken)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        Chunk? chunk = await db.Chunks.SingleOrDefaultAsync(candidate => candidate.Id == id, cancellationToken);
+        if (chunk is null)
+            return NotFound(id);
+
+        (chunk.ValidFrom, chunk.ValidTo) = Closed(chunk.ValidFrom, validTo);
+        chunk.UpdatedAt = timeProvider.GetUtcNow();
+        await db.SaveChangesAsync(cancellationToken);
+        return Result.Success();
+    }
+
+    public async Task<Result> SetValidTimeAsync(ChunkId id, DateTimeOffset validFrom, DateTimeOffset? validTo, CancellationToken cancellationToken)
+    {
+        if (validTo is { } end && end <= validFrom)
+            return Invalid("validTo must be after validFrom.");
+
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        Chunk? chunk = await db.Chunks.SingleOrDefaultAsync(candidate => candidate.Id == id, cancellationToken);
+        if (chunk is null)
+            return NotFound(id);
+        if (chunk.ValidFrom == validFrom && chunk.ValidTo == validTo)
+            return Result.Success();
+
+        chunk.ValidFrom = validFrom;
+        chunk.ValidTo = validTo;
+        chunk.UpdatedAt = timeProvider.GetUtcNow();
+        await db.SaveChangesAsync(cancellationToken);
+        return Result.Success();
     }
 
     public async Task<Result> LinkAsync(ChunkId from, ChunkId to, ChunkEdgeKind kind, CancellationToken cancellationToken)
@@ -117,7 +158,7 @@ public sealed class SqliteMemoryStore(
             .Where(version => version.ChunkId == id)
             .OrderBy(version => version.ReplacedAt)
             .ToListAsync(cancellationToken);
-        return [.. versions.Select(version => new MemoryChunkVersion(version.ChunkId, version.Content, version.Importance, version.SourceRef, version.ReplacedAt))];
+        return [.. versions.Select(ToView)];
     }
 
     public async Task<IReadOnlyList<MemoryEdge>> GetEdgesAsync(ChunkId id, CancellationToken cancellationToken)
@@ -132,7 +173,14 @@ public sealed class SqliteMemoryStore(
 
     internal static MemoryChunk ToView(Chunk chunk) => new(
         chunk.Id, chunk.Scope, chunk.ProjectId, chunk.Type, chunk.Title, chunk.Content, chunk.Importance, chunk.Pinned, chunk.SourceRef,
-        chunk.CreatedBy, chunk.CreatedAt, chunk.UpdatedAt, chunk.DeletedAt, chunk.LastRetrievedAt);
+        chunk.CreatedBy, chunk.CreatedAt, chunk.UpdatedAt, chunk.DeletedAt, chunk.LastRetrievedAt)
+    {
+        ValidFrom = chunk.ValidFrom,
+        ValidTo = chunk.ValidTo,
+    };
+
+    internal static MemoryChunkVersion ToView(ChunkVersion version) =>
+        new(version.ChunkId, version.Content, version.Importance, version.SourceRef, version.ReplacedAt) { ValidFrom = version.ValidFrom, ValidTo = version.ValidTo };
 
     internal static MemoryEdge ToView(ChunkEdge edge) => new(edge.FromId, edge.ToId, edge.Kind, edge.CreatedAt);
 
@@ -160,21 +208,40 @@ public sealed class SqliteMemoryStore(
 
         ChunkId id = ChunkIds.Compute(Owner, draft.Scope, draft.ProjectId, draft.Type, title);
         Chunk? existing = await db.Chunks.SingleOrDefaultAsync(chunk => chunk.Id == id, cancellationToken);
-        bool unchanged = existing is { DeletedAt: null }
+        bool sameContent = existing is { DeletedAt: null }
             && existing.Title == title && existing.Content == content && existing.Importance == draft.Importance && existing.SourceRef == sourceRef;
-        float[]? vector = unchanged ? null : (await embeddings.GenerateAsync([MemoryIndexes.EmbeddingText(title, content)], cancellationToken: cancellationToken)).Single().Vector.ToArray();
-        return new Prepared(id, draft with { Title = title, Content = content, SourceRef = sourceRef }, existing, vector);
+        DateTimeOffset validFrom = draft.ValidFrom ?? (sameContent ? existing!.ValidFrom : timeProvider.GetUtcNow());
+        DateTimeOffset? validTo = draft.ValidTo ?? (sameContent ? existing!.ValidTo : null);
+        if (validTo is { } end && end <= validFrom)
+            return Invalid("validTo must be after validFrom.");
+
+        bool sameValidTime = sameContent && existing!.ValidFrom == validFrom && existing.ValidTo == validTo;
+        float[]? vector = sameContent ? null : (await embeddings.GenerateAsync([MemoryIndexes.EmbeddingText(title, content)], cancellationToken: cancellationToken)).Single().Vector.ToArray();
+        return new Prepared(id, draft with { Title = title, Content = content, SourceRef = sourceRef, ValidFrom = validFrom, ValidTo = validTo }, existing, vector, sameContent && sameValidTime);
     }
 
     private async Task<ChunkWriteResult> WriteCoreAsync(MarshalDbContext db, Prepared prepared, ChunkAuthor author, CancellationToken cancellationToken)
     {
-        if (prepared.Vector is null)
+        if (prepared.Unchanged)
             return new ChunkWriteResult(prepared.Id, ChunkWriteOutcome.Unchanged);
+
+        DateTimeOffset validFrom = prepared.Draft.ValidFrom!.Value;
+        if (prepared.Vector is null)
+        {
+            // Same content, new valid time: no version, no re-embedding.
+            Chunk same = prepared.Existing!;
+            same.ValidFrom = validFrom;
+            same.ValidTo = prepared.Draft.ValidTo;
+            same.UpdatedAt = timeProvider.GetUtcNow();
+            await db.SaveChangesAsync(cancellationToken);
+            return new ChunkWriteResult(prepared.Id, ChunkWriteOutcome.Updated);
+        }
 
         await MemoryIndexes.EnsureVectorTableAsync(db, embeddings, prepared.Vector.Length, cancellationToken);
         DateTimeOffset now = timeProvider.GetUtcNow();
         ChunkDraft draft = prepared.Draft;
         Chunk? chunk = prepared.Existing;
+        ChunkVersion? version = null;
         ChunkWriteOutcome outcome;
         if (chunk is null)
         {
@@ -192,6 +259,8 @@ public sealed class SqliteMemoryStore(
                 CreatedBy = author,
                 CreatedAt = now,
                 UpdatedAt = now,
+                ValidFrom = validFrom,
+                ValidTo = draft.ValidTo,
             };
             db.Chunks.Add(chunk);
             outcome = ChunkWriteOutcome.Created;
@@ -200,7 +269,7 @@ public sealed class SqliteMemoryStore(
         {
             if (chunk.Content != draft.Content || chunk.Importance != draft.Importance || chunk.SourceRef != draft.SourceRef)
             {
-                db.ChunkVersions.Add(new ChunkVersion
+                version = new ChunkVersion
                 {
                     Id = Guid.CreateVersion7(),
                     OwnerId = chunk.OwnerId,
@@ -209,7 +278,10 @@ public sealed class SqliteMemoryStore(
                     Importance = chunk.Importance,
                     SourceRef = chunk.SourceRef,
                     ReplacedAt = now,
-                });
+                    ValidFrom = chunk.ValidTo is null ? Closed(chunk.ValidFrom, validFrom).From : chunk.ValidFrom,
+                    ValidTo = chunk.ValidTo ?? validFrom,
+                };
+                db.ChunkVersions.Add(version);
             }
 
             chunk.Title = draft.Title;
@@ -217,12 +289,16 @@ public sealed class SqliteMemoryStore(
             chunk.Importance = draft.Importance;
             chunk.SourceRef = draft.SourceRef;
             chunk.UpdatedAt = now;
+            chunk.ValidFrom = validFrom;
+            chunk.ValidTo = draft.ValidTo;
             chunk.DeletedAt = null;
             outcome = ChunkWriteOutcome.Updated;
         }
 
         await db.SaveChangesAsync(cancellationToken);
         await MemoryIndexes.PutAsync(db, chunk, prepared.Vector, cancellationToken);
+        if (version is not null)
+            await MemoryIndexes.PutVersionAsync(db, version, cancellationToken);
         await MemoryIndexes.InvalidateCentroidAsync(db, chunk.ProjectId, cancellationToken);
         return new ChunkWriteResult(prepared.Id, outcome);
     }
@@ -242,5 +318,10 @@ public sealed class SqliteMemoryStore(
 
     private static Error SelfSupersede() => new("memory.self_supersede", "A chunk cannot supersede itself; update it in place instead.", ErrorType.Validation);
 
-    private sealed record Prepared(ChunkId Id, ChunkDraft Draft, Chunk? Existing, float[]? Vector);
+    // Marshal may have known a fact only since it was stored; ending it earlier moves the start just before the end.
+    private static (DateTimeOffset From, DateTimeOffset To) Closed(DateTimeOffset from, DateTimeOffset to) =>
+        (to > from ? from : to.AddSeconds(-1), to);
+
+    /// <summary>A validated write; <see cref="Vector"/> is null when the content is unchanged.</summary>
+    private sealed record Prepared(ChunkId Id, ChunkDraft Draft, Chunk? Existing, float[]? Vector, bool Unchanged);
 }

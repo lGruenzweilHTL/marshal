@@ -10,6 +10,11 @@ goal: >-
 trigger:
   kind: cron
   expression: "0 6 * * *"          # 06:00 in the owner's time zone
+prepare:                            # a preparation run at 03:00 collects the slow parts; the 06:00 run sees its notes
+  before: 3h                        # at most 12h; notes older than before + 1h are dropped
+  goal: >-
+    Collect today's appointments and the RSS digest for the morning briefing, following the briefing-format skill.
+    Leave out mail, the weather and the house: the briefing checks them fresh.
 deliver:
   - channel: voice                  # spoken where the owner is, once both conditions hold
     followUp: true                  # the satellite listens for "tell me more ..."

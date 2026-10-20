@@ -23,6 +23,7 @@ public interface IMemoryBrowser
 /// <param name="Pinned">Only pinned (true) or unpinned (false) chunks.</param>
 /// <param name="IncludeDeleted">Also soft-deleted chunks (never with a query).</param>
 /// <param name="Limit">Maximum number of chunks.</param>
+/// <param name="Closed">Only closed (true) or not closed (false) chunks; without a query.</param>
 public sealed record MemoryListFilter(
     string? Query = null,
     ChunkType? Type = null,
@@ -30,7 +31,8 @@ public sealed record MemoryListFilter(
     ProjectId? Project = null,
     bool? Pinned = null,
     bool IncludeDeleted = false,
-    int Limit = 100);
+    int Limit = 100,
+    bool? Closed = null);
 
 /// <summary>Where a history entry comes from.</summary>
 public enum MemoryHistoryKind
@@ -51,5 +53,6 @@ public enum MemoryHistoryKind
 /// <param name="Title">Title of that chunk.</param>
 /// <param name="Content">Content in that state.</param>
 /// <param name="Importance">Importance in that state.</param>
-/// <param name="ValidFrom">When the state began.</param>
-public sealed record MemoryHistoryEntry(ChunkId ChunkId, MemoryHistoryKind Kind, string Title, string Content, int Importance, DateTimeOffset ValidFrom);
+/// <param name="ValidFrom">Since when the state was true.</param>
+/// <param name="ValidTo">Until when it was true; null while open.</param>
+public sealed record MemoryHistoryEntry(ChunkId ChunkId, MemoryHistoryKind Kind, string Title, string Content, int Importance, DateTimeOffset ValidFrom, DateTimeOffset? ValidTo = null);

@@ -1,9 +1,9 @@
 using Marshal.Abstractions.Identity;
 
-namespace Marshal.Core.AiTasks;
+namespace Marshal.Abstractions.Runs;
 
 /// <summary>
-/// The global daily cost cap shared by background tasks and AI tasks.
+/// The global daily cost cap shared by background tasks, AI tasks, eval replays and idle-time memory jobs.
 /// </summary>
 public interface IDailyCostCap
 {

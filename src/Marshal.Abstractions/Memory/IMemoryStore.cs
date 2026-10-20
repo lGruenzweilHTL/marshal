@@ -15,6 +15,15 @@ public interface IMemoryStore
     /// <summary>Writes a chunk with a new identity and a <c>supersedes</c> edge from it to <paramref name="old"/>.</summary>
     Task<Result<ChunkWriteResult>> SupersedeAsync(ChunkId old, ChunkDraft replacement, ChunkAuthor author, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Ends a chunk's valid time at <paramref name="validTo"/> without a new version. A time not after the chunk's
+    /// valid-from time moves that to just before it, so the range stays valid.
+    /// </summary>
+    Task<Result> CloseAsync(ChunkId id, DateTimeOffset validTo, CancellationToken cancellationToken);
+
+    /// <summary>Sets a chunk's valid time exactly (an open end clears <c>validTo</c>), without a new version.</summary>
+    Task<Result> SetValidTimeAsync(ChunkId id, DateTimeOffset validFrom, DateTimeOffset? validTo, CancellationToken cancellationToken);
+
     /// <summary>Adds an edge; <c>supersedes</c> never points from a chunk to itself.</summary>
     Task<Result> LinkAsync(ChunkId from, ChunkId to, ChunkEdgeKind kind, CancellationToken cancellationToken);
 

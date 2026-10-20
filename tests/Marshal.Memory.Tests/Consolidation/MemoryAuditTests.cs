@@ -99,7 +99,7 @@ public sealed class MemoryAuditTests : IAsyncLifetime
     }
 
     private MemoryAudit Audit() =>
-        new(_database.Factory, Microsoft.Extensions.Options.Options.Create(new MemoryOptions { Audit = { StaleAfterDays = 180 } }), _time);
+        new(_database.Factory, Microsoft.Extensions.Options.Options.Create(new MemoryOptions { Audit = { StaleAfterDays = 180 } }), _time, new Marshal.Memory.Idle.EfMemoryProposals(_database.Factory, MemoryTestKit.Store(_database, _embeddings, _time), _database.Accessor, _time));
 
     private async Task<ChunkId> WriteAsync(string title, string content, float[]? vector = null, ProjectId? project = null)
     {

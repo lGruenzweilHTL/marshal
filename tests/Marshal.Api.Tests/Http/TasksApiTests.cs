@@ -122,6 +122,29 @@ public sealed class TasksApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Detail_PreparationWithNextAndLastPreparedTime()
+    {
+        TaskRecord task = await CreateAsync(_user, new NewTask
+        {
+            Goal = "Briefing.",
+            Trigger = TaskTrigger.Cron("0 6 * * *"),
+            Preparation = new TaskPreparation(TimeSpan.FromHours(3), "Collect today's appointments."),
+        });
+        var preparedAt = new DateTimeOffset(2026, 10, 18, 1, 0, 0, TimeSpan.Zero);
+        await UpdateAsync(_user, task with { Prepared = new PreparedNotes("Dentist at 09:00.", ["calendar"], preparedAt) });
+        TaskRecord plain = await CreateAsync(_user, new NewTask { Goal = "Check the print.", Trigger = TaskTrigger.Now() });
+
+        JsonElement detail = await _browser.GetFromJsonAsync<JsonElement>($"/api/v1/tasks/{task.Id}", Ct);
+        JsonElement plainDetail = await _browser.GetFromJsonAsync<JsonElement>($"/api/v1/tasks/{plain.Id}", Ct);
+
+        JsonElement preparation = detail.GetProperty("preparation");
+        Assert.Equal(("03:00:00", "Collect today's appointments."), (preparation.GetProperty("before").GetString(), preparation.GetProperty("goal").GetString()));
+        Assert.Equal(preparedAt, preparation.GetProperty("preparedAt").GetDateTimeOffset());
+        Assert.Equal(JsonValueKind.String, preparation.GetProperty("nextAt").ValueKind);
+        Assert.Equal(JsonValueKind.Null, plainDetail.GetProperty("preparation").ValueKind);
+    }
+
+    [Fact]
     public async Task EditGoal_NextRunUsesItAndIsAudited()
     {
         TaskRecord task = await CreateAsync(_user, new NewTask { Goal = "Morning briefing.", Name = "briefing", Trigger = TaskTrigger.Cron("0 6 * * *") });
@@ -135,34 +158,6 @@ public sealed class TasksApiTests : IAsyncLifetime
         Assert.Equal("Morning briefing with the weather.", (await GetAsync(_user, task.Id)).Goal);
         AuditEvent audit = await _factory.WithDatabaseAsync(_user, db => db.AuditEvents.SingleAsync(entry => entry.Action == "task.update_goal", Ct));
         Assert.Equal((task.Id.ToString(), _user.ToString()), (audit.Target, audit.ActorId));
-    }
-
-    [Fact]
-    public async Task Cancel_CancelsTheTaskAndItsUnfinishedChildrenAndIsAudited()
-    {
-        TaskRecord parent = await CreateAsync(_user, new NewTask { Goal = "Plan the trip.", Trigger = TaskTrigger.At(DateTimeOffset.UtcNow.AddDays(1)) });
-        TaskRecord child = await CreateAsync(_user, new NewTask { Goal = "Book the hotel.", ParentId = parent.Id, Trigger = TaskTrigger.At(DateTimeOffset.UtcNow.AddDays(1)) });
-
-        HttpResponseMessage response = await _browser.PostAsync($"/api/v1/tasks/{parent.Id}/cancel", null, Ct);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(2, (await response.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("cancelled").GetInt32());
-        Assert.Equal((AgentTaskStatus.Cancelled, AgentTaskStatus.Cancelled), ((await GetAsync(_user, parent.Id)).Status, (await GetAsync(_user, child.Id)).Status));
-        Assert.Equal(1, await _factory.WithDatabaseAsync(_user, db => db.AuditEvents.CountAsync(entry => entry.Action == "task.cancel" && entry.Target == parent.Id.ToString(), Ct)));
-    }
-
-    [Fact]
-    public async Task OtherUsersTask_NotFound()
-    {
-        (_, OwnerId other) = await Browser.SignInAsync(_factory, "user");
-        TaskRecord foreign = await CreateAsync(other, new NewTask { Goal = "Not yours.", Trigger = TaskTrigger.At(DateTimeOffset.UtcNow.AddDays(1)) });
-
-        HttpResponseMessage detail = await _browser.GetAsync($"/api/v1/tasks/{foreign.Id}", Ct);
-        HttpResponseMessage goal = await _browser.PutAsJsonAsync($"/api/v1/tasks/{foreign.Id}/goal", new { goal = "Mine now." }, Ct);
-        HttpResponseMessage cancel = await _browser.PostAsync($"/api/v1/tasks/{foreign.Id}/cancel", null, Ct);
-
-        Assert.Equal((HttpStatusCode.NotFound, HttpStatusCode.NotFound, HttpStatusCode.NotFound), (detail.StatusCode, goal.StatusCode, cancel.StatusCode));
-        Assert.Equal(AgentTaskStatus.Pending, (await GetAsync(other, foreign.Id)).Status);
     }
 
     [Fact]
@@ -210,6 +205,34 @@ public sealed class TasksApiTests : IAsyncLifetime
         HttpResponseMessage foreignResponse = await _browser.PutAsJsonAsync($"/api/v1/tasks/{foreign.Id}/tool-policy", new { tools = new[] { "tasks.*" } }, Ct);
 
         Assert.Equal((HttpStatusCode.Forbidden, HttpStatusCode.NotFound), (byToken.StatusCode, foreignResponse.StatusCode));
+    }
+
+    [Fact]
+    public async Task Cancel_CancelsTheTaskAndItsUnfinishedChildrenAndIsAudited()
+    {
+        TaskRecord parent = await CreateAsync(_user, new NewTask { Goal = "Plan the trip.", Trigger = TaskTrigger.At(DateTimeOffset.UtcNow.AddDays(1)) });
+        TaskRecord child = await CreateAsync(_user, new NewTask { Goal = "Book the hotel.", ParentId = parent.Id, Trigger = TaskTrigger.At(DateTimeOffset.UtcNow.AddDays(1)) });
+
+        HttpResponseMessage response = await _browser.PostAsync($"/api/v1/tasks/{parent.Id}/cancel", null, Ct);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(2, (await response.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("cancelled").GetInt32());
+        Assert.Equal((AgentTaskStatus.Cancelled, AgentTaskStatus.Cancelled), ((await GetAsync(_user, parent.Id)).Status, (await GetAsync(_user, child.Id)).Status));
+        Assert.Equal(1, await _factory.WithDatabaseAsync(_user, db => db.AuditEvents.CountAsync(entry => entry.Action == "task.cancel" && entry.Target == parent.Id.ToString(), Ct)));
+    }
+
+    [Fact]
+    public async Task OtherUsersTask_NotFound()
+    {
+        (_, OwnerId other) = await Browser.SignInAsync(_factory, "user");
+        TaskRecord foreign = await CreateAsync(other, new NewTask { Goal = "Not yours.", Trigger = TaskTrigger.At(DateTimeOffset.UtcNow.AddDays(1)) });
+
+        HttpResponseMessage detail = await _browser.GetAsync($"/api/v1/tasks/{foreign.Id}", Ct);
+        HttpResponseMessage goal = await _browser.PutAsJsonAsync($"/api/v1/tasks/{foreign.Id}/goal", new { goal = "Mine now." }, Ct);
+        HttpResponseMessage cancel = await _browser.PostAsync($"/api/v1/tasks/{foreign.Id}/cancel", null, Ct);
+
+        Assert.Equal((HttpStatusCode.NotFound, HttpStatusCode.NotFound, HttpStatusCode.NotFound), (detail.StatusCode, goal.StatusCode, cancel.StatusCode));
+        Assert.Equal(AgentTaskStatus.Pending, (await GetAsync(other, foreign.Id)).Status);
     }
 
     [Fact]

@@ -220,5 +220,110 @@ public sealed class SqliteMemoryStoreTests : IAsyncLifetime
         Assert.Equal(new ChunkWriteResult(id, ChunkWriteOutcome.Unchanged), again.Value);
     }
 
+    [Fact]
+    public async Task Write_WithoutValidTime_ValidFromCreationOpenEnded()
+    {
+        ChunkId id = (await _store.WriteAsync(Nozzle("0.4 mm"), ChunkAuthor.Agent, Ct)).Value.Id;
+
+        MemoryChunk chunk = (await _store.GetAsync(id, Ct))!;
+        Assert.Equal((_time.GetUtcNow(), (DateTimeOffset?)null), (chunk.ValidFrom, chunk.ValidTo));
+    }
+
+    [Fact]
+    public async Task Write_ValidToNotAfterValidFrom_ValidationError()
+    {
+        DateTimeOffset from = new(2026, 3, 1, 0, 0, 0, TimeSpan.Zero);
+
+        Result<ChunkWriteResult> result = await _store.WriteAsync(Nozzle("0.4 mm") with { ValidFrom = from, ValidTo = from.AddDays(-1) }, ChunkAuthor.Agent, Ct);
+
+        Assert.Equal("memory.invalid_chunk", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task Write_SameIdUpdate_VersionClosedAtNewValidFrom()
+    {
+        ChunkId id = (await _store.WriteAsync(Nozzle("0.4 mm") with { ValidFrom = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero) }, ChunkAuthor.Agent, Ct)).Value.Id;
+        _time.Advance(TimeSpan.FromDays(1));
+        DateTimeOffset march = new(2026, 3, 1, 0, 0, 0, TimeSpan.Zero);
+
+        await _store.WriteAsync(Nozzle("0.6 mm") with { ValidFrom = march }, ChunkAuthor.Agent, Ct);
+
+        MemoryChunk chunk = (await _store.GetAsync(id, Ct))!;
+        Assert.Equal(("0.6 mm", march, (DateTimeOffset?)null), (chunk.Content, chunk.ValidFrom, chunk.ValidTo));
+        MemoryChunkVersion version = Assert.Single(await _store.GetVersionsAsync(id, Ct));
+        Assert.Equal(("0.4 mm", new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), (DateTimeOffset?)march), (version.Content, version.ValidFrom, version.ValidTo));
+    }
+
+    [Fact]
+    public async Task Write_SameIdUpdateWithoutValidTime_VersionClosedNow()
+    {
+        ChunkId id = (await _store.WriteAsync(Nozzle("0.4 mm"), ChunkAuthor.Agent, Ct)).Value.Id;
+        _time.Advance(TimeSpan.FromDays(1));
+
+        await _store.WriteAsync(Nozzle("0.6 mm"), ChunkAuthor.Agent, Ct);
+
+        Assert.Equal(_time.GetUtcNow(), (await _store.GetAsync(id, Ct))!.ValidFrom);
+        Assert.Equal(_time.GetUtcNow(), Assert.Single(await _store.GetVersionsAsync(id, Ct)).ValidTo);
+    }
+
+    [Fact]
+    public async Task Write_OnlyValidToChanged_ClosesWithoutVersion()
+    {
+        ChunkId id = (await _store.WriteAsync(Nozzle("0.4 mm"), ChunkAuthor.Agent, Ct)).Value.Id;
+        DateTimeOffset end = _time.GetUtcNow().AddDays(2);
+
+        Result<ChunkWriteResult> closed = await _store.WriteAsync(Nozzle("0.4 mm") with { ValidTo = end }, ChunkAuthor.User, Ct);
+
+        Assert.Equal(ChunkWriteOutcome.Updated, closed.Value.Outcome);
+        MemoryChunk chunk = (await _store.GetAsync(id, Ct))!;
+        Assert.Equal((_time.GetUtcNow(), (DateTimeOffset?)end), (chunk.ValidFrom, chunk.ValidTo));
+        Assert.Empty(await _store.GetVersionsAsync(id, Ct));
+    }
+
+    [Fact]
+    public async Task Supersede_OpenOldChunk_ClosedAtNewValidFrom()
+    {
+        ProjectId voron = await MemoryTestKit.AddProjectAsync(_database, "Voron");
+        ChunkId old = (await _store.WriteAsync(Nozzle("0.4 mm"), ChunkAuthor.Agent, Ct)).Value.Id;
+        _time.Advance(TimeSpan.FromDays(1));
+
+        ChunkId moved = (await _store.SupersedeAsync(old, Nozzle("0.4 mm") with { Scope = ChunkScope.Project, ProjectId = voron }, ChunkAuthor.User, Ct)).Value.Id;
+
+        Assert.Equal(_time.GetUtcNow(), (await _store.GetAsync(old, Ct))!.ValidTo);
+        Assert.Equal(_time.GetUtcNow(), (await _store.GetAsync(moved, Ct))!.ValidFrom);
+    }
+
+    [Fact]
+    public async Task Close_SetsValidToWithoutVersion()
+    {
+        ChunkId id = (await _store.WriteAsync(Nozzle("0.4 mm") with { ValidFrom = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero) }, ChunkAuthor.Agent, Ct)).Value.Id;
+        DateTimeOffset march = new(2026, 3, 1, 0, 0, 0, TimeSpan.Zero);
+
+        Result closed = await _store.CloseAsync(id, march, Ct);
+
+        Assert.True(closed.IsSuccess);
+        Assert.Equal((DateTimeOffset?)march, (await _store.GetAsync(id, Ct))!.ValidTo);
+        Assert.Empty(await _store.GetVersionsAsync(id, Ct));
+    }
+
+    [Fact]
+    public async Task Close_BeforeValidFrom_ValidTimeEndsThereAndStaysAValidRange()
+    {
+        ChunkId id = (await _store.WriteAsync(Nozzle("0.4 mm"), ChunkAuthor.Agent, Ct)).Value.Id;
+        DateTimeOffset march = new(2026, 3, 1, 0, 0, 0, TimeSpan.Zero);
+
+        await _store.CloseAsync(id, march, Ct);
+
+        MemoryChunk chunk = (await _store.GetAsync(id, Ct))!;
+        Assert.Equal((DateTimeOffset?)march, chunk.ValidTo);
+        Assert.True(chunk.ValidFrom < march);
+    }
+
+    [Fact]
+    public async Task Close_UnknownChunk_NotFound()
+    {
+        Assert.Equal("memory.chunk_not_found", (await _store.CloseAsync(ChunkId.FromHash(new byte[32]), _time.GetUtcNow(), Ct)).Error.Code);
+    }
+
     private static ChunkDraft Nozzle(string content) => new(ChunkScope.General, null, ChunkType.Device, "Voron nozzle size", content);
 }

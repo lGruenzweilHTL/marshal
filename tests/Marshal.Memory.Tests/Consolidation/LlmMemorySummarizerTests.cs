@@ -69,7 +69,7 @@ public sealed class LlmMemorySummarizerTests : IAsyncLifetime
         }
 
         _model.ThenText(Candidates());
-        var job = new ConsolidationJob(_database.Factory, Summarizer(), _database.Accessor, Microsoft.Extensions.Options.Options.Create(new MemoryOptions()), _time, NullLogger<ConsolidationJob>.Instance);
+        var job = new ConsolidationJob(_database.Factory, Summarizer(), [], new NoUsers(), _database.Accessor, Microsoft.Extensions.Options.Options.Create(new MemoryOptions()), _time, NullLogger<ConsolidationJob>.Instance);
 
         Assert.True((await job.RunAsync(Ct)).IsSuccess);
         string input = string.Join("\n", Assert.Single(_model.Requests).Messages.Select(message => message.Text));
@@ -96,6 +96,32 @@ public sealed class LlmMemorySummarizerTests : IAsyncLifetime
         Assert.Equal("0.4 mm nozzle.", Assert.Single(await _store.GetVersionsAsync(nozzle, Ct)).Content);
         MemoryChunk coffee = (await _store.GetAsync(Id(ChunkType.Preference, "Coffee"), Ct))!;
         Assert.Equal((ChunkAuthor.Consolidation, false), (coffee.CreatedBy, coffee.Pinned));
+    }
+
+    [Fact]
+    public async Task Candidate_StatedValidTime_WrittenInOwnerZone_PromptHasTodayAndSchema()
+    {
+        await TurnAsync("Until last month the printer was in the garage", "Noted.");
+        _model.ThenText(Candidates(new { type = "device", title = "Printer location", content = "The printer was in the garage.", validFrom = "2026-01-10", validTo = "2026-09-01" }));
+
+        Assert.True((await Summarizer().SummarizeAsync(_session, Ct)).IsSuccess);
+
+        MemoryChunk chunk = (await _store.GetAsync(Id(ChunkType.Device, "Printer location"), Ct))!;
+        Assert.Equal((new DateTimeOffset(2026, 1, 9, 23, 0, 0, TimeSpan.Zero), (DateTimeOffset?)new DateTimeOffset(2026, 8, 31, 22, 0, 0, TimeSpan.Zero)), (chunk.ValidFrom, chunk.ValidTo));
+        ChatMessage[] messages = [.. Assert.Single(_model.Requests).Messages];
+        Assert.Contains("\"validFrom\"", messages[0].Text, StringComparison.Ordinal);
+        Assert.Contains("Today is 2026-09-28.", messages[^1].Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Candidate_InvalidValidTime_Skipped()
+    {
+        await TurnAsync("The printer was in the garage", "Noted.");
+        _model.ThenText(Candidates(new { type = "device", title = "Printer location", content = "In the garage.", validFrom = "last spring" }));
+
+        MemorySummary summary = (await Summarizer().SummarizeAsync(_session, Ct)).Value;
+
+        Assert.Equal((0, 1), (summary.Written.Count, summary.Skipped));
     }
 
     [Fact]
@@ -239,6 +265,7 @@ public sealed class LlmMemorySummarizerTests : IAsyncLifetime
         new MemoryProjects(_database.Factory),
         _summaryRuns,
         new ZeroCost(),
+        new ViennaProfiles(),
         _database.Accessor,
         Microsoft.Extensions.Options.Options.Create(new MemoryOptions()),
         _time,
@@ -264,6 +291,11 @@ public sealed class LlmMemorySummarizerTests : IAsyncLifetime
     private static ChunkId Id(ChunkType type, string title) => ChunkIds.Compute(TestExecutionContext.OwnerA, ChunkScope.General, null, type, title);
 
     private static string Candidates(params object[] candidates) => JsonSerializer.Serialize(new { candidates });
+
+    private sealed class NoUsers : Abstractions.Identity.IUserDirectory
+    {
+        public Task<IReadOnlyList<Abstractions.Identity.OwnerId>> ListAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<Abstractions.Identity.OwnerId>>([]);
+    }
 
     private sealed class FastRouter(IChatClient client) : IModelRouter
     {

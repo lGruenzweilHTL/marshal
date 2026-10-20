@@ -2,7 +2,8 @@ namespace Marshal.Abstractions.Memory;
 
 /// <summary>
 /// Hybrid memory search for the current owner: vector and keyword seeds, edge expansion, superseded chunks replaced
-/// by their successors, scored and limited by quotas and a token budget. Soft-deleted chunks are never returned.
+/// by their successors, scored and limited by quotas and a token budget. Soft-deleted chunks are never returned, closed
+/// ones only for a search at a past time.
 /// </summary>
 public interface IMemoryRetriever
 {
@@ -22,6 +23,10 @@ public interface IMemoryRetriever
 /// <param name="Project">Only chunks of this project.</param>
 /// <param name="IncludePinned">Also return pinned chunks (they are injected separately in automatic retrieval).</param>
 /// <param name="MarkRetrieved">Set the chunks' last-retrieved time; off for maintenance reads that must not keep chunks fresh.</param>
+/// <param name="AsOf">
+/// Search what was valid at this time: closed chunks and earlier versions whose valid time covers it, each returned with
+/// that content and valid time. Without it, only chunks not closed now are searched.
+/// </param>
 public sealed record MemoryQuery(
     string Text,
     ReadOnlyMemory<float>? Embedding,
@@ -30,7 +35,8 @@ public sealed record MemoryQuery(
     ChunkType? Type = null,
     ProjectId? Project = null,
     bool IncludePinned = false,
-    bool MarkRetrieved = true);
+    bool MarkRetrieved = true,
+    DateTimeOffset? AsOf = null);
 
 /// <summary>How a chunk was found.</summary>
 public enum RetrievalSource

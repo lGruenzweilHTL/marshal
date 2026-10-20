@@ -66,6 +66,26 @@ public sealed class AgentTask : IOwned, IVersioned
     /// <summary>Optional name, unique per owner.</summary>
     public string? Name { get; set; }
 
+    /// <summary>JSON array of tool id globs the task's runs are limited to; null = the template's allowlist.</summary>
+    public string? ToolPolicy { get; set; }
+
+    /// <summary>How long before each cron run a preparation run starts; null = no preparation.</summary>
+    public TimeSpan? PrepareBefore { get; set; }
+
+    /// <summary>Goal of the preparation run.</summary>
+    public string? PrepareGoal { get; set; }
+
+    /// <summary>When the next preparation run is due (the next cron run minus <see cref="PrepareBefore"/>).</summary>
+    public DateTimeOffset? NextPrepareAt { get; set; }
+
+    /// <summary>Result body of the last preparation run, read by the next main run.</summary>
+    public string? PreparedNotes { get; set; }
+
+    /// <summary>JSON array of the taint kinds of the preparation run that wrote <see cref="PreparedNotes"/>.</summary>
+    public string? PreparedTaint { get; set; }
+
+    public DateTimeOffset? PreparedAt { get; set; }
+
     /// <summary>JSON array of deliveries, with the state of pending conditional ones.</summary>
     public string Deliveries { get; set; } = "[]";
 

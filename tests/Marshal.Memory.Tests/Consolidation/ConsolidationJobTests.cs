@@ -7,6 +7,7 @@ using Marshal.Abstractions.Sessions;
 using Marshal.Data;
 using Marshal.Data.Conversations;
 using Marshal.Memory.Consolidation;
+using Marshal.Memory.Idle;
 using Marshal.Testing;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -76,9 +77,28 @@ public sealed class ConsolidationJobTests : IAsyncLifetime
         Assert.Equal("Consolidated 1 of 2 sessions closed in the last day.", result.Value);
     }
 
-    private ConsolidationJob Job(bool enabled = true) => new(
+    [Fact]
+    public async Task Run_IdleJobsAfterSummaries_PerOwnerInOrder_AFailureDoesNotStopTheOthers()
+    {
+        await SessionAsync(OwnerA, closedHoursAgo: 5);
+        var calls = new List<string>();
+        IIdleMemoryJob[] jobs =
+        [
+            new RecordingJob("contradictions", calls, _database.Accessor, _summarizer, throws: true),
+            new RecordingJob("duplicates", calls, _database.Accessor, _summarizer),
+        ];
+
+        Result<string> result = await Job(jobs: jobs).RunAsync(Ct);
+
+        Assert.Equal([$"contradictions {OwnerA} after 1", $"duplicates {OwnerA} after 1", $"contradictions {OwnerB} after 1", $"duplicates {OwnerB} after 1"], calls);
+        Assert.Contains("Idle-time jobs: 2 failed.", result.Value, StringComparison.Ordinal);
+    }
+
+    private ConsolidationJob Job(bool enabled = true, IReadOnlyList<IIdleMemoryJob>? jobs = null) => new(
         _database.Factory,
         _summarizer,
+        jobs ?? [],
+        new Owners(),
         _database.Accessor,
         Options.Create(new MemoryOptions { Summarizer = new SummarizerOptions { Enabled = enabled } }),
         _time,
@@ -118,6 +138,23 @@ public sealed class ConsolidationJobTests : IAsyncLifetime
             Outcome = outcome,
         });
         await db.SaveChangesAsync(Ct);
+    }
+
+    private sealed class Owners : IUserDirectory
+    {
+        public Task<IReadOnlyList<OwnerId>> ListAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<OwnerId>>([OwnerA, OwnerB]);
+    }
+
+    // Records the job, its owner and how many summaries ran before it.
+    private sealed class RecordingJob(string name, List<string> calls, IExecutionContextAccessor context, RecordingSummarizer summarizer, bool throws = false) : IIdleMemoryJob
+    {
+        public string Name => name;
+
+        public Task<Result<int>> RunAsync(DateTimeOffset since, CancellationToken cancellationToken)
+        {
+            calls.Add($"{name} {context.Current!.OwnerId} after {summarizer.Calls.Count}");
+            return throws ? throw new InvalidOperationException("boom") : Task.FromResult(Result.Success(0));
+        }
     }
 
     // Records the owner of the execution context each summary runs in.

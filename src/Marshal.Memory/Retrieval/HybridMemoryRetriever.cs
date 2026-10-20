@@ -14,7 +14,9 @@ namespace Marshal.Memory.Retrieval;
 /// <summary>
 /// Two-phase hybrid retrieval: vector (sqlite-vec KNN) and keyword (FTS5 bm25) seeds, then one breadth-first step
 /// along <c>relates_to</c> / <c>depends_on</c> edges; superseded chunks are replaced by their live successors, and
-/// <see cref="IChunkScorer"/> picks the result. Returned chunks get their <c>last_retrieved_at</c> set.
+/// <see cref="IChunkScorer"/> picks the result. Returned chunks get their <c>last_retrieved_at</c> set. Closed chunks are
+/// dropped. A search at a past time (<see cref="MemoryQuery.AsOf"/>) also seeds from the version keyword index, keeps
+/// superseded chunks and returns each chunk as it was then: itself or the version whose valid time covers that time.
 /// </summary>
 public sealed partial class HybridMemoryRetriever(
     IDbContextFactory<MarshalDbContext> contexts,
@@ -61,21 +63,25 @@ public sealed partial class HybridMemoryRetriever(
             }
         }
 
-        Dictionary<ChunkId, (double Similarity, RetrievalSource Source)> replaced = await ReplaceSupersededAsync(db, found, cancellationToken);
+        // At a past time the superseded chunk may be the one that was valid; now only its successor counts.
+        Dictionary<ChunkId, (double Similarity, RetrievalSource Source)> replaced = query.AsOf is null ? await ReplaceSupersededAsync(db, found, cancellationToken) : found;
         List<ChunkId> ids = [.. replaced.Keys];
-        List<Chunk> chunks = await db.Chunks.AsNoTracking()
-            .Where(chunk => ids.Contains(chunk.Id) && chunk.DeletedAt == null)
-            .ToListAsync(cancellationToken);
+        DateTimeOffset now = timeProvider.GetUtcNow();
+        IQueryable<Chunk> live = db.Chunks.AsNoTracking().Where(chunk => ids.Contains(chunk.Id) && chunk.DeletedAt == null);
+        if (query.AsOf is null)
+            live = live.Where(chunk => chunk.ValidTo == null || chunk.ValidTo > now);
+
+        List<Chunk> chunks = await live.ToListAsync(cancellationToken);
+        IReadOnlyList<MemoryChunk> views = query.AsOf is { } asOf ? await AsOfAsync(db, chunks, asOf, cancellationToken) : [.. chunks.Select(SqliteMemoryStore.ToView)];
         List<ChunkCandidate> candidates =
         [
-            .. chunks
+            .. views
                 .Where(chunk => query.IncludePinned || !chunk.Pinned)
                 .Where(chunk => query.Type is null || chunk.Type == query.Type)
                 .Where(chunk => query.Project is null || chunk.ProjectId == query.Project)
-                .Select(chunk => new ChunkCandidate(SqliteMemoryStore.ToView(chunk), replaced[chunk.Id].Similarity)),
+                .Select(chunk => new ChunkCandidate(chunk, replaced[chunk.Id].Similarity)),
         ];
 
-        DateTimeOffset now = timeProvider.GetUtcNow();
         IReadOnlyList<ScoredChunk> selected = scorer.Select(candidates, new ScoringContext(query.ActiveProjects, now, query.TokenBudget));
         List<ChunkId> selectedIds = [.. selected.Select(chunk => chunk.Chunk.Id)];
         if (query.MarkRetrieved && selectedIds.Count > 0)
@@ -94,6 +100,30 @@ public sealed partial class HybridMemoryRetriever(
             .Where(chunk => chunk.Pinned && chunk.DeletedAt == null)
             .ToListAsync(cancellationToken);
         return [.. pinned.OrderByDescending(chunk => chunk.Importance).ThenBy(chunk => chunk.Title, StringComparer.Ordinal).Select(SqliteMemoryStore.ToView)];
+    }
+
+    // Each chunk as it was at the time: itself when its valid time covers it, else the newest version that does.
+    private static async Task<IReadOnlyList<MemoryChunk>> AsOfAsync(MarshalDbContext db, List<Chunk> chunks, DateTimeOffset asOf, CancellationToken cancellationToken)
+    {
+        List<ChunkId> ids = [.. chunks.Select(chunk => chunk.Id)];
+        List<ChunkVersion> versions = await db.ChunkVersions.AsNoTracking()
+            .Where(version => ids.Contains(version.ChunkId) && version.ValidFrom <= asOf && (version.ValidTo == null || version.ValidTo > asOf))
+            .ToListAsync(cancellationToken);
+        var result = new List<MemoryChunk>();
+        foreach (Chunk chunk in chunks)
+        {
+            MemoryChunk view = SqliteMemoryStore.ToView(chunk);
+            if (chunk.ValidFrom <= asOf && (chunk.ValidTo is null || chunk.ValidTo > asOf))
+            {
+                result.Add(view);
+            }
+            else if (versions.Where(version => version.ChunkId == chunk.Id).MaxBy(version => version.ValidFrom) is { } version)
+            {
+                result.Add(view with { Content = version.Content, Importance = version.Importance, SourceRef = version.SourceRef, ValidFrom = version.ValidFrom, ValidTo = version.ValidTo });
+            }
+        }
+
+        return result;
     }
 
     private OwnerId Owner => executionContext.Current?.OwnerId
@@ -122,8 +152,14 @@ public sealed partial class HybridMemoryRetriever(
         return seeds;
     }
 
+    private enum KeywordIndex
+    {
+        Chunks,
+        Versions,
+    }
+
     private static async Task<List<(ChunkId Id, double Similarity)>> KeywordSeedsAsync(
-        MarshalDbContext db, string owner, string text, int count, CancellationToken cancellationToken)
+        MarshalDbContext db, string owner, string text, int count, KeywordIndex index, CancellationToken cancellationToken)
     {
         var seeds = new List<(ChunkId, double)>();
         string[] terms = [.. Words().Matches(text).Select(match => match.Value).Where(word => word.Length > 1).Distinct(StringComparer.OrdinalIgnoreCase)];
@@ -132,8 +168,9 @@ public sealed partial class HybridMemoryRetriever(
 
         // Every term is quoted, so FTS5 query syntax in user text is taken literally.
         string match = string.Join(" OR ", terms.Select(term => $"\"{term}\""));
+        string table = index == KeywordIndex.Chunks ? "chunks_fts" : "chunk_versions_fts";
         await using DbCommand command = MemoryIndexes.Command(db,
-            "SELECT chunk_id, bm25(chunks_fts) AS rank FROM chunks_fts WHERE chunks_fts MATCH $match AND owner_id = $owner ORDER BY rank LIMIT $k",
+            $"SELECT chunk_id, bm25({table}) AS rank FROM {table} WHERE {table} MATCH $match AND owner_id = $owner ORDER BY rank LIMIT $k",
             ("$match", match), ("$owner", owner), ("$k", count));
         var ranked = new List<(ChunkId Id, double Rank)>();
         await using (DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken))

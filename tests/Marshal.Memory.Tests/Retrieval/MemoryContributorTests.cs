@@ -1,10 +1,13 @@
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Memory;
 using Marshal.Abstractions.Satellites;
+using Marshal.Data;
+using Marshal.Data.Memory;
 using Marshal.Memory.Projects;
 using Marshal.Memory.Retrieval;
 using Marshal.Memory.Tests.Projects;
 using Marshal.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
@@ -43,6 +46,49 @@ public sealed class MemoryContributorTests : IAsyncLifetime
         string? section = await Retrieved().ContributeAsync(new ContextRequest(TestExecutionContext.Text(), "Make me a coffee"), Ct);
 
         Assert.Contains("- [preference] Coffee: Likes oat milk.", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Retrieved_NotYetValidChunk_ShownWithValidFrom()
+    {
+        _embeddings.Pin("Employer\nWorks at Fabrikam.", Vec(0, 1));
+        await _store.WriteAsync(new ChunkDraft(ChunkScope.General, null, ChunkType.Fact, "Employer", "Works at Fabrikam.") { ValidFrom = new DateTimeOffset(2026, 10, 31, 23, 0, 0, TimeSpan.Zero) }, ChunkAuthor.User, Ct);
+        _embeddings.Pin("Where will I work?", Vec(0, 1));
+
+        string? section = await Retrieved().ContributeAsync(new ContextRequest(TestExecutionContext.Text(), "Where will I work?"), Ct);
+
+        Assert.Contains("- [fact] Employer: Works at Fabrikam. (valid from 2026-11-01)", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ProjectSummary_ActiveProjectWithSummary_InTheProjectSection()
+    {
+        ProjectId voron = await MemoryTestKit.AddProjectAsync(_database, "Voron", "Voron 2.4 build");
+        await using (MarshalDbContext db = _database.CreateContext())
+        {
+            Project project = await db.Projects.SingleAsync(candidate => candidate.Id == voron, Ct);
+            project.Summary = "A Voron 2.4 with a 0.6 mm nozzle, being tuned for ABS.";
+            project.SummaryUpdatedAt = _time.GetUtcNow();
+            await db.SaveChangesAsync(Ct);
+        }
+
+        _embeddings.Pin("How is the Voron doing?", Vec(3, 1));
+
+        string? section = await new ProjectSummaryContributor(_turns, _database.Factory).ContributeAsync(new ContextRequest(TestExecutionContext.Text(), "How is the Voron doing?"), Ct);
+
+        Assert.Contains("Active projects:", section, StringComparison.Ordinal);
+        Assert.Contains("- Voron: A Voron 2.4 with a 0.6 mm nozzle, being tuned for ABS.", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ProjectSummary_ActiveProjectWithoutSummary_Nothing()
+    {
+        await MemoryTestKit.AddProjectAsync(_database, "Voron", "Voron 2.4 build");
+        _embeddings.Pin("How is the Voron doing?", Vec(3, 1));
+
+        string? section = await new ProjectSummaryContributor(_turns, _database.Factory).ContributeAsync(new ContextRequest(TestExecutionContext.Text(), "How is the Voron doing?"), Ct);
+
+        Assert.Null(section);
     }
 
     [Fact]
@@ -114,7 +160,7 @@ public sealed class MemoryContributorTests : IAsyncLifetime
         var turns = new TurnMemory(new FailingEmbeddings(), new Areas(), ProjectTestKit.Activator(_database, _embeddings, new ProjectSessions(), new MemoryOptions(), _time));
         var request = new ContextRequest(TestExecutionContext.Text(), "Turn on the light");
 
-        string? section = await new RetrievedMemoryContributor(_retriever, turns, Microsoft.Extensions.Options.Options.Create(new MemoryOptions()), NullLogger<RetrievedMemoryContributor>.Instance)
+        string? section = await new RetrievedMemoryContributor(_retriever, turns, new ViennaProfiles(), Microsoft.Extensions.Options.Options.Create(new MemoryOptions()), _time, NullLogger<RetrievedMemoryContributor>.Instance)
             .ContributeAsync(request, Ct);
 
         Assert.Null(section);
@@ -131,7 +177,7 @@ public sealed class MemoryContributorTests : IAsyncLifetime
     }
 
     private RetrievedMemoryContributor Retrieved() =>
-        new(_retriever, _turns, Microsoft.Extensions.Options.Options.Create(new MemoryOptions()), NullLogger<RetrievedMemoryContributor>.Instance);
+        new(_retriever, _turns, new ViennaProfiles(), Microsoft.Extensions.Options.Options.Create(new MemoryOptions()), _time, NullLogger<RetrievedMemoryContributor>.Instance);
 
     private async Task<ChunkId> WriteAsync(string title, string content, float[] vector, ChunkType type = ChunkType.Fact)
     {

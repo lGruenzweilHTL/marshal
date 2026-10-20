@@ -51,6 +51,18 @@ public sealed record TaskRecord
 
     public DateTimeOffset? NextRunAt { get; init; }
 
+    /// <summary>The task's preparation run, if any (cron tasks only).</summary>
+    public TaskPreparation? Preparation { get; init; }
+
+    /// <summary>
+    /// When the next preparation run is due. The store derives it from <see cref="NextRunAt"/> whenever that or the
+    /// preparation changes; the scheduler clears it when it claims the preparation.
+    /// </summary>
+    public DateTimeOffset? NextPrepareAt { get; init; }
+
+    /// <summary>Notes of the last preparation run, discarded after the next main run.</summary>
+    public PreparedNotes? Prepared { get; init; }
+
     public string? Notes { get; init; }
 
     public required TaskBudget Budget { get; init; }

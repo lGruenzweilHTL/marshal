@@ -22,10 +22,20 @@ namespace Marshal.Tasks.Running;
 /// run's satellite), background rules (not interactive, text output). The model gets the goal, the notes and the
 /// trigger payload, never an earlier run's transcript; the one exception is the first run of a turn moved to the
 /// background, which continues that turn's transcript (and its taint). The reply's first paragraph is the result's
-/// speech, the whole reply its body.
+/// speech, the whole reply its body. A preparation run works on the preparation goal with the same template, policy
+/// and limits; the next main run gets its result as prepared notes, wrapped when it was tainted, and starts with
+/// its taint. Notes older than <see cref="TaskPreparation.MaxAge"/> are ignored.
 /// </summary>
-public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider profiles, ActiveTaskRuns activeRuns, TaskContinuations continuations) : ITaskRunner
+public sealed class AgentTaskRunner(
+    IAgentRunner agent,
+    IUserProfileProvider profiles,
+    ActiveTaskRuns activeRuns,
+    TaskContinuations continuations,
+    TimeProvider timeProvider) : ITaskRunner, ITaskPreparer
 {
+    /// <summary>Run trigger of preparation runs.</summary>
+    public const string PrepareTrigger = "prepare";
+
     /// <summary>Taint kind of runs started by an event payload (events can carry third-party text, e.g. mail subjects).</summary>
     public const string EventTaint = "event";
 
@@ -36,30 +46,39 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
 
     public TaskKind Kind => TaskKind.Agent;
 
+    public async Task<TaskPreparationOutcome> PrepareAsync(TaskRecord task, RunLimits limits, CancellationToken cancellationToken)
+    {
+        if (task.Preparation is not { } preparation)
+            return new TaskPreparationOutcome(null, [], TaskSpend.Zero, "no_preparation");
+
+        MarshalExecutionContext context = await ContextAsync(task, cancellationToken);
+        string input = $"Preparation goal:\n{preparation.Goal}\n\nThis prepares a later run of the task with this goal:\n{task.Goal}\n\n"
+            + "Collect what that run will need and reply with it as notes; the later run reads them instead of looking everything up again.";
+        AgentRunResult result = await agent.RunAsync(new AgentRunRequest { Context = context, Trigger = PrepareTrigger, UserText = input, Limits = limits }, cancellationToken);
+        var spend = new TaskSpend(context.Usage.Tokens, context.Usage.Cost, context.Usage.ModelCalls);
+        IReadOnlyList<string> taint = [.. context.Taint.Sources.Select(source => source.Kind).Distinct(StringComparer.Ordinal)];
+        return result.Outcome == RunOutcome.Ok && !string.IsNullOrWhiteSpace(result.Reply)
+            ? new TaskPreparationOutcome(result.Reply.Trim(), taint, spend)
+            : new TaskPreparationOutcome(null, taint, spend, result.OutcomeReason ?? result.Outcome.ToString().ToLowerInvariant());
+    }
+
     public async Task<TaskRunOutcome> RunAsync(TaskRecord task, RunLimits limits, CancellationToken cancellationToken)
     {
-        var context = new MarshalExecutionContext
-        {
-            OwnerId = task.OwnerId,
-            Source = SessionSource.Task,
-            InputMode = InputMode.Text,
-            Language = await LanguageAsync(task.OwnerId, cancellationToken),
-            SatelliteId = task.OriginSatelliteId,
-            IsInteractive = false,
-            Template = task.Template ?? "default",
-            TaskId = task.Id,
-            ProjectId = task.ProjectId,
-        };
-        var request = new AgentRunRequest { Context = context, Trigger = "task", UserText = Input(task), Limits = limits };
+        MarshalExecutionContext context = await ContextAsync(task, cancellationToken);
+        PreparedNotes? prepared = Fresh(task);
+        var request = new AgentRunRequest { Context = context, Trigger = "task", UserText = Input(task, prepared), Limits = limits };
         if (continuations.TryTake(task.Id, out Continuation? continuation))
         {
             request = request with { Trigger = "continuation", History = continuation.Transcript, UserText = null };
             foreach (TaintSource source in continuation.Taint)
                 context.Taint.Mark(source.Kind, 0);
         }
-        else if (PayloadTaint(task) is { } taint)
+        else
         {
-            context.Taint.Mark(taint, 0);
+            if (PayloadTaint(task) is { } taint)
+                context.Taint.Mark(taint, 0);
+            foreach (string kind in prepared?.Taint ?? [])
+                context.Taint.Mark(kind, 0);
         }
 
         using ActiveTaskRuns.Scope run = activeRuns.Begin(task.Id);
@@ -77,6 +96,25 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
         return outcome with { Spend = new TaskSpend(context.Usage.Tokens, context.Usage.Cost, context.Usage.ModelCalls) };
     }
 
+    private async Task<MarshalExecutionContext> ContextAsync(TaskRecord task, CancellationToken cancellationToken) =>
+        new()
+        {
+            OwnerId = task.OwnerId,
+            Source = SessionSource.Task,
+            InputMode = InputMode.Text,
+            Language = await LanguageAsync(task.OwnerId, cancellationToken),
+            SatelliteId = task.OriginSatelliteId,
+            IsInteractive = false,
+            Template = task.Template ?? "default",
+            TaskId = task.Id,
+            ProjectId = task.ProjectId,
+            ToolPolicy = task.ToolPolicy,
+        };
+
+    // Prepared notes count only while fresh: a late or stale preparation must not stand in for today's data.
+    private PreparedNotes? Fresh(TaskRecord task) =>
+        task is { Prepared: { } prepared, Preparation: { } preparation } && timeProvider.GetUtcNow() - prepared.At <= preparation.MaxAge ? prepared : null;
+
     // A server-written note, so the resumed run knows what it waited for.
     private static string ApprovalNote(string? notes, PendingActionRecord approval)
     {
@@ -84,11 +122,19 @@ public sealed class AgentTaskRunner(IAgentRunner agent, IUserProfileProvider pro
         return string.IsNullOrWhiteSpace(notes) ? note : $"{notes}\n{note}";
     }
 
-    private static string Input(TaskRecord task)
+    private static string Input(TaskRecord task, PreparedNotes? prepared)
     {
         var input = new StringBuilder();
         input.Append("Task goal:\n").Append(task.Goal).Append("\n\nTask notes from earlier runs:\n")
-            .Append(string.IsNullOrWhiteSpace(task.Notes) ? "(none)" : task.Notes)
+            .Append(string.IsNullOrWhiteSpace(task.Notes) ? "(none)" : task.Notes);
+        if (prepared is not null)
+        {
+            input.Append("\n\nPrepared notes (collected ").Append(prepared.At.ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture))
+                .Append(" by this task's preparation run; check anything that may have changed since):\n")
+                .Append(prepared.Taint.Count > 0 ? UntrustedContent.Wrap(prepared.Taint[0], prepared.Body) : prepared.Body);
+        }
+
+        input
             .Append("\n\nThis run was started by: ").Append(Describe(task));
         if (task.TriggerPayload is not null)
         {

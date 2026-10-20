@@ -40,8 +40,11 @@ public interface IProjectStore
 /// <param name="LastActiveAt">Last activation, if any.</param>
 /// <param name="ChunkCount">Live chunks of the project.</param>
 /// <param name="Aliases">Active, candidate and rejected aliases.</param>
+/// <param name="Summary">Summary written by the idle-time jobs (read-only).</param>
+/// <param name="SummaryUpdatedAt">When the summary was written.</param>
 public sealed record ProjectView(
-    ProjectId Id, string Name, string Description, DateTimeOffset CreatedAt, DateTimeOffset? LastActiveAt, int ChunkCount, IReadOnlyList<ProjectAliasView> Aliases);
+    ProjectId Id, string Name, string Description, DateTimeOffset CreatedAt, DateTimeOffset? LastActiveAt, int ChunkCount, IReadOnlyList<ProjectAliasView> Aliases,
+    string? Summary = null, DateTimeOffset? SummaryUpdatedAt = null);
 
 /// <summary>An alias or alias candidate.</summary>
 /// <param name="Id">Alias id.</param>

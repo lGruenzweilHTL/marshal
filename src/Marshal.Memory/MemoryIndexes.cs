@@ -75,6 +75,11 @@ internal static class MemoryIndexes
             ("$id", chunk.Id.Value), ("$owner", owner), ("$embedding", ToBlob(vector)));
     }
 
+    /// <summary>Adds the keyword entry of a chunk version.</summary>
+    public static Task PutVersionAsync(MarshalDbContext db, ChunkVersion version, CancellationToken cancellationToken) =>
+        ExecuteAsync(db, "INSERT INTO chunk_versions_fts (version_id, chunk_id, owner_id, content) VALUES ($version, $chunk, $owner, $content)", cancellationToken,
+            ("$version", version.Id.ToString("D")), ("$chunk", version.ChunkId.Value), ("$owner", OwnerKey(version.OwnerId)), ("$content", version.Content));
+
     /// <summary>Removes the index entries of a chunk (the vector table may not exist yet).</summary>
     public static async Task RemoveAsync(MarshalDbContext db, ChunkId id, CancellationToken cancellationToken)
     {

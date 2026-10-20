@@ -173,7 +173,7 @@ public sealed class ProjectStore(IDbContextFactory<MarshalDbContext> contexts, I
         List<ProjectAlias> aliases = await db.ProjectAliases.AsNoTracking().Where(alias => alias.ProjectId == project.Id).ToListAsync(cancellationToken);
         int chunks = await db.Chunks.CountAsync(chunk => chunk.ProjectId == project.Id && chunk.DeletedAt == null, cancellationToken);
         return new ProjectView(project.Id, project.Name, project.Description, project.CreatedAt, project.LastActiveAt, chunks,
-            [.. aliases.OrderBy(alias => alias.Status).ThenBy(alias => alias.Phrase, StringComparer.Ordinal).Select(View)]);
+            [.. aliases.OrderBy(alias => alias.Status).ThenBy(alias => alias.Phrase, StringComparer.Ordinal).Select(View)], project.Summary, project.SummaryUpdatedAt);
     }
 
     private static ProjectAliasView View(ProjectAlias alias) => new(alias.Id, alias.Phrase, alias.Status, alias.Confirmations, alias.CreatedAt);

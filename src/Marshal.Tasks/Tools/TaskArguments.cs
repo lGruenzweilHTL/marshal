@@ -59,6 +59,45 @@ internal static class TaskArguments
         }
     }
 
+    /// <summary>
+    /// Parses <c>prepare: {before, goal}</c>; <c>before</c> is a duration like <c>3h</c>, <c>90m</c>, <c>PT3H</c> or
+    /// <c>03:00:00</c>. The limits (cron trigger, at most 12 hours) are checked by the store.
+    /// </summary>
+    public static Result<TaskPreparation> Preparation(JsonElement arguments)
+    {
+        JsonElement prepare = arguments.GetProperty("prepare");
+        if (prepare.ValueKind != JsonValueKind.Object)
+            return TaskErrors.Invalid("prepare must be an object with before and goal.");
+        if (Text(prepare, "goal") is not { } goal)
+            return TaskErrors.Invalid("prepare needs a goal.");
+        if (Text(prepare, "before") is not { } text || Duration(text) is not { } before)
+            return TaskErrors.Invalid("prepare.before must be a duration like 3h, 90m or PT3H.");
+        return new TaskPreparation(before, goal);
+    }
+
+    private static TimeSpan? Duration(string text)
+    {
+        if (text.Length > 1 && char.ToLowerInvariant(text[^1]) is 'h' or 'm'
+            && double.TryParse(text[..^1], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out double amount))
+        {
+            return char.ToLowerInvariant(text[^1]) == 'h' ? TimeSpan.FromHours(amount) : TimeSpan.FromMinutes(amount);
+        }
+
+        if (text.StartsWith('P'))
+        {
+            try
+            {
+                return System.Xml.XmlConvert.ToTimeSpan(text);
+            }
+            catch (FormatException)
+            {
+                return null;
+            }
+        }
+
+        return TimeSpan.TryParse(text, CultureInfo.InvariantCulture, out TimeSpan span) ? span : null;
+    }
+
     /// <summary>Parses <c>deliver</c>; channel and priority names only (the delivery rules are checked by the store's caller).</summary>
     public static Result<IReadOnlyList<TaskDelivery>> Deliveries(JsonElement arguments)
     {

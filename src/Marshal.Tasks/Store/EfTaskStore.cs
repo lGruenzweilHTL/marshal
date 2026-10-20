@@ -44,6 +44,9 @@ public sealed partial class EfTaskStore(
         Result deliveries = DeliveryRules.Validate(task.Deliveries);
         if (deliveries.IsFailure)
             return deliveries.Error;
+        Result preparation = ValidatePreparation(task.Preparation, task.Trigger);
+        if (preparation.IsFailure)
+            return preparation.Error;
 
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
         Result afterValid = await ValidateAfterAsync(db, task.Trigger, cancellationToken);
@@ -72,6 +75,7 @@ public sealed partial class EfTaskStore(
             return TaskErrors.Invalid($"There is no project '{project}'.");
 
         DateTimeOffset now = timeProvider.GetUtcNow();
+        DateTimeOffset? nextRun = task.AwaitsResume ? null : TaskTriggers.NextRun(task.Trigger, now, await profiles.TimeZoneAsync(owner, cancellationToken));
         var row = new AgentTask
         {
             Id = TaskId.New(),
@@ -89,7 +93,10 @@ public sealed partial class EfTaskStore(
             TriggerSpec = task.Trigger.Spec,
             TriggerOnce = task.Trigger.Once,
             Status = task.AwaitsResume ? AgentTaskStatus.Waiting : AgentTaskStatus.Pending,
-            NextRunAt = task.AwaitsResume ? null : TaskTriggers.NextRun(task.Trigger, now, await profiles.TimeZoneAsync(owner, cancellationToken)),
+            NextRunAt = nextRun,
+            PrepareBefore = task.Preparation?.Before,
+            PrepareGoal = task.Preparation?.Goal.Trim(),
+            NextPrepareAt = PrepareAt(task.Preparation, task.Trigger, nextRun, now),
             Notes = task.Notes,
             Budget = TaskJson.Serialize(task.Budget),
             Spent = TaskJson.Serialize(TaskSpend.Zero),
@@ -184,6 +191,16 @@ public sealed partial class EfTaskStore(
         Result deliveriesValid = deliveries != row.Deliveries ? DeliveryRules.Validate(task.Deliveries) : Result.Success();
         if (deliveriesValid.IsFailure)
             return deliveriesValid.Error;
+        TaskPreparation? storedPreparation = Preparation(row);
+        bool preparationChanged = task.Preparation != storedPreparation;
+        Result preparationValid = preparationChanged || triggerChanged ? ValidatePreparation(task.Preparation, task.Trigger) : Result.Success();
+        if (preparationValid.IsFailure)
+            return preparationValid.Error;
+
+        // The next preparation follows the next run; otherwise the caller's value stands (the scheduler clears it on claim).
+        DateTimeOffset? nextPrepareAt = preparationChanged || triggerChanged || task.NextRunAt != row.NextRunAt
+            ? PrepareAt(task.Preparation, task.Trigger, task.NextRunAt, timeProvider.GetUtcNow())
+            : task.NextPrepareAt;
 
         // The caller's version is what the database must still hold; the context increments it on save.
         db.Entry(row).Property(entity => entity.RowVersion).OriginalValue = task.RowVersion;
@@ -197,6 +214,12 @@ public sealed partial class EfTaskStore(
         row.Status = task.Status;
         row.StatusReason = task.StatusReason;
         row.NextRunAt = task.NextRunAt;
+        row.PrepareBefore = task.Preparation?.Before;
+        row.PrepareGoal = task.Preparation?.Goal.Trim();
+        row.NextPrepareAt = nextPrepareAt;
+        row.PreparedNotes = task.Prepared?.Body;
+        row.PreparedTaint = task.Prepared is null ? null : TaskJson.Serialize(task.Prepared.Taint);
+        row.PreparedAt = task.Prepared?.At;
         row.Notes = task.Notes;
         row.Spent = TaskJson.Serialize(task.Spent);
         row.Name = name.Value;
@@ -234,10 +257,23 @@ public sealed partial class EfTaskStore(
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<OwnedTask>> GetDuePreparationsAsync(DateTimeOffset now, int limit, CancellationToken cancellationToken)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        return await Preparing(db)
+            .Where(row => row.NextPrepareAt <= now)
+            .OrderBy(row => row.NextPrepareAt)
+            .Take(limit)
+            .Select(row => new OwnedTask(row.Id, row.OwnerId))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<DateTimeOffset?> GetNextRunAtAsync(CancellationToken cancellationToken)
     {
         await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
-        return await Schedulable(db).OrderBy(row => row.NextRunAt).Select(row => row.NextRunAt).FirstOrDefaultAsync(cancellationToken);
+        DateTimeOffset? run = await Schedulable(db).OrderBy(row => row.NextRunAt).Select(row => row.NextRunAt).FirstOrDefaultAsync(cancellationToken);
+        DateTimeOffset? prepare = await Preparing(db).OrderBy(row => row.NextPrepareAt).Select(row => row.NextPrepareAt).FirstOrDefaultAsync(cancellationToken);
+        return run is null ? prepare : prepare is null ? run : (run < prepare ? run : prepare);
     }
 
     public async Task<IReadOnlyList<TaskWatch>> GetWatchesAsync(CancellationToken cancellationToken)
@@ -270,6 +306,33 @@ public sealed partial class EfTaskStore(
     // The scheduler serves every owner; it only reads ids and owners here and loads each task as its owner.
     private static IQueryable<AgentTask> Schedulable(MarshalDbContext db) =>
         db.AgentTasks.IgnoreQueryFilters().AsNoTracking().Where(row => _schedulable.Contains(row.Status) && row.NextRunAt != null);
+
+    private static IQueryable<AgentTask> Preparing(MarshalDbContext db) =>
+        db.AgentTasks.IgnoreQueryFilters().AsNoTracking().Where(row => _schedulable.Contains(row.Status) && row.NextPrepareAt != null);
+
+    // The preparation starts `before` ahead of the next run; when that time has passed, right away.
+    private static DateTimeOffset? PrepareAt(TaskPreparation? preparation, TaskTrigger trigger, DateTimeOffset? nextRun, DateTimeOffset now)
+    {
+        if (preparation is null || trigger.Kind != TaskTriggerKind.Cron || nextRun is not { } run || run <= now)
+            return null;
+
+        DateTimeOffset start = run - preparation.Before;
+        return start > now ? start : now;
+    }
+
+    private static Result ValidatePreparation(TaskPreparation? preparation, TaskTrigger trigger)
+    {
+        if (preparation is null)
+            return Result.Success();
+        if (trigger.Kind != TaskTriggerKind.Cron)
+            return TaskErrors.Invalid("Only scheduled (cron) tasks can have a preparation run.");
+        if (preparation.Before <= TimeSpan.Zero || preparation.Before > TaskPreparation.MaxBefore)
+            return TaskErrors.Invalid($"prepare.before must be more than zero and at most {TaskPreparation.MaxBefore.TotalHours:0} hours.");
+        return string.IsNullOrWhiteSpace(preparation.Goal) ? TaskErrors.Invalid("prepare.goal is required.") : ValidateGoal(preparation.Goal);
+    }
+
+    private static TaskPreparation? Preparation(AgentTask row) =>
+        row.PrepareBefore is { } before && row.PrepareGoal is { } goal ? new TaskPreparation(before, goal) : null;
 
     private OwnerId CurrentOwner() =>
         executionContext.Current?.OwnerId ?? throw new InvalidOperationException("Tasks accessed without an execution context.");
@@ -337,6 +400,11 @@ public sealed partial class EfTaskStore(
         Status = row.Status,
         StatusReason = row.StatusReason,
         NextRunAt = row.NextRunAt,
+        Preparation = Preparation(row),
+        NextPrepareAt = row.NextPrepareAt,
+        Prepared = row.PreparedNotes is { } body && row.PreparedAt is { } at
+            ? new PreparedNotes(body, row.PreparedTaint is null ? [] : TaskJson.Deserialize<List<string>>(row.PreparedTaint), at)
+            : null,
         Notes = row.Notes,
         Budget = TaskJson.Deserialize<TaskBudget>(row.Budget),
         Spent = TaskJson.Deserialize<TaskSpend>(row.Spent),

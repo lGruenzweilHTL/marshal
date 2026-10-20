@@ -17,7 +17,7 @@ public interface ITaskStore
 
     /// <summary>
     /// Saves the changeable fields of <paramref name="task"/> (goal, template, trigger and payload, status, next run,
-    /// notes, spend, name, deliveries, quiet-hours override, result). Owner, parent, kind, budget, project, origin
+    /// preparation and prepared notes, notes, spend, name, deliveries, quiet-hours override, result). Owner, parent, kind, budget, project, origin
     /// satellite and depth never change. Fails with <c>tasks.conflict</c> when the row version is stale.
     /// </summary>
     Task<Result<TaskRecord>> UpdateAsync(TaskRecord task, CancellationToken cancellationToken);
@@ -28,7 +28,10 @@ public interface ITaskStore
     /// <summary>Pending or waiting tasks of every owner with <c>next_run_at</c> at or before <paramref name="now"/>, earliest first.</summary>
     Task<IReadOnlyList<OwnedTask>> GetDueAsync(DateTimeOffset now, int limit, CancellationToken cancellationToken);
 
-    /// <summary>The earliest <c>next_run_at</c> of any pending or waiting task of every owner.</summary>
+    /// <summary>Pending or waiting tasks of every owner with <c>next_prepare_at</c> at or before <paramref name="now"/>, earliest first.</summary>
+    Task<IReadOnlyList<OwnedTask>> GetDuePreparationsAsync(DateTimeOffset now, int limit, CancellationToken cancellationToken);
+
+    /// <summary>The earliest <c>next_run_at</c> or <c>next_prepare_at</c> of any pending or waiting task of every owner.</summary>
     Task<DateTimeOffset?> GetNextRunAtAsync(CancellationToken cancellationToken);
 
     /// <summary>Armed <c>event</c> tasks of every owner: pending or waiting, not already due.</summary>

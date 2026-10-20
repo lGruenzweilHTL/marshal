@@ -361,6 +361,66 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
         Assert.Equal("error", (await GetAsync(task.Id)).StatusReason);
     }
 
+    [Fact]
+    public async Task Prepare_RunsBeforeEachOccurrence_MainRunSeesTheNotesWhichAreThenDiscarded()
+    {
+        _time.SetUtcNow(new DateTimeOffset(2026, 10, 20, 12, 0, 0, TimeSpan.Zero));
+        TaskRecord task = await CreateAsync(New(TaskTrigger.Cron("0 6 * * *")) with { Preparation = new TaskPreparation(TimeSpan.FromHours(3), "Collect today's appointments.") });
+        Assert.Equal(new DateTimeOffset(2026, 10, 21, 1, 0, 0, TimeSpan.Zero), task.NextPrepareAt);
+        await StartAsync();
+
+        await AdvanceToAsync(new DateTimeOffset(2026, 10, 21, 0, 59, 0, TimeSpan.Zero));
+        Assert.Empty(_runner.Preparations);
+        await AdvanceToAsync(new DateTimeOffset(2026, 10, 21, 1, 0, 0, TimeSpan.Zero)); // 03:00 CEST
+        await WaitForAsync(async () => (await GetAsync(task.Id)).Prepared is not null);
+
+        TaskRecord prepared = await GetAsync(task.Id);
+        Assert.Equal(("Prepared.", new DateTimeOffset(2026, 10, 21, 1, 0, 0, TimeSpan.Zero)), (prepared.Prepared!.Body, prepared.Prepared.At));
+        Assert.Equal(["calendar"], prepared.Prepared.Taint);
+        Assert.Equal((AgentTaskStatus.Pending, (DateTimeOffset?)null), (prepared.Status, prepared.NextPrepareAt));
+        Assert.Empty(_runner.Runs);
+        Assert.Equal((OwnerId?)OwnerA, Assert.Single(_runner.Preparations).Owner);
+
+        await AdvanceToAsync(new DateTimeOffset(2026, 10, 21, 4, 0, 0, TimeSpan.Zero)); // 06:00 CEST
+        await WaitForAsync(() => StatusAsync(task.Id, AgentTaskStatus.Waiting));
+        Assert.Equal("Prepared.", Assert.Single(_runner.Seen).Prepared?.Body);
+        TaskRecord after = await GetAsync(task.Id);
+        Assert.Null(after.Prepared);
+        Assert.Equal((new DateTimeOffset(2026, 10, 22, 4, 0, 0, TimeSpan.Zero), (DateTimeOffset?)new DateTimeOffset(2026, 10, 22, 1, 0, 0, TimeSpan.Zero)), (after.NextRunAt!.Value, after.NextPrepareAt));
+    }
+
+    [Fact]
+    public async Task Prepare_Failed_MainRunStillRunsWithoutNotes()
+    {
+        _time.SetUtcNow(new DateTimeOffset(2026, 10, 20, 12, 0, 0, TimeSpan.Zero));
+        _runner.Preparation = _ => new TaskPreparationOutcome(null, [], TaskSpend.Zero, "error");
+        TaskRecord task = await CreateAsync(New(TaskTrigger.Cron("0 6 * * *")) with { Preparation = new TaskPreparation(TimeSpan.FromHours(3), "Collect.") });
+        await StartAsync();
+
+        await AdvanceToAsync(new DateTimeOffset(2026, 10, 21, 1, 0, 0, TimeSpan.Zero));
+        await WaitForAsync(() => Task.FromResult(_runner.Preparations.Count == 1));
+        await AdvanceToAsync(new DateTimeOffset(2026, 10, 21, 4, 0, 0, TimeSpan.Zero));
+        await WaitForAsync(() => Task.FromResult(_runner.Runs.Count == 1));
+
+        Assert.Null(Assert.Single(_runner.Seen).Prepared);
+        await WaitForAsync(() => StatusAsync(task.Id, AgentTaskStatus.Waiting));
+    }
+
+    [Fact]
+    public async Task Prepare_SpendDrawnFromTheTasksBudget()
+    {
+        _time.SetUtcNow(new DateTimeOffset(2026, 10, 20, 12, 0, 0, TimeSpan.Zero));
+        _runner.Preparation = _ => new TaskPreparationOutcome("Prepared.", [], new TaskSpend(Tokens: 500, Cost: 0.02m, Steps: 2));
+        TaskRecord task = await CreateAsync(New(TaskTrigger.Cron("0 6 * * *")) with { Preparation = new TaskPreparation(TimeSpan.FromHours(3), "Collect.") });
+        await StartAsync();
+
+        await AdvanceToAsync(new DateTimeOffset(2026, 10, 21, 1, 0, 0, TimeSpan.Zero));
+        await WaitForAsync(async () => (await GetAsync(task.Id)).Prepared is not null);
+
+        TaskSpend spent = (await GetAsync(task.Id)).Spent;
+        Assert.Equal((500L, 0.02m, 2), (spent.Tokens, spent.Cost, spent.Steps));
+    }
+
     private EfTaskStore Store() => new(_database.Factory, _accessor, new ViennaProfiles(), Options.Create(_options), _time);
 
     private async Task StartAsync(int workers = 2)
@@ -447,8 +507,20 @@ public sealed class BackgroundTaskSchedulerTests : IAsyncLifetime
         public Task ReviewPendingAsync(string? changedEntity, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
-    private sealed class FakeRunner(TimeProvider time, IExecutionContextAccessor accessor, TaskKind kind = TaskKind.Agent) : ITaskRunner
+    private sealed class FakeRunner(TimeProvider time, IExecutionContextAccessor accessor, TaskKind kind = TaskKind.Agent) : ITaskRunner, ITaskPreparer
     {
+        public ConcurrentQueue<(TaskId Id, DateTimeOffset At, OwnerId? Owner)> PreparationsQueue { get; } = new();
+
+        public List<(TaskId Id, DateTimeOffset At, OwnerId? Owner)> Preparations => [.. PreparationsQueue];
+
+        public Func<TaskRecord, TaskPreparationOutcome> Preparation { get; set; } = _ => new TaskPreparationOutcome("Prepared.", ["calendar"], TaskSpend.Zero);
+
+        public Task<TaskPreparationOutcome> PrepareAsync(TaskRecord task, RunLimits limits, CancellationToken cancellationToken)
+        {
+            PreparationsQueue.Enqueue((task.Id, time.GetUtcNow(), accessor.Current?.OwnerId));
+            return Task.FromResult(Preparation(task));
+        }
+
         private TaskCompletionSource? _gate;
         private int _finished;
 

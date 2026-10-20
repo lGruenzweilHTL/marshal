@@ -64,6 +64,8 @@ public sealed class NdjsonMemoryExporter(
                 writer.WriteString("createdAt", Time(chunk.CreatedAt));
                 writer.WriteString("updatedAt", Time(chunk.UpdatedAt));
                 WriteNullable(writer, "deletedAt", chunk.DeletedAt is { } deleted ? Time(deleted) : null);
+                writer.WriteString("validFrom", Time(chunk.ValidFrom));
+                WriteNullable(writer, "validTo", chunk.ValidTo is { } validTo ? Time(validTo) : null);
             }, cancellationToken);
         }
 
@@ -78,6 +80,8 @@ public sealed class NdjsonMemoryExporter(
                 writer.WriteNumber("importance", version.Importance);
                 WriteNullable(writer, "sourceRef", version.SourceRef);
                 writer.WriteString("replacedAt", Time(version.ReplacedAt));
+                writer.WriteString("validFrom", Time(version.ValidFrom));
+                WriteNullable(writer, "validTo", version.ValidTo is { } validTo ? Time(validTo) : null);
             }, cancellationToken);
         }
 
@@ -185,6 +189,7 @@ public sealed class NdjsonMemoryExporter(
                         string title = Text(line, "title");
                         ChunkId id = ChunkIds.Compute(owner, scope, project, type, title);
                         ids[Text(line, "id")] = id;
+                        DateTimeOffset created = ParseTime(Text(line, "createdAt"));
                         parsed.Chunks.Add(new Chunk
                         {
                             Id = id,
@@ -198,9 +203,12 @@ public sealed class NdjsonMemoryExporter(
                             Pinned = line.GetProperty("pinned").GetBoolean(),
                             SourceRef = Optional(line, "sourceRef"),
                             CreatedBy = Parse<ChunkAuthor>(Text(line, "createdBy")),
-                            CreatedAt = ParseTime(Text(line, "createdAt")),
+                            CreatedAt = created,
                             UpdatedAt = ParseTime(Text(line, "updatedAt")),
                             DeletedAt = OptionalTime(line, "deletedAt"),
+                            // Exports from before valid time: valid since creation.
+                            ValidFrom = OptionalTime(line, "validFrom") ?? created,
+                            ValidTo = OptionalTime(line, "validTo"),
                         });
                         break;
 
@@ -214,6 +222,9 @@ public sealed class NdjsonMemoryExporter(
                             Importance = line.GetProperty("importance").GetInt32(),
                             SourceRef = Optional(line, "sourceRef"),
                             ReplacedAt = ParseTime(Text(line, "replacedAt")),
+                            // Exports from before valid time: valid from the chunk's creation until replaced.
+                            ValidFrom = OptionalTime(line, "validFrom") ?? parsed.Chunks.FirstOrDefault(chunk => chunk.Id == Mapped(ids, Text(line, "chunkId")))?.CreatedAt ?? ParseTime(Text(line, "replacedAt")),
+                            ValidTo = OptionalTime(line, "validTo") ?? OptionalTime(line, "replacedAt"),
                         });
                         break;
 

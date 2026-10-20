@@ -130,13 +130,73 @@ public sealed class HybridMemoryRetrieverTests : IAsyncLifetime
         Assert.Equal(_time.GetUtcNow(), (await _store.GetAsync(oat, Ct))!.LastRetrievedAt);
     }
 
+    [Fact]
+    public async Task Retrieve_ClosedChunk_ExcludedFromVectorAndKeywordPhases()
+    {
+        await WriteAsync("Employer", "Works at Contoso.", Vec(0, 1), validFrom: _time.GetUtcNow().AddYears(-1), validTo: _time.GetUtcNow().AddDays(-1));
+        _embeddings.Pin("Where does Contoso fit in?", Vec(0, 1));
+
+        Assert.Empty(await RetrieveAsync("Where does Contoso fit in?"));
+    }
+
+    [Fact]
+    public async Task Retrieve_FutureValidFrom_IncludedWithValidTime()
+    {
+        DateTimeOffset start = _time.GetUtcNow().AddDays(30);
+        await WriteAsync("Employer", "Works at Fabrikam.", Vec(0, 1), validFrom: start);
+        _embeddings.Pin("work", Vec(0, 1));
+
+        RetrievedChunk hit = Assert.Single(await RetrieveAsync("work"));
+        Assert.Equal(start, hit.Chunk.ValidFrom);
+    }
+
+    [Fact]
+    public async Task Retrieve_AsOf_VersionValidThenWithItsValidTime()
+    {
+        DateTimeOffset january = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        DateTimeOffset march = new(2026, 3, 1, 0, 0, 0, TimeSpan.Zero);
+        ChunkId nozzle = await WriteAsync("Voron nozzle size", "0.4 mm brass", Vec(0, 1), ChunkType.Device, validFrom: january);
+        await WriteAsync("Voron nozzle size", "0.6 mm hardened steel", Vec(0, 1, 1, 0.1f), ChunkType.Device, validFrom: march);
+        _embeddings.Pin("nozzle", Vec(0, 1));
+
+        RetrievedChunk hit = Assert.Single(await RetrieveAsync("nozzle", asOf: new DateTimeOffset(2026, 2, 1, 0, 0, 0, TimeSpan.Zero)));
+        Assert.Equal((nozzle, "0.4 mm brass", january, (DateTimeOffset?)march), (hit.Chunk.Id, hit.Chunk.Content, hit.Chunk.ValidFrom, hit.Chunk.ValidTo));
+        Assert.Equal("0.6 mm hardened steel", Assert.Single(await RetrieveAsync("nozzle")).Chunk.Content);
+    }
+
+    [Fact]
+    public async Task Retrieve_AsOf_VersionFoundByItsOwnWords()
+    {
+        await WriteAsync("Voron nozzle size", "0.4 mm brass", Vec(0, 1), ChunkType.Device, validFrom: new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        await WriteAsync("Voron nozzle size", "0.6 mm hardened steel", Vec(0, 1), ChunkType.Device, validFrom: new DateTimeOffset(2026, 3, 1, 0, 0, 0, TimeSpan.Zero));
+        _embeddings.Pin("brass", Vec(9, 1));
+
+        RetrievedChunk hit = Assert.Single(await RetrieveAsync("brass", asOf: new DateTimeOffset(2026, 2, 1, 0, 0, 0, TimeSpan.Zero)));
+        Assert.Equal(("0.4 mm brass", RetrievalSource.Keyword), (hit.Chunk.Content, hit.Source));
+    }
+
+    [Fact]
+    public async Task Retrieve_AsOf_ClosedChunkIncluded_NotYetValidExcluded()
+    {
+        DateTimeOffset june = new(2026, 6, 30, 0, 0, 0, TimeSpan.Zero);
+        ChunkId contoso = await WriteAsync("Employer", "Works at Contoso.", Vec(0, 1), validFrom: new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero), validTo: june);
+        await WriteAsync("Next employer", "Works at Fabrikam.", Vec(0, 1, 1, 0.1f), validFrom: june);
+        _embeddings.Pin("work", Vec(0, 1));
+
+        RetrievedChunk hit = Assert.Single(await RetrieveAsync("work", asOf: new DateTimeOffset(2026, 5, 1, 0, 0, 0, TimeSpan.Zero)));
+        Assert.Equal((contoso, (DateTimeOffset?)june), (hit.Chunk.Id, hit.Chunk.ValidTo));
+    }
+
+    private Task<IReadOnlyList<RetrievedChunk>> RetrieveAsync(string text, DateTimeOffset? asOf) =>
+        _retriever.RetrieveAsync(new MemoryQuery(text, null, new HashSet<ProjectId>(), 1000, AsOf: asOf), Ct);
+
     private Task<IReadOnlyList<RetrievedChunk>> RetrieveAsync(string text) =>
         _retriever.RetrieveAsync(new MemoryQuery(text, null, new HashSet<ProjectId>(), 1000), Ct);
 
-    private async Task<ChunkId> WriteAsync(string title, string content, float[] vector, ChunkType type = ChunkType.Fact)
+    private async Task<ChunkId> WriteAsync(string title, string content, float[] vector, ChunkType type = ChunkType.Fact, DateTimeOffset? validFrom = null, DateTimeOffset? validTo = null)
     {
         _embeddings.Pin($"{title}\n{content}", vector);
-        return (await _store.WriteAsync(new ChunkDraft(ChunkScope.General, null, type, title, content), ChunkAuthor.User, Ct)).Value.Id;
+        return (await _store.WriteAsync(new ChunkDraft(ChunkScope.General, null, type, title, content) { ValidFrom = validFrom, ValidTo = validTo }, ChunkAuthor.User, Ct)).Value.Id;
     }
 
     /// <summary>A 16-dimensional vector with the given axis weights (axis, weight, axis, weight, ...).</summary>

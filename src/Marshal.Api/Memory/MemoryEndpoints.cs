@@ -9,7 +9,8 @@ using Microsoft.AspNetCore.Http.HttpResults;
 namespace Marshal.Api.Memory;
 
 /// <summary>
-/// The memory view (<c>/memory</c>): chunks (list, search, create, edit, pin, supersede, delete, history), the audit,
+/// The memory view (<c>/memory</c>): chunks (list, search, create, edit, pin, supersede, delete, history), the audit and
+/// memory proposals,
 /// the NDJSON export, and projects with aliases and correction log. Pinning is only possible here. Every change is
 /// audited with the user as actor.
 /// </summary>
@@ -21,13 +22,13 @@ internal static class MemoryEndpoints
     {
         RouteGroupBuilder memory = group.MapGroup("/memory").WithTags("Memory").RequireAuthorization(Policies.Human);
         memory.MapGet("/chunks", ListAsync).WithName("ListMemoryChunks")
-            .WithSummary("Chunks newest first, or ranked by relevance with query; filter by type, scope, projectId and pinned.");
+            .WithSummary("Chunks newest first, or ranked by relevance with query; filter by type, scope, projectId, pinned and closed.");
         memory.MapPost("/chunks", CreateAsync).WithName("CreateMemoryChunk")
             .WithSummary("Writes a chunk through its deterministic id (an existing chunk with the same identity is updated).");
         memory.MapGet("/chunks/{id}", GetAsync).WithName("GetMemoryChunk")
             .WithSummary("A chunk (also when deleted) with its earlier versions and its edges.");
         memory.MapPut("/chunks/{id}", EditAsync).WithName("EditMemoryChunk")
-            .WithSummary("Changes content, importance and source; the previous content becomes a version.");
+            .WithSummary("Changes content, importance, source and valid time; the previous content becomes a version.");
         memory.MapDelete("/chunks/{id}", DeleteAsync).WithName("DeleteMemoryChunk")
             .WithSummary("Soft-deletes a chunk; it is no longer retrieved.");
         memory.MapPut("/chunks/{id}/pin", PinAsync).WithName("PinMemoryChunk")
@@ -39,7 +40,13 @@ internal static class MemoryEndpoints
         memory.MapGet("/chunks/{id}/history", HistoryAsync).WithName("GetMemoryChunkHistory")
             .WithSummary("Predecessors, earlier versions and the current content, oldest first.");
         memory.MapGet("/audit", GetAuditAsync).WithName("GetMemoryAudit")
-            .WithSummary("Stale chunks, open contradictions, orphans and dangling edges.");
+            .WithSummary("Stale chunks, open contradictions, orphans, dangling edges and open proposals.");
+        memory.MapGet("/proposals", ListProposalsAsync).WithName("ListMemoryProposals")
+            .WithSummary("Open proposals of the idle-time jobs (contradictions and duplicates), oldest first.");
+        memory.MapPost("/proposals/{id}/accept", AcceptProposalAsync).WithName("AcceptMemoryProposal")
+            .WithSummary("Applies a proposal: closes the outdated chunk, or merges the duplicates.");
+        memory.MapPost("/proposals/{id}/dismiss", DismissProposalAsync).WithName("DismissMemoryProposal")
+            .WithSummary("Dismisses a proposal; memory stays unchanged and the pair is not proposed again.");
         memory.MapGet("/graph", GraphAsync).WithName("GetMemoryGraph")
             .WithSummary("Live chunks and the edges between them, for the force-directed graph.");
         memory.MapGet("/scatter", ScatterAsync).WithName("GetMemoryScatter")
@@ -67,13 +74,13 @@ internal static class MemoryEndpoints
     }
 
     private static async Task<Results<Ok<IReadOnlyList<MemoryChunk>>, ProblemHttpResult>> ListAsync(
-        string? query, string? type, string? scope, ProjectId? projectId, bool? pinned, bool? includeDeleted, int? limit, IMemoryBrowser browser, CancellationToken ct)
+        string? query, string? type, string? scope, ProjectId? projectId, bool? pinned, bool? includeDeleted, bool? closed, int? limit, IMemoryBrowser browser, CancellationToken ct)
     {
         // Query values use the same camelCase names as the JSON (device, general, ...).
         if (!TryParse(type, out ChunkType? typeFilter) || !TryParse(scope, out ChunkScope? scopeFilter))
             return new Error("memory.invalid_filter", "Unknown type or scope.", ErrorType.Validation).ToProblem();
 
-        var filter = new MemoryListFilter(query, typeFilter, scopeFilter, projectId, pinned, includeDeleted ?? false, Math.Clamp(limit ?? 100, 1, MaxLimit));
+        var filter = new MemoryListFilter(query, typeFilter, scopeFilter, projectId, pinned, includeDeleted ?? false, Math.Clamp(limit ?? 100, 1, MaxLimit), closed);
         return TypedResults.Ok(await browser.ListAsync(filter, ct));
     }
 
@@ -102,10 +109,22 @@ internal static class MemoryEndpoints
         if (await store.GetAsync(id, ct) is not { DeletedAt: null } chunk)
             return ChunkNotFound();
 
-        var draft = new ChunkDraft(chunk.Scope, chunk.ProjectId, chunk.Type, chunk.Title, request.Content, request.Importance, request.SourceRef);
+        var draft = new ChunkDraft(chunk.Scope, chunk.ProjectId, chunk.Type, chunk.Title, request.Content, request.Importance, request.SourceRef)
+        {
+            ValidFrom = request.ValidFrom,
+            ValidTo = request.ValidTo,
+        };
         Result<ChunkWriteResult> written = await store.WriteAsync(draft, ChunkAuthor.User, ct);
         if (written.IsFailure)
             return written.Error.ToProblem();
+
+        // The editor sends the whole valid time: an empty end reopens the chunk.
+        if (request.ValidFrom is { } validFrom)
+        {
+            Result exact = await store.SetValidTimeAsync(id, validFrom, request.ValidTo, ct);
+            if (exact.IsFailure)
+                return exact.Error.ToProblem();
+        }
 
         await AuditAsync(audit, user, "memory.chunk.edit", id, null, ct);
         return TypedResults.Ok(written.Value);
@@ -153,6 +172,26 @@ internal static class MemoryEndpoints
 
     private static async Task<Ok<MemoryAuditReport>> GetAuditAsync(IMemoryAudit memoryAudit, CancellationToken ct) =>
         TypedResults.Ok(await memoryAudit.RunAsync(ct));
+
+    private static async Task<Ok<IReadOnlyList<MemoryProposalView>>> ListProposalsAsync(IMemoryProposals proposals, CancellationToken ct) =>
+        TypedResults.Ok(await proposals.ListOpenAsync(ct));
+
+    private static Task<Results<NoContent, ProblemHttpResult>> AcceptProposalAsync(Guid id, ClaimsPrincipal user, IMemoryProposals proposals, IAuditLog audit, CancellationToken ct) =>
+        DecideAsync(id, "memory.proposal.accept", () => proposals.AcceptAsync(id, ct), user, audit, ct);
+
+    private static Task<Results<NoContent, ProblemHttpResult>> DismissProposalAsync(Guid id, ClaimsPrincipal user, IMemoryProposals proposals, IAuditLog audit, CancellationToken ct) =>
+        DecideAsync(id, "memory.proposal.dismiss", () => proposals.DismissAsync(id, ct), user, audit, ct);
+
+    private static async Task<Results<NoContent, ProblemHttpResult>> DecideAsync(
+        Guid id, string action, Func<Task<Result>> decide, ClaimsPrincipal user, IAuditLog audit, CancellationToken ct)
+    {
+        Result result = await decide();
+        if (result.IsFailure)
+            return result.Error.ToProblem();
+
+        await AuditAsync(audit, user, action, id.ToString(), null, ct);
+        return TypedResults.NoContent();
+    }
 
     private static async Task<Ok<MemoryGraph>> GraphAsync(IMemoryMaps maps, CancellationToken ct) =>
         TypedResults.Ok(await maps.GetGraphAsync(ct));
@@ -272,16 +311,22 @@ internal static class MemoryEndpoints
 /// <param name="Content">English content.</param>
 /// <param name="Importance">1–5 (default 3).</param>
 /// <param name="SourceRef">Origin reference, if any.</param>
-public sealed record ChunkWriteRequest(ChunkScope Scope, ProjectId? ProjectId, ChunkType Type, string Title, string Content, int? Importance, string? SourceRef)
+/// <param name="ValidFrom">Since when it is true (default: now).</param>
+/// <param name="ValidTo">Until when it is true; null leaves it open.</param>
+public sealed record ChunkWriteRequest(
+    ChunkScope Scope, ProjectId? ProjectId, ChunkType Type, string Title, string Content, int? Importance, string? SourceRef,
+    DateTimeOffset? ValidFrom = null, DateTimeOffset? ValidTo = null)
 {
-    public ChunkDraft ToDraft() => new(Scope, ProjectId, Type, Title ?? "", Content ?? "", Importance ?? 3, SourceRef);
+    public ChunkDraft ToDraft() => new(Scope, ProjectId, Type, Title ?? "", Content ?? "", Importance ?? 3, SourceRef) { ValidFrom = ValidFrom, ValidTo = ValidTo };
 }
 
 /// <summary>New content of a chunk; identity fields cannot change (supersede instead).</summary>
 /// <param name="Content">English content.</param>
 /// <param name="Importance">1–5.</param>
 /// <param name="SourceRef">Origin reference, if any.</param>
-public sealed record ChunkEditRequest(string Content, int Importance, string? SourceRef);
+/// <param name="ValidFrom">Since when it is true; with it, the valid time is set exactly as sent (null <paramref name="ValidTo"/> reopens the chunk).</param>
+/// <param name="ValidTo">Until when it is true.</param>
+public sealed record ChunkEditRequest(string Content, int Importance, string? SourceRef, DateTimeOffset? ValidFrom = null, DateTimeOffset? ValidTo = null);
 
 /// <summary>A chunk with its history data.</summary>
 /// <param name="Chunk">The chunk.</param>

@@ -1,7 +1,7 @@
 namespace Marshal.Abstractions.Memory;
 
 /// <summary>
-/// Health of the current owner's memory: stale chunks, open contradictions and orphans.
+/// Health of the current owner's memory: stale chunks, open contradictions, orphans and open proposals.
 /// </summary>
 public interface IMemoryAudit
 {
@@ -10,14 +10,18 @@ public interface IMemoryAudit
 
 /// <summary>An audit result.</summary>
 /// <param name="Stale">Live, unpinned chunks neither updated nor retrieved for the configured period, oldest first.</param>
-/// <param name="Contradictions">Live chunk pairs linked by <c>contradicts</c> where neither supersedes the other.</param>
+/// <param name="Contradictions">Live, open chunk pairs linked by <c>contradicts</c> where neither supersedes the other.</param>
 /// <param name="Orphans">Live chunks of deleted projects.</param>
 /// <param name="DanglingEdges">Edges touching a deleted chunk (except <c>supersedes</c> edges to the replaced chunk, which are history).</param>
 public sealed record MemoryAuditReport(
     IReadOnlyList<MemoryChunk> Stale,
     IReadOnlyList<MemoryContradiction> Contradictions,
     IReadOnlyList<MemoryChunk> Orphans,
-    IReadOnlyList<MemoryEdge> DanglingEdges);
+    IReadOnlyList<MemoryEdge> DanglingEdges)
+{
+    /// <summary>Open proposals of the idle-time jobs, waiting for the user.</summary>
+    public IReadOnlyList<MemoryProposalView> Proposals { get; init; } = [];
+}
 
 /// <summary>An open contradiction.</summary>
 /// <param name="From">The contradicting chunk (edge source).</param>

@@ -24,7 +24,7 @@ public sealed class MemoryRememberToolTests : IAsyncLifetime
         _database = await TestDatabase.CreateAsync();
         _database.Accessor.Current = TestExecutionContext.Text();
         _store = MemoryTestKit.Store(_database, _embeddings, _time);
-        _tool = new MemoryRememberTool(_store, new MemoryProjects(_database.Factory));
+        _tool = new MemoryRememberTool(_store, new MemoryProjects(_database.Factory), new ViennaProfiles());
     }
 
     public async ValueTask DisposeAsync() => await _database.DisposeAsync();
@@ -94,6 +94,43 @@ public sealed class MemoryRememberToolTests : IAsyncLifetime
         Assert.Equal("memory.invalid_arguments", badImportance.Error.Code);
         Assert.Equal("memory.project_not_found", unknownProject.Error.Code);
         Assert.Equal("memory.invalid_arguments", projectScopeWithoutProject.Error.Code);
+    }
+
+    [Fact]
+    public async Task Remember_ValidFromDate_MidnightInOwnerZone()
+    {
+        Result<ToolOutput> result = await RememberAsync(new { type = "fact", title = "Employer", content = "Works at Fabrikam.", validFrom = "2026-03-01" });
+
+        Assert.True(result.IsSuccess);
+        MemoryChunk chunk = await SingleAsync("Employer", ChunkType.Fact);
+        Assert.Equal((new DateTimeOffset(2026, 2, 28, 23, 0, 0, TimeSpan.Zero), (DateTimeOffset?)null), (chunk.ValidFrom, chunk.ValidTo));
+    }
+
+    [Fact]
+    public async Task Remember_ValidToDateTime_Stored()
+    {
+        await RememberAsync(new { type = "fact", title = "Employer", content = "Worked at Contoso.", validFrom = "2025-01-01", validTo = "2026-06-30T17:00" });
+
+        Assert.Equal(new DateTimeOffset(2026, 6, 30, 15, 0, 0, TimeSpan.Zero), (await SingleAsync("Employer", ChunkType.Fact)).ValidTo);
+    }
+
+    [Theory]
+    [InlineData("validFrom", "March")]
+    [InlineData("validTo", "2026-02-30")]
+    public async Task Remember_InvalidValidTime_ValidationError(string name, string value)
+    {
+        Result<ToolOutput> result = await RememberAsync(new Dictionary<string, string> { ["type"] = "fact", ["title"] = "A", ["content"] = "B", [name] = value });
+
+        Assert.Equal("memory.invalid_arguments", result.Error.Code);
+        Assert.Contains(name, result.Error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Remember_ValidToBeforeValidFrom_ValidationError()
+    {
+        Result<ToolOutput> result = await RememberAsync(new { type = "fact", title = "A", content = "B", validFrom = "2026-03-01", validTo = "2026-02-01" });
+
+        Assert.Equal("memory.invalid_chunk", result.Error.Code);
     }
 
     private Task<Result<ToolOutput>> RememberAsync(object arguments) =>

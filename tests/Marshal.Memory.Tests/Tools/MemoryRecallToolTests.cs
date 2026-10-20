@@ -24,7 +24,7 @@ public sealed class MemoryRecallToolTests : IAsyncLifetime
         _database = await TestDatabase.CreateAsync();
         _database.Accessor.Current = TestExecutionContext.Text();
         _store = MemoryTestKit.Store(_database, _embeddings, _time);
-        _tool = new MemoryRecallTool(MemoryTestKit.Retriever(_database, _embeddings, _time), new MemoryProjects(_database.Factory), Microsoft.Extensions.Options.Options.Create(new MemoryOptions()));
+        _tool = new MemoryRecallTool(MemoryTestKit.Retriever(_database, _embeddings, _time), new MemoryProjects(_database.Factory), new ViennaProfiles(), Microsoft.Extensions.Options.Options.Create(new MemoryOptions()), _time);
     }
 
     public async ValueTask DisposeAsync() => await _database.DisposeAsync();
@@ -67,7 +67,7 @@ public sealed class MemoryRecallToolTests : IAsyncLifetime
             await WriteAsync(ChunkType.Event, $"Printer job {index}", $"Printed part {index}. {new string('x', 200)}");
         var options = new MemoryOptions();
         options.Retrieval.Quotas[ChunkType.Event] = 20;
-        var tool = new MemoryRecallTool(MemoryTestKit.Retriever(_database, _embeddings, _time, options), new MemoryProjects(_database.Factory), Microsoft.Extensions.Options.Options.Create(options));
+        var tool = new MemoryRecallTool(MemoryTestKit.Retriever(_database, _embeddings, _time, options), new MemoryProjects(_database.Factory), new ViennaProfiles(), Microsoft.Extensions.Options.Options.Create(options), _time);
 
         string all = (await tool.InvokeAsync(new ToolInvocation(Json(new { query = "printer", limit = 30 }), TestExecutionContext.Text()), Ct)).Value.Content;
         string limited = (await tool.InvokeAsync(new ToolInvocation(Json(new { query = "printer", limit = 3 }), TestExecutionContext.Text()), Ct)).Value.Content;
@@ -84,6 +84,43 @@ public sealed class MemoryRecallToolTests : IAsyncLifetime
 
         Assert.Equal("memory.project_not_found", project.Error.Code);
         Assert.Equal("memory.invalid_arguments", type.Error.Code);
+    }
+
+    [Fact]
+    public async Task Recall_WithoutAsOf_ClosedChunkNotFound()
+    {
+        await _store.WriteAsync(new ChunkDraft(ChunkScope.General, null, ChunkType.Fact, "Employer", "Works at Contoso.") { ValidTo = _time.GetUtcNow().AddHours(1) }, ChunkAuthor.User, Ct);
+        _time.Advance(TimeSpan.FromDays(1));
+
+        Assert.Equal("No memory found.", await RecallAsync(new { query = "Contoso" }));
+    }
+
+    [Fact]
+    public async Task Recall_AsOf_EarlierVersionWithValidTimeInOwnerZone()
+    {
+        await _store.WriteAsync(new ChunkDraft(ChunkScope.General, null, ChunkType.Device, "Voron nozzle size", "0.4 mm") { ValidFrom = new DateTimeOffset(2025, 12, 31, 23, 0, 0, TimeSpan.Zero) }, ChunkAuthor.User, Ct);
+        await _store.WriteAsync(new ChunkDraft(ChunkScope.General, null, ChunkType.Device, "Voron nozzle size", "0.6 mm") { ValidFrom = new DateTimeOffset(2026, 2, 28, 23, 0, 0, TimeSpan.Zero) }, ChunkAuthor.User, Ct);
+
+        string result = await RecallAsync(new { query = "Voron nozzle", asOf = "2026-02-01" });
+
+        Assert.Contains("- [device] Voron nozzle size: 0.4 mm (valid 2026-01-01 to 2026-03-01)", result, StringComparison.Ordinal);
+        Assert.DoesNotContain("0.6 mm", result, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Recall_FutureValidFrom_Shown()
+    {
+        await _store.WriteAsync(new ChunkDraft(ChunkScope.General, null, ChunkType.Fact, "Employer", "Works at Fabrikam.") { ValidFrom = new DateTimeOffset(2026, 10, 31, 23, 0, 0, TimeSpan.Zero) }, ChunkAuthor.User, Ct);
+
+        Assert.Contains("Works at Fabrikam. (valid from 2026-11-01)", await RecallAsync(new { query = "Fabrikam" }), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Recall_InvalidAsOf_ValidationError()
+    {
+        Result<ToolOutput> result = await _tool.InvokeAsync(new ToolInvocation(Json(new { query = "x", asOf = "last spring" }), TestExecutionContext.Text()), Ct);
+
+        Assert.Equal("memory.invalid_arguments", result.Error.Code);
     }
 
     [Fact]

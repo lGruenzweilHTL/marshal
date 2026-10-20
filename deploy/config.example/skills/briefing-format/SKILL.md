@@ -11,7 +11,16 @@ Do not prepare a new briefing in the conversation. Call `tasks_status` with `bri
 and less than two hours old, answer with its spoken version as it is. Otherwise call `tasks_run_now` with
 `briefing`; the task prepares it in the background and delivers it through its deliveries.
 
+## Prepare (in the preparation run before the briefing)
+
+When the goal asks you to collect for the morning briefing, do steps 1 and 3 of "Gather" below and nothing else.
+Answer with the appointments and both versions of the RSS digest as plain notes; they are not read aloud, so skip the
+"Answer" format.
+
 ## Gather (while preparing the briefing)
+
+When the input has prepared notes, take today's appointments and the RSS digest from them and skip steps 1 and 3.
+Do the other steps as usual, so mail, the weather and the house are current.
 
 1. Call `calendar_list_events` for today (from now until midnight) and the first event of tomorrow.
 2. Call `mail_search` for unread mail from the last 24 hours, and for drafts Marshal created that still wait in the

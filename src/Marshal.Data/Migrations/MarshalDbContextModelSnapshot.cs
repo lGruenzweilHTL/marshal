@@ -1416,6 +1416,14 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("updated_at");
 
+                    b.Property<long>("ValidFrom")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("valid_from");
+
+                    b.Property<long?>("ValidTo")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("valid_to");
+
                     b.HasKey("Id")
                         .HasName("pk_chunks");
 
@@ -1498,6 +1506,14 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("source_ref");
 
+                    b.Property<long>("ValidFrom")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("valid_from");
+
+                    b.Property<long?>("ValidTo")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("valid_to");
+
                     b.HasKey("Id")
                         .HasName("pk_chunk_versions");
 
@@ -1505,6 +1521,71 @@ namespace Marshal.Data.Migrations
                         .HasDatabaseName("ix_chunk_versions_chunk_id_replaced_at");
 
                     b.ToTable("chunk_versions", (string)null);
+                });
+
+            modelBuilder.Entity("Marshal.Data.Memory.MemoryProposal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ChunkA")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("chunk_a");
+
+                    b.Property<string>("ChunkB")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("chunk_b");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<long?>("DecidedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("decided_at");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("status");
+
+                    b.Property<string>("SuggestionJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("suggestion_json");
+
+                    b.HasKey("Id")
+                        .HasName("pk_memory_proposals");
+
+                    b.HasIndex("ChunkA")
+                        .HasDatabaseName("ix_memory_proposals_chunk_a");
+
+                    b.HasIndex("ChunkB")
+                        .HasDatabaseName("ix_memory_proposals_chunk_b");
+
+                    b.HasIndex("OwnerId", "Status")
+                        .HasDatabaseName("ix_memory_proposals_owner_id_status");
+
+                    b.HasIndex("OwnerId", "Kind", "ChunkA", "ChunkB")
+                        .IsUnique()
+                        .HasDatabaseName("ix_memory_proposals_owner_id_kind_chunk_a_chunk_b");
+
+                    b.ToTable("memory_proposals", (string)null);
                 });
 
             modelBuilder.Entity("Marshal.Data.Memory.Project", b =>
@@ -1542,6 +1623,14 @@ namespace Marshal.Data.Migrations
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("TEXT")
                         .HasColumnName("owner_id");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("summary");
+
+                    b.Property<long?>("SummaryUpdatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("summary_updated_at");
 
                     b.HasKey("Id")
                         .HasName("pk_projects");
@@ -1878,6 +1967,10 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("name");
 
+                    b.Property<long?>("NextPrepareAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("next_prepare_at");
+
                     b.Property<long?>("NextRunAt")
                         .HasColumnType("INTEGER")
                         .HasColumnName("next_run_at");
@@ -1905,6 +1998,26 @@ namespace Marshal.Data.Migrations
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("TEXT")
                         .HasColumnName("parent_id");
+
+                    b.Property<TimeSpan?>("PrepareBefore")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("prepare_before");
+
+                    b.Property<string>("PrepareGoal")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("prepare_goal");
+
+                    b.Property<long?>("PreparedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("prepared_at");
+
+                    b.Property<string>("PreparedNotes")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("prepared_notes");
+
+                    b.Property<string>("PreparedTaint")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("prepared_taint");
 
                     b.Property<Guid?>("ProjectId")
                         .HasColumnType("TEXT")
@@ -1977,6 +2090,10 @@ namespace Marshal.Data.Migrations
                     b.HasIndex("DeliveriesPending")
                         .HasDatabaseName("ix_agent_tasks_deliveries_pending")
                         .HasFilter("deliveries_pending");
+
+                    b.HasIndex("NextPrepareAt")
+                        .HasDatabaseName("ix_agent_tasks_next_prepare_at")
+                        .HasFilter("next_prepare_at IS NOT NULL");
 
                     b.HasIndex("OriginSessionId")
                         .HasDatabaseName("ix_agent_tasks_origin_session_id");
@@ -2673,6 +2790,30 @@ namespace Marshal.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_chunk_versions_chunks_chunk_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Memory.MemoryProposal", b =>
+                {
+                    b.HasOne("Marshal.Data.Memory.Chunk", null)
+                        .WithMany()
+                        .HasForeignKey("ChunkA")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_memory_proposals_chunks_chunk_a");
+
+                    b.HasOne("Marshal.Data.Memory.Chunk", null)
+                        .WithMany()
+                        .HasForeignKey("ChunkB")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_memory_proposals_chunks_chunk_b");
+
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_memory_proposals_users_owner_id");
                 });
 
             modelBuilder.Entity("Marshal.Data.Memory.Project", b =>

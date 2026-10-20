@@ -63,8 +63,8 @@ public sealed class SqliteVectorExtensionTests : IDisposable
 
         await db.Database.MigrateAsync(Ct);
 
-        List<string> tables = await db.Database.SqlQueryRaw<string>("SELECT name AS \"Value\" FROM sqlite_master WHERE name IN ('chunks_fts', 'memory_vector_index')").ToListAsync(Ct);
-        Assert.Equal(["chunks_fts", "memory_vector_index"], tables.Order(StringComparer.Ordinal));
+        List<string> tables = await db.Database.SqlQueryRaw<string>("SELECT name AS \"Value\" FROM sqlite_master WHERE name IN ('chunks_fts', 'chunk_versions_fts', 'memory_vector_index')").ToListAsync(Ct);
+        Assert.Equal(["chunk_versions_fts", "chunks_fts", "memory_vector_index"], tables.Order(StringComparer.Ordinal));
         foreach (string statement in Marshal.Data.Memory.MemorySchema.Create)
             await db.Database.ExecuteSqlRawAsync(statement, Ct);
     }

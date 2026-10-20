@@ -36,7 +36,32 @@ public sealed class NdjsonMemoryExporterTests : IAsyncLifetime
         Assert.All(lines, line => Assert.StartsWith("{\"kind\":", line, StringComparison.Ordinal));
         Assert.DoesNotContain(lines, line => line.Contains("embedding", StringComparison.OrdinalIgnoreCase));
         string[] chunkFields = [.. JsonDocument.Parse(lines[1]).RootElement.EnumerateObject().Select(property => property.Name)];
-        Assert.Equal(["kind", "id", "scope", "projectId", "type", "title", "content", "importance", "pinned", "sourceRef", "createdBy", "createdAt", "updatedAt", "deletedAt"], chunkFields);
+        Assert.Equal(["kind", "id", "scope", "projectId", "type", "title", "content", "importance", "pinned", "sourceRef", "createdBy", "createdAt", "updatedAt", "deletedAt", "validFrom", "validTo"], chunkFields);
+    }
+
+    [Fact]
+    public async Task Export_ChunksAndVersionsCarryValidTime()
+    {
+        await SeedAsync();
+
+        JsonElement[] lines = [.. (await ExportAsync(_database)).Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line => JsonDocument.Parse(line).RootElement)];
+
+        JsonElement superseded = lines.Single(line => line.GetProperty("kind").GetString() == "chunk" && line.GetProperty("title").GetString() == "Voron nozzle size");
+        Assert.Equal(("2026-09-28T08:59:59.0000000+00:00", "2026-09-28T09:00:00.0000000+00:00"), (superseded.GetProperty("validFrom").GetString(), superseded.GetProperty("validTo").GetString()));
+        JsonElement version = lines.Single(line => line.GetProperty("kind").GetString() == "version");
+        Assert.Equal(("2026-09-28T08:00:00.0000000+00:00", "2026-09-28T09:00:00.0000000+00:00"), (version.GetProperty("validFrom").GetString(), version.GetProperty("validTo").GetString()));
+    }
+
+    [Fact]
+    public async Task Import_LineWithoutValidTime_ValidFromCreation()
+    {
+        string line = """{"kind":"chunk","id":"x","scope":"general","projectId":null,"type":"fact","title":"Old export","content":"Before valid time.","importance":3,"pinned":false,"sourceRef":null,"createdBy":"user","createdAt":"2026-01-02T03:04:05.0000000+00:00","updatedAt":"2026-01-02T03:04:05.0000000+00:00","deletedAt":null}""";
+
+        await Exporter(_database, _embeddings).ImportAsync(new MemoryStream(Encoding.UTF8.GetBytes(line + "\n")), Ct);
+
+        ChunkId id = ChunkIds.Compute(TestExecutionContext.OwnerA, ChunkScope.General, null, ChunkType.Fact, "Old export");
+        MemoryChunk chunk = (await _store.GetAsync(id, Ct))!;
+        Assert.Equal((new DateTimeOffset(2026, 1, 2, 3, 4, 5, TimeSpan.Zero), (DateTimeOffset?)null), (chunk.ValidFrom, chunk.ValidTo));
     }
 
     [Fact]

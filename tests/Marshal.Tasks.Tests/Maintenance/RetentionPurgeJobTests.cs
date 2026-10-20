@@ -84,6 +84,7 @@ public sealed class RetentionPurgeJobTests : IAsyncLifetime
                 CreatedBy = ChunkAuthor.User,
                 CreatedAt = _time.GetUtcNow().AddYears(-2),
                 UpdatedAt = _time.GetUtcNow().AddYears(-2),
+                ValidFrom = _time.GetUtcNow().AddYears(-2),
             });
             await db.SaveChangesAsync(Ct);
         }

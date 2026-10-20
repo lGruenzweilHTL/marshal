@@ -2,8 +2,10 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.Memory;
 using Marshal.Api.Tests.Auth;
 using Marshal.Data.Audit;
+using Marshal.Data.Memory;
 using Microsoft.EntityFrameworkCore;
 
 namespace Marshal.Api.Tests.Http;
@@ -175,6 +177,25 @@ public sealed class MemoryApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Projects_SummaryReadOnly()
+    {
+        string project = (await (await _browser.PostAsJsonAsync(Projects, new { name = "Voron", description = "" }, Ct)).Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("id").GetString()!;
+        DateTimeOffset at = new(2026, 10, 20, 3, 0, 0, TimeSpan.Zero);
+        await _factory.WithDatabaseAsync(_user, async db =>
+        {
+            Project stored = await db.Projects.SingleAsync(Ct);
+            stored.Summary = "A Voron 2.4.";
+            stored.SummaryUpdatedAt = at;
+            return await db.SaveChangesAsync(Ct);
+        });
+
+        await _browser.PutAsJsonAsync($"{Projects}/{project}", new { name = "Voron", description = "The printer.", summary = "Changed by the client." }, Ct);
+        JsonElement listed = Assert.Single((await _browser.GetFromJsonAsync<List<JsonElement>>(Projects, Ct))!);
+
+        Assert.Equal(("A Voron 2.4.", at), (listed.GetProperty("summary").GetString(), listed.GetProperty("summaryUpdatedAt").GetDateTimeOffset()));
+    }
+
+    [Fact]
     public async Task Projects_DeleteLeavesOrphansInTheAudit()
     {
         string project = (await (await _browser.PostAsJsonAsync(Projects, new { name = "Voron", description = "" }, Ct)).Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("id").GetString()!;
@@ -219,6 +240,69 @@ public sealed class MemoryApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Chunks_ValidTimeCreateEditClearAndClosedFilter()
+    {
+        string id = await CreateAsync(new { scope = "general", type = "fact", title = "Employer", content = "Works at Contoso.", validFrom = "2025-01-01T00:00:00+01:00" });
+        await CreateAsync(new { scope = "general", type = "fact", title = "Kettle", content = "In the kitchen." });
+
+        HttpResponseMessage closed = await _browser.PutAsJsonAsync($"{Chunks}/{id}", new { content = "Works at Contoso.", importance = 3, validFrom = "2025-01-01T00:00:00+01:00", validTo = "2026-06-30T00:00:00+02:00" }, Ct);
+        JsonElement chunk = (await _browser.GetFromJsonAsync<JsonElement>($"{Chunks}/{id}", Ct)).GetProperty("chunk");
+        List<JsonElement> closedOnly = (await _browser.GetFromJsonAsync<List<JsonElement>>($"{Chunks}?closed=true", Ct))!;
+        List<JsonElement> openOnly = (await _browser.GetFromJsonAsync<List<JsonElement>>($"{Chunks}?closed=false", Ct))!;
+        await _browser.PutAsJsonAsync($"{Chunks}/{id}", new { content = "Works at Contoso.", importance = 3, validFrom = "2025-01-01T00:00:00+01:00", validTo = (string?)null }, Ct);
+        JsonElement reopened = (await _browser.GetFromJsonAsync<JsonElement>($"{Chunks}/{id}", Ct)).GetProperty("chunk");
+        HttpResponseMessage invalid = await _browser.PutAsJsonAsync($"{Chunks}/{id}", new { content = "Works at Contoso.", importance = 3, validFrom = "2026-01-01T00:00:00Z", validTo = "2025-01-01T00:00:00Z" }, Ct);
+
+        Assert.Equal(HttpStatusCode.OK, closed.StatusCode);
+        Assert.Equal((new DateTimeOffset(2024, 12, 31, 23, 0, 0, TimeSpan.Zero), new DateTimeOffset(2026, 6, 29, 22, 0, 0, TimeSpan.Zero)),
+            (chunk.GetProperty("validFrom").GetDateTimeOffset().ToUniversalTime(), chunk.GetProperty("validTo").GetDateTimeOffset().ToUniversalTime()));
+        Assert.Equal([id], closedOnly.Select(item => item.GetProperty("id").GetString()));
+        Assert.DoesNotContain(openOnly, item => item.GetProperty("id").GetString() == id);
+        Assert.Equal(JsonValueKind.Null, reopened.GetProperty("validTo").ValueKind);
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+    }
+
+    [Fact]
+    public async Task Proposals_ListAcceptAndDismiss_AuditedWithTheUserAsActor()
+    {
+        string old = await CreateAsync(new { scope = "general", type = "device", title = "Voron nozzle", content = "0.4 mm nozzle.", validFrom = "2026-01-01T00:00:00Z" });
+        string current = await CreateAsync(new { scope = "general", type = "device", title = "Voron nozzle (conflicting)", content = "0.6 mm nozzle." });
+        string coffee = await CreateAsync(new { scope = "general", type = "preference", title = "Coffee", content = "Likes oat milk." });
+        string oat = await CreateAsync(new { scope = "general", type = "preference", title = "Coffee milk", content = "Prefers oat milk." });
+        Guid contradiction = await ProposalAsync(MemoryProposalKind.Contradiction, old, current, new { current, outdated = old, closeAt = "2026-03-01T00:00:00Z", reason = "newer" });
+        Guid duplicate = await ProposalAsync(MemoryProposalKind.Duplicate, coffee, oat, new { keep = coffee, other = oat, title = "Coffee", content = "Prefers oat milk.", similarity = 0.95 });
+
+        List<JsonElement> listed = (await _browser.GetFromJsonAsync<List<JsonElement>>("/api/v1/memory/proposals", Ct))!;
+        JsonElement audit = await _browser.GetFromJsonAsync<JsonElement>("/api/v1/memory/audit", Ct);
+        HttpResponseMessage accepted = await _browser.PostAsync($"/api/v1/memory/proposals/{contradiction}/accept", null, Ct);
+        HttpResponseMessage dismissed = await _browser.PostAsync($"/api/v1/memory/proposals/{duplicate}/dismiss", null, Ct);
+        HttpResponseMessage again = await _browser.PostAsync($"/api/v1/memory/proposals/{duplicate}/accept", null, Ct);
+
+        Assert.Equal(2, listed.Count);
+        Assert.Equal("contradiction", listed[0].GetProperty("kind").GetString());
+        Assert.Equal("newer", listed[0].GetProperty("suggestion").GetProperty("reason").GetString());
+        Assert.Equal(2, audit.GetProperty("proposals").GetArrayLength());
+        Assert.Equal((HttpStatusCode.NoContent, HttpStatusCode.NoContent, HttpStatusCode.Conflict), (accepted.StatusCode, dismissed.StatusCode, again.StatusCode));
+        Assert.Equal("2026-03-01T00:00:00+00:00", (await _browser.GetFromJsonAsync<JsonElement>($"{Chunks}/{old}", Ct)).GetProperty("chunk").GetProperty("validTo").GetString());
+        Assert.Empty((await _browser.GetFromJsonAsync<List<JsonElement>>("/api/v1/memory/proposals", Ct))!);
+        List<AuditEvent> events = await _factory.WithDatabaseAsync(_user, db => db.AuditEvents.Where(entry => entry.Action.StartsWith("memory.proposal.")).OrderBy(entry => entry.CreatedAt).ToListAsync(Ct));
+        Assert.Equal([("memory.proposal.accept", contradiction.ToString()), ("memory.proposal.dismiss", duplicate.ToString())], events.Select(entry => (entry.Action, entry.Target)));
+        Assert.All(events, entry => Assert.Equal(_user.Value.ToString(), entry.ActorId));
+    }
+
+    [Fact]
+    public async Task Proposals_OtherUser_NotFound()
+    {
+        string a = await CreateAsync(new { scope = "general", type = "preference", title = "Coffee", content = "Likes oat milk." });
+        string b = await CreateAsync(new { scope = "general", type = "preference", title = "Coffee milk", content = "Prefers oat milk." });
+        Guid proposal = await ProposalAsync(MemoryProposalKind.Duplicate, a, b, new { keep = a, other = b, title = "Coffee", content = "x", similarity = 0.95 });
+        (HttpClient other, _) = await Browser.SignInAsync(_factory, "user");
+
+        Assert.Empty((await other.GetFromJsonAsync<List<JsonElement>>("/api/v1/memory/proposals", Ct))!);
+        Assert.Equal(HttpStatusCode.NotFound, (await other.PostAsync($"/api/v1/memory/proposals/{proposal}/dismiss", null, Ct)).StatusCode);
+    }
+
+    [Fact]
     public async Task Tokens_CannotReachTheMemoryView()
     {
         HttpClient token = await _factory.ClientWithTokenAsync(Abstractions.Tokens.ApiScopes.ConversationWrite);
@@ -231,6 +315,28 @@ public sealed class MemoryApiTests : IAsyncLifetime
         HttpResponseMessage response = await _browser.PostAsJsonAsync(Chunks, body, Ct);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         return (await response.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("id").GetString()!;
+    }
+
+    private async Task<Guid> ProposalAsync(MemoryProposalKind kind, string first, string second, object suggestion)
+    {
+        (ChunkId a, ChunkId b) = MemoryProposal.Pair(ChunkId.From(first), ChunkId.From(second));
+        var proposal = new MemoryProposal
+        {
+            Id = Guid.CreateVersion7(),
+            OwnerId = _user,
+            Kind = kind,
+            ChunkA = a,
+            ChunkB = b,
+            SuggestionJson = JsonSerializer.Serialize(suggestion),
+            Status = MemoryProposalStatus.Open,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        await _factory.WithDatabaseAsync(_user, async db =>
+        {
+            db.MemoryProposals.Add(proposal);
+            return await db.SaveChangesAsync(Ct);
+        });
+        return proposal.Id;
     }
 
     private async Task TurnAsync(string text)

@@ -31,7 +31,17 @@ public sealed record MemoryChunk(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     DateTimeOffset? DeletedAt,
-    DateTimeOffset? LastRetrievedAt);
+    DateTimeOffset? LastRetrievedAt)
+{
+    /// <summary>Since when the fact is true in the world (defaults to the creation time).</summary>
+    public DateTimeOffset ValidFrom { get; init; } = CreatedAt;
+
+    /// <summary>Until when the fact was true; null while open. A chunk whose <see cref="ValidTo"/> is past is closed.</summary>
+    public DateTimeOffset? ValidTo { get; init; }
+
+    /// <summary>True when the fact stopped being true at or before <paramref name="now"/>.</summary>
+    public bool IsClosedAt(DateTimeOffset now) => ValidTo is { } end && end <= now;
+}
 
 /// <summary>A chunk to write; its identity (scope, project, type, normalized title) determines the id.</summary>
 /// <param name="Scope">General or project.</param>
@@ -41,7 +51,14 @@ public sealed record MemoryChunk(
 /// <param name="Content">English content.</param>
 /// <param name="Importance">1–5.</param>
 /// <param name="SourceRef">Optional origin reference.</param>
-public sealed record ChunkDraft(ChunkScope Scope, ProjectId? ProjectId, ChunkType Type, string Title, string Content, int Importance = 3, string? SourceRef = null);
+public sealed record ChunkDraft(ChunkScope Scope, ProjectId? ProjectId, ChunkType Type, string Title, string Content, int Importance = 3, string? SourceRef = null)
+{
+    /// <summary>Since when the fact is true; null keeps the stored value, or means now for a new chunk or new content.</summary>
+    public DateTimeOffset? ValidFrom { get; init; }
+
+    /// <summary>Until when the fact is true; null leaves it open. Must be after the valid-from time.</summary>
+    public DateTimeOffset? ValidTo { get; init; }
+}
 
 /// <summary>What a write did.</summary>
 public enum ChunkWriteOutcome
@@ -62,7 +79,14 @@ public sealed record ChunkWriteResult(ChunkId Id, ChunkWriteOutcome Outcome);
 /// <param name="Importance">Importance before the update.</param>
 /// <param name="SourceRef">Source before the update.</param>
 /// <param name="ReplacedAt">When it was replaced.</param>
-public sealed record MemoryChunkVersion(ChunkId ChunkId, string Content, int Importance, string? SourceRef, DateTimeOffset ReplacedAt);
+public sealed record MemoryChunkVersion(ChunkId ChunkId, string Content, int Importance, string? SourceRef, DateTimeOffset ReplacedAt)
+{
+    /// <summary>Since when this content was true.</summary>
+    public DateTimeOffset ValidFrom { get; init; }
+
+    /// <summary>Until when this content was true.</summary>
+    public DateTimeOffset? ValidTo { get; init; }
+}
 
 /// <summary>A relation between two chunks.</summary>
 /// <param name="From">Source chunk.</param>

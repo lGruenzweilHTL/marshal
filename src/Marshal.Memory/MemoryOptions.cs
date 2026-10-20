@@ -14,6 +14,9 @@ public sealed class MemoryOptions
     public SummarizerOptions Summarizer { get; set; } = new();
 
     public AuditOptions Audit { get; set; } = new();
+
+    /// <summary>Embedding similarity from which two chunks of the same type and scope are proposed as duplicates (0-1].</summary>
+    public double DuplicateThreshold { get; set; } = 0.92;
 }
 
 /// <summary>Memory audit.</summary>

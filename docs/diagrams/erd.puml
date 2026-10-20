@@ -354,6 +354,8 @@ package "Memory" {
     * description : string
     centroid : blob  <<float32 vector>>
     last_active_at : DateTimeOffset
+    summary : string  <<idle-time job, at most 120 words>>
+    summary_updated_at : DateTimeOffset
     * created_at : DateTimeOffset
     deleted_at : DateTimeOffset  <<soft delete>>
   }
@@ -398,6 +400,8 @@ package "Memory" {
     * updated_at : DateTimeOffset
     deleted_at : DateTimeOffset  <<soft delete>>
     last_retrieved_at : DateTimeOffset
+    * valid_from : DateTimeOffset  <<true in the world since>>
+    valid_to : DateTimeOffset  <<closed when past>>
   }
 
   entity ChunkVersion {
@@ -409,7 +413,23 @@ package "Memory" {
     * importance : int (1-5)
     source_ref : string
     * replaced_at : DateTimeOffset
+    * valid_from : DateTimeOffset
+    valid_to : DateTimeOffset
     <<previous content of a same-id update>>
+  }
+
+  entity MemoryProposal <<memory_proposals>> {
+    * id : Guid <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    * kind : contradiction | duplicate
+    * chunk_a : ChunkId <<FK, lower id of the pair>>
+    * chunk_b : ChunkId <<FK, higher id>>
+    * suggestion_json : json
+    * status : open | accepted | dismissed
+    * created_at : DateTimeOffset
+    decided_at : DateTimeOffset
+    <<unique (owner_id, kind, chunk_a, chunk_b)>>
   }
 
   entity ChunkEdge {
@@ -425,6 +445,11 @@ package "Memory" {
   entity "chunks_fts" as ChunkFts <<FTS5>> {
     chunk_id, owner_id : unindexed
     title, content : indexed
+  }
+
+  entity "chunk_versions_fts" as ChunkVersionFts <<FTS5>> {
+    version_id, chunk_id, owner_id : unindexed
+    content : indexed
   }
 
   entity "chunk_vectors" as ChunkVectors <<sqlite-vec vec0>> {
@@ -460,6 +485,13 @@ package "Background Work" {
     * budget : json
     * spent : json
     name : string  <<unique (owner_id, name) where name is not null>>
+    tool_policy : json  <<[tool id globs]; null = template allowlist>>
+    prepare_before : TimeSpan  <<cron only, at most 12 h>>
+    prepare_goal : string
+    next_prepare_at : DateTimeOffset
+    prepared_notes : string  <<last preparation result body>>
+    prepared_taint : json  <<[taint kinds]>>
+    prepared_at : DateTimeOffset
     * deliveries : json  <<[{channel, target, priority, followUp, when, expires, fallback, pendingSince, expiresAt}]>>
     * deliveries_pending : bool  <<a delivery waits for its conditions>>
     override_quiet_hours_until : DateTimeOffset
@@ -687,6 +719,9 @@ Project |o--o{ AgentTask
 Chunk ||--o{ ChunkEdge : from
 Chunk ||--o{ ChunkEdge : to
 Chunk ||--o| ChunkFts : indexed in
+ChunkVersion ||--o| ChunkVersionFts : indexed in
+Chunk ||--o{ MemoryProposal : chunk_a
+Chunk ||--o{ MemoryProposal : chunk_b
 Chunk ||--o| ChunkVectors : embedded in
 
 AgentTask |o--o{ AgentTask : parent

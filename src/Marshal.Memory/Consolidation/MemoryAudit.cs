@@ -10,7 +10,7 @@ namespace Marshal.Memory.Consolidation;
 /// Computes the memory audit over the owner's chunks and edges. The corpus is small (personal memory), so it is read
 /// once and evaluated in memory.
 /// </summary>
-public sealed class MemoryAudit(IDbContextFactory<MarshalDbContext> contexts, IOptions<MemoryOptions> options, TimeProvider timeProvider) : IMemoryAudit
+public sealed class MemoryAudit(IDbContextFactory<MarshalDbContext> contexts, IOptions<MemoryOptions> options, TimeProvider timeProvider, IMemoryProposals proposals) : IMemoryAudit
 {
     public async Task<MemoryAuditReport> RunAsync(CancellationToken cancellationToken)
     {
@@ -23,7 +23,8 @@ public sealed class MemoryAudit(IDbContextFactory<MarshalDbContext> contexts, IO
             .ToListAsync(cancellationToken)];
 
         var live = chunks.Where(chunk => chunk.DeletedAt is null).ToDictionary(chunk => chunk.Id);
-        DateTimeOffset staleBefore = timeProvider.GetUtcNow().AddDays(-options.Value.Audit.StaleAfterDays);
+        DateTimeOffset now = timeProvider.GetUtcNow();
+        DateTimeOffset staleBefore = now.AddDays(-options.Value.Audit.StaleAfterDays);
         List<MemoryChunk> stale = [.. live.Values
             .Where(chunk => !chunk.Pinned && LastActivity(chunk) < staleBefore)
             .OrderBy(LastActivity)
@@ -35,6 +36,7 @@ public sealed class MemoryAudit(IDbContextFactory<MarshalDbContext> contexts, IO
         List<MemoryContradiction> contradictions = [.. edges
             .Where(edge => edge.Kind == ChunkEdgeKind.Contradicts && !superseded.Contains((edge.FromId, edge.ToId)))
             .Where(edge => live.ContainsKey(edge.FromId) && live.ContainsKey(edge.ToId))
+            .Where(edge => !IsClosed(live[edge.FromId], now) && !IsClosed(live[edge.ToId], now))
             .OrderBy(edge => edge.CreatedAt)
             .Select(edge => new MemoryContradiction(SqliteMemoryStore.ToView(live[edge.FromId]), SqliteMemoryStore.ToView(live[edge.ToId]), edge.CreatedAt))];
 
@@ -49,8 +51,10 @@ public sealed class MemoryAudit(IDbContextFactory<MarshalDbContext> contexts, IO
             .OrderBy(edge => edge.CreatedAt)
             .Select(edge => new MemoryEdge(edge.FromId, edge.ToId, edge.Kind, edge.CreatedAt))];
 
-        return new MemoryAuditReport(stale, contradictions, orphans, dangling);
+        return new MemoryAuditReport(stale, contradictions, orphans, dangling) { Proposals = await proposals.ListOpenAsync(cancellationToken) };
     }
+
+    private static bool IsClosed(Chunk chunk, DateTimeOffset now) => chunk.ValidTo is { } end && end <= now;
 
     private static DateTimeOffset LastActivity(Chunk chunk) =>
         chunk.LastRetrievedAt is { } retrieved && retrieved > chunk.UpdatedAt ? retrieved : chunk.UpdatedAt;

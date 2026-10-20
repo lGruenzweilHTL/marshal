@@ -34,6 +34,9 @@ public sealed record NewTask
 
     public string? Notes { get; init; }
 
+    /// <summary>A preparation run before each scheduled run (cron tasks only).</summary>
+    public TaskPreparation? Preparation { get; init; }
+
     public TaskBudget Budget { get; init; } = new();
 
     public IReadOnlyList<TaskDelivery> Deliveries { get; init; } = [];

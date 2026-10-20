@@ -93,7 +93,7 @@ internal sealed class TaskLoopHarness
             NullLogger<AgentRunner>.Instance,
             harness.Approvals);
         harness.Agent = agent;
-        harness.Runner = new AgentTaskRunner(agent, new Profiles(), harness.ActiveRuns, harness.Continuations);
+        harness.Runner = new AgentTaskRunner(agent, new Profiles(), harness.ActiveRuns, harness.Continuations, harness.Time);
         return harness;
     }
 

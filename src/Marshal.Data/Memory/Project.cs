@@ -20,6 +20,11 @@ public sealed class Project : IOwned
 
     public DateTimeOffset? LastActiveAt { get; set; }
 
+    /// <summary>Short English summary of the project's open chunks (at most 120 words), written by an idle-time job.</summary>
+    public string? Summary { get; set; }
+
+    public DateTimeOffset? SummaryUpdatedAt { get; set; }
+
     public required DateTimeOffset CreatedAt { get; init; }
 
     /// <summary>Soft-delete time; its chunks become orphans in the audit.</summary>

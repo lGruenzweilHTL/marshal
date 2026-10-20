@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Marshal.Abstractions;
+using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Memory;
 using Marshal.Abstractions.Tools;
 using Marshal.Memory.Projects;
@@ -8,11 +9,12 @@ using Marshal.Memory.Retrieval;
 namespace Marshal.Memory.Tools;
 
 /// <summary>
-/// <c>memory.remember(type, title, content, importance?, scope?, project?, sourceRef?)</c>: writes a chunk through its
-/// deterministic id, updating it in place when it exists. It cannot pin. Flagged <see cref="ToolDescriptor.Persists"/>,
+/// <c>memory.remember(type, title, content, importance?, scope?, project?, sourceRef?, validFrom?, validTo?)</c>: writes a
+/// chunk through its deterministic id, updating it in place when it exists. Valid times are dates or date-times in the
+/// owner's time zone. It cannot pin. Flagged <see cref="ToolDescriptor.Persists"/>,
 /// so the guard escalates it to confirm in tainted runs.
 /// </summary>
-public sealed class MemoryRememberTool(IMemoryStore store, IMemoryProjects projects) : ITool
+public sealed class MemoryRememberTool(IMemoryStore store, IMemoryProjects projects, IUserProfileProvider profiles) : ITool
 {
     public ToolDescriptor Descriptor { get; } = new()
     {
@@ -26,7 +28,9 @@ public sealed class MemoryRememberTool(IMemoryStore store, IMemoryProjects proje
               "importance":{"type":"integer","minimum":1,"maximum":5,"description":"1 trivia to 5 essential (default 3)."},
               "scope":{"type":"string","enum":["general","project"],"description":"Default: project when a project is given, else general."},
               "project":{"type":"string","description":"Project name or alias for project-scoped entries."},
-              "sourceRef":{"type":"string","description":"Where the knowledge comes from, e.g. a note path."}},
+              "sourceRef":{"type":"string","description":"Where the knowledge comes from, e.g. a note path."},
+              "validFrom":{"type":"string","description":"Since when it is true, only when the user says so (\"since March\"): YYYY-MM-DD or ISO 8601 date-time in the user's time zone. Default: now."},
+              "validTo":{"type":"string","description":"Until when it was or will be true, only when the user says so: YYYY-MM-DD or ISO 8601 date-time."}},
              "required":["type","title","content"]}
             """).RootElement.Clone(),
         DefaultTier = RiskTier.Safe,
@@ -67,7 +71,19 @@ public sealed class MemoryRememberTool(IMemoryStore store, IMemoryProjects proje
                 return new Error("memory.project_not_found", $"There is no project '{projectName}'.", ErrorType.NotFound);
         }
 
-        var draft = new ChunkDraft(scope, project, type, title.Trim(), content.Trim(), importance, ToolArguments.Text(arguments, "sourceRef"));
+        TimeZoneInfo zone = await profiles.ZoneAsync(invocation.Context.OwnerId, cancellationToken);
+        Result<DateTimeOffset?> validFrom = ValidTimeInput.Parse(ToolArguments.Text(arguments, "validFrom"), zone, "validFrom");
+        if (validFrom.IsFailure)
+            return validFrom.Error;
+        Result<DateTimeOffset?> validTo = ValidTimeInput.Parse(ToolArguments.Text(arguments, "validTo"), zone, "validTo");
+        if (validTo.IsFailure)
+            return validTo.Error;
+
+        var draft = new ChunkDraft(scope, project, type, title.Trim(), content.Trim(), importance, ToolArguments.Text(arguments, "sourceRef"))
+        {
+            ValidFrom = validFrom.Value,
+            ValidTo = validTo.Value,
+        };
         Result<ChunkWriteResult> written = await store.WriteAsync(draft, ChunkAuthor.Agent, cancellationToken);
         if (written.IsFailure)
             return written.Error;

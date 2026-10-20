@@ -39,6 +39,12 @@ public sealed class Chunk : IOwned
     public DateTimeOffset? DeletedAt { get; set; }
 
     public DateTimeOffset? LastRetrievedAt { get; set; }
+
+    /// <summary>Since when the fact is true in the world (UTC).</summary>
+    public required DateTimeOffset ValidFrom { get; set; }
+
+    /// <summary>Until when the fact was true; null while open.</summary>
+    public DateTimeOffset? ValidTo { get; set; }
 }
 
 /// <summary>Previous content of a chunk after a same-id update.</summary>
@@ -57,6 +63,12 @@ public sealed class ChunkVersion : IOwned
     public string? SourceRef { get; init; }
 
     public required DateTimeOffset ReplacedAt { get; init; }
+
+    /// <summary>Since when this content was true.</summary>
+    public required DateTimeOffset ValidFrom { get; init; }
+
+    /// <summary>Until when this content was true.</summary>
+    public DateTimeOffset? ValidTo { get; init; }
 }
 
 /// <summary>A relation between two chunks of the same owner.</summary>

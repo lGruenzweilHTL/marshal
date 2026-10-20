@@ -37,6 +37,112 @@ public sealed class EfTaskStoreTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Preparation_CronTask_StoredWithTheNextPreparationTime()
+    {
+        TaskRecord task = (await Store().CreateAsync(New("briefing", TaskTrigger.Cron("0 6 * * *")) with { Preparation = new TaskPreparation(TimeSpan.FromHours(3), "Collect.") }, Ct)).Value;
+
+        TaskRecord stored = (await Store().GetAsync(task.Id, Ct)).Value;
+        Assert.Equal((new TaskPreparation(TimeSpan.FromHours(3), "Collect."), (DateTimeOffset?)new DateTimeOffset(2026, 9, 30, 1, 0, 0, TimeSpan.Zero)), (stored.Preparation, stored.NextPrepareAt));
+    }
+
+    [Theory]
+    [InlineData(13 * 60)]
+    [InlineData(0)]
+    public async Task Preparation_BeforeOutOfRange_ValidationError(int minutes)
+    {
+        Result<TaskRecord> result = await Store().CreateAsync(New("briefing", TaskTrigger.Cron("0 6 * * *")) with { Preparation = new TaskPreparation(TimeSpan.FromMinutes(minutes), "Collect.") }, Ct);
+
+        Assert.Equal("tasks.invalid", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task Preparation_NotACronTask_ValidationError()
+    {
+        Result<TaskRecord> result = await Store().CreateAsync(New("later", TaskTrigger.At(_time.GetUtcNow().AddHours(5))) with { Preparation = new TaskPreparation(TimeSpan.FromHours(1), "Collect.") }, Ct);
+
+        Assert.Equal("tasks.invalid", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task Preparation_WindowAlreadyOpen_PreparesNow()
+    {
+        TaskRecord task = (await Store().CreateAsync(New("evening", TaskTrigger.Cron("0 14 * * *")) with { Preparation = new TaskPreparation(TimeSpan.FromHours(3), "Collect.") }, Ct)).Value;
+
+        Assert.Equal(_time.GetUtcNow(), task.NextPrepareAt);
+    }
+
+    [Fact]
+    public async Task Preparation_NextRunChanges_PreparationTimeFollows_ClearedStaysCleared()
+    {
+        TaskRecord task = (await Store().CreateAsync(New("briefing", TaskTrigger.Cron("0 6 * * *")) with { Preparation = new TaskPreparation(TimeSpan.FromHours(3), "Collect.") }, Ct)).Value;
+
+        TaskRecord claimed = (await Store().UpdateAsync(task with { NextPrepareAt = null }, Ct)).Value;
+        TaskRecord moved = (await Store().UpdateAsync(claimed with { NextRunAt = new DateTimeOffset(2026, 10, 1, 4, 0, 0, TimeSpan.Zero) }, Ct)).Value;
+
+        Assert.Null(claimed.NextPrepareAt);
+        Assert.Equal(new DateTimeOffset(2026, 10, 1, 1, 0, 0, TimeSpan.Zero), moved.NextPrepareAt);
+    }
+
+    [Fact]
+    public async Task Preparation_PreparedNotesRoundTrip()
+    {
+        TaskRecord task = (await Store().CreateAsync(New("briefing", TaskTrigger.Cron("0 6 * * *")) with { Preparation = new TaskPreparation(TimeSpan.FromHours(3), "Collect.") }, Ct)).Value;
+        var notes = new PreparedNotes("Dentist at 09:00.", ["calendar", "rss"], _time.GetUtcNow());
+
+        await Store().UpdateAsync(task with { Prepared = notes }, Ct);
+
+        PreparedNotes stored = (await Store().GetAsync(task.Id, Ct)).Value.Prepared!;
+        Assert.Equal((notes.Body, notes.At), (stored.Body, stored.At));
+        Assert.Equal(["calendar", "rss"], stored.Taint);
+    }
+
+    [Fact]
+    public async Task Preparation_DuePreparationsListedAndInTheNextWakeTime()
+    {
+        TaskRecord task = (await Store().CreateAsync(New("briefing", TaskTrigger.Cron("0 6 * * *")) with { Preparation = new TaskPreparation(TimeSpan.FromHours(3), "Collect.") }, Ct)).Value;
+
+        Assert.Empty(await Store().GetDuePreparationsAsync(_time.GetUtcNow(), 10, Ct));
+        Assert.Equal([task.Id], (await Store().GetDuePreparationsAsync(task.NextPrepareAt!.Value, 10, Ct)).Select(due => due.Id));
+        Assert.Equal(task.NextPrepareAt, await Store().GetNextRunAtAsync(Ct));
+    }
+
+    [Fact]
+    public async Task ToolPolicy_StoredAtCreationAndNullForTasksWithout()
+    {
+        TaskRecord withPolicy = (await Store().CreateAsync(New("printing", TaskTrigger.Now()) with { ToolPolicy = ["printer.*", "notifications.notify"] }, Ct)).Value;
+        TaskRecord legacy = (await Store().CreateAsync(New("legacy", TaskTrigger.Now()), Ct)).Value;
+
+        Assert.Equal(["printer.*", "notifications.notify"], (await Store().GetAsync(withPolicy.Id, Ct)).Value.ToolPolicy);
+        Assert.Null((await Store().GetAsync(legacy.Id, Ct)).Value.ToolPolicy);
+    }
+
+    [Fact]
+    public async Task ToolPolicy_UpdateKeepsItAndOnlySetToolPolicyChangesIt()
+    {
+        TaskRecord task = (await Store().CreateAsync(New("printing", TaskTrigger.Now()) with { ToolPolicy = ["printer.*"] }, Ct)).Value;
+
+        TaskRecord updated = (await Store().UpdateAsync(task with { Goal = "Other goal", ToolPolicy = ["mail.*"] }, Ct)).Value;
+        Assert.Equal(["printer.*"], (await Store().GetAsync(task.Id, Ct)).Value.ToolPolicy);
+
+        TaskRecord widened = (await Store().SetToolPolicyAsync(task.Id, ["printer.*", "calendar.list_events"], Ct)).Value;
+
+        Assert.Equal(["printer.*", "calendar.list_events"], widened.ToolPolicy);
+        Assert.Equal("Other goal", widened.Goal);
+        Assert.Equal(updated.RowVersion + 1, widened.RowVersion);
+    }
+
+    [Fact]
+    public async Task SetToolPolicy_ForeignTask_NotFound()
+    {
+        TaskRecord task = (await Store().CreateAsync(New("printing", TaskTrigger.Now()), Ct)).Value;
+        _database.Accessor.Current = Text(OwnerB);
+
+        Result<TaskRecord> result = await Store().SetToolPolicyAsync(task.Id, ["printer.*"], Ct);
+
+        Assert.Equal("tasks.not_found", result.Error.Code);
+    }
+
+    [Fact]
     public async Task Create_NowAtEventAfter_NextRun()
     {
         DateTimeOffset at = _time.GetUtcNow().AddHours(2);

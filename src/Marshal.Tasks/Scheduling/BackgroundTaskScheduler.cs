@@ -19,7 +19,9 @@ namespace Marshal.Tasks.Scheduling;
 /// Runs due tasks. One loop sleeps until the earliest <c>next_run_at</c> (or a <see cref="TaskSignals.Wake"/>), then queues the
 /// due tasks in run-time order; <see cref="TaskOptions.Workers"/> workers claim each task by moving it to
 /// <c>running</c> with its row version, so a task is never run twice, run it as its owner and apply the outcome.
-/// Tasks left <c>running</c> by a crash become <c>pending</c> again at startup.
+/// Tasks left <c>running</c> by a crash become <c>pending</c> again at startup. Preparation runs become due at
+/// <c>next_prepare_at</c>; a worker claims one by clearing that time, runs it without changing the task's status and
+/// stores its result as the prepared notes. A failed preparation leaves the main run as it was.
 /// </summary>
 internal sealed partial class BackgroundTaskScheduler(
     ITaskStore store,
@@ -42,8 +44,8 @@ internal sealed partial class BackgroundTaskScheduler(
     private static readonly TimeSpan _maxSleep = TimeSpan.FromMinutes(1);
 
     private readonly Dictionary<TaskKind, ITaskRunner> _runners = runners.ToDictionary(runner => runner.Kind);
-    private readonly Channel<OwnedTask> _queue = Channel.CreateBounded<OwnedTask>(new BoundedChannelOptions(DueBatch) { SingleReader = false, SingleWriter = true });
-    private readonly ConcurrentDictionary<TaskId, byte> _queued = new();
+    private readonly Channel<WorkItem> _queue = Channel.CreateBounded<WorkItem>(new BoundedChannelOptions(DueBatch) { SingleReader = false, SingleWriter = true });
+    private readonly ConcurrentDictionary<WorkItem, byte> _queued = new();
     private volatile bool _sleeping;
     private int _busy;
     private int _idleWorkers;
@@ -84,8 +86,14 @@ internal sealed partial class BackgroundTaskScheduler(
             {
                 foreach (OwnedTask due in await store.GetDueAsync(now, DueBatch, stoppingToken))
                 {
-                    if (_queued.TryAdd(due.Id, 0))
-                        await _queue.Writer.WriteAsync(due, stoppingToken);
+                    if (_queued.TryAdd(new WorkItem(due, Prepare: false), 0))
+                        await _queue.Writer.WriteAsync(new WorkItem(due, Prepare: false), stoppingToken);
+                }
+
+                foreach (OwnedTask due in await store.GetDuePreparationsAsync(now, DueBatch, stoppingToken))
+                {
+                    if (_queued.TryAdd(new WorkItem(due, Prepare: true), 0))
+                        await _queue.Writer.WriteAsync(new WorkItem(due, Prepare: true), stoppingToken);
                 }
 
                 // When the earliest task is already due it is queued; the workers wake the loop when they finish.
@@ -142,14 +150,20 @@ internal sealed partial class BackgroundTaskScheduler(
 
             if (!more)
                 return;
-            if (!_queue.Reader.TryRead(out OwnedTask? due))
+            if (!_queue.Reader.TryRead(out WorkItem? item))
                 continue;
 
+            OwnedTask due = item.Task;
             Interlocked.Increment(ref _busy);
             try
             {
                 using (executionContext.Use(SystemContext(due.OwnerId)))
-                    await ProcessAsync(due.Id, stoppingToken);
+                {
+                    if (item.Prepare)
+                        await PrepareAsync(due.Id, stoppingToken);
+                    else
+                        await ProcessAsync(due.Id, stoppingToken);
+                }
             }
             catch (Exception exception) when (exception is not OperationCanceledException || !stoppingToken.IsCancellationRequested)
             {
@@ -157,7 +171,7 @@ internal sealed partial class BackgroundTaskScheduler(
             }
             finally
             {
-                _queued.TryRemove(due.Id, out _);
+                _queued.TryRemove(item, out _);
                 Interlocked.Decrement(ref _busy);
                 signals.Wake();
             }
@@ -201,6 +215,74 @@ internal sealed partial class BackgroundTaskScheduler(
             await DispatchAsync(id, stoppingToken);
         if (finished is { Status: AgentTaskStatus.Done or AgentTaskStatus.Waiting } && outcome.End == TaskRunEnd.Done)
             await ReleaseDependentsAsync(id, stoppingToken);
+    }
+
+    private async Task PrepareAsync(TaskId id, CancellationToken stoppingToken)
+    {
+        Result<TaskRecord> loaded = await store.GetAsync(id, stoppingToken);
+        if (loaded.IsFailure)
+            return;
+        TaskRecord task = loaded.Value;
+        if (task.Status is not (AgentTaskStatus.Pending or AgentTaskStatus.Waiting) || task.NextPrepareAt is null || task.NextPrepareAt > time.GetUtcNow())
+            return;
+
+        // Without a preparer, while paused or over budget, the preparation is skipped; the main run goes ahead as usual.
+        Result<RunLimits> allowance = _runners.TryGetValue(task.Kind, out ITaskRunner? runner) && runner is ITaskPreparer && task.Preparation is not null
+            && !await pauses.IsPausedAsync(task.OwnerId, stoppingToken)
+            ? await budgets.AllowanceAsync(task, stoppingToken)
+            : new Error("tasks.no_preparation", "The task cannot be prepared now.", ErrorType.Unavailable);
+        Result<TaskRecord> claimed = await store.UpdateAsync(task with { NextPrepareAt = null }, stoppingToken);
+        if (claimed.IsFailure)
+            return;
+        if (allowance.IsFailure)
+        {
+            LogPreparationSkipped(id, allowance.Error.Code);
+            return;
+        }
+
+        long started = time.GetTimestamp();
+        TaskPreparationOutcome outcome = await PrepareRunAsync((ITaskPreparer)runner!, claimed.Value, allowance.Value, stoppingToken);
+        TaskSpend spend = outcome.Spend with { WallTime = time.GetElapsedTime(started) };
+        if (outcome.Body is null)
+            LogPreparationFailed(id, outcome.Reason ?? "error");
+
+        for (int attempt = 0; attempt < ApplyAttempts; attempt++)
+        {
+            Result<TaskRecord> current = await store.GetAsync(id, stoppingToken);
+            if (current.IsFailure || current.Value.Status is not (AgentTaskStatus.Pending or AgentTaskStatus.Waiting))
+                break;
+
+            PreparedNotes? notes = outcome.Body is { } body ? new PreparedNotes(body, outcome.Taint, time.GetUtcNow()) : null;
+            if ((await store.UpdateAsync(current.Value with { Prepared = notes, Spent = current.Value.Spent.Add(spend) }, stoppingToken)).IsSuccess)
+                break;
+        }
+
+        await budgets.DrawDownAsync(claimed.Value, spend, stoppingToken);
+    }
+
+    private async Task<TaskPreparationOutcome> PrepareRunAsync(ITaskPreparer preparer, TaskRecord task, RunLimits limits, CancellationToken stoppingToken)
+    {
+        using var run = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+        signals.RunStarted(task.Id, run);
+        Interlocked.Decrement(ref _busy);
+        try
+        {
+            return await preparer.PrepareAsync(task, limits, run.Token);
+        }
+        catch (OperationCanceledException) when (run.IsCancellationRequested && !stoppingToken.IsCancellationRequested)
+        {
+            return new TaskPreparationOutcome(null, [], TaskSpend.Zero, "cancelled");
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException || !stoppingToken.IsCancellationRequested)
+        {
+            LogRunFailed(task.Id, exception);
+            return new TaskPreparationOutcome(null, [], TaskSpend.Zero, "error");
+        }
+        finally
+        {
+            signals.RunEnded(task.Id, run);
+            Interlocked.Increment(ref _busy);
+        }
     }
 
     private async Task DispatchAsync(TaskId id, CancellationToken stoppingToken)
@@ -264,11 +346,13 @@ internal sealed partial class BackgroundTaskScheduler(
 
             TaskRecord task = current.Value;
             DateTimeOffset now = time.GetUtcNow();
+            // Prepared notes serve one main run.
             TaskRecord updated = task with
             {
                 TriggerPayload = null,
                 Notes = outcome.Notes ?? task.Notes,
                 Spent = task.Spent.Add(spend),
+                Prepared = null,
             };
             updated = outcome.End switch
             {
@@ -325,9 +409,18 @@ internal sealed partial class BackgroundTaskScheduler(
         }
     }
 
+    /// <summary>A queued main run or preparation run of a task.</summary>
+    private sealed record WorkItem(OwnedTask Task, bool Prepare);
+
     /// <summary>The context background work runs in for <paramref name="owner"/>.</summary>
     internal static MarshalExecutionContext SystemContext(OwnerId owner) =>
         new() { OwnerId = owner, Source = SessionSource.Task, IsInteractive = false };
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Preparation of task {TaskId} skipped: {Code}")]
+    private partial void LogPreparationSkipped(TaskId taskId, string code);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Preparation of task {TaskId} failed: {Reason}; the main run goes ahead without notes")]
+    private partial void LogPreparationFailed(TaskId taskId, string reason);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Task scheduler loop failed")]
     private partial void LogLoopFailed(Exception exception);

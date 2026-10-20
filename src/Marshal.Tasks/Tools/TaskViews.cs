@@ -18,6 +18,7 @@ internal static class TaskViews
         trigger = Describe(task.Trigger),
         once = Once(task.Trigger),
         nextRun = task.NextRunAt is { } next ? Local(next, zone) : null,
+        prepare = Preparation(task),
         resultAgeMinutes = task.ResultAt is { } at ? (int?)(now - at).TotalMinutes : null,
     };
 
@@ -32,6 +33,8 @@ internal static class TaskViews
         once = Once(task.Trigger),
         nextRun = task.NextRunAt is { } next ? Local(next, zone) : null,
         notes = task.Notes,
+        prepare = Preparation(task),
+        preparedAt = task.Prepared is { } prepared ? Local(prepared.At, zone) : null,
         result = task.Result is { } result
             ? new { speech = result.Speech, body = result.Body, at = task.ResultAt is { } at ? Local(at, zone) : null, ageMinutes = task.ResultAt is { } resultAt ? (int)(now - resultAt).TotalMinutes : 0 }
             : null,
@@ -40,6 +43,10 @@ internal static class TaskViews
 
     public static string Local(DateTimeOffset time, TimeZoneInfo zone) =>
         TimeZoneInfo.ConvertTime(time, zone).ToString("yyyy-MM-dd'T'HH:mm:sszzz", CultureInfo.InvariantCulture);
+
+    private static object? Preparation(TaskRecord task) => task.Preparation is { } preparation
+        ? new { before = preparation.Before.ToString(@"hh\:mm", CultureInfo.InvariantCulture), goal = preparation.Goal }
+        : null;
 
     // Watches say whether they end after their first event; other triggers leave it out.
     private static bool? Once(TaskTrigger trigger) => trigger.Kind == TaskTriggerKind.Event ? trigger.Once : null;

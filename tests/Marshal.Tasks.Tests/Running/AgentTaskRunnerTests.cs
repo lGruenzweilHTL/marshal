@@ -358,6 +358,86 @@ public sealed class AgentTaskRunnerTests
         Assert.Equal((TaskRunEnd.Failed, "step_limit"), (outcome.End, outcome.Reason));
     }
 
+    [Fact]
+    public async Task Prepare_PreparationGoalWithTheTasksTemplateAndPolicy_BodyAndTaintReturned()
+    {
+        TaskLoopHarness harness = await TaskLoopHarness.CreateAsync(null, FakeTool.Untrusted("calendar.list_events", "calendar").Returns("Dentist at 09:00."));
+        harness.Model.ThenToolCall("calendar_list_events").ThenText("Appointments: dentist at 09:00.");
+        harness.Templates.Items.Add(FakeTemplateCatalog.Template("briefing"));
+        TaskRecord task = Task() with
+        {
+            Template = "briefing",
+            Goal = "Give the morning briefing.",
+            Trigger = TaskTrigger.Cron("0 6 * * *"),
+            ToolPolicy = ["calendar.*"],
+            Preparation = new TaskPreparation(TimeSpan.FromHours(3), "Collect today's appointments."),
+        };
+
+        TaskPreparationOutcome outcome = await harness.Runner.PrepareAsync(task, new RunLimits(), Ct);
+
+        Assert.Equal("Appointments: dentist at 09:00.", outcome.Body);
+        Assert.Equal(["calendar"], outcome.Taint);
+        MarshalExecutionContext context = harness.LastContext;
+        Assert.Equal(("briefing", task.Id), (context.Template, context.TaskId));
+        Assert.Equal(["calendar.*"], context.ToolPolicy!);
+        Assert.Equal("prepare", harness.Recorder.Runs[^1].Start.Trigger);
+        string input = harness.Model.Requests[0].Messages[1].Text;
+        Assert.Contains("Collect today's appointments.", input, StringComparison.Ordinal);
+        Assert.Contains("Give the morning briefing.", input, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Prepare_RunFails_NoBody()
+    {
+        TaskLoopHarness harness = await TaskLoopHarness.CreateAsync(null, FakeTool.Safe("printer.status"));
+        for (int i = 0; i < 20; i++)
+            harness.Model.ThenToolCall("printer_status");
+        TaskRecord task = Task() with { Trigger = TaskTrigger.Cron("0 6 * * *"), Preparation = new TaskPreparation(TimeSpan.FromHours(3), "Collect.") };
+
+        TaskPreparationOutcome outcome = await harness.Runner.PrepareAsync(task, new RunLimits(), Ct);
+
+        Assert.Equal(((string?)null, "step_limit"), (outcome.Body, outcome.Reason));
+    }
+
+    [Fact]
+    public async Task Run_FreshPreparedNotes_InTheInputAndTheRunStartsWithTheirTaint()
+    {
+        TaskLoopHarness harness = await TaskLoopHarness.CreateAsync();
+        harness.Model.ThenText("Good morning.");
+        TaskRecord task = Task() with
+        {
+            Trigger = TaskTrigger.Cron("0 6 * * *"),
+            Preparation = new TaskPreparation(TimeSpan.FromHours(3), "Collect."),
+            Prepared = new PreparedNotes("Dentist at 09:00.", ["calendar"], harness.Time.GetUtcNow().AddHours(-3)),
+        };
+
+        await harness.Runner.RunAsync(task, new RunLimits(), Ct);
+
+        string input = harness.Model.Requests[0].Messages[1].Text;
+        Assert.Contains("Prepared notes", input, StringComparison.Ordinal);
+        Assert.Contains("<untrusted-data source=\"calendar\">", input, StringComparison.Ordinal);
+        Assert.Contains("Dentist at 09:00.", input, StringComparison.Ordinal);
+        Assert.Equal(["calendar"], harness.LastContext.Taint.Sources.Select(source => source.Kind));
+    }
+
+    [Fact]
+    public async Task Run_StalePreparedNotes_Ignored()
+    {
+        TaskLoopHarness harness = await TaskLoopHarness.CreateAsync();
+        harness.Model.ThenText("Good morning.");
+        TaskRecord task = Task() with
+        {
+            Trigger = TaskTrigger.Cron("0 6 * * *"),
+            Preparation = new TaskPreparation(TimeSpan.FromHours(3), "Collect."),
+            Prepared = new PreparedNotes("Dentist at 09:00.", ["calendar"], harness.Time.GetUtcNow().AddHours(-4).AddMinutes(-1)),
+        };
+
+        await harness.Runner.RunAsync(task, new RunLimits(), Ct);
+
+        Assert.DoesNotContain("Dentist", harness.Model.Requests[0].Messages[1].Text, StringComparison.Ordinal);
+        Assert.Empty(harness.LastContext.Taint.Sources);
+    }
+
     private static TaskRecord Task() => new()
     {
         Id = TaskId.New(),

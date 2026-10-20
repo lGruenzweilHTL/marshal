@@ -80,6 +80,37 @@ public sealed class MemoryIndexRebuilderTests : IAsyncLifetime
         Assert.Null(await InfoAsync());
     }
 
+    [Fact]
+    public async Task VersionsWithoutKeywordEntries_IndexedOnce()
+    {
+        ChunkId nozzle = await WriteAsync(TestExecutionContext.OwnerA, "Voron nozzle", "0.4 mm brass.");
+        await WriteAsync(TestExecutionContext.OwnerA, "Voron nozzle", "0.6 mm steel.");
+        await using (MarshalDbContext db = _database.CreateContext())
+        {
+            // A version written before the version keyword index existed.
+            await db.Database.ExecuteSqlRawAsync("DELETE FROM chunk_versions_fts", Ct);
+        }
+
+        int indexed = await Rebuilder(_old).IndexVersionsAsync(Ct);
+        int again = await Rebuilder(_old).IndexVersionsAsync(Ct);
+
+        Assert.Equal((1, 0), (indexed, again));
+        Assert.Equal([nozzle], await VersionHitsAsync("brass"));
+    }
+
+    private async Task<List<ChunkId>> VersionHitsAsync(string word)
+    {
+        await using MarshalDbContext db = _database.CreateContext();
+        await db.Database.OpenConnectionAsync(Ct);
+        await using System.Data.Common.DbCommand command = MemoryIndexes.Command(db, "SELECT chunk_id FROM chunk_versions_fts WHERE chunk_versions_fts MATCH $word", ("$word", word));
+        var hits = new List<ChunkId>();
+        await using System.Data.Common.DbDataReader reader = await command.ExecuteReaderAsync(Ct);
+        while (await reader.ReadAsync(Ct))
+            hits.Add(ChunkId.Parse(reader.GetString(0), null));
+
+        return hits;
+    }
+
     private MemoryIndexRebuilder Rebuilder(IEmbeddingGenerator<string, Embedding<float>> embeddings) =>
         new(_database.Factory, embeddings, new Users(), _database.Accessor, NullLogger<MemoryIndexRebuilder>.Instance);
 
