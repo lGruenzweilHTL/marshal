@@ -259,6 +259,20 @@ public sealed class AgentTaskRunnerTests
     }
 
     [Fact]
+    public async Task ToolPolicy_LimitsTheToolsOfEveryRun()
+    {
+        TaskLoopHarness harness = await TaskLoopHarness.CreateAsync(null, FakeTool.Safe("mail.create_draft"), FakeTool.Safe("printer.status"));
+        harness.Model.ThenText("Done.").ThenText("Done.");
+
+        await harness.Runner.RunAsync(Task() with { ToolPolicy = ["printer.*"] }, new RunLimits(), Ct);
+        await harness.Runner.RunAsync(Task(), new RunLimits(), Ct);
+
+        Assert.Equal(["printer_status"], harness.Model.Requests[0].ToolNames);
+        Assert.Equal(["printer.*"], harness.Recorder.Runs[0].Start.Context.ToolPolicy);
+        Assert.Equal(["mail_create_draft", "printer_status"], harness.Model.Requests[1].ToolNames.Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
     public async Task Template_LimitsTheTools()
     {
         TaskLoopHarness harness = await TaskLoopHarness.CreateAsync(null, FakeTool.Safe("mail.search"), FakeTool.Safe("printer.status"));

@@ -1569,6 +1569,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tasks/{id}/tool-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replaces the task's tool policy (tool ids or globs inside its template's allowlist); the next run sees only those tools. */
+        put: operations["SetTaskToolPolicy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tasks/{id}/cancel": {
         parameters: {
             query?: never;
@@ -3202,6 +3219,10 @@ export interface components {
             notifications: components["schemas"]["NotificationEntry"][];
             /** @description External work it started, newest first. */
             executorSessions: components["schemas"]["ExecutorSessionRecord"][];
+            /** @description Tool id globs the task's runs are limited to; null = every tool its template allows. */
+            toolPolicy: null | string[];
+            /** @description Tool ids the task's template allows (what a policy may contain), sorted. */
+            availableTools: string[];
         };
         /** @description A new goal for a task. */
         TaskGoalUpdate: {
@@ -3290,6 +3311,11 @@ export interface components {
              * @description Runs.
              */
             runs: number;
+        };
+        /** @description A new tool policy for a task. */
+        TaskToolPolicyUpdate: {
+            /** @description Tool ids or globs (e.g. `printer.*`) inside the task's template allowlist. */
+            tools: null | string[];
         };
         TaskTrigger: {
             kind: components["schemas"]["TaskTriggerKind"];
@@ -5882,6 +5908,32 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TaskGoalUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskItem"];
+                };
+            };
+        };
+    };
+    SetTaskToolPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskToolPolicyUpdate"];
             };
         };
         responses: {

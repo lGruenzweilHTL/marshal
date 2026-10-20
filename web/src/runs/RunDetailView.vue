@@ -169,6 +169,13 @@ const count = (value: number | null) => (value === null ? '–' : format.value.n
                     <CodeBlock v-else data-test="content" :code="step.content" :label="t('runs.detail.result')" />
                   </template>
                   <p v-if="step.error" class="error">{{ step.error }}</p>
+                  <RouterLink
+                    v-if="step.error?.startsWith('tool.outside_policy') && detail.data.value?.taskId"
+                    data-test="widen-policy"
+                    :to="`/tasks/${detail.data.value.taskId}`"
+                  >
+                    {{ t('runs.detail.widenPolicy') }}
+                  </RouterLink>
                 </div>
               </li>
             </ol>

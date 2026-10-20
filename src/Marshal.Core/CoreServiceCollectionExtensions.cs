@@ -1,6 +1,9 @@
 using System.Collections;
+using Marshal.Abstractions.Apps;
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Displays;
+using Marshal.Abstractions.Evals;
+using Marshal.Abstractions.Extraction;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Health;
@@ -19,7 +22,10 @@ using Marshal.Abstractions.Templates;
 using Marshal.Abstractions.Tools;
 using Marshal.Core.Agent;
 using Marshal.Core.AiTasks;
+using Marshal.Core.McpServer;
 using Marshal.Core.Configuration;
+using Marshal.Core.Evals;
+using Marshal.Core.Extraction;
 using Marshal.Core.Context;
 using Marshal.Core.Displays;
 using Marshal.Core.Music;
@@ -96,6 +102,9 @@ public static class CoreServiceCollectionExtensions
 
         services.AddSingleton(new ToolNamespace("agent", "Marshal itself: skills, delegating to subagents, the advisor, finding more tools, moving work to the background"));
         services.AddSingleton<ITool, AskAdvisorTool>();
+        // Quarantined extraction: typed questions about untrusted items, answered by a tool-less fast model.
+        services.AddSingleton<IQuarantinedExtractor, ModelQuarantinedExtractor>();
+        services.AddSingleton<ITool, ExtractTool>();
         services.AddSingleton<ITool>(provider => new SystemHealthTool(provider.GetService<ISystemHealth>()));
         services.AddSingleton(new ToolNamespace("system", "Marshal's own health: problems with integrations, configuration and approvals that need an admin"));
         services.AddSingleton<IToolSource, BuiltInToolSource>();

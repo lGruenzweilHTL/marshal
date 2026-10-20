@@ -27,6 +27,8 @@ public sealed class TaskToolsTests : IAsyncLifetime
     private readonly FakeAuditLog _audit = new();
     private readonly RecordingScheduler _scheduler = new();
     private readonly ActiveTaskRuns _runs = new();
+    private readonly FakeTemplateCatalog _templates = new();
+    private Marshal.Tasks.Policies.ITaskToolPolicy? _policy;
     private TestDatabase _database = null!;
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -50,6 +52,75 @@ public sealed class TaskToolsTests : IAsyncLifetime
         Assert.All(tools, tool => Assert.Equal(RiskTier.Safe, tool.Descriptor.DefaultTier));
         Assert.Equal(["tasks.create", "tasks.schedule_wakeup", "tasks.update", "tasks.watch"], tools.Where(tool => tool.Descriptor.Persists).Select(tool => tool.Descriptor.Id.ToString()).Order(StringComparer.Ordinal));
         Assert.Equal(["tasks.create", "tasks.update", "tasks.watch"], tools.Where(tool => tool.Descriptor.ConfirmingArguments.TryGetValue("overrideQuietHoursUntil", out ConfirmationReasonCode code) && code == ConfirmationReasonCode.QuietHoursOverride).Select(tool => tool.Descriptor.Id.ToString()).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public async Task Create_InATurnThatLoadedPrinter_PolicyHasCoreAndPrinterTools()
+    {
+        await UsePoliciesAsync();
+
+        await InvokeAsync("create", new { goal = "Watch the print.", name = "print" }, Loaded(Text(OwnerA), "printer"));
+
+        Assert.Equal(["agent.*", "memory.*", "notifications.*", "printer.*", "tasks.*"], (await Store().FindAsync("print", Ct)).Value.ToolPolicy);
+    }
+
+    [Fact]
+    public async Task Create_WithTools_NarrowsThePolicy()
+    {
+        await UsePoliciesAsync();
+
+        await InvokeAsync("create", new { goal = "Watch the print.", name = "print", tools = new[] { "printer.status", "notifications.notify" } }, Loaded(Text(OwnerA)));
+
+        Assert.Equal(["printer.status", "notifications.notify"], (await Store().FindAsync("print", Ct)).Value.ToolPolicy);
+    }
+
+    [Fact]
+    public async Task Create_WithToolsOutsideTheTemplate_FailsAndCreatesNothing()
+    {
+        await UsePoliciesAsync();
+        _templates.Items.Add(FakeTemplateCatalog.Template("printing", ["printer.*", "notifications.*"]));
+
+        Result<ToolOutput> result = await InvokeAsync("create", new { goal = "Read my mail.", template = "printing", tools = new[] { "mail.*" } }, Loaded(Text(OwnerA)));
+
+        Assert.Equal((ErrorType.Validation, "tasks.invalid_tools"), (result.Error.Type, result.Error.Code));
+        Assert.Empty(await Store().ListAsync(new TaskFilter(), Ct));
+    }
+
+    [Fact]
+    public async Task Watch_StoresThePolicy()
+    {
+        await UsePoliciesAsync();
+
+        await InvokeAsync("watch", new { filter = new { source = "printer" }, goal = "Tell me when it is done.", name = "done", tools = new[] { "notifications.notify" } }, Loaded(Text(OwnerA)));
+
+        Assert.Equal(["notifications.notify"], (await Store().FindAsync("done", Ct)).Value.ToolPolicy);
+    }
+
+    [Fact]
+    public async Task Update_WithTools_FailsNamingTools()
+    {
+        await UsePoliciesAsync();
+        await InvokeAsync("create", new { goal = "Watch the print.", name = "print", tools = new[] { "printer.status" } }, Loaded(Text(OwnerA)));
+
+        Result<ToolOutput> result = await InvokeAsync("update", new { task = "print", tools = new[] { "mail.search" } });
+
+        Assert.Equal(ErrorType.Validation, result.Error.Type);
+        Assert.Contains("tools", result.Error.Message, StringComparison.Ordinal);
+        Assert.Equal(["printer.status"], (await Store().FindAsync("print", Ct)).Value.ToolPolicy);
+    }
+
+    [Fact]
+    public async Task Create_ConfirmationTextListsThePolicy()
+    {
+        await UsePoliciesAsync();
+        ITool create = await ToolAsync("create");
+
+        string summary = create.Summarize(JsonSerializer.SerializeToElement(new { goal = "Watch the print.", tools = new[] { "printer.status" } }), Loaded(Text(OwnerA)));
+        string derived = create.Summarize(JsonSerializer.SerializeToElement(new { goal = "Watch the print." }), Loaded(Text(OwnerA), "printer"));
+
+        Assert.Contains("Watch the print.", summary, StringComparison.Ordinal);
+        Assert.Contains("tools: printer.status", summary, StringComparison.Ordinal);
+        Assert.Contains("printer.*", derived, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -333,7 +404,25 @@ public sealed class TaskToolsTests : IAsyncLifetime
         _runs,
         new ViennaProfiles(),
         Options.Create(_options),
-        _time);
+        _time,
+        _policy);
+
+    private async Task UsePoliciesAsync()
+    {
+        var registry = new Marshal.Core.Tools.ToolRegistry([new FakeToolSource("test", true,
+            new FakeTool("agent.delegate"), new FakeTool("memory.recall"), new FakeTool("tasks.create"), new FakeTool("notifications.notify"),
+            new FakeTool("printer.status"), new FakeTool("mail.search"))]);
+        await registry.RefreshAsync(Ct);
+        _policy = new Marshal.Tasks.Policies.DefaultTaskToolPolicy(registry, _templates, Options.Create(new Marshal.Core.Tools.ToolsOptions { Core = ["agent", "memory", "tasks", "notifications"] }));
+    }
+
+    private static MarshalExecutionContext Loaded(MarshalExecutionContext context, params string[] namespaces)
+    {
+        context.LoadedTools.RetrievalActive = true;
+        foreach (string name in namespaces)
+            context.LoadedTools.Load(name, "retrieval");
+        return context;
+    }
 
     private async Task<ITool> ToolAsync(string name) => (await Source().GetToolsAsync(Ct)).Single(tool => tool.Descriptor.Id.Name == name);
 

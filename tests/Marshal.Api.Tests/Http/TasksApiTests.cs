@@ -166,6 +166,53 @@ public sealed class TasksApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ToolPolicy_ShownInTheDetailWithTheTemplatesTools()
+    {
+        TaskRecord task = await CreateAsync(_user, new NewTask { Goal = "Check the print.", Trigger = TaskTrigger.Now(), ToolPolicy = ["tasks.*"] });
+        TaskRecord legacy = await CreateAsync(_user, new NewTask { Goal = "Old task.", Trigger = TaskTrigger.Now() });
+
+        JsonElement detail = await _browser.GetFromJsonAsync<JsonElement>($"/api/v1/tasks/{task.Id}", Ct);
+        JsonElement legacyDetail = await _browser.GetFromJsonAsync<JsonElement>($"/api/v1/tasks/{legacy.Id}", Ct);
+
+        Assert.Equal(["tasks.*"], detail.GetProperty("toolPolicy").EnumerateArray().Select(item => item.GetString()));
+        Assert.Equal(JsonValueKind.Null, legacyDetail.GetProperty("toolPolicy").ValueKind);
+        List<string?> available = [.. detail.GetProperty("availableTools").EnumerateArray().Select(item => item.GetString())];
+        Assert.Contains("tasks.create", available);
+        Assert.Contains("memory.recall", available);
+    }
+
+    [Fact]
+    public async Task SetToolPolicy_ValidatedAndAudited()
+    {
+        TaskRecord task = await CreateAsync(_user, new NewTask { Goal = "Check the print.", Trigger = TaskTrigger.Now(), ToolPolicy = ["tasks.*"] });
+
+        HttpResponseMessage response = await _browser.PutAsJsonAsync($"/api/v1/tasks/{task.Id}/tool-policy", new { tools = new[] { "tasks.*", "memory.recall" } }, Ct);
+        HttpResponseMessage unknown = await _browser.PutAsJsonAsync($"/api/v1/tasks/{task.Id}/tool-policy", new { tools = new[] { "nothing.*" } }, Ct);
+        HttpResponseMessage empty = await _browser.PutAsJsonAsync($"/api/v1/tasks/{task.Id}/tool-policy", new { tools = Array.Empty<string>() }, Ct);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal((HttpStatusCode.BadRequest, HttpStatusCode.BadRequest), (unknown.StatusCode, empty.StatusCode));
+        Assert.Equal(["tasks.*", "memory.recall"], (await GetAsync(_user, task.Id)).ToolPolicy);
+        AuditEvent audit = await _factory.WithDatabaseAsync(_user, db => db.AuditEvents.SingleAsync(entry => entry.Action == "task.update_tool_policy", Ct));
+        Assert.Equal((task.Id.ToString(), _user.ToString()), (audit.Target, audit.ActorId));
+        Assert.Contains("memory.recall", audit.Details, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SetToolPolicy_TokensForbiddenAndForeignTasksNotFound()
+    {
+        TaskRecord task = await CreateAsync(_user, new NewTask { Goal = "Check the print.", Trigger = TaskTrigger.Now() });
+        (_, OwnerId other) = await Browser.SignInAsync(_factory, "user");
+        TaskRecord foreign = await CreateAsync(other, new NewTask { Goal = "Not yours.", Trigger = TaskTrigger.Now() });
+        HttpClient token = await _factory.ClientWithTokenAsync(Marshal.Abstractions.Tokens.ApiScopes.Admin, Marshal.Abstractions.Tokens.ApiScopes.TasksWrite);
+
+        HttpResponseMessage byToken = await token.PutAsJsonAsync($"/api/v1/tasks/{task.Id}/tool-policy", new { tools = new[] { "tasks.*" } }, Ct);
+        HttpResponseMessage foreignResponse = await _browser.PutAsJsonAsync($"/api/v1/tasks/{foreign.Id}/tool-policy", new { tools = new[] { "tasks.*" } }, Ct);
+
+        Assert.Equal((HttpStatusCode.Forbidden, HttpStatusCode.NotFound), (byToken.StatusCode, foreignResponse.StatusCode));
+    }
+
+    [Fact]
     public async Task KillSwitch_ActivateCancelsAgentTasks_ReleaseResumes()
     {
         TaskRecord task = await CreateAsync(_user, new NewTask { Goal = "Water the plants.", Trigger = TaskTrigger.At(DateTimeOffset.UtcNow.AddDays(1)) });

@@ -3,6 +3,7 @@ using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
 using Marshal.Tasks.Control;
 using Marshal.Tasks.Limits;
+using Marshal.Tasks.Policies;
 using Marshal.Tasks.Running;
 using Microsoft.Extensions.Options;
 
@@ -19,9 +20,10 @@ public sealed class TaskToolSource(
     ActiveTaskRuns runs,
     IUserProfileProvider profiles,
     IOptions<TaskOptions> options,
-    TimeProvider time) : IToolSource
+    TimeProvider time,
+    ITaskToolPolicy? policy = null) : IToolSource
 {
-    private readonly IReadOnlyList<ITool> _tools = TaskTools.Create(new TaskToolContext(store, scheduler, new TaskControl(store, scheduler), killSwitch, budgets, runs, profiles, options, time));
+    private readonly IReadOnlyList<ITool> _tools = TaskTools.Create(new TaskToolContext(store, scheduler, new TaskControl(store, scheduler), killSwitch, budgets, runs, profiles, options, time, policy));
 
     public string Name => "tasks";
 
@@ -48,4 +50,5 @@ internal sealed record TaskToolContext(
     ActiveTaskRuns Runs,
     IUserProfileProvider Profiles,
     IOptions<TaskOptions> Options,
-    TimeProvider Time);
+    TimeProvider Time,
+    ITaskToolPolicy? Policy);

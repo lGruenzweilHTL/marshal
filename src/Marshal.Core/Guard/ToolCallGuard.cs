@@ -18,6 +18,11 @@ public sealed class ToolCallGuard(IToolRegistry registry, IToolVisibilityFilter 
         "Not done: this action needs the user's confirmation, which a subagent cannot ask for. Report the needed action to your caller in your answer.",
         ErrorType.Forbidden);
 
+    private static readonly Error _outsidePolicy = new(
+        "tool.outside_policy",
+        "Not done: this task may not use this tool. Say in your result which tool was missing; the user can add it to the task's tools in the web UI.",
+        ErrorType.Forbidden);
+
     public async Task<GuardVerdict> EvaluateAsync(GuardRequest request, CancellationToken cancellationToken)
     {
         RegisteredTool? tool = (request.Context.Tools ?? registry.Current).FindByModelName(request.ModelName);
@@ -56,7 +61,7 @@ public sealed class ToolCallGuard(IToolRegistry registry, IToolVisibilityFilter 
             {
                 ConfirmationReasonCode.UnresolvedTarget => ConfirmationReasonText.UnresolvedTarget(language),
                 ConfirmationReasonCode.QuietHoursOverride => ConfirmationReasonText.QuietHoursOverride(language),
-                _ => ConfirmationReasonText.Rule(tool.Tool.Summarize(request.Arguments, language), language),
+                _ => ConfirmationReasonText.Rule(tool.Tool.Summarize(request.Arguments, request.Context), language),
             });
         }
 
@@ -85,6 +90,7 @@ public sealed class ToolCallGuard(IToolRegistry registry, IToolVisibilityFilter 
         "forbidden" => new Error("tool.forbidden", "This action is not allowed.", ErrorType.Forbidden),
         "satellite_denied" or "satellite_denies_confirm" => _notFromDevice,
         "subagent_confirm" => _notInSubagent,
+        "outside_policy" => _outsidePolicy,
         _ => new Error("tool.unavailable", "This tool is not available right now.", ErrorType.Forbidden),
     };
 

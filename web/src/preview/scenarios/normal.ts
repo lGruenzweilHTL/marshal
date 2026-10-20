@@ -677,6 +677,8 @@ const taskDetail: Schemas['TaskDetail'] = {
   runs: runs.slice(2, 4),
   notifications: notifications.slice(1, 2),
   executorSessions: [],
+  toolPolicy: ['calendar.*', 'mail.*', 'printers.*', 'agent.extract'],
+  availableTools: ['agent.extract', 'calendar.list', 'mail.search', 'mail.read', 'printers.status', 'rss.search', 'notes.search'],
 }
 
 const files: Schemas['PrinterFile'][] = [

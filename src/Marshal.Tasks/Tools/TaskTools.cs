@@ -203,6 +203,10 @@ internal static class TaskTools
     private static async Task<Result<ToolOutput>> UpdateAsync(TaskToolContext context, ToolInvocation invocation, CancellationToken ct)
     {
         JsonElement arguments = invocation.Arguments;
+        // The tool policy is frozen at creation; only the user widens or narrows it, in the web UI.
+        if (arguments.ValueKind == JsonValueKind.Object && arguments.TryGetProperty("tools", out _))
+            return TaskErrors.Invalid("tools cannot be changed: a task's tools are fixed when it is created, and only the user changes them in the web UI.");
+
         Result<TaskRecord> found = await FindAsync(context, arguments, ct);
         if (found.IsFailure)
             return found.Error;
@@ -356,6 +360,23 @@ internal static class TaskTools
         return until.IsFailure ? until.Error : until.Value;
     }
 
+    /// <summary>The tool policy a new task gets: the requested <c>tools</c> or the derived default.</summary>
+    private static Result<IReadOnlyList<string>?> Policy(TaskToolContext context, JsonElement arguments, MarshalExecutionContext run)
+    {
+        IReadOnlyList<string>? requested = null;
+        if (arguments.ValueKind == JsonValueKind.Object && arguments.TryGetProperty("tools", out JsonElement tools) && tools.ValueKind != JsonValueKind.Null)
+        {
+            if (tools.ValueKind != JsonValueKind.Array || tools.EnumerateArray().Any(item => item.ValueKind != JsonValueKind.String) || tools.GetArrayLength() == 0)
+                return TaskErrors.Invalid("tools must be a non-empty list of tool ids or globs.");
+            requested = [.. tools.EnumerateArray().Select(item => item.GetString()!)];
+        }
+
+        if (context.Policy is null)
+            return requested is null ? Result.Success<IReadOnlyList<string>?>(null) : TaskErrors.Invalid("tools are not supported here.");
+
+        return context.Policy.Derive(TaskArguments.Text(arguments, "template"), run, requested);
+    }
+
     private static ToolOutput Output(object value, string? reference) => new(JsonSerializer.Serialize(value, _json), reference);
 
     private sealed class TaskTool(
@@ -401,6 +422,18 @@ internal static class TaskTools
             }
 
             return Result.Success();
+        }
+
+        // A new task's confirmation names the tools it will get, so the user approves the policy with the task.
+        public string Summarize(JsonElement arguments, MarshalExecutionContext executionContext)
+        {
+            string summary = Summarize(arguments, executionContext.Language);
+            if (name is not ("create" or "watch") || Policy(context, arguments, executionContext) is not { IsSuccess: true } policy)
+                return summary;
+
+            bool german = executionContext.Language.StartsWith("de", StringComparison.OrdinalIgnoreCase);
+            string tools = policy.Value is { } globs ? string.Join(", ", globs) : german ? "alle des Templates" : "all of the template";
+            return german ? $"{summary}; Werkzeuge: {tools}" : $"{summary}; tools: {tools}";
         }
 
         public string Summarize(JsonElement arguments, string language)

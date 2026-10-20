@@ -36,7 +36,12 @@ internal sealed class LiveTaskStore(EfTaskStore inner, ILiveEventPublisher publi
         return updated;
     }
 
+    public async Task<Result<TaskRecord>> SetToolPolicyAsync(TaskId id, IReadOnlyList<string> policy, CancellationToken cancellationToken) =>
+        Published(await inner.SetToolPolicyAsync(id, policy, cancellationToken));
+
     public Task<IReadOnlyList<OwnedTask>> GetDueAsync(DateTimeOffset now, int limit, CancellationToken cancellationToken) => inner.GetDueAsync(now, limit, cancellationToken);
+
+    public Task<IReadOnlyList<OwnedTask>> GetDuePreparationsAsync(DateTimeOffset now, int limit, CancellationToken cancellationToken) => inner.GetDuePreparationsAsync(now, limit, cancellationToken);
 
     public Task<DateTimeOffset?> GetNextRunAtAsync(CancellationToken cancellationToken) => inner.GetNextRunAtAsync(cancellationToken);
 

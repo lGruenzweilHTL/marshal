@@ -259,7 +259,7 @@ internal static class MailTools
         return new MailDraft(to, subject, body, replyTo);
     }
 
-    private static string Render(MailAccount account, MailMessage message)
+    internal static string Render(MailAccount account, MailMessage message)
     {
         var text = new StringBuilder();
         text.AppendLine(CultureInfo.InvariantCulture, $"Id: {Id(account, message.Id)}");

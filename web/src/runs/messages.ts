@@ -56,6 +56,7 @@ export const en = {
   detail: {
     title: 'Run',
     openTask: 'Open task',
+    widenPolicy: 'Widen tool policy',
     taintedTitle: 'Tainted: this run read untrusted content',
     taintedBody: 'Memory and task writes after the first of these steps were escalated to confirm tier.',
     taintSource: '{kind} from step {step}',
@@ -142,6 +143,7 @@ export const de: Catalog<typeof en> = {
   detail: {
     title: 'Lauf',
     openTask: 'Aufgabe öffnen',
+    widenPolicy: 'Werkzeugrichtlinie erweitern',
     taintedTitle: 'Belastet: dieser Lauf hat nicht vertrauenswürdige Inhalte gelesen',
     taintedBody: 'Speicher- und Aufgabenänderungen nach dem ersten dieser Schritte brauchten eine Bestätigung.',
     taintSource: '{kind} ab Schritt {step}',

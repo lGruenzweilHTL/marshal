@@ -31,6 +31,7 @@ import {
   useDesktop,
 } from '../ui'
 import BudgetMeter from './BudgetMeter.vue'
+import TaskToolPolicy from './TaskToolPolicy.vue'
 import TriggerLabel from './TriggerLabel.vue'
 import { isUnfinished, taskLabel } from './taskFormat'
 import { statusTone } from './taskTone'
@@ -142,6 +143,8 @@ function describeDelivery(delivery: Schemas['TaskDelivery']): string {
               <div v-if="detail.data.value.result" data-test="result" class="markdown" v-html="renderMarkdown(detail.data.value.result.body)"></div>
               <p v-else class="ink-3">{{ t('tasks.detail.noResult') }}</p>
             </Card>
+
+            <TaskToolPolicy :task-id="id" :policy="detail.data.value.toolPolicy" :available="detail.data.value.availableTools" @saved="detail.refresh()" />
 
             <Section :title="t('tasks.detail.runs')" :count="detail.data.value.runs.length" data-test="runs">
               <ListCard v-if="detail.data.value.runs.length"><RunRow v-for="run in detail.data.value.runs" :key="run.id" :run="run" /></ListCard>

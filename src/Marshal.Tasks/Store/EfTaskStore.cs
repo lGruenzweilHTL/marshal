@@ -95,6 +95,7 @@ public sealed partial class EfTaskStore(
             Spent = TaskJson.Serialize(TaskSpend.Zero),
             Name = name.Value,
             Deliveries = TaskJson.Serialize(task.Deliveries),
+            ToolPolicy = task.ToolPolicy is null ? null : TaskJson.Serialize(task.ToolPolicy),
             DeliveriesPending = task.Deliveries.Any(delivery => delivery.PendingSince is not null),
             OverrideQuietHoursUntil = task.OverrideQuietHoursUntil,
             Depth = depth,
@@ -111,6 +112,19 @@ public sealed partial class EfTaskStore(
             return TaskErrors.NameTaken(name.Value);
         }
 
+        return ToRecord(row);
+    }
+
+    public async Task<Result<TaskRecord>> SetToolPolicyAsync(TaskId id, IReadOnlyList<string> policy, CancellationToken cancellationToken)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        AgentTask? row = await db.AgentTasks.SingleOrDefaultAsync(candidate => candidate.Id == id, cancellationToken);
+        if (row is null)
+            return TaskErrors.NotFound(id.ToString());
+
+        row.ToolPolicy = TaskJson.Serialize(policy);
+        row.UpdatedAt = timeProvider.GetUtcNow();
+        await db.SaveChangesAsync(cancellationToken);
         return ToRecord(row);
     }
 
@@ -328,6 +342,7 @@ public sealed partial class EfTaskStore(
         Spent = TaskJson.Deserialize<TaskSpend>(row.Spent),
         Name = row.Name,
         Deliveries = TaskJson.Deserialize<List<TaskDelivery>>(row.Deliveries),
+        ToolPolicy = row.ToolPolicy is null ? null : TaskJson.Deserialize<List<string>>(row.ToolPolicy),
         OverrideQuietHoursUntil = row.OverrideQuietHoursUntil,
         Result = row.ResultSpeech is not null && row.ResultBody is not null ? new TaskResult(row.ResultSpeech, row.ResultBody) : null,
         ResultAt = row.ResultAt,

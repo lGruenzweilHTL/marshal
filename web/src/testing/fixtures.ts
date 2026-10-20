@@ -116,6 +116,8 @@ export function taskDetail(overrides: Partial<Schemas['TaskDetail']> = {}): Sche
     runs: [runSummary({ id: 'r-9', source: 'task', trigger: 'task' })],
     notifications: [notificationEntry()],
     executorSessions: [],
+    toolPolicy: null,
+    availableTools: ['agent.extract', 'mail.search', 'mail.read', 'rss.search'],
     ...overrides,
   }
 }

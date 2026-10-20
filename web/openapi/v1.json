@@ -3478,6 +3478,48 @@
         }
       }
     },
+    "/api/v1/tasks/{id}/tool-policy": {
+      "put": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Replaces the task\u0027s tool policy (tool ids or globs inside its template\u0027s allowlist); the next run sees only those tools.",
+        "operationId": "SetTaskToolPolicy",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskToolPolicyUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/tasks/{id}/cancel": {
       "post": {
         "tags": [
@@ -8657,7 +8699,9 @@
           "overrideQuietHoursUntil",
           "runs",
           "notifications",
-          "executorSessions"
+          "executorSessions",
+          "toolPolicy",
+          "availableTools"
         ],
         "type": "object",
         "properties": {
@@ -8718,6 +8762,23 @@
               "$ref": "#/components/schemas/ExecutorSessionRecord"
             },
             "description": "External work it started, newest first."
+          },
+          "toolPolicy": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Tool id globs the task\u0027s runs are limited to; null = every tool its template allows."
+          },
+          "availableTools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tool ids the task\u0027s template allows (what a policy may contain), sorted."
           }
         },
         "description": "One task with everything the detail view shows."
@@ -8907,6 +8968,25 @@
           }
         },
         "description": "What a task\u0027s current activation has used, in the shape of ."
+      },
+      "TaskToolPolicyUpdate": {
+        "required": [
+          "tools"
+        ],
+        "type": "object",
+        "properties": {
+          "tools": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Tool ids or globs (e.g. \u0060printer.*\u0060) inside the task\u0027s template allowlist."
+          }
+        },
+        "description": "A new tool policy for a task."
       },
       "TaskTrigger": {
         "required": [

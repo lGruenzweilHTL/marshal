@@ -1,3 +1,4 @@
+using Marshal.Abstractions.Extraction;
 using Marshal.Abstractions.Rss;
 using Marshal.Abstractions.Tools;
 using Marshal.Integrations.FreshRss.Tools;
@@ -30,6 +31,7 @@ public static class FreshRssServiceCollectionExtensions
         services.AddSingleton<IRssClient, FreshRssClient>();
         services.AddSingleton<IFullTextExtractor, SmartReaderExtractor>();
         services.AddSingleton<IToolSource, RssToolSource>();
+        services.AddSingleton<IUntrustedContentResolver, RssContentResolver>();
         return services;
     }
 }

@@ -17,7 +17,7 @@ Every tool SHALL have an internal id `<namespace>.<name>` used in risk rules, sa
 - **THEN** the call is denied, nothing is executed, and the model receives an error result
 
 ### Requirement: Reserved namespaces
-The namespaces `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra`, `repos`, `media`, `music` and `system` SHALL be reserved for built-in tools. Built-in namespaces SHALL name capabilities, never providers.
+The namespaces `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra`, `repos`, `media`, `music`, `system`, `maintenance` and `web` SHALL be reserved for built-in tools. Built-in namespaces SHALL name capabilities, never providers.
 
 #### Scenario: Reserved namespace used by another tool source
 - **WHEN** a non-built-in tool source registers a tool in namespace `mail`
@@ -50,7 +50,7 @@ Each tool SHALL declare its default risk tier, whether its output is untrusted (
 - **THEN** a German voice turn that calls it can speak the German line
 
 ### Requirement: Visibility filter
-Before every model call the system SHALL remove from the tool list every tool that is forbidden, not in the active template's allowlist, denied for the satellite (`denyTools`), confirm-tier on a satellite that denies confirmation for it (`denyConfirm`), confirm-tier inside a subagent, waiting for MCP pin approval, or hidden by the tool's own visibility condition (e.g. the advisor in voice turns). Tools whose tier depends on arguments SHALL stay visible. The guard SHALL enforce the same rules on every call.
+Before every model call the system SHALL remove from the tool list every tool that is forbidden, not in the active template's allowlist, outside the tool policy of the task the run belongs to, denied for the satellite (`denyTools`), confirm-tier on a satellite that denies confirmation for it (`denyConfirm`), confirm-tier inside a subagent, waiting for MCP pin approval, or hidden by the tool's own visibility condition (e.g. the advisor in voice turns). Tools whose tier depends on arguments SHALL stay visible. The guard SHALL enforce the same rules on every call.
 
 #### Scenario: Forbidden tool is invisible
 - **WHEN** a risk rule marks a tool `forbidden`
@@ -63,6 +63,10 @@ Before every model call the system SHALL remove from the tool list every tool th
 #### Scenario: Tool awaiting pin approval
 - **WHEN** an MCP tool's description changed and is not approved
 - **THEN** the tool is not in the tool list, and a call to it is denied by the guard
+
+#### Scenario: Outside the task policy
+- **WHEN** a task's policy contains only printer tools and its run reads injected text asking to call `mail_draft`
+- **THEN** `mail_draft` is not in the tool list, and a call to it is denied by the guard
 
 ### Requirement: External tool sources
 The registry SHALL accept tools from MCP servers and skills in addition to built-in tools. Each source SHALL register and unregister as a unit on reload.

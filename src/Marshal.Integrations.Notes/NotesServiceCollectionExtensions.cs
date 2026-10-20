@@ -1,3 +1,4 @@
+using Marshal.Abstractions.Extraction;
 using Marshal.Abstractions.Notes;
 using Marshal.Abstractions.Tools;
 using Marshal.Integrations.Notes.Index;
@@ -28,6 +29,7 @@ public static class NotesServiceCollectionExtensions
         services.AddSingleton<NotesSyncService>();
         services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<NotesSyncService>());
         services.AddSingleton<IToolSource, NotesToolSource>();
+        services.AddSingleton<IUntrustedContentResolver, NoteContentResolver>();
         return services;
     }
 }

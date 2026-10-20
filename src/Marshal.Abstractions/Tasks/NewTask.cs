@@ -40,6 +40,12 @@ public sealed record NewTask
 
     public DateTimeOffset? OverrideQuietHoursUntil { get; init; }
 
+    /// <summary>
+    /// Tool id globs every run of the task is limited to (inside its template's allowlist), frozen at creation; null
+    /// for the template's allowlist.
+    /// </summary>
+    public IReadOnlyList<string>? ToolPolicy { get; init; }
+
     /// <summary>Created <c>waiting</c> without a run time: runs only when resumed (e.g. by an executor's completion).</summary>
     public bool AwaitsResume { get; init; }
 }

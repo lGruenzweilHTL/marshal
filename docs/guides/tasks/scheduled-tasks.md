@@ -83,6 +83,14 @@ Inside a run, the agent can call `tasks.schedule_wakeup` (`at` or `inMinutes`, p
 
 Task names are lowercase letters, digits, `-` and `_`, at most 64 characters, unique per owner (`A task named 'briefing' already exists.`).
 
+## Tool policy
+
+Each task may use only the tools in its tool policy. When you create a task from a conversation, the policy is the template's tools in the core namespaces plus the namespaces that conversation loaded. Ask for fewer tools to narrow it, for example "only use the printer status and notifications"; Marshal then passes `tools: [printers.status, notifications.notify]`. The confirmation text lists the policy.
+
+To change the policy, open the task in the web UI (**Tasks**, then the task), select **Edit tool policy**, tick the namespaces the task may use and select **Save policy**. The model cannot change a policy with `tasks.update`.
+
+A run step that the policy blocked shows the error `tool.outside_policy` with a **Widen tool policy** link to the task. Background on why policies exist: [untrusted content](../../concepts/untrusted-content.md#task-tool-policies).
+
 ## Budgets and limits
 
 Each task has a budget for one activation (tokens, cost, steps, wall time, runs), and child tasks draw from their parent. Defaults and the daily cost cap are in [`tasks`](../../configuration/marshal-yaml/tasks.md). A task that exceeds its budget ends `failed` with `The task's budget (or its parent's) is used up.` When the daily cap is reached no new run starts: `Today's cost cap for background tasks is reached.`

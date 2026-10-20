@@ -1945,6 +1945,10 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("template");
 
+                    b.Property<string>("ToolPolicy")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tool_policy");
+
                     b.Property<string>("TriggerKind")
                         .IsRequired()
                         .HasColumnType("TEXT")

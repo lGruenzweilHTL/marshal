@@ -2,6 +2,7 @@ using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Runs;
+using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tools;
 using Marshal.Data.Conversations;
 using Marshal.Testing;
@@ -74,6 +75,37 @@ public sealed class EfRunQueriesTests
         Assert.Equal(GuardDecision.EscalatedByTaint, remember.GuardDecision);
         Assert.Equal(ConfirmationReasonCode.Taint, Assert.Single(remember.Reasons).Code);
         Assert.Equal("""{"text":"x"}""", remember.Arguments);
+    }
+
+    [Fact]
+    public async Task Get_TaskRun_NamesItsTask()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        DbRunRecorder recorder = Recorder(database);
+        database.Accessor.Current = Text(OwnerA);
+        var task = TaskId.New();
+        await using (MarshalDbContext context = database.CreateContext(OwnerA))
+        {
+            context.AgentTasks.Add(new Tasks.AgentTask
+            {
+                Id = task,
+                OwnerId = OwnerA,
+                CreatedBy = TaskCreator.User,
+                Kind = TaskKind.Agent,
+                Goal = "Check the print.",
+                TriggerKind = TaskTriggerKind.Now,
+                TriggerSpec = "",
+                CreatedAt = _time.GetUtcNow(),
+                UpdatedAt = _time.GetUtcNow(),
+            });
+            await context.SaveChangesAsync(Ct);
+        }
+
+        RunId run = await recorder.StartRunAsync(new RunStart(Text(OwnerA) with { TaskId = task, Source = SessionSource.Task }, "task"), Ct);
+
+        RunDetail? detail = await Queries(database, OwnerA).GetAsync(run, Ct);
+
+        Assert.Equal(task, detail!.TaskId);
     }
 
     [Fact]

@@ -106,6 +106,42 @@ describe('TaskDetailView', () => {
     expect(wrapper.find('[data-test="cancel"]').exists()).toBe(false)
   })
 
+  it('says a task without a policy may use every tool its template allows', async () => {
+    const { wrapper } = await mountDetail(server())
+
+    expect(wrapper.get('[data-test="tool-policy"]').text()).toContain('Every tool its template allows')
+  })
+
+  it('shows the tool policy globs', async () => {
+    const { wrapper } = await mountDetail(server(taskDetail({ toolPolicy: ['mail.*', 'agent.extract'] })))
+
+    const policy = wrapper.get('[data-test="tool-policy"]').text()
+    expect(policy).toContain('mail.*')
+    expect(policy).toContain('agent.extract')
+  })
+
+  it('edits the tool policy by namespace and refreshes the detail', async () => {
+    let saved: string[] | null = ['mail.*', 'agent.extract']
+    const fake = server()
+      .handle('GET', '/api/v1/tasks/t-1', () => json(200, taskDetail({ toolPolicy: saved })))
+      .handle('PUT', '/api/v1/tasks/t-1/tool-policy', (request) => {
+        saved = JSON.parse(request.body).tools
+        return json(200, taskItem())
+      })
+    const { wrapper } = await mountDetail(fake)
+
+    await wrapper.get('[data-test="edit-policy"]').trigger('click')
+    const boxes = wrapper.findAll('form[data-test="policy-form"] input[type="checkbox"]')
+    expect(boxes.map((box) => (box.element as HTMLInputElement).value)).toEqual(['agent.*', 'agent.extract', 'mail.*', 'rss.*'])
+    await wrapper.get('input[value="rss.*"]').setValue(true)
+    await wrapper.get('form[data-test="policy-form"]').trigger('submit')
+    await flushPromises()
+
+    expect(JSON.parse(fake.request('PUT', '/api/v1/tasks/t-1/tool-policy')!.body)).toEqual({ tools: ['agent.extract', 'mail.*', 'rss.*'] })
+    expect(fake.count('GET', '/api/v1/tasks/t-1')).toBe(2)
+    expect(wrapper.get('[data-test="tool-policy"]').text()).toContain('rss.*')
+  })
+
   it('reports a missing task', async () => {
     const fake = new FakeServer().on('GET', '/api/v1/me', 200, me).on('GET', '/api/v1/tasks/t-1', 404, { status: 404, code: 'tasks.not_found' })
     const { wrapper } = await mountDetail(fake)

@@ -22,6 +22,9 @@ public interface ITaskStore
     /// </summary>
     Task<Result<TaskRecord>> UpdateAsync(TaskRecord task, CancellationToken cancellationToken);
 
+    /// <summary>Replaces the task's tool policy (a user action in the web UI; the caller validates and audits it).</summary>
+    Task<Result<TaskRecord>> SetToolPolicyAsync(TaskId id, IReadOnlyList<string> policy, CancellationToken cancellationToken);
+
     /// <summary>Pending or waiting tasks of every owner with <c>next_run_at</c> at or before <paramref name="now"/>, earliest first.</summary>
     Task<IReadOnlyList<OwnedTask>> GetDueAsync(DateTimeOffset now, int limit, CancellationToken cancellationToken);
 

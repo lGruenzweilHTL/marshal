@@ -1,8 +1,9 @@
 using System.Text.Json;
 using Marshal.Abstractions;
+using Marshal.Abstractions.Artifacts;
 using Marshal.Abstractions.Events;
 using Marshal.Abstractions.Execution;
-using Marshal.Abstractions.Artifacts;
+using Marshal.Abstractions.Extraction;
 using Marshal.Abstractions.Identity;
 using Marshal.Abstractions.Mail;
 using Marshal.Abstractions.Mcp;
@@ -15,6 +16,7 @@ using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Secrets;
 using Marshal.Abstractions.Templates;
 using Marshal.Abstractions.Tools;
+using Marshal.Demo.Seeding;
 using Marshal.Integrations.FreshRss;
 using Marshal.Integrations.HomeAssistant;
 using Marshal.Integrations.Mail;
@@ -80,6 +82,7 @@ internal sealed class DemoServices : IAsyncDisposable
         services.AddSingleton<IExecutionContextAccessor>(new FakeExecutionContextAccessor(TestExecutionContext.Text()));
         services.AddSingleton<ISnapshotLinks, PathLinks>();
         services.AddSingleton<IModelRouter, NoModels>();
+        services.AddSingleton<IQuarantinedExtractor, NoExtractor>();
         services.AddSingleton<ICostCalculator, ZeroCost>();
         services.AddSingleton<ITemplateCatalog>(new FakeTemplateCatalog());
         services.AddSingleton<IRunRecorder>(new InMemoryRunRecorder());
@@ -144,6 +147,12 @@ internal sealed class DemoServices : IAsyncDisposable
         public string For(string printer, string id) => $"/snapshots/{printer}/{id}";
 
         public string Shared(string printer, string id) => $"{For(printer, id)}/shared";
+    }
+
+    private sealed class NoExtractor : IQuarantinedExtractor
+    {
+        public Task<Result<ExtractionAnswer>> ExtractAsync(UntrustedItem item, string question, AnswerSpec answer, MarshalExecutionContext context, CancellationToken cancellationToken) =>
+            Task.FromResult<Result<ExtractionAnswer>>(new Error("model.not_available", "No model.", ErrorType.Unavailable));
     }
 
     private sealed class NoModels : IModelRouter

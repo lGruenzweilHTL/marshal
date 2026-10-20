@@ -1,3 +1,4 @@
+using Marshal.Abstractions.Extraction;
 using Marshal.Abstractions.Events;
 using Marshal.Abstractions.Mail;
 using Marshal.Abstractions.Secrets;
@@ -38,6 +39,7 @@ public static class MailServiceCollectionExtensions
         services.AddSingleton<IMailProvider, ImapMailProvider>();
         services.AddSingleton<IMailAccountStore, EfMailAccountStore>();
         services.AddSingleton<IToolSource, MailToolSource>();
+        services.AddSingleton<IUntrustedContentResolver, MailContentResolver>();
 
         services.AddSingleton(new MailWatchTimings());
         services.AddSingleton<ImapNewMailSource>();

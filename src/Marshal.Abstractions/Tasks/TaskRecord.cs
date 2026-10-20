@@ -35,6 +35,13 @@ public sealed record TaskRecord
 
     public required TaskTrigger Trigger { get; init; }
 
+    /// <summary>
+    /// Tool id globs the task's runs are limited to, inside the template's allowlist; null (tasks created before tool
+    /// policies, or without a session) means the template's allowlist. Changed only through
+    /// <see cref="ITaskStore.SetToolPolicyAsync"/>.
+    /// </summary>
+    public IReadOnlyList<string>? ToolPolicy { get; init; }
+
     /// <summary>JSON payload of the trigger that made the task due.</summary>
     public string? TriggerPayload { get; init; }
 

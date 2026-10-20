@@ -57,6 +57,32 @@ So an injected "remember that my PIN is ..." or "create a task that ..." cannot 
 
 Mail draft tools are not escalated by taint: a draft never leaves your mailbox, because Marshal has no send path.
 
+### Extraction without reading
+
+Often the model needs one fact from untrusted content, not the content itself: the delivery date in a shipping mail, or whether an article mentions Klipper. `agent.extract` answers such a question without putting the content into the model's context.
+
+The model passes a reference (`mail:<message id>`, `rss:<article id>`, `note:<path>`, `web:<result id>`), a question and an answer type. Marshal resolves the reference through your own sources, so a reference to another user's item fails with `extract.not_found`. A separate call to a `fast` tier model, with no tools, reads the content as untrusted data and answers only the question. Marshal validates the answer against the type and retries once; an answer that still does not fit fails with `extract.invalid_answer`. Content longer than 24,000 characters is cut.
+
+The answer type decides the taint:
+
+| Answer type | Taints the run |
+|---|---|
+| `boolean`, `number`, `integer`, `date`, `datetime`, `enum` | No |
+| `unknown` (allowed for every type) | No |
+| `text` (at most 500 characters) | Yes, with the content's source, and the answer is wrapped as untrusted data |
+
+An injected instruction cannot fit into a date or a yes/no answer, so a run that extracts "When does the parcel arrive?" as a `date` stays untainted, and a task it then creates needs no confirmation. The extractor's model calls are recorded as steps of the calling run. The tool is hidden when no mail, RSS, notes or web search source is configured. A `web:` reference reads only the title and snippet of a search result of the current conversation, for one hour.
+
+`web.answer` works the same way for web search: it gives only the titles and snippets of the results to the extractor, so a typed answer leaves the run untainted. See [web search](../guides/integrations/web-search.md).
+
+### Task tool policies
+
+Every agent task has a frozen tool policy: a list of tool globs, such as `mail.*` or `printers.status`. Its runs, and the subagents they start, see and call only tools inside the policy. A tool outside it is filtered from the tool list and, as a second line, the guard refuses it with `tool.outside_policy`.
+
+The policy is set when the task is created. `tasks.create` and `tasks.watch` take an optional `tools` argument that can only narrow the template's allowlist; a glob outside it fails validation. Without `tools`, the policy is the template's tools in the core namespaces plus the namespaces loaded in the creating conversation. A task created in the web UI or from configuration gets the template's allowlist. Tasks that existed before policies behave as if their policy were the template's allowlist.
+
+`tasks.update` cannot change the policy. Only you can, on the task's page in the web UI, and the change is audited. A task created from a conversation that read your mail therefore cannot quietly gain tools the conversation never used.
+
 ### Event-triggered runs
 
 A task run started by an untrusted event gets the payload wrapped as untrusted data and is tainted with source `event` from its first step. A Home Assistant state change on `person.lukas` is untrusted, because entity names and attributes can be set by many integrations. A trusted webhook event, such as an Uptime Kuma `monitor.down`, arrives unwrapped and does not taint the run.

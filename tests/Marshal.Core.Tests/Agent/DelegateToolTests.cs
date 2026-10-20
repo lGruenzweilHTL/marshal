@@ -134,6 +134,23 @@ public sealed class DelegateToolTests
         Assert.Null(result.PendingAction);
     }
 
+    [Fact]
+    public async Task Delegate_InATaskWithAPolicy_SubagentGetsTheIntersection()
+    {
+        LoopHarness harness = await HarnessAsync("risk: []", FakeTool.Safe("rss.list"), FakeTool.Safe("rss.mark_read"), FakeTool.Safe("mail.search"));
+        harness.Templates.Items.Add(FakeTemplateCatalog.Template("reader", tools: ["rss.*", "mail.*"]));
+        harness.Model
+            .ThenToolCall("agent_delegate", new { template = "reader", task = "Read the news." })
+            .ThenText("Nothing new.")
+            .ThenText("Nothing new.");
+        MarshalExecutionContext task = TestExecutionContext.Text() with { IsInteractive = false, ToolPolicy = ["agent.delegate", "rss.list"] };
+
+        await harness.Runner.RunAsync(Request(task), Ct);
+
+        Assert.Equal(["agent_delegate", "rss_list"], harness.Model.Requests[0].ToolNames.Order(StringComparer.Ordinal));
+        Assert.Equal(["rss_list"], harness.Model.Requests[1].ToolNames);
+    }
+
     private static Task<LoopHarness> HarnessAsync(string rules, params ITool[] tools) =>
         LoopHarness.CreateAsync(rules, builtIns: harness => [harness.DelegateTool], tools: tools);
 

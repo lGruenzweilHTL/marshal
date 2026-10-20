@@ -35,6 +35,19 @@ public sealed class GuardTests
     }
 
     [Fact]
+    public async Task Evaluate_OutsideTheTaskPolicy_DeniedEvenWhenOffered()
+    {
+        ToolCallGuard guard = await GuardAsync("risk: []", FakeTool.Safe("mail.create_draft"), FakeTool.Safe("printer.status"));
+        MarshalExecutionContext run = TestExecutionContext.Text() with { ToolPolicy = ["printer.*"] };
+
+        GuardVerdict outside = await guard.EvaluateAsync(Request("mail_create_draft", context: run), Ct);
+        GuardVerdict inside = await guard.EvaluateAsync(Request("printer_status", context: run), Ct);
+
+        Assert.Equal((GuardOutcome.Deny, "tool.outside_policy"), (outside.Outcome, outside.Denial!.Code));
+        Assert.Equal(GuardOutcome.Allow, inside.Outcome);
+    }
+
+    [Fact]
     public async Task Evaluate_UnknownName_Denied()
     {
         ToolCallGuard guard = await GuardAsync("risk: []", FakeTool.Safe());

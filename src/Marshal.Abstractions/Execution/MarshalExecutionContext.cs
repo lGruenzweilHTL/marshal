@@ -70,6 +70,13 @@ public sealed record MarshalExecutionContext
     /// <summary>Delegation depth: 0 for a top-level run, 1 and more inside subagents.</summary>
     public int Depth { get; init; }
 
+    /// <summary>
+    /// Tool id globs of the task the run belongs to; tools outside them are hidden and denied. Subagents inherit it,
+    /// so they get the intersection with their own template's allowlist. Null outside task runs and for tasks
+    /// without a policy (their template's allowlist applies).
+    /// </summary>
+    public IReadOnlyList<string>? ToolPolicy { get; init; }
+
     /// <summary>True inside a subagent (no user to ask: confirm-tier actions are never run).</summary>
     public bool IsSubagent => Depth > 0;
 

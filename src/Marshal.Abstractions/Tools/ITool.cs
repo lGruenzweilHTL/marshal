@@ -34,6 +34,12 @@ public interface ITool
     string Summarize(JsonElement arguments, string language) =>
         $"{Descriptor.Id} {arguments.GetRawText()}";
 
+    /// <summary>
+    /// Summary of a call in <paramref name="context"/>, for tools whose confirmation text depends on the run (e.g. the
+    /// tool policy a new task gets). Defaults to <see cref="Summarize(JsonElement, string)"/> in the run's language.
+    /// </summary>
+    string Summarize(JsonElement arguments, MarshalExecutionContext context) => Summarize(arguments, context.Language);
+
     /// <summary>Executes the call. Expected failures are returned as a failed result.</summary>
     Task<Result<ToolOutput>> InvokeAsync(ToolInvocation invocation, CancellationToken cancellationToken);
 }
