@@ -1,6 +1,6 @@
 # Integration sections
 
-Keys of the integration sections of `marshal.yaml`: Home Assistant, printers, FreshRSS, notes, mail OAuth clients, Proxmox, media, music, GitHub and executors. Every section is optional. An integration's tools stay hidden until its section is set. Changes need a restart.
+Keys of the integration sections of `marshal.yaml`: Home Assistant, printers, FreshRSS, notes, web search, mail OAuth clients, Proxmox, media, music, GitHub and executors. Every section is optional. An integration's tools stay hidden until its section is set. Changes need a restart.
 
 Secret keys (`...Secret`) hold secret names, never values. See [secrets reference](../secrets-reference.md).
 
@@ -82,6 +82,19 @@ Markdown files in a git repository. Without `remote`, put a repository into `/da
 
 Validation: `notes.pullInterval must be at least one minute.`, `notes.maxReadCharacters must be at least 1000.`
 
+## `web` (SearXNG web search)
+
+SearXNG must serve JSON (`search.formats: [html, json]` in its `settings.yml`). Keep it on the LAN or a VPN.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `web.searxng.url` | URL | unset | SearXNG base URL. Unset: web tools are hidden. |
+| `web.searxng.authHeaderSecret` | secret name | unset | Secret holding an `Authorization` header value, for a SearXNG behind a reverse proxy. |
+| `web.searxng.engines` | list of strings | `[google, bing, duckduckgo, wikipedia]` | SearXNG engine names sent with every request. The query text reaches each of them. |
+| `web.searxng.maxResults` | integer | `8` | Most results one search returns, and the default `limit` of `web.search`. 1 to 20. |
+
+Validation: `web.searxng.url must be an absolute http(s) URL.`, `web.searxng.authHeaderSecret must be a secret name (^[a-z][a-z0-9_]{0,63}$).`, `web.searxng.maxResults must be 1-20.`, `web.searxng.engines must not contain empty names.`
+
 ## `oauth` (mail account connections)
 
 OAuth clients that let users connect Gmail or Microsoft mail accounts in the web UI. Without a client, the connect button is disabled. Register the redirect URI `<public URL>/oauth/callback/google` (or `/microsoft`). Google needs the `https://mail.google.com/` scope; Microsoft needs `IMAP.AccessAsUser.All` and `offline_access`. Marshal never sends mail.
@@ -161,6 +174,6 @@ Validation: `executors.callbackBaseUrl must be an absolute URL.`, and when `clau
 
 ## Related
 
-- [Home Assistant](../../guides/integrations/home-assistant.md), [printers](../../guides/integrations/printers-moonraker.md), [RSS](../../guides/integrations/rss-freshrss.md), [notes](../../guides/integrations/notes.md), [mail](../../guides/integrations/mail.md)
+- [Home Assistant](../../guides/integrations/home-assistant.md), [printers](../../guides/integrations/printers-moonraker.md), [RSS](../../guides/integrations/rss-freshrss.md), [notes](../../guides/integrations/notes.md), [web search](../../guides/integrations/web-search.md), [mail](../../guides/integrations/mail.md)
 - [Proxmox](../../guides/integrations/proxmox.md), [media](../../guides/integrations/media.md), [music](../../guides/integrations/music.md), [GitHub](../../guides/integrations/github.md)
 - [Executor host](../../installation/executor-host.md)

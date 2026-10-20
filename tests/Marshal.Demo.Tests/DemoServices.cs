@@ -22,7 +22,7 @@ using Marshal.Integrations.HomeAssistant;
 using Marshal.Integrations.Mail;
 using Marshal.Integrations.Moonraker;
 using Marshal.Integrations.Notes;
-using Marshal.Demo.Seeding;
+using Marshal.Integrations.Web;
 using Marshal.Testing;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
@@ -93,6 +93,7 @@ internal sealed class DemoServices : IAsyncDisposable
         services.AddMarshalPrinters(configuration, _ => Path.Combine(Path.GetTempPath(), "marshal-demo-tests", "snapshots"));
         AddMail(services, configuration);
         services.AddMarshalFreshRss(configuration);
+        services.AddMarshalWeb(configuration);
         services.AddMarshalNotes(configuration, _ => Path.Combine(Path.GetTempPath(), "marshal-demo-tests", "no-notes"));
         services.Replace(ServiceDescriptor.Singleton<INotesIndex, NoNotesIndex>());
         configure?.Invoke(services);

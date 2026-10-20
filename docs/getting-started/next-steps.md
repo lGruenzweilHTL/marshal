@@ -18,7 +18,7 @@ Where to go after the first working setup.
 
 ## Connect services
 
-- [Printers](../guides/integrations/printers-moonraker.md), [mail](../guides/integrations/mail.md), [RSS](../guides/integrations/rss-freshrss.md), [notes](../guides/integrations/notes.md), [music](../guides/integrations/music.md).
+- [Printers](../guides/integrations/printers-moonraker.md), [mail](../guides/integrations/mail.md), [RSS](../guides/integrations/rss-freshrss.md), [notes](../guides/integrations/notes.md), [web search](../guides/integrations/web-search.md), [music](../guides/integrations/music.md).
 
 ## Voice and tasks
 

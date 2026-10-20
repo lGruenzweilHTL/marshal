@@ -30,6 +30,15 @@ instance:
 #   searchWindow: 500                              # recent articles rss.search looks through
 #   fullText: { maxBytes: 2097152, timeout: "00:00:15", maxCharacters: 20000 }
 
+# Web search through your own SearXNG (optional). Enable JSON in SearXNG's settings.yml (search.formats: [html, json])
+# and keep it on the LAN or a VPN. Query text reaches every engine listed; result pages are never opened.
+# web:
+#   searxng:
+#     url: http://searxng.local:8080
+#     authHeaderSecret: searxng_auth                 # optional Authorization header value, for a reverse proxy
+#     engines: [google, bing, duckduckgo, wikipedia]
+#     maxResults: 8
+
 # Notes (optional): Markdown files in a git repository. Without a remote, put a repository into /data/notes; with
 # one, Marshal clones it there and mirrors it read-only. credentialSecret holds an https token or an SSH deploy key.
 # notes:

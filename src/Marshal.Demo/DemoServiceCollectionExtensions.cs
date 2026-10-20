@@ -6,12 +6,14 @@ using Marshal.Abstractions.Notes;
 using Marshal.Abstractions.Printers;
 using Marshal.Abstractions.Rss;
 using Marshal.Abstractions.Tools;
+using Marshal.Abstractions.Web;
 using Marshal.Demo.HomeAssistant;
 using Marshal.Demo.Mail;
 using Marshal.Demo.Notes;
 using Marshal.Demo.Printers;
 using Marshal.Demo.Rss;
 using Marshal.Demo.Seeding;
+using Marshal.Demo.Web;
 using Marshal.Integrations.HomeAssistant;
 using Marshal.Integrations.HomeAssistant.Energy;
 using Marshal.Integrations.HomeAssistant.Music;
@@ -84,6 +86,10 @@ public static class DemoServiceCollectionExtensions
         if (notes)
             services.Decorate<INotesSource>((provider, inner) => new DemoNotesSource(inner, provider.GetRequiredService<DemoWorld>()));
 
+        bool web = services.Any(descriptor => descriptor.ServiceType == typeof(IWebSearchProvider));
+        if (web)
+            services.Decorate<IWebSearchProvider>((provider, inner) => new DemoWebSearch(inner));
+
         services.AddHostedService<DemoSeedService>();
 
         services.AddSingleton(provider => new DemoIntegrations(
@@ -91,6 +97,7 @@ public static class DemoServiceCollectionExtensions
             .. simulated,
             .. rss && provider.GetRequiredService<IRssClient>() is DemoRssClient { IsReal: false } ? [DemoIntegration.Rss] : Array.Empty<DemoIntegration>(),
             .. notes && provider.GetRequiredService<INotesSource>() is DemoNotesSource { IsReal: false } ? [DemoIntegration.Notes] : Array.Empty<DemoIntegration>(),
+            .. web && provider.GetRequiredService<IWebSearchProvider>() is DemoWebSearch { IsReal: false } ? [DemoIntegration.Web] : Array.Empty<DemoIntegration>(),
         ]));
         return services;
     }

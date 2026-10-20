@@ -26,7 +26,7 @@ export const en = {
     title: 'Demo mode',
     hint: 'These integrations are not configured and are simulated; their data is sample data.',
     simulated: 'simulated',
-    names: { home_assistant: 'Home Assistant', printers: 'Printers', mail: 'Mail', rss: 'RSS', notes: 'Notes' },
+    names: { home_assistant: 'Home Assistant', printers: 'Printers', mail: 'Mail', rss: 'RSS', notes: 'Notes', web: 'Web search' },
   },
   sources: {
     title: 'Event sources',
@@ -133,7 +133,7 @@ export const de: Catalog<typeof en> = {
     title: 'Demomodus',
     hint: 'Diese Integrationen sind nicht konfiguriert und werden simuliert; ihre Daten sind Beispieldaten.',
     simulated: 'simuliert',
-    names: { home_assistant: 'Home Assistant', printers: 'Drucker', mail: 'Mail', rss: 'RSS', notes: 'Notizen' },
+    names: { home_assistant: 'Home Assistant', printers: 'Drucker', mail: 'Mail', rss: 'RSS', notes: 'Notizen', web: 'Websuche' },
   },
   sources: {
     title: 'Ereignisquellen',

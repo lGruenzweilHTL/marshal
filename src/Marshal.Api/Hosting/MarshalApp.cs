@@ -29,6 +29,7 @@ using Marshal.Core.Configuration;
 using Marshal.Data;
 using Marshal.Demo;
 using Marshal.Integrations.FreshRss;
+using Marshal.Integrations.Web;
 using Marshal.Integrations.GitHub;
 using Marshal.Integrations.HomeAssistant;
 using Marshal.Integrations.Mail;
@@ -64,6 +65,7 @@ public static class MarshalApp
         builder.Services.AddMarshalPrinters(builder.Configuration, SnapshotDirectory);
         builder.Services.AddMarshalMail(builder.Configuration);
         builder.Services.AddMarshalFreshRss(builder.Configuration);
+        builder.Services.AddMarshalWeb(builder.Configuration);
         builder.Services.AddMarshalGitHub(builder.Configuration);
         builder.Services.AddMarshalProxmox(builder.Configuration);
         builder.Services.AddMarshalMedia(builder.Configuration);

@@ -73,7 +73,7 @@ public sealed class DemoHostTests
         JsonElement system = await browser.GetFromJsonAsync<JsonElement>("/api/v1/system", Ct);
 
         Assert.Equal((true, false), (demo.GetProperty("enabled").GetBoolean(), demo.GetProperty("showBadge").GetBoolean()));
-        Assert.Equal(["home_assistant", "printers", "mail", "rss", "notes"], system.GetProperty("simulatedIntegrations").EnumerateArray().Select(item => item.GetString()));
+        Assert.Equal(["home_assistant", "printers", "mail", "rss", "notes", "web"], system.GetProperty("simulatedIntegrations").EnumerateArray().Select(item => item.GetString()));
     }
 
     [Fact]

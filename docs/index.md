@@ -55,6 +55,9 @@ Marshal is a self-hosted AI agent for Home Assistant. This page maps the documen
 
 ## More
 
+- [Rate replies and replay eval cases](guides/evals.md)
+- [Connect web search (SearXNG)](guides/integrations/web-search.md)
+
 - [FAQ](faq.md)
 - [Roadmap](roadmap.md)
 - [Security model](concepts/security-model.md)

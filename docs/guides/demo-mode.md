@@ -37,6 +37,7 @@ Each of these integrations is simulated when it is not configured. A configured 
 | Mail | A mail account `demo` with sample messages. Drafts are kept until the next restart. There is no send path. |
 | FreshRSS | Feeds in two categories, with articles and their full text. |
 | Notes | A small collection of Markdown notes, indexed like a real notes repository. |
+| Web search | Fixed search results for every query. Result pages are never opened, and no search engine is contacted. |
 
 The simulated tools have the same ids, risk tiers and guard rules as the real ones. For example, cancelling the print still needs your confirmation.
 

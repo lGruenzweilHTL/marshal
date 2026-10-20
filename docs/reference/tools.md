@@ -28,6 +28,7 @@ Every tool the model can get, grouped by integration, with its risk tier, argume
 | `mail` | `search`, `read_message`, `read_thread`, `list_folders`, `list_labels`, `create_draft`, `update_draft`, `save_attachment` | Built in |
 | `rss` | `list_feeds`, `list_categories`, `get_unread`, `get_article`, `search`, `mark_read`, `fetch_full_text` | Built in (FreshRSS) |
 | `notes` | `list`, `read`, `search` | Built in |
+| `web` | `search`, `answer` | Built in (SearXNG) |
 | `media` | `search`, `request`, `requests`, `upcoming`, `downloads` | Built in (Seerr, Sonarr, Radarr) |
 | `infra` | `overview`, `guests`, `storage`, `tasks` | Built in (Proxmox VE) |
 | `repos` | `prs`, `pr`, `issues`, `issue`, `runs`, `run_log` | Built in (GitHub) |
@@ -35,7 +36,7 @@ Every tool the model can get, grouped by integration, with its risk tier, argume
 | `system` | `health` | Built in |
 | `ha` and others | Whatever the server reports | [MCP servers](#mcp-server-tools) |
 
-The namespaces `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra`, `repos`, `media`, `music` and `system` are reserved for built-in tools. An MCP server with one of these ids is rejected.
+The namespaces `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra`, `repos`, `media`, `music`, `system` and `web` are reserved for built-in tools. An MCP server with one of these ids is rejected.
 
 Marshal has no tool that sends mail, no tool that sends raw G-code and no tool that deletes mail, files or calendar events. These capabilities do not exist as code paths.
 
@@ -191,6 +192,15 @@ All notes tools are safe, untrusted (taint source `notes`) and sensitive. They a
 | `notes.list` | `folder?` | Up to 500 notes with path, size and modified time. |
 | `notes.read` | `path` | One note. |
 | `notes.search` | `query`, `limit?` | Matching sections found by meaning and keywords. `limit` is 1 to 20. |
+
+## Web search (`web`)
+
+Web tools are safe in every run, also in a tainted one. They are hidden when `web.searxng` is not configured. Marshal never opens a result URL. See [web search](../guides/integrations/web-search.md).
+
+| Tool id | Tier | Arguments | Returns |
+|---|---|---|---|
+| `web.search` | safe, untrusted (`web`) | `query`, `limit?` | Up to `limit` results (default and maximum `web.searxng.maxResults`) with result id, title, snippet, URL and domain. `query` is at most 300 characters. Results stay addressable as `web:<result id>` for one hour. |
+| `web.answer` | safe | `question`, `answerType`, `values?` | `{ answer, domains }`. Only titles and snippets reach the quarantined extractor. Typed answers do not taint; a `text` answer taints with `web` and is wrapped as untrusted data. `values` is required for `enum`. |
 
 ## Media (`media`)
 

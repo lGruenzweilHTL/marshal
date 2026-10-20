@@ -10,6 +10,7 @@
     <ProjectReference Include="..\Marshal.Core\Marshal.Core.csproj" />
     <ProjectReference Include="..\Marshal.Data\Marshal.Data.csproj" />
     <ProjectReference Include="..\Marshal.Integrations.FreshRss\Marshal.Integrations.FreshRss.csproj" />
+    <ProjectReference Include="..\Marshal.Integrations.Web\Marshal.Integrations.Web.csproj" />
     <ProjectReference Include="..\Marshal.Integrations.GitHub\Marshal.Integrations.GitHub.csproj" />
     <ProjectReference Include="..\Marshal.Integrations.HomeAssistant\Marshal.Integrations.HomeAssistant.csproj" />
     <ProjectReference Include="..\Marshal.Integrations.Mail\Marshal.Integrations.Mail.csproj" />

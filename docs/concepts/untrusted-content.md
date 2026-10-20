@@ -19,6 +19,7 @@ A tool declares `untrustedOutput` in its descriptor. These sources are untrusted
 | Mail tools that return mail content | `mail` |
 | RSS article content | `rss` |
 | Notes tools | `notes` |
+| Web search results (`web.search`, `text` answers of `web.answer`) | `web` |
 | Calendar events (invitations come from third parties) | `calendar` |
 | The notification inbox | `notifications` |
 | Media tools (titles and overviews from third parties) | `media` |
@@ -89,7 +90,7 @@ A task run started by an untrusted event gets the payload wrapped as untrusted d
 
 ### No caller-chosen URLs
 
-No tool takes a URL from the model and fetches it. `rss.fetch_full_text` takes an article id, looks up the link in FreshRSS and extracts the text; a URL argument fails validation and no request is made. Printer snapshots come from the URL Moonraker reports. This closes the path where injected text tells the model to send your data to an attacker's server.
+No tool takes a URL from the model and fetches it. `rss.fetch_full_text` takes an article id, looks up the link in FreshRSS and extracts the text; a URL argument fails validation and no request is made. `web.search` returns result URLs but never opens them; its only request goes to your SearXNG instance. Printer snapshots come from the URL Moonraker reports. This closes the path where injected text tells the model to send your data to an attacker's server.
 
 ### Memory is written in Marshal's own words
 

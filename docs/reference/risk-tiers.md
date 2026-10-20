@@ -85,6 +85,7 @@ A run becomes tainted when the result of a tool flagged untrusted enters its con
 | `mail` | `mail.search`, `mail.read_message`, `mail.read_thread` |
 | `rss` | `rss.get_unread`, `rss.get_article`, `rss.search`, `rss.fetch_full_text` |
 | `notes` | `notes.*` |
+| `web` | `web.search`, and `web.answer` with answer type `text` |
 | `calendar` | `calendar.list_events` |
 | `media` | `media.*` |
 | `music` | `music.search`, `music.queue` |

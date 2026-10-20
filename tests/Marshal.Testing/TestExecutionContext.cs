@@ -23,6 +23,15 @@ public static class TestExecutionContext
         Language = language,
     };
 
+    /// <summary>A web chat turn for <paramref name="owner"/> (default owner A).</summary>
+    public static MarshalExecutionContext Web(OwnerId? owner = null, string language = "en") => new()
+    {
+        OwnerId = owner ?? OwnerA,
+        Source = SessionSource.Web,
+        InputMode = InputMode.Text,
+        Language = language,
+    };
+
     /// <summary>A voice turn from a satellite for <paramref name="owner"/> (default owner A).</summary>
     public static MarshalExecutionContext Voice(OwnerId? owner = null, string language = "en", string? satelliteId = "assist_satellite.kitchen", string? areaId = "kitchen") => new()
     {

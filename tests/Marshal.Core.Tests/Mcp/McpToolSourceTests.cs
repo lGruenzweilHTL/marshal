@@ -11,6 +11,7 @@ using Marshal.Abstractions.Notifications;
 using Marshal.Core.Agent;
 using Marshal.Core.Context;
 using Marshal.Core.Mcp;
+using Marshal.Core.Recording;
 using Marshal.Core.Tests.Agent;
 using Marshal.Core.Tools;
 using Marshal.Testing;
@@ -55,11 +56,11 @@ public sealed class McpToolSourceTests : IAsyncDisposable
     public async Task Start_ToolPrefix_IsNamespace()
     {
         _server.WithTool("search");
-        McpToolSource source = await StartAsync(FakeMcpServerCatalog.Server("websearch", toolPrefix: "web"));
+        McpToolSource source = await StartAsync(FakeMcpServerCatalog.Server("websearch", toolPrefix: "search"));
 
         ITool tool = Assert.Single(await source.GetToolsAsync(Ct));
 
-        Assert.Equal(new ToolId("web", "search"), tool.Descriptor.Id);
+        Assert.Equal(new ToolId("search", "search"), tool.Descriptor.Id);
         Assert.Equal("websearch", source.Name);
     }
 
@@ -130,7 +131,7 @@ public sealed class McpToolSourceTests : IAsyncDisposable
     public async Task Descriptor_UntrustedServer_TaintsWithServerSource()
     {
         _server.WithTool("search");
-        McpToolSource source = await StartAsync(FakeMcpServerCatalog.Server("websearch", toolPrefix: "web", untrusted: true));
+        McpToolSource source = await StartAsync(FakeMcpServerCatalog.Server("websearch", toolPrefix: "search", untrusted: true));
 
         ITool tool = Assert.Single(await source.GetToolsAsync(Ct));
 

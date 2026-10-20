@@ -8,6 +8,7 @@ public enum DemoIntegration
     Mail,
     Rss,
     Notes,
+    Web,
 }
 
 /// <summary>The integrations simulated in this process because they were not configured.</summary>

@@ -57,6 +57,8 @@ src/                         .NET projects
   Marshal.Integrations.Moonraker/  printers: Moonraker REST + websocket state cache, snapshots, inspection, printer tools
   Marshal.Integrations.Mail/ mail providers (IMAP via MailKit) and credential sources, mail tools (never a send path)
   Marshal.Integrations.FreshRss/  FreshRSS Google Reader API client, full-text extraction, RSS tools
+  Marshal.Integrations.Web/  SearXNG search provider, per-session web results, web tools (search, answer; never
+                             fetches a result URL)
   Marshal.Integrations.Notes/  git-backed Markdown notes source, own hybrid notes index, notes tools
   Marshal.Integrations.Media/  Seerr client (search, requests), read-only Sonarr/Radarr calendars and queues, Jellyfin
                              links, media tools
@@ -66,7 +68,7 @@ src/                         .NET projects
   Marshal.Artifacts/         artifact store (files in /data/artifacts, per-owner quota), kind detection, media renditions
                              for displays, code highlighter (languages.json and parity cases shared with web/src/artifacts/
                              highlighting/), artifacts tools
-  Marshal.Demo/              demo mode: simulated HA (incl. the ha.* home control tools), printer, mail, RSS and notes
+  Marshal.Demo/              demo mode: simulated HA (incl. the ha.* home control tools), printer, mail, RSS, notes and web search
                              behind the integrations' interfaces, demo world state, seeder and reset (referenced only by
                              Marshal.Api)
   Marshal.Data/              EF Core DbContext, migrations, owner-scoped query filters

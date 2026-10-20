@@ -5,6 +5,7 @@ using Marshal.Integrations.HomeAssistant;
 using Marshal.Integrations.Mail.Credentials;
 using Marshal.Integrations.Moonraker;
 using Marshal.Integrations.Notes;
+using Marshal.Integrations.Web;
 using Microsoft.Extensions.Options;
 
 namespace Marshal.Api.Hosting;
@@ -21,6 +22,7 @@ internal static class SecretBoundOptions
         (Value<MailOAuthOptions>(services), "oauth"),
         (Value<FreshRssOptions>(services), "freshrss"),
         (Value<NotesOptions>(services), "notes"),
+        (Value<SearxngOptions>(services), "web.searxng"),
     ];
 
     private static T Value<T>(IServiceProvider services)
