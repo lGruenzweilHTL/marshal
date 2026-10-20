@@ -39,7 +39,7 @@ The public API SHALL be versioned by URL segment (`/api/v{version}`) with `Asp.V
 - **THEN** the response is an SSE stream ending in a final event
 
 ### Requirement: Streaming response
-The response SHALL be `text/event-stream` with `delta` events (text chunks), optional `status` events, optional `artifact` events (`{ id, name, kind, url }`, one per artifact the turn shows), and one final event `{ speech, continueConversation, conversationId }`. `conversationId` SHALL echo the client's id for token clients. `continueConversation` SHALL be true when Marshal asks the user something (confirmation, clarification).
+The response SHALL be `text/event-stream` with `delta` events (text chunks), optional `status` events, optional `artifact` events (`{ id, name, kind, url }`, one per artifact the turn shows), optional `widget` events (`{ kind, toolCallId, data }`) and `app` events (`{ appId, server, tool, toolCallId }`) for web turns, and one final event `{ speech, continueConversation, conversationId }`. `conversationId` SHALL echo the client's id for token clients. `continueConversation` SHALL be true when Marshal asks the user something (confirmation, clarification).
 
 #### Scenario: Confirmation question keeps listening
 - **WHEN** the turn ends with a pending action
@@ -52,6 +52,14 @@ The response SHALL be `text/event-stream` with `delta` events (text chunks), opt
 #### Scenario: Artifact shown
 - **WHEN** a web turn calls `artifacts_show` for artifact `a1`
 - **THEN** the stream carries an `artifact` event with `a1`'s id, name, kind and content URL before the final event
+
+#### Scenario: Widget event
+- **WHEN** a web turn calls `printer_status`
+- **THEN** the stream carries a `widget` event of kind `printer` before the final event
+
+#### Scenario: No widgets for voice
+- **WHEN** a voice turn calls `printer_status`
+- **THEN** the stream carries no `widget` event
 
 ### Requirement: Latency cap
 The system SHALL enforce a hard latency cap per turn (default ~8 s for voice, ~60 s for text, configurable). Reaching the cap SHALL speak a short "working on it, I'll tell you when done" reply, end the turn, and continue the run as a background task owned by the same user. The original run SHALL be recorded with outcome `backgrounded`, and the task SHALL deliver its result by voice to the originating satellite (voice turns) or to the web UI (text turns). The task SHALL record the originating session. Its result SHALL be added to that session as a background result, and SHALL be part of the session's conversation history for later turns.

@@ -1,5 +1,7 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Marshal.Abstractions;
+using Marshal.Abstractions.Apps;
 using Marshal.Abstractions.Mcp;
 using Marshal.Abstractions.Tools;
 using Marshal.Abstractions.Execution;
@@ -646,6 +648,106 @@ public sealed class McpToolSourceTests : IAsyncDisposable
         _server.IsDown = false;
         await EventuallyAsync(() => Task.FromResult(source.Status.State == McpServerState.Connected && _server.Connections == 2));
         Assert.True((await (await source.GetToolsAsync(Ct))[0].InvokeAsync(Invocation("{}"), Ct)).IsSuccess);
+    }
+
+    private const string AppHtml = "<!doctype html><p>chart</p>";
+
+    private static ToolInvocation WebInvocation(string arguments = "{}") =>
+        new(JsonDocument.Parse(arguments).RootElement.Clone(), TestExecutionContext.Web());
+
+    [Fact]
+    public async Task App_WebTurnOfAppsServer_ReadsResourceAndKeepsResult()
+    {
+        _server.WithAppTool("sales_report", "ui://charts/report");
+        _server.Resources["ui://charts/report"] = (McpToolSource.AppMimeType, AppHtml, null);
+        _server.Handler = (_, _) => new CallToolResult { Content = [new TextContentBlock { Text = "Sales: 12" }] };
+        ITool tool = Assert.Single(await (await StartAsync(FakeMcpServerCatalog.Server("charts", apps: true))).GetToolsAsync(Ct));
+
+        Result<ToolOutput> result = await tool.InvokeAsync(WebInvocation("""{"month":"9"}"""), Ct);
+
+        Assert.Equal("Sales: 12", result.Value.Content);
+        McpAppOutput app = result.Value.App!;
+        Assert.Equal(("charts", "sales_report", "ui://charts/report", AppHtml), (app.Server, app.Tool, app.ResourceUri, app.Html));
+        Assert.Equal("Sales: 12", JsonDocument.Parse(result.Value.CallResult!).RootElement.GetProperty("content")[0].GetProperty("text").GetString());
+    }
+
+    [Fact]
+    public async Task App_ServerWithoutApps_NoResourceRead()
+    {
+        _server.WithAppTool("sales_report", "ui://charts/report");
+        _server.Resources["ui://charts/report"] = (McpToolSource.AppMimeType, AppHtml, null);
+        ITool tool = Assert.Single(await (await StartAsync(FakeMcpServerCatalog.Server("charts"))).GetToolsAsync(Ct));
+
+        Result<ToolOutput> result = await tool.InvokeAsync(WebInvocation(), Ct);
+
+        Assert.Null(result.Value.App);
+        Assert.Empty(_server.ResourceReads);
+    }
+
+    [Fact]
+    public async Task App_NonWebTurn_NoResourceRead()
+    {
+        _server.WithAppTool("sales_report", "ui://charts/report");
+        _server.Resources["ui://charts/report"] = (McpToolSource.AppMimeType, AppHtml, null);
+        ITool tool = Assert.Single(await (await StartAsync(FakeMcpServerCatalog.Server("charts", apps: true))).GetToolsAsync(Ct));
+
+        Result<ToolOutput> result = await tool.InvokeAsync(Invocation("{}"), Ct);
+
+        Assert.Null(result.Value.App);
+        Assert.Empty(_server.ResourceReads);
+    }
+
+    [Fact]
+    public async Task App_ResourceCachedForTimeToLive()
+    {
+        var time = new FakeTimeProvider(DateTimeOffset.Parse("2026-10-17T08:00:00Z", System.Globalization.CultureInfo.InvariantCulture));
+        _server.WithAppTool("sales_report", "ui://charts/report");
+        _server.Resources["ui://charts/report"] = (McpToolSource.AppMimeType, AppHtml, TimeSpan.FromMinutes(1));
+        ITool tool = Assert.Single(await (await StartAsync(FakeMcpServerCatalog.Server("charts", apps: true), time)).GetToolsAsync(Ct));
+
+        await tool.InvokeAsync(WebInvocation(), Ct);
+        time.Advance(TimeSpan.FromSeconds(59));
+        await tool.InvokeAsync(WebInvocation(), Ct);
+        Assert.Single(_server.ResourceReads);
+        time.Advance(TimeSpan.FromSeconds(2));
+        await tool.InvokeAsync(WebInvocation(), Ct);
+        Assert.Equal(2, _server.ResourceReads.Count);
+    }
+
+    [Theory]
+    [InlineData("text/html", false, "not text/html;profile=mcp-app")]
+    [InlineData("text/html;profile=mcp-app", true, "1 MB")]
+    [InlineData(null, false, "could not be read")]
+    public async Task App_UnusableResource_SkippedWithNote(string? mimeType, bool large, string reason)
+    {
+        _server.WithAppTool("sales_report", "ui://charts/report");
+        if (mimeType is not null)
+            _server.Resources["ui://charts/report"] = (mimeType, large ? new string('x', McpAppOutput.MaxHtmlBytes + 1) : AppHtml, null);
+        ITool tool = Assert.Single(await (await StartAsync(FakeMcpServerCatalog.Server("charts", apps: true))).GetToolsAsync(Ct));
+
+        Result<ToolOutput> result = await tool.InvokeAsync(WebInvocation(), Ct);
+
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value.App);
+        Marshal.Abstractions.Context.ContextNote note = Assert.Single(result.Value.Notes!);
+        Assert.Equal(("app_skipped", "ui://charts/report"), (note.Kind, note.Label));
+        Assert.Contains(reason, note.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Fingerprint_UiMetadataIsPartOfTheDefinition()
+    {
+        Tool plain = FakeMcpServer.Tool("sales_report");
+        Tool withUi = FakeMcpServer.Tool("sales_report");
+        withUi.Meta = new JsonObject { ["ui"] = new JsonObject { ["resourceUri"] = "ui://charts/report" } };
+        Tool otherUi = FakeMcpServer.Tool("sales_report");
+        otherUi.Meta = new JsonObject { ["ui"] = new JsonObject { ["resourceUri"] = "ui://charts/other" } };
+        Tool otherMeta = FakeMcpServer.Tool("sales_report");
+        otherMeta.Meta = new JsonObject { ["vendor"] = "x" };
+
+        Assert.NotEqual(McpToolFingerprint.Of(plain).Fingerprint, McpToolFingerprint.Of(withUi).Fingerprint);
+        Assert.NotEqual(McpToolFingerprint.Of(withUi).Fingerprint, McpToolFingerprint.Of(otherUi).Fingerprint);
+        Assert.Equal(McpToolFingerprint.Of(plain).Fingerprint, McpToolFingerprint.Of(otherMeta).Fingerprint);
     }
 
     [Theory]

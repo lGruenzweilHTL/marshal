@@ -22,7 +22,7 @@ Every view works at phone width. The views you act on (Home, Inbox, Chat, Printe
 | Group | Destination | What it does |
 |---|---|---|
 | Act | Home | What needs you first: pending approvals with approve and reject, printer alerts, running tasks and next runs, recent notifications. The kill switch appears while background tasks run. |
-| Act | Chat | Text chat with Marshal. Replies stream in. Markdown, tables and code render; images show only from Marshal's own origin. Artifacts appear inline (images) or as cards that open the viewer. Earlier conversations, typed and spoken, are listed next to the chat. |
+| Act | Chat | Text chat with Marshal. Replies stream in. Markdown, tables and code render; images show only from Marshal's own origin. Artifacts appear inline (images) or as cards that open the viewer. Printer and music widgets and MCP apps appear below the reply. Earlier conversations, typed and spoken, are listed next to the chat. |
 | Act | Inbox | The one place for everything that waits for you: approvals (frozen action, reasons, time left), input requests of MCP servers (a form or a link with "Done"), coding proposals (diff, merge or reject) and the notification history, filterable by outcome. |
 | Act | Printer | Live printer state. |
 | Activity | Tasks | Tasks and watches with status, trigger, next run, budget and latest result. Edit a goal, cancel a task, use the kill switch. |
@@ -66,6 +66,16 @@ While Marshal works on a reply, the chat shows what it does:
 - **Tool steps.** Each tool call is one line: the tool's name, a short summary of its arguments, its state (running, done, failed, not allowed, waiting for confirmation), how long it took and a short result. Results of sensitive tools, such as mail and notes, are never summarized. Progress messages of the turn appear in the same list.
 
 "Thinking…" shows only until the first of these arrives. A reopened conversation shows both, collapsed. Reasoning that followed private content (a mail or a note) is not kept; the chat then shows a note instead. Voice turns never request reasoning, and Home Assistant and API clients never receive reasoning or tool steps.
+
+## Widgets and apps in the chat
+
+Some tool calls show an interactive view below the reply. Voice and API turns never do.
+
+- **Printer widget.** After `printer.status`, the printer's live state: progress, layer, time left and temperatures, with pause, resume and cancel. Cancel and resume are confirm tier; the widget asks in a dialog first, and confirming there counts as your confirmation.
+- **Music widget.** After `music.queue` or `music.play`, what plays on the speaker and what comes next, with play, pause, previous, next and volume. It refreshes every 5 seconds.
+- **MCP apps.** A server with [`apps: true`](../../configuration/mcp-servers.md#mcp-apps) can show its own UI in a sandboxed frame labeled with the server's name.
+
+Every widget button is a recorded run with trigger `widget:printer` or `widget:music`. A reopened conversation shows widgets with the current state. An app shows again only while its server still serves it; otherwise a card says the view is no longer available.
 
 ## Background results in the chat
 

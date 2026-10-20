@@ -25,6 +25,7 @@ const routes: Route[] = [
   { name: 'chat', path: '/chat' },
   { name: 'chat-web', path: `/chat/${ids.conversation(2)}` },
   { name: 'chat-voice', path: `/chat/${ids.conversation(3)}` },
+  { name: 'chat-widgets', path: `/chat/${ids.conversation(6)}` },
   { name: 'chat-history', path: '/chat/history' },
   { name: 'inbox', path: '/inbox' },
   { name: 'approval', path: `/inbox/approvals/${ids.approvalPrint}` },

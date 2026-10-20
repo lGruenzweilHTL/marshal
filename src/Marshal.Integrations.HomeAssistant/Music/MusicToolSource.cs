@@ -56,7 +56,7 @@ public sealed partial class MusicToolSource(IMusicPlayer player, ISpeakerDirecto
         return MusicUri().IsMatch(item) && !_webSchemes.Contains(item[..item.IndexOf("://", StringComparison.Ordinal)]);
     }
 
-    private static ToolDescriptor Descriptor(string name, string description, string schema, bool untrusted = false) => new()
+    private static ToolDescriptor Descriptor(string name, string description, string schema, bool untrusted = false, string? widget = null) => new()
     {
         Id = new ToolId("music", name),
         Description = description,
@@ -65,6 +65,7 @@ public sealed partial class MusicToolSource(IMusicPlayer player, ISpeakerDirecto
         UntrustedOutput = untrusted,
         TaintKind = untrusted ? "music" : null,
         Fillers = name == "search" ? ToolFillers.Lines("Ich suche die Musik.", "Let me find that music.") : ToolFillers.None,
+        Widget = widget,
     };
 
     private static Error Invalid(string message) => new("music.invalid_arguments", message, ErrorType.Validation);
@@ -175,7 +176,8 @@ public sealed partial class MusicToolSource(IMusicPlayer player, ISpeakerDirecto
               "enqueue":{"type":"string","enum":["play","replace","next","replace_next","add"]},
               "radio":{"type":"boolean"}},
              "required":["item"]}
-            """);
+            """,
+            widget: MusicWidgetData.WidgetKind);
 
         public Result Validate(JsonElement arguments) => Parse(arguments) is { IsFailure: true } parsed ? parsed.Error : Result.Success();
 
@@ -245,7 +247,8 @@ public sealed partial class MusicToolSource(IMusicPlayer player, ISpeakerDirecto
             $$$"""
             {"type":"object","properties":{ {{{SpeakerProperty}}} }}
             """,
-            untrusted: true);
+            untrusted: true,
+            widget: MusicWidgetData.WidgetKind);
 
         public async Task<Result<ToolOutput>> InvokeAsync(ToolInvocation invocation, CancellationToken cancellationToken)
         {

@@ -55,6 +55,7 @@ public static partial class PrinterServiceCollectionExtensions
         services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<PrintBabysitter>());
         services.AddSingleton<PrinterCameraTools>();
         services.AddSingleton<IToolSource, PrinterToolSource>();
+        services.AddSingleton<Marshal.Abstractions.Widgets.IWidgetDataProvider, PrinterWidgetData>();
         return services;
     }
 

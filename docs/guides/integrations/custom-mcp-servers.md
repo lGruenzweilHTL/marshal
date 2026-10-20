@@ -88,6 +88,20 @@ If a server returns text that other people control, such as web search or shared
 
 A run that calls such a tool is tainted with source `mcp:<id>`, its results are wrapped as data, and memory and task writes in that run need confirmation. A glob that matches no reported tool shows a warning for that server on the config view and `/health`. See [untrusted content](../../concepts/untrusted-content.md).
 
+## Show the server's apps
+
+Some servers attach an interactive UI to a tool (MCP Apps): a chart, a player, a form-like view. Marshal shows these UIs in the web chat when you set `apps: true` in the server file. Leave it off for servers you do not trust; `apps: true` together with `untrusted: true` is rejected.
+
+An app is server-authored HTML. Marshal limits what it can do:
+
+- It runs in a sandbox without network access. Apps that load data from the internet do not work.
+- It has no forms, pop-ups or navigation, and cannot read Marshal's cookies or data.
+- It can call tools of its own server only. Each call runs through the guard as its own run, and confirm-tier calls are denied.
+- It cannot write into the conversation. Links it suggests appear below it for you to click.
+- A label above the app names the server. Never type a password into an app.
+
+See [MCP apps](../../configuration/mcp-servers.md#mcp-apps) for the details.
+
 ## Approve changed tools
 
 Marshal pins every tool definition the first time it sees the server. When the server later adds a tool or changes one, that tool is hidden until you decide:

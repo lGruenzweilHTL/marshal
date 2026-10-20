@@ -68,7 +68,12 @@ internal static class ConversationEntries
                 run.Outcome,
                 reasoning.Length == 0 ? null : string.Join("\n\n", reasoning),
                 calls.Any(call => call?.ReasoningWithheld == true),
-                details is null ? [] : [.. own.Where(step => step.Kind == RunStepKind.ToolCall).Select(step => ToolStep(step, details))]));
+                details is null ? [] : [.. own.Where(step => step.Kind == RunStepKind.ToolCall).Select(step => ToolStep(step, details))])
+            {
+                Widgets = reply?.Widgets ?? [],
+                Apps = reply?.Apps ?? [],
+                Rating = run.Rating,
+            });
         }
 
         IQueryable<Tasks.AgentTask> tasks = db.AgentTasks.AsNoTracking().Where(task => task.OriginSessionId == session && task.ResultAt != null && task.ResultBody != null);

@@ -17,3 +17,6 @@ untrustedTools: ["todo__get_items"]
 # or intents are exposed, so every such change asks for approval. Set false to trust HA's list as it is (a server
 # that is malicious from the start is not caught by pinning anyway).
 pinTools: true
+# MCP Apps: render UIs the server attaches to tools (ui:// resources) in the web chat, in a sandbox without network,
+# forms or access to Marshal. Not allowed with untrusted: true. Home Assistant's server has no apps.
+apps: false

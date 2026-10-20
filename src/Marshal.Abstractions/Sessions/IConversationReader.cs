@@ -88,7 +88,17 @@ public sealed record TurnEntry(
     RunOutcome Outcome,
     string? Reasoning,
     bool ReasoningWithheld,
-    IReadOnlyList<TurnToolStep> Tools) : ConversationEntry(At);
+    IReadOnlyList<TurnToolStep> Tools) : ConversationEntry(At)
+{
+    /// <summary>Built-in widgets the turn showed, with their data at the time of the call.</summary>
+    public IReadOnlyList<Widgets.WidgetRef> Widgets { get; init; } = [];
+
+    /// <summary>MCP apps the turn showed; the chat loads each by its app id.</summary>
+    public IReadOnlyList<Apps.AppRef> Apps { get; init; } = [];
+
+    /// <summary>The owner's rating of the turn's run; null when unrated.</summary>
+    public Evals.RunRating? Rating { get; init; }
+}
 
 /// <summary>
 /// One tool call of a turn, summarized like the live <c>tool</c> events.

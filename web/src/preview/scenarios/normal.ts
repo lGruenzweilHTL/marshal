@@ -284,6 +284,25 @@ export const conversationDetails: Record<string, Schemas['ConversationDetail']> 
     conversation: conversations[3]!,
     entries: [turn(8, -95, 'Summarize the RSS digest for the dashboard', 'Three new posts: Klipper 0.13 is out, a PETG drying guide and a Home Assistant release note.')],
   },
+  [id(10, 6)]: {
+    conversation: conversations[5]!,
+    entries: [
+      turn(60, -12, 'How is the Voron doing, and what is playing in the kitchen?', 'The Voron is on layer 112 of 268. In the kitchen: *Innuendo* by Queen.', {
+        tools: [
+          { tool: 'printer.status', arguments: 'printer=voron', state: 'ok', durationMs: 184, result: 'Printing planter_bracket.gcode, layer 112 of 268' },
+          { tool: 'music.queue', arguments: 'speaker=kitchen', state: 'ok', durationMs: 122, result: 'Playing Innuendo by Queen, 12 in the queue' },
+        ],
+        widgets: [
+          { kind: 'printer', callId: 'call-60-1', data: { printer: 'voron', state: printerState } },
+          { kind: 'music', callId: 'call-60-2', data: musicQueue },
+        ],
+      }),
+      turn(61, -9, 'Show me the filament report for this month', 'Here is the report from the filament tracker.', {
+        tools: [{ tool: 'filament.monthly_report', arguments: 'month=2026-10', state: 'ok', durationMs: 340, result: 'PETG 1.2 kg, PLA 0.4 kg, ASA 0.3 kg' }],
+        apps: [{ appId: ids.app, server: 'filament', tool: 'monthly_report', callId: 'call-61-1' }],
+      }),
+    ],
+  },
   [id(10, 5)]: {
     conversation: conversations[4]!,
     entries: [

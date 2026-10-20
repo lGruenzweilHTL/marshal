@@ -31,4 +31,7 @@ public enum GuardDecision
 
     /// <summary>The pending action expired before confirmation.</summary>
     Expired,
+
+    /// <summary>The user confirmed the action in Marshal's own UI (a widget's confirmation dialog).</summary>
+    ConfirmedInUi,
 }

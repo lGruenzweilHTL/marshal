@@ -334,7 +334,65 @@ describe('ChatView', () => {
     expect(card.attributes('href')).toBe('/artifacts/a2')
   })
 
+  it('shows widget events as live widgets below the reply', async () => {
+    const server = new FakeServer()
+      .handle('POST', turns, () =>
+        eventStream([sse('widget', { kind: 'printer', toolCallId: 'c-1', data: { printer: 'voron', state: printerState({ progress: 0.4 }) } }), final('It is printing.')]),
+      )
+      .on('GET', '/api/v1/printers/voron', 200, printerState({ progress: 0.4 }))
+    const wrapper = await mountChat(server)
+
+    await send(wrapper, 'printer?')
+    await flushPromises()
+
+    const reply = wrapper.findAll('[data-role="assistant"]').at(-1)!
+    expect(reply.get('[data-widget="printer"] [data-test="progress"]').text()).toBe('40%')
+    wrapper.live.publish('printer', 'printer.state', { printer: 'voron', state: printerState({ progress: 0.6 }) })
+    await flushPromises()
+    expect(reply.get('[data-widget="printer"] [data-test="progress"]').text()).toBe('60%')
+  })
+
+  it('shows app events as sandboxed apps below the reply', async () => {
+    const server = new FakeServer()
+      .handle('POST', turns, () => eventStream([sse('app', { appId: 'app-1', server: 'charts', tool: 'sales_report', toolCallId: 'c-1' }), final('Here is the report.')]))
+      .on('GET', '/api/v1/apps/app-1', 200, { appId: 'app-1', server: 'charts', tool: 'sales_report', toolCallId: 'c-1', arguments: {}, result: { content: [] }, available: true })
+    const wrapper = await mountChat(server)
+
+    await send(wrapper, 'sales report')
+    await flushPromises()
+
+    const reply = wrapper.findAll('[data-role="assistant"]').at(-1)!
+    expect(reply.get('[data-app="app-1"] iframe').attributes('sandbox')).toBe('allow-scripts')
+  })
+
   describe('history', () => {
+    it('renders stored widgets with the current state when a conversation is reopened', async () => {
+      const server = new FakeServer()
+        .on('GET', '/api/v1/conversations/s-7', 200, detail('s-7', [turn({ widgets: [{ kind: 'printer', callId: 'c-1', data: { printer: 'voron', state: printerState({ progress: 0.1 }) } }] })]))
+        .on('GET', '/api/v1/printers/voron', 200, printerState({ progress: 0.8 }))
+      const wrapper = await mountChat(server, '/chat/s-7')
+
+      const reply = wrapper.findAll('[data-role="assistant"]').at(-1)!
+      expect(reply.get('[data-widget="printer"] [data-test="progress"]').text()).toBe('80%')
+    })
+
+    it('renders a stored app again, or the unavailable card when it can no longer be shown', async () => {
+      const apps = [
+        { appId: 'app-1', server: 'charts', tool: 'sales_report', callId: 'c-1' },
+        { appId: 'app-2', server: 'gone', tool: 'report', callId: 'c-2' },
+      ]
+      const server = new FakeServer()
+        .on('GET', '/api/v1/conversations/s-8', 200, detail('s-8', [turn({ apps })]))
+        .on('GET', '/api/v1/apps/app-1', 200, { appId: 'app-1', server: 'charts', tool: 'sales_report', toolCallId: 'c-1', arguments: {}, result: { content: [] }, available: true })
+        .on('GET', '/api/v1/apps/app-2', 200, { appId: 'app-2', server: 'gone', tool: 'report', toolCallId: 'c-2', arguments: {}, result: null, available: false })
+      const wrapper = await mountChat(server, '/chat/s-8')
+
+      const reply = wrapper.findAll('[data-role="assistant"]').at(-1)!
+      expect(reply.find('[data-app="app-1"] iframe').exists()).toBe(true)
+      expect(reply.find('[data-app="app-2"] iframe').exists()).toBe(false)
+      expect(reply.get('[data-app="app-2"] [data-test="app-unavailable"]').text()).toBe('This interactive view is no longer available.')
+    })
+
     it('loads /chat/{id} and renders its turns with voice marks', async () => {
       const server = new FakeServer().on(
         'GET',

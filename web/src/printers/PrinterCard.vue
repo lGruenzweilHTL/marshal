@@ -11,14 +11,16 @@ import { usePrinterControls } from './usePrinterControls'
 
 /**
  * One printer at a glance: state, file, progress with layer and time left; `full` adds the temperatures and, with
- * `actions`, pause / resume / cancel (cancel and resume are confirm tier and ask first).
+ * `actions`, pause / resume / cancel (cancel and resume are confirm tier and ask first). `widget` sends the controls
+ * as chat widget actions.
  */
-const props = withDefaults(defineProps<{ printer: Schemas['PrinterSummary']; density?: 'full' | 'compact'; actions?: boolean }>(), {
+const props = withDefaults(defineProps<{ printer: Schemas['PrinterSummary']; density?: 'full' | 'compact'; actions?: boolean; widget?: boolean }>(), {
   density: 'full',
   actions: false,
+  widget: false,
 })
 const { t } = useI18n()
-const controls = usePrinterControls(() => props.printer.name)
+const controls = usePrinterControls(() => props.printer.name, undefined, props.widget)
 
 const status = computed(() => printerStatus(props.printer))
 const state = computed(() => (status.value === 'offline' ? null : props.printer.state))

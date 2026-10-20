@@ -70,6 +70,9 @@ The guard records one decision on every tool-call step of a run.
 | `escalated_by_taint` | A `persists` tool was raised to `confirm` in a tainted run. |
 | `denied` | The guard refused the call, with the reason. The model receives an error result. |
 | `expired` | The user confirmed after the expiry. |
+| `confirmed_in_ui` | The user confirmed the action in Marshal's own dialog, for example the cancel button of the printer widget in the chat. |
+
+A tool call that an MCP app requests is never confirmed: a confirm-tier call from an app is `denied` with the error code `app_confirm`, and no pending action is created. A click inside server-authored HTML does not count as your confirmation.
 
 A pending action itself ends as confirmed, `expired`, `superseded` or dropped. These decisions appear as the `decision` tag of the `marshal.tool.calls` metric, see [metrics and traces](metrics-and-traces.md).
 

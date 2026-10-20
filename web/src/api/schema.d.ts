@@ -1070,6 +1070,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/music/{speaker}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The speaker's queue as the music widget shows it: state, current and next item, item count, shuffle and repeat. */
+        get: operations["GetMusicQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/music/{speaker}/control": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Runs a playback control (pause, resume, next, previous, stop, volume) through the guard, recorded as a run with trigger widget:music. */
+        post: operations["ControlMusic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/apps/{appId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** An MCP app a turn showed: server, tool, the call's arguments and result, and whether it can still be shown. */
+        get: operations["GetApp"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/apps/{appId}/tool-calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Calls a tool of the app's own server for the app, through the guard as a run with trigger app:<server>/<tool>; confirm tier is denied. */
+        post: operations["CallAppTool"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/mail/accounts": {
         parameters: {
             query?: never;
@@ -1532,6 +1600,30 @@ export interface components {
             /** @description True for tokens users cannot manage (executor callback tokens). */
             readOnly: boolean;
         };
+        /** Format: uuid */
+        AppInstanceId: string;
+        AppRef: {
+            appId: components["schemas"]["AppInstanceId"];
+            server: string;
+            tool: string;
+            callId: string;
+        };
+        AppResponse: {
+            /** @description The app id. */
+            appId: string;
+            /** @description The MCP server id. */
+            server: string;
+            /** @description The tool name as the server reports it. */
+            tool: string;
+            /** @description The tool call that showed the app. */
+            toolCallId: string;
+            /** @description The call's arguments. */
+            arguments: components["schemas"]["JsonElement"];
+            /** @description The call's `CallToolResult`; null when it was too large to keep. */
+            result: null | components["schemas"]["JsonElement"];
+            /** @description The app can be shown: the result is complete and the server still serves its UI. */
+            available: boolean;
+        };
         /** @description The outcome of a decision. */
         ApprovalDecision: {
             /** @description Pending action id. */
@@ -1567,6 +1659,12 @@ export interface components {
              * @description When it expires (counts as rejected).
              */
             expiresAt: string;
+        };
+        AppToolCallRequest: {
+            /** @description The tool name as the app's server reports it. */
+            name: string;
+            /** @description The call's arguments (a JSON object). */
+            arguments?: unknown;
         };
         /** Format: uuid */
         ArtifactId: string;
@@ -1751,6 +1849,9 @@ export interface components {
             reasoning: null | string;
             reasoningWithheld: boolean;
             tools: components["schemas"]["TurnToolStep"][];
+            widgets?: components["schemas"]["WidgetRef"][];
+            apps?: components["schemas"]["AppRef"][];
+            rating?: null | components["schemas"]["RunRating"];
             /** Format: date-time */
             at: string;
         };
@@ -2319,6 +2420,7 @@ export interface components {
         /** @description Confirms a frozen control. */
         PrinterControlConfirmation: {
             token: string;
+            widget?: null | boolean;
         };
         /** @description A printer page control. `action` names the command; the other fields are its arguments. */
         PrinterControlRequest: {
@@ -2353,6 +2455,8 @@ export interface components {
             jobIds?: null | string[];
             /** @description Job for queue_jump. */
             jobId?: null | string;
+            /** @description True when the printer widget in the chat sent it: the control is recorded as a run with trigger `widget:printer`. */
+            widget?: null | boolean;
         };
         /** @description Outcome of a control: `done`, or `confirmation_required` with a token for the dialog. */
         PrinterControlResult: {
@@ -4686,6 +4790,102 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    GetMusicQueue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                speaker: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonElement"];
+                };
+            };
+        };
+    };
+    ControlMusic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                speaker: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MusicControlRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MusicControlResult"];
+                };
+            };
+        };
+    };
+    GetApp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppResponse"];
+                };
+            };
+        };
+    };
+    CallAppTool: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppToolCallRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonElement"];
+                };
             };
         };
     };

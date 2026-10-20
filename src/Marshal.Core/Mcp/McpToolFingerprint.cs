@@ -9,7 +9,7 @@ namespace Marshal.Core.Mcp;
 
 /// <summary>
 /// A tool definition as pinned: canonical JSON of everything that reaches the prompt or the guard (name, title,
-/// description, input and output schema, annotations) and its SHA-256.
+/// description, input and output schema, annotations, MCP Apps <c>_meta.ui</c>) and its SHA-256.
 /// </summary>
 /// <param name="Json">Canonical JSON: keys sorted, no insignificant whitespace, absent fields left out.</param>
 /// <param name="Fingerprint">Lowercase hex SHA-256 of <paramref name="Json"/> (UTF-8).</param>
@@ -36,6 +36,10 @@ public static class McpToolFingerprint
 
         if (tool.Annotations is not null)
             definition["annotations"] = JsonSerializer.SerializeToNode(tool.Annotations, McpJsonUtilities.DefaultOptions);
+
+        // Which UI a tool shows (MCP Apps) is part of its definition; the UI's HTML is not.
+        if (tool.Meta?["ui"] is { } ui)
+            definition["_meta"] = new JsonObject { ["ui"] = ui.DeepClone() };
 
         string json = Canonical(definition);
         return new McpToolDefinition(json, Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(json))));

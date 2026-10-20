@@ -87,6 +87,12 @@ internal sealed class LoopHarness
 
     public FixedToolLatency Latency { get; } = new();
 
+    /// <summary>Widget data providers; add one to make a tool's widget appear.</summary>
+    public List<Marshal.Abstractions.Widgets.IWidgetDataProvider> Widgets { get; } = [];
+
+    /// <summary>MCP app instances the runner stored.</summary>
+    public InMemoryAppInstanceStore Apps { get; } = new();
+
     public NamespaceToolSelector Selector { get; private set; } = null!;
 
     public ToolVisibilityFilter Visibility { get; private set; } = null!;
@@ -139,7 +145,9 @@ internal sealed class LoopHarness
             sessionTools: harness.SessionTools,
             latency: harness.Latency,
             voiceOptions: Microsoft.Extensions.Options.Options.Create(harness.VoiceOptions),
-            shaper: new ModelStructuredOutputShaper(harness.Recorder, costs, harness.Time));
+            shaper: new ModelStructuredOutputShaper(harness.Recorder, costs, harness.Time),
+            widgets: harness.Widgets,
+            apps: harness.Apps);
         harness.RunnerSpy = new RunnerSpy(harness.Runner);
         return harness;
     }

@@ -75,6 +75,7 @@ public static class HomeAssistantServiceCollectionExtensions
         services.AddSingleton<IToolSource, CalendarToolSource>();
         services.AddSingleton<IMusicPlayer, HomeAssistantMusicPlayer>();
         services.AddSingleton<IToolSource, MusicToolSource>();
+        services.AddSingleton<Marshal.Abstractions.Widgets.IWidgetDataProvider, MusicWidgetData>();
         return services;
     }
 }

@@ -18,6 +18,7 @@ namespace Marshal.Api.Printers;
 /// <param name="Files">Files for queue_add.</param>
 /// <param name="JobIds">Jobs for queue_remove.</param>
 /// <param name="JobId">Job for queue_jump.</param>
+/// <param name="Widget">True when the printer widget in the chat sent it: the control is recorded as a run with trigger <c>widget:printer</c>.</param>
 public sealed record PrinterControlRequest(
     string Action,
     string? File = null,
@@ -29,7 +30,8 @@ public sealed record PrinterControlRequest(
     string? Macro = null,
     IReadOnlyList<string>? Files = null,
     IReadOnlyList<string>? JobIds = null,
-    string? JobId = null)
+    string? JobId = null,
+    bool? Widget = null)
 {
     public Result<PrinterCommand> ToCommand() => Action switch
     {
@@ -91,7 +93,7 @@ public sealed record PrinterControlRequest(
 public sealed record PrinterControlResult(string Status, string Description, string? Token = null, DateTimeOffset? ExpiresAt = null);
 
 /// <summary>Confirms a frozen control.</summary>
-public sealed record PrinterControlConfirmation(string Token);
+public sealed record PrinterControlConfirmation(string Token, bool? Widget = null);
 
 /// <summary>A printer with its live state (null while offline), its macros and its own web UI, if configured.</summary>
 public sealed record PrinterSummary(string Name, bool Online, PrinterState? State, IReadOnlyList<string> Macros, Uri? WebUrl, BabysitterStatus? Babysitter);

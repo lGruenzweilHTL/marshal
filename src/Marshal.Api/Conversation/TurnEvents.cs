@@ -42,6 +42,19 @@ public sealed record TurnTool(
 /// <param name="Id">Input request id.</param>
 public sealed record TurnInputRequest(string Id);
 
+/// <summary>A built-in widget for a tool call's result (<c>widget</c> event, cookie clients only).</summary>
+/// <param name="Kind">Widget kind: <c>printer</c> or <c>music</c>.</param>
+/// <param name="ToolCallId">The tool call that produced it.</param>
+/// <param name="Data">The widget's data at the time of the call.</param>
+public sealed record TurnWidget(string Kind, string ToolCallId, System.Text.Json.JsonElement Data);
+
+/// <summary>An MCP app for a tool call's result (<c>app</c> event, cookie clients only).</summary>
+/// <param name="AppId">Load it from <c>/api/v1/apps/{appId}</c>; its HTML is at <c>/mcp-apps/{appId}</c>.</param>
+/// <param name="Server">The MCP server id.</param>
+/// <param name="Tool">The tool name as the server reports it.</param>
+/// <param name="ToolCallId">The tool call that produced it.</param>
+public sealed record TurnApp(string AppId, string Server, string Tool, string ToolCallId);
+
 /// <summary>The last event of a turn (<c>final</c> event).</summary>
 /// <param name="Speech">Full reply text.</param>
 /// <param name="ContinueConversation">True when Marshal asked something and the client should keep listening.</param>

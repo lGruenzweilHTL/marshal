@@ -1,4 +1,5 @@
 using System.Collections;
+using Marshal.Api.Apps;
 using Marshal.Api.Approvals;
 using Marshal.Api.AiTasks;
 using Marshal.Api.Artifacts;
@@ -11,8 +12,10 @@ using Marshal.Api.Health;
 using Marshal.Api.Hooks;
 using Marshal.Api.LiveEvents;
 using Marshal.Api.Mail;
+using Marshal.Api.McpServer;
 using Marshal.Api.Notifications;
 using Marshal.Api.Memory;
+using Marshal.Api.Music;
 using Marshal.Api.Printers;
 using Marshal.Api.Proposals;
 using Marshal.Api.Runs;
@@ -115,6 +118,8 @@ public static class MarshalApp
         v1.MapConfigEndpoints();
         v1.MapMemoryEndpoints();
         v1.MapPrinterEndpoints();
+        v1.MapMusicEndpoints();
+        v1.MapAppEndpoints();
         v1.MapMailAccountEndpoints();
         v1.MapConversationEndpoints();
         v1.MapConversationHistoryEndpoints();
@@ -128,6 +133,8 @@ public static class MarshalApp
         v1.MapDisplayEndpoints();
         v1.MapHookEndpoints();
         app.MapMailOAuthCallback();
+        app.MapMarshalMcp();
+        app.MapMcpAppHtml();
         app.MapSpaFallback();
         return app;
     }

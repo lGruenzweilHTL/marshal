@@ -2414,6 +2414,156 @@
         }
       }
     },
+    "/api/v1/music/{speaker}": {
+      "get": {
+        "tags": [
+          "Music"
+        ],
+        "summary": "The speaker\u0027s queue as the music widget shows it: state, current and next item, item count, shuffle and repeat.",
+        "operationId": "GetMusicQueue",
+        "parameters": [
+          {
+            "name": "speaker",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonElement"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/music/{speaker}/control": {
+      "post": {
+        "tags": [
+          "Music"
+        ],
+        "summary": "Runs a playback control (pause, resume, next, previous, stop, volume) through the guard, recorded as a run with trigger widget:music.",
+        "operationId": "ControlMusic",
+        "parameters": [
+          {
+            "name": "speaker",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MusicControlRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MusicControlResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/apps/{appId}": {
+      "get": {
+        "tags": [
+          "Apps"
+        ],
+        "summary": "An MCP app a turn showed: server, tool, the call\u0027s arguments and result, and whether it can still be shown.",
+        "operationId": "GetApp",
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/apps/{appId}/tool-calls": {
+      "post": {
+        "tags": [
+          "Apps"
+        ],
+        "summary": "Calls a tool of the app\u0027s own server for the app, through the guard as a run with trigger app:\u003Cserver\u003E/\u003Ctool\u003E; confirm tier is denied.",
+        "operationId": "CallAppTool",
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppToolCallRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonElement"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/mail/accounts": {
       "get": {
         "tags": [
@@ -3408,6 +3558,82 @@
         },
         "description": "A machine token without its secret."
       },
+      "AppInstanceId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "AppRef": {
+        "required": [
+          "appId",
+          "server",
+          "tool",
+          "callId"
+        ],
+        "type": "object",
+        "properties": {
+          "appId": {
+            "$ref": "#/components/schemas/AppInstanceId"
+          },
+          "server": {
+            "type": "string"
+          },
+          "tool": {
+            "type": "string"
+          },
+          "callId": {
+            "type": "string"
+          }
+        }
+      },
+      "AppResponse": {
+        "required": [
+          "appId",
+          "server",
+          "tool",
+          "toolCallId",
+          "arguments",
+          "result",
+          "available"
+        ],
+        "type": "object",
+        "properties": {
+          "appId": {
+            "type": "string",
+            "description": "The app id."
+          },
+          "server": {
+            "type": "string",
+            "description": "The MCP server id."
+          },
+          "tool": {
+            "type": "string",
+            "description": "The tool name as the server reports it."
+          },
+          "toolCallId": {
+            "type": "string",
+            "description": "The tool call that showed the app."
+          },
+          "arguments": {
+            "description": "The call\u0027s arguments.",
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "result": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JsonElement"
+              }
+            ],
+            "description": "The call\u0027s \u0060CallToolResult\u0060; null when it was too large to keep."
+          },
+          "available": {
+            "type": "boolean",
+            "description": "The app can be shown: the result is complete and the server still serves its UI."
+          }
+        }
+      },
       "ApprovalDecision": {
         "required": [
           "id",
@@ -3497,6 +3723,21 @@
           }
         },
         "description": "A background approval in the review queue."
+      },
+      "AppToolCallRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The tool name as the app\u0027s server reports it."
+          },
+          "arguments": {
+            "description": "The call\u0027s arguments (a JSON object)."
+          }
+        }
       },
       "ArtifactId": {
         "type": "string",
@@ -4126,6 +4367,28 @@
             "items": {
               "$ref": "#/components/schemas/TurnToolStep"
             }
+          },
+          "widgets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WidgetRef"
+            }
+          },
+          "apps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppRef"
+            }
+          },
+          "rating": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunRating"
+              }
+            ]
           },
           "at": {
             "type": "string",
@@ -5987,6 +6250,13 @@
               "string"
             ],
             "description": "Job for queue_jump."
+          },
+          "widget": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "True when the printer widget in the chat sent it: the control is recorded as a run with trigger \u0060widget:printer\u0060."
           }
         },
         "description": "A printer page control. \u0060action\u0060 names the command; the other fields are its arguments."
@@ -7072,6 +7342,12 @@
         "properties": {
           "value": {
             "type": "string"
+          },
+          "widget": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         },
         "description": "A secret value to store. It is never returned."
@@ -7879,6 +8155,25 @@
           }
         },
         "description": "A user\u0027s preferences. Content preferences (briefing topics, interests) live in memory, not here."
+      },
+      "WidgetRef": {
+        "required": [
+          "kind",
+          "callId",
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "callId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/JsonElement"
+          }
+        }
       }
     }
   },
@@ -7942,6 +8237,12 @@
     },
     {
       "name": "Tasks"
+    },
+    {
+      "name": "Music"
+    },
+    {
+      "name": "Apps"
     },
     {
       "name": "Proposals"

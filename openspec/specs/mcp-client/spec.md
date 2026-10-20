@@ -20,6 +20,10 @@ MCP servers SHALL be configured in `/config/mcp/*.yaml` with `id`, transport (`s
 - **WHEN** a server file sets `pinTools: false`
 - **THEN** changes to that server's tools take effect without approval
 
+#### Scenario: Apps on an untrusted server
+- **WHEN** a server file sets `untrusted: true` and `apps: true`
+- **THEN** that server is rejected with a config error naming both keys
+
 ### Requirement: Flat namespaces
 Tools from an MCP server SHALL use the server id (or `toolPrefix`) as namespace, without an `mcp.` prefix. Tool names SHALL be kept as reported, sanitized per the registry rules.
 
@@ -104,3 +108,17 @@ The client SHALL declare the tasks extension. When a tool call returns a task ha
 #### Scenario: Server task fails
 - **WHEN** the server reports the task failed
 - **THEN** the waiting task resumes with the failure and delivers a short message saying so
+
+### Requirement: Trace context propagation
+Every request to an MCP server SHALL carry the W3C trace context in `_meta` (`traceparent`, and `tracestate` when present) of an MCP client span for the request that is a child of the current `execute_tool` span, so that a tracing server's spans join the run's trace. Requests made outside a run (tool listing, discovery) SHALL carry the context of the current span when there is one.
+
+#### Scenario: Tool call carries traceparent
+- **WHEN** a run calls `ha_HassTurnOn`
+- **THEN** the MCP request's `_meta` contains a `traceparent` whose trace id equals the run's trace id and whose parent is the request's MCP client span, a child of the tool call's span
+
+### Requirement: App resources
+For servers with `apps: true`, the client SHALL read `ui://` resources named by a tool's MCP Apps metadata with `resources/read` when the tool is called in a web turn, and SHALL cache them per server for the result's `ttlMs` (default 5 minutes). A tool's `ui://` metadata SHALL be part of its pin fingerprint.
+
+#### Scenario: Changed UI resource reference
+- **WHEN** a pinned tool's `ui://` resource URI changes
+- **THEN** the tool waits for approval like any changed tool

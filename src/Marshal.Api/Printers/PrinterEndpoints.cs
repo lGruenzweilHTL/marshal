@@ -1,9 +1,15 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Marshal.Abstractions;
+using Marshal.Abstractions.Execution;
+using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Audit;
 using Marshal.Abstractions.Printers;
+using Marshal.Abstractions.Tools;
 using Marshal.Api.Auth;
 using Marshal.Api.Problems;
+using Marshal.Api.Widgets;
+using Marshal.Core.Agent;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Marshal.Api.Printers;
@@ -94,7 +100,7 @@ internal static class PrinterEndpoints
 
     private static async Task<Results<Ok<PrinterControlResult>, ProblemHttpResult>> ControlAsync(
         string printer, PrinterControlRequest request, ClaimsPrincipal user, IPrinterDirectory directory, IPrinterClient client,
-        PrinterControlConfirmations confirmations, IAuditLog audit, CancellationToken ct)
+        PrinterControlConfirmations confirmations, IAuditLog audit, WidgetRuns widgets, CancellationToken ct)
     {
         Result<PrinterInfo> found = Find(directory, printer);
         if (found.IsFailure)
@@ -114,12 +120,12 @@ internal static class PrinterEndpoints
             return TypedResults.Ok(new PrinterControlResult("confirmation_required", command.Value.Describe(), token, expiresAt));
         }
 
-        return await RunAsync(found.Value.Name, command.Value, confirmed: false, user, client, audit, ct);
+        return await RunAsync(found.Value.Name, command.Value, confirmed: false, request.Widget == true, user, client, audit, widgets, ct);
     }
 
     private static async Task<Results<Ok<PrinterControlResult>, ProblemHttpResult>> ConfirmAsync(
         string printer, PrinterControlConfirmation confirmation, ClaimsPrincipal user, IPrinterDirectory directory, IPrinterClient client,
-        PrinterControlConfirmations confirmations, IAuditLog audit, CancellationToken ct)
+        PrinterControlConfirmations confirmations, IAuditLog audit, WidgetRuns widgets, CancellationToken ct)
     {
         Result<PrinterInfo> found = Find(directory, printer);
         if (found.IsFailure)
@@ -128,13 +134,22 @@ internal static class PrinterEndpoints
         if (confirmations.Take(user.Owner(), found.Value.Name, confirmation.Token) is not { } command)
             return new Error("printer.confirmation_not_found", "The confirmation expired or was already used.", ErrorType.NotFound).ToProblem();
 
-        return await RunAsync(found.Value.Name, command, confirmed: true, user, client, audit, ct);
+        return await RunAsync(found.Value.Name, command, confirmed: true, confirmation.Widget == true, user, client, audit, widgets, ct);
     }
 
     private static async Task<Results<Ok<PrinterControlResult>, ProblemHttpResult>> RunAsync(
-        string printer, PrinterCommand command, bool confirmed, ClaimsPrincipal user, IPrinterClient client, IAuditLog audit, CancellationToken ct)
+        string printer, PrinterCommand command, bool confirmed, bool widget, ClaimsPrincipal user, IPrinterClient client, IAuditLog audit, WidgetRuns widgets, CancellationToken ct)
     {
-        Result sent = await client.SendAsync(printer, command, ct);
+        Result sent;
+        if (widget)
+        {
+            Result<bool> run = await widgets.RunAsync(user, "printer", context => SendAsync(context, printer, command, confirmed, client, widgets, ct), ct);
+            sent = run.IsSuccess ? Result.Success() : run.Error;
+        }
+        else
+        {
+            sent = await client.SendAsync(printer, command, ct);
+        }
         (AuditActorKind kind, string actor) = user.Actor();
         await audit.RecordAsync(new AuditEntry(kind, actor, "printer.control", printer, new
         {
@@ -144,6 +159,31 @@ internal static class PrinterEndpoints
         }), ct);
         return sent.IsSuccess ? TypedResults.Ok(new PrinterControlResult("done", command.Describe())) : sent.Error.ToProblem();
     }
+
+    // The widget's control as a tool step: the user confirmed confirm-tier controls in the widget's dialog.
+    private static async Task<Result<bool>> SendAsync(MarshalExecutionContext context, string printer, PrinterCommand command, bool confirmed, IPrinterClient client, WidgetRuns widgets, CancellationToken ct)
+    {
+        Result sent = await client.SendAsync(printer, command, ct);
+        JsonElement arguments = JsonSerializer.SerializeToElement(new { printer });
+        await widgets.RecordAsync(context, ToolCallSteps.Step(
+            null, $"printer_{ToolName(command)}", arguments, confirmed ? RiskTier.Confirm : RiskTier.Safe, confirmed ? GuardDecision.ConfirmedInUi : GuardDecision.Safe, [],
+            sent.IsSuccess ? new ToolOutput($"Done: {command.Describe()} on {printer}.") : null, sent.IsFailure ? sent.Error : null, 0), ct);
+        return sent.IsSuccess ? true : sent.Error;
+    }
+
+    private static string ToolName(PrinterCommand command) => command switch
+    {
+        PrinterCommand.Pause => "pause",
+        PrinterCommand.Resume => "resume",
+        PrinterCommand.Cancel => "cancel",
+        PrinterCommand.EmergencyStop => "emergency_stop",
+        PrinterCommand.StartPrint => "start_print",
+        PrinterCommand.SetTemperature => "set_temperature",
+        PrinterCommand.Home => "home",
+        PrinterCommand.Move => "move",
+        PrinterCommand.RunMacro => "run_macro",
+        _ => "edit_queue",
+    };
 
     private static async Task<Results<Ok<PrinterSnapshotInfo>, ProblemHttpResult>> CaptureAsync(string printer, IPrinterDirectory directory, ISnapshotSource snapshots, CancellationToken ct)
     {

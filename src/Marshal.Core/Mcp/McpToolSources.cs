@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Marshal.Abstractions;
+using Marshal.Abstractions.Apps;
 using Marshal.Abstractions.InputRequests;
 using Marshal.Abstractions.Mcp;
 using Marshal.Abstractions.Secrets;
@@ -13,7 +14,7 @@ namespace Marshal.Core.Mcp;
 /// added starts a source, a removed one stops it, a changed one replaces it. Sources of unchanged servers keep
 /// their connection. The registry reads <see cref="IToolSourceProvider.Sources"/> on every refresh.
 /// </summary>
-public sealed partial class McpToolSources : IToolSourceProvider, IMcpTaskClient, IAsyncDisposable
+public sealed partial class McpToolSources : IToolSourceProvider, IMcpTaskClient, IMcpAppResources, IAsyncDisposable
 {
     private static readonly TimeSpan _reloadWait = TimeSpan.FromSeconds(10);
 
@@ -67,6 +68,14 @@ public sealed partial class McpToolSources : IToolSourceProvider, IMcpTaskClient
         _sources.TryGetValue(serverId, out McpToolSource? source)
             ? source.CancelTaskAsync(taskId, cancellationToken)
             : Task.FromResult<Result>(UnknownServer(serverId));
+
+    public string? AppNamespace(string server) =>
+        _sources.TryGetValue(server, out McpToolSource? source) && source.Server.Apps ? source.Server.Namespace : null;
+
+    public Task<Result<string>> ReadAsync(string server, string uri, CancellationToken cancellationToken) =>
+        _sources.TryGetValue(server, out McpToolSource? source)
+            ? source.ReadAppResourceAsync(uri, cancellationToken)
+            : Task.FromResult<Result<string>>(UnknownServer(server));
 
     // A removed server's tasks are gone for Marshal; a server that is only down is a configured source.
     private static Error UnknownServer(string serverId) =>

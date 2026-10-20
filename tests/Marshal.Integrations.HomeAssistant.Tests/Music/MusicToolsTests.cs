@@ -341,7 +341,7 @@ public sealed class MusicToolsTests
 
     private static JsonElement Arguments(object arguments) => JsonSerializer.SerializeToElement(arguments);
 
-    private sealed class FakeMusicPlayer : IMusicPlayer
+    internal sealed class FakeMusicPlayer : IMusicPlayer
     {
         public IReadOnlyList<MusicItem> Found { get; set; } = [];
 

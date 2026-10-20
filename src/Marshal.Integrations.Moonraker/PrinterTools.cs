@@ -24,7 +24,8 @@ internal static class PrinterTools
         return
         [
             Read(directory, "status", "Current state of the 3D printer: job, progress, layer, time left and temperatures.", NoArguments,
-                (printer, _, _) => Task.FromResult(states.Get(printer.Name).Map(state => new ToolOutput(Status(state) + Babysitter(babysitter.Get(printer.Name)))))),
+                (printer, _, _) => Task.FromResult(states.Get(printer.Name).Map(state => new ToolOutput(Status(state) + Babysitter(babysitter.Get(printer.Name))))),
+                widget: PrinterWidgetData.WidgetKind),
             Read(directory, "list_files", "Lists the printable files on the 3D printer, newest first.", NoArguments,
                 async (printer, _, ct) => (await client.ListFilesAsync(printer.Name, ct)).Map(files => Json(files.Take(50).Select(file => new { file.Path, file.Size, modified = file.Modified })))),
             Read(directory, "job_queue", "Shows the 3D printer's job queue.", NoArguments,
@@ -164,8 +165,8 @@ internal static class PrinterTools
         _ => null,
     };
 
-    private static PrinterTool Read(IPrinterDirectory directory, string name, string description, string properties, Func<PrinterInfo, JsonElement, CancellationToken, Task<Result<ToolOutput>>> run) =>
-        new PrinterTool(directory, name, description, RiskTier.Safe, properties, null, run, true);
+    private static PrinterTool Read(IPrinterDirectory directory, string name, string description, string properties, Func<PrinterInfo, JsonElement, CancellationToken, Task<Result<ToolOutput>>> run, string? widget = null) =>
+        new PrinterTool(directory, name, description, RiskTier.Safe, properties, null, run, true, widget);
 
     private static PrinterTool Command(IPrinterDirectory directory, IPrinterClient client, string name, string description, RiskTier tier, string properties, Func<JsonElement, Result<PrinterCommand>> parse, bool available = true) =>
         new PrinterTool(directory, name, description, tier, properties, parse, async (printer, arguments, ct) =>
@@ -199,7 +200,8 @@ internal static class PrinterTools
         string properties,
         Func<JsonElement, Result<PrinterCommand>>? parse,
         Func<PrinterInfo, JsonElement, CancellationToken, Task<Result<ToolOutput>>> run,
-        bool available) : ITool
+        bool available,
+        string? widget = null) : ITool
     {
         public ToolDescriptor Descriptor { get; } = new()
         {
@@ -207,6 +209,7 @@ internal static class PrinterTools
             Description = description,
             ParametersSchema = Schema(directory, properties),
             DefaultTier = tier,
+            Widget = widget,
         };
 
         public ValueTask<bool> IsAvailableAsync(MarshalExecutionContext context, CancellationToken cancellationToken) => ValueTask.FromResult(available);

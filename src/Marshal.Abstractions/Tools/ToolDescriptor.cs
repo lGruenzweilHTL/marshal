@@ -43,4 +43,7 @@ public sealed record ToolDescriptor
     /// usually slow (e.g. "Let me look at the printer."). Built-in tools only.
     /// </summary>
     public IReadOnlyDictionary<string, string> Fillers { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>Built-in chat widget shown after a successful call in a web turn (e.g. <c>printer</c>); null = none.</summary>
+    public string? Widget { get; init; }
 }

@@ -14,9 +14,12 @@ import { readEvents } from './sse'
 import ArtifactCard from '../artifacts/ArtifactCard.vue'
 import ConversationList from './ConversationList.vue'
 import InputRequestCard from './InputRequestCard.vue'
+import RatingButtons from '../runs/RatingButtons.vue'
 import ReasoningBlock from './ReasoningBlock.vue'
 import ToolTimeline from './ToolTimeline.vue'
-import { applyTool, type ToolStep, type TurnArtifact, type TurnDelta, type TurnFinal, type TurnInputRequest, type TurnReasoning, type TurnStatus, type TurnTool } from './turnEvents'
+import AppHost from './apps/AppHost.vue'
+import ChatWidget from './widgets/ChatWidget.vue'
+import { applyTool, type ToolStep, type TurnArtifact, type TurnDelta, type TurnFinal, type TurnInputRequest, type TurnReasoning, type TurnStatus, type TurnApp, type TurnTool, type TurnWidget } from './turnEvents'
 
 interface Message {
   id: number
@@ -32,6 +35,10 @@ interface Message {
   reasoningWithheld?: boolean
   /** Artifacts the turn showed: images inline, every other kind as a card. */
   artifacts: TurnArtifact[]
+  /** Built-in widgets the turn showed (printer, music), live after a reload too. */
+  widgets: TurnWidget[]
+  /** MCP apps the turn showed, sandboxed; after a reload only while they can still be shown. */
+  apps: TurnApp[]
   /** Input requests MCP servers sent during the reply, answered in the chat. */
   inputs: string[]
   /** A spoken user turn: the satellite (or area) it came from, '' when unknown. */
@@ -47,7 +54,7 @@ type Entry = Schemas['ConversationDetail']['entries'][number]
 /**
  * Written conversation with Marshal over the turn stream: reasoning fills a block that folds away when the reply
  * starts, tool and status events become the reply's timeline, deltas grow the text, and the final event settles it. A question back (continueConversation) offers Yes / No; the answer is an
- * ordinary user turn, judged by the server like a spoken one. `/chat/{id}` opens an earlier conversation: web chats
+ * ordinary user turn, judged by the server like a spoken one. Finished replies offer thumbs up and down for their run. `/chat/{id}` opens an earlier conversation: web chats
  * continue, voice and API conversations are read-only. Results of work moved to the background arrive live.
  */
 const api = useApi()
@@ -97,13 +104,13 @@ function newChat() {
   if (routeId.value) void router.push('/chat')
 }
 
-function empty(): Pick<Message, 'steps' | 'artifacts' | 'inputs' | 'reasoning' | 'reasoningOpen'> {
-  return { steps: [], artifacts: [], inputs: [], reasoning: '', reasoningOpen: false }
+function empty(): Pick<Message, 'steps' | 'artifacts' | 'widgets' | 'apps' | 'inputs' | 'reasoning' | 'reasoningOpen'> {
+  return { steps: [], artifacts: [], widgets: [], apps: [], inputs: [], reasoning: '', reasoningOpen: false }
 }
 
 /** No event of the reply arrived yet: the only time "Thinking…" shows. */
 function waiting(message: Message) {
-  return !message.text && !message.reasoning && message.steps.length === 0 && message.artifacts.length === 0 && message.inputs.length === 0
+  return !message.text && !message.reasoning && message.steps.length === 0 && message.artifacts.length === 0 && message.widgets.length === 0 && message.apps.length === 0 && message.inputs.length === 0
 }
 
 function toMessages(entry: Entry): Message[] {
@@ -124,7 +131,11 @@ function toMessages(entry: Entry): Message[] {
     reasoning: turn.reasoning ?? '',
     reasoningWithheld: turn.reasoningWithheld,
     artifacts: [...turn.artifacts],
+    widgets: (turn.widgets ?? []).map((widget) => ({ kind: widget.kind, toolCallId: widget.callId, data: widget.data })),
+    apps: (turn.apps ?? []).map((app) => ({ appId: app.appId, server: app.server, tool: app.tool, toolCallId: app.callId })),
     noReply: turn.reply === null,
+    runId: turn.runId,
+    rating: turn.rating ?? null,
   })
   return result
 }
@@ -237,6 +248,8 @@ async function send(text = draft.value.trim()) {
         live.value = text
         reply.steps.push({ kind: 'status', text })
       } else if (event === 'artifact') reply.artifacts.push(JSON.parse(payload) as TurnArtifact)
+      else if (event === 'widget') reply.widgets.push(JSON.parse(payload) as TurnWidget)
+      else if (event === 'app') reply.apps.push(JSON.parse(payload) as TurnApp)
       else if (event === 'input_request') reply.inputs.push((JSON.parse(payload) as TurnInputRequest).id)
       else if (event === 'final') {
         const final = JSON.parse(payload) as TurnFinal
@@ -246,6 +259,7 @@ async function send(text = draft.value.trim()) {
         // The conversation gets its own URL with its first turn; the history shows it first.
         if (routeId.value !== final.conversationId) void router.replace(`/chat/${final.conversationId}`)
         list.value?.refresh()
+        void attachRun(reply, final.conversationId)
       }
       void scrollToEnd()
     }
@@ -258,6 +272,13 @@ async function send(text = draft.value.trim()) {
       live.value = null
     }
   }
+}
+
+/** The final event carries no run id: the stored conversation's newest turn is the reply just finished. */
+async function attachRun(reply: Message, id: string) {
+  const result = await fetchDetail(id)
+  const last = result.data?.entries.filter((entry) => entry.kind === 'turn').at(-1)
+  if (last?.kind === 'turn' && conversationId === id) reply.runId = last.runId
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -323,7 +344,10 @@ onBeforeUnmount(() => running?.abort())
               <span v-else-if="busy && message === messages[messages.length - 1] && waiting(message)" class="thinking">{{ t('chat.thinking') }}</span>
               <span v-else-if="message.noReply" class="thinking">{{ t('chat.noReply') }}</span>
               <ArtifactCard v-for="artifact in message.artifacts" :key="artifact.id" :artifact="artifact" />
+              <ChatWidget v-for="widget in message.widgets" :key="widget.toolCallId" :widget="widget" />
+              <AppHost v-for="app in message.apps" :key="app.appId" :app="app" />
               <InputRequestCard v-for="input in message.inputs" :key="input" :id="input" />
+              <RatingButtons v-if="message.runId && !(busy && message === messages[messages.length - 1])" :key="message.runId" :run-id="message.runId" :rating="message.rating" />
             </div>
           </template>
         </li>

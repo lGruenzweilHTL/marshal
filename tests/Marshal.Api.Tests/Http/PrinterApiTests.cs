@@ -145,6 +145,36 @@ public sealed class PrinterApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task WidgetControl_RecordedAsWidgetRun()
+    {
+        JsonElement result = await ControlAsync(new { action = "pause", widget = true });
+
+        Assert.Equal("done", result.GetProperty("status").GetString());
+        Assert.Equal(new PrinterCommand.Pause(), Assert.Single(_client.Sent).Command);
+        Marshal.Data.Conversations.Run run = await _factory.WithDatabaseAsync(_user, db => db.Runs.SingleAsync(Ct));
+        Assert.Equal((Marshal.Abstractions.Execution.SessionSource.Web, "widget:printer"), (run.Source, run.Trigger));
+        Marshal.Data.Conversations.RunStep step = await _factory.WithDatabaseAsync(_user, db => db.RunSteps.SingleAsync(Ct));
+        Assert.Equal(("printer.pause", Marshal.Abstractions.Guard.GuardDecision.Safe), (step.Tool, step.GuardDecision!.Value));
+    }
+
+    [Fact]
+    public async Task WidgetConfirmControl_OnlyAfterTheDialog_RecordedAsConfirmedInUi()
+    {
+        JsonElement pending = await ControlAsync(new { action = "cancel", widget = true });
+
+        Assert.Equal("confirmation_required", pending.GetProperty("status").GetString());
+        Assert.Empty(_client.Sent);
+        Assert.Equal(0, await _factory.WithDatabaseAsync(_user, db => db.Runs.CountAsync(Ct)));
+
+        HttpResponseMessage confirmed = await _browser.PostAsJsonAsync($"{Voron}/controls/confirm", new { token = pending.GetProperty("token").GetString(), widget = true }, Ct);
+
+        Assert.Equal(HttpStatusCode.OK, confirmed.StatusCode);
+        Assert.Equal(new PrinterCommand.Cancel(), Assert.Single(_client.Sent).Command);
+        Marshal.Data.Conversations.RunStep step = await _factory.WithDatabaseAsync(_user, db => db.RunSteps.SingleAsync(Ct));
+        Assert.Equal(("printer.cancel", Marshal.Abstractions.Guard.GuardDecision.ConfirmedInUi), (step.Tool, step.GuardDecision!.Value));
+    }
+
+    [Fact]
     public async Task ConfirmToken_BoundToUserAndPrinter()
     {
         string token = (await ControlAsync(new { action = "set_temperature", heater = "bed", target = 60 })).GetProperty("token").GetString()!;

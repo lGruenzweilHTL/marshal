@@ -3,6 +3,8 @@ using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Marshal.Abstractions;
+using Marshal.Abstractions.Apps;
+using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.InputRequests;
 using Marshal.Abstractions.Mcp;
@@ -128,7 +130,7 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
 
     internal ToolPinState PinStateOf(string name) => _pinner?.StateOf(_server.Id, name) ?? ToolPinState.Approved;
 
-    internal async Task<Result<ToolOutput>> CallAsync(string name, JsonElement arguments, MarshalExecutionContext context, CancellationToken cancellationToken)
+    internal async Task<Result<ToolOutput>> CallAsync(string name, JsonElement arguments, MarshalExecutionContext context, CancellationToken cancellationToken, string? appResourceUri = null)
     {
         Connection? connection = _connection;
         if (connection is null || connection.IsLost)
@@ -154,10 +156,16 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
             if (result.IsTask)
                 return await TrackAsync(name, result, context, cancellationToken);
 
-            string content = McpContent.ToText(result.ToToolResult());
-            return result.IsError == true
-                ? new Error("mcp.tool_error", content)
-                : new ToolOutput(content);
+            CallToolResult toolResult = result.ToToolResult();
+            string content = McpContent.ToText(toolResult);
+            if (result.IsError == true)
+                return new Error("mcp.tool_error", content);
+
+            string callResult = JsonSerializer.Serialize(toolResult, McpJsonUtilities.DefaultOptions);
+            var output = new ToolOutput(content) { CallResult = System.Text.Encoding.UTF8.GetByteCount(callResult) <= McpAppOutput.MaxResultBytes ? callResult : null };
+            return appResourceUri is not null && context.Source == SessionSource.Web
+                ? await WithAppAsync(output, name, appResourceUri, connection, call.Token)
+                : output;
         }
         catch (Exception) when (scope.Requested is not null)
         {
@@ -180,6 +188,69 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
             return Unavailable();
         }
     }
+
+    /// <summary>The <c>ui://</c> resource a tool's MCP Apps metadata (<c>_meta.ui.resourceUri</c>) names, or null.</summary>
+    public static string? AppResourceUriOf(Tool tool) =>
+        tool.Meta?["ui"] is JsonObject ui && ui["resourceUri"] is JsonValue value && value.TryGetValue(out string? uri)
+            && uri.StartsWith("ui://", StringComparison.Ordinal) ? uri : null;
+
+    /// <summary>MIME type of an MCP App resource (MCP Apps 2026-01-26).</summary>
+    public const string AppMimeType = "text/html;profile=mcp-app";
+
+    private static readonly TimeSpan _defaultAppTimeToLive = TimeSpan.FromMinutes(5);
+    private readonly ConcurrentDictionary<string, (string Html, DateTimeOffset Expires)> _appResources = new(StringComparer.Ordinal);
+
+    // The UI is extra: a resource that cannot be shown leaves the result as it is, with a note in the run.
+    private async Task<ToolOutput> WithAppAsync(ToolOutput output, string name, string uri, Connection connection, CancellationToken cancellationToken)
+    {
+        Result<string> html = await ReadAppResourceAsync(uri, connection, cancellationToken);
+        if (html.IsFailure)
+        {
+            LogAppSkipped(_server.Id, uri, html.Error.Message);
+            return output with { Notes = [new ContextNote("app_skipped", uri, html.Error.Message)] };
+        }
+
+        return output with { App = new McpAppOutput(_server.Id, name, uri, html.Value) };
+    }
+
+    /// <summary>Reads an app resource (cached per server for the result's <c>ttlMs</c>, default 5 minutes).</summary>
+    public Task<Result<string>> ReadAppResourceAsync(string uri, CancellationToken cancellationToken)
+    {
+        Connection? connection = _connection;
+        return connection is null || connection.IsLost
+            ? Task.FromResult<Result<string>>(new Error("mcp.unavailable", $"MCP server '{_server.Id}' is not connected.", ErrorType.Unavailable))
+            : ReadAppResourceAsync(uri, connection, cancellationToken);
+    }
+
+    private async Task<Result<string>> ReadAppResourceAsync(string uri, Connection connection, CancellationToken cancellationToken)
+    {
+        if (!_server.Apps)
+            return new Error("mcp.apps_off", $"MCP server '{_server.Id}' does not have apps: true.", ErrorType.Forbidden);
+        if (_appResources.TryGetValue(uri, out (string Html, DateTimeOffset Expires) cached) && cached.Expires > _time.GetUtcNow())
+            return cached.Html;
+
+        ReadResourceResult read;
+        try
+        {
+            using var call = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, connection.LostToken);
+            read = await connection.Client.ReadResourceAsync(uri, cancellationToken: call.Token);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        {
+            return new Error("mcp.app_unreadable", $"The resource could not be read: {exception.Message}", ErrorType.Unavailable);
+        }
+
+        if (read.Contents.FirstOrDefault() is not TextResourceContents { } text || !IsAppMimeType(text.MimeType))
+            return new Error("mcp.app_mime_type", $"The resource is not {AppMimeType}.", ErrorType.Validation);
+        if (System.Text.Encoding.UTF8.GetByteCount(text.Text) > McpAppOutput.MaxHtmlBytes)
+            return new Error("mcp.app_too_large", "The resource is larger than 1 MB.", ErrorType.Validation);
+
+        _appResources[uri] = (text.Text, _time.GetUtcNow() + (read.TimeToLive ?? _defaultAppTimeToLive));
+        return text.Text;
+    }
+
+    private static bool IsAppMimeType(string? mimeType) =>
+        mimeType is not null && string.Equals(string.Concat(mimeType.Where(c => !char.IsWhiteSpace(c))), AppMimeType, StringComparison.OrdinalIgnoreCase);
 
     // The request's content is server text: it goes to the web UI only. The model learns that input is needed.
     private async Task<Result<ToolOutput>> RequestInputAsync(string name, JsonElement arguments, CallScope scope, MarshalExecutionContext context, CancellationToken cancellationToken)
@@ -505,7 +576,7 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
         }
         while (cursor is not null);
 
-        ImmutableArray<ITool> tools = [.. listed.Select(tool => (ITool)new McpTool(this, Describe(tool), tool.Name))];
+        ImmutableArray<ITool> tools = [.. listed.Select(tool => (ITool)new McpTool(this, Describe(tool), tool.Name, _server.Apps ? AppResourceUriOf(tool) : null))];
         if (_pinner is not null)
             await _pinner.ApplyAsync(_server.Id, listed, cancellationToken);
 
@@ -547,6 +618,9 @@ public sealed partial class McpToolSource : IToolSource, IAsyncDisposable
         _state = new State(McpServerState.Down, reason, [], []);
         LogDown(_server.Id, reason);
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "MCP server {Server}: app resource {Uri} skipped: {Reason}")]
+    private partial void LogAppSkipped(string server, string uri, string reason);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "MCP server {Server} connected with {Count} tools")]
     private partial void LogConnected(string server, int count);

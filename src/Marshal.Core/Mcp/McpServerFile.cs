@@ -34,6 +34,9 @@ public sealed class McpServerFile
     /// <summary>New or changed tools wait for approval after the first discovery (default true).</summary>
     public bool PinTools { get; set; } = true;
 
+    /// <summary>Render the server's MCP Apps UIs in web chat (default false).</summary>
+    public bool Apps { get; set; }
+
     /// <summary>A <c>variable</c> filled from a <c>secret</c> name.</summary>
     public sealed class EnvironmentSecret
     {

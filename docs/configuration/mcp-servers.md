@@ -46,8 +46,9 @@ Only the keys below are accepted. The file name is free; the `id` must be unique
 | `untrusted` | boolean | `false` | When `true`, every tool's output is third-party data and taints the run (source `mcp:<id>`). |
 | `untrustedTools` | list of globs | `[]` | Globs on the tool names the server reports. Only matching tools taint the run. Entries must not be empty. |
 | `pinTools` | boolean | `true` | Pins every tool definition at first discovery. A new or changed tool later stays hidden until an admin approves it. See [tool pinning](#tool-pinning). |
+| `apps` | boolean | `false` | Shows the server's MCP Apps UIs in the web chat, in a sandbox. See [MCP apps](#mcp-apps). |
 
-`untrusted: true` together with a non-empty `untrustedTools` is an error.
+`untrusted: true` together with a non-empty `untrustedTools` is an error. `untrusted: true` together with `apps: true` is an error too.
 
 ## Tool names
 
@@ -75,6 +76,19 @@ Marshal stores a fingerprint of each tool's name, title, description, input sche
 - Admins approve or reject in the web UI under System > Configuration, with the previous and the current definition side by side. Each decision is audited and applies from the next turn.
 
 With `pinTools: false` the server's tools are never pinned. Use it for servers whose tool list changes often by design, such as Home Assistant when you expose entities. Pinning protects against later changes only: a server that is malicious at first discovery is pinned as it is.
+
+## MCP apps
+
+With `apps: true`, a tool whose definition names a `ui://` resource (MCP Apps, `_meta.ui.resourceUri`) shows that UI below the reply when a web chat turn calls it. Voice, API and task runs never show apps.
+
+- Marshal reads the resource with `resources/read` and caches it for the result's `ttlMs`, 5 minutes by default.
+- The resource must have the MIME type `text/html;profile=mcp-app` and be at most 1 MB. Otherwise the reply shows without the app, and the run records a note `app_skipped` on the tool step.
+- The app runs in an iframe with `sandbox="allow-scripts"` and the CSP `sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; frame-ancestors 'self'`. It has no access to Marshal's cookies, storage or API, and it cannot connect to any host, submit forms, open pop-ups or navigate the page. The resource's `csp` and `permissions` metadata are ignored.
+- The app can call tools of its own server only, and only tools you could use in a web chat turn. Each call runs through the guard as its own run with trigger `app:<server>/<tool>`. The result goes to the app only, never to the model. A confirm-tier call is denied with `app_confirm`.
+- Requests to post chat messages or change the model's context are refused. A request to open a link shows the link below the app; you open it yourself.
+- The chat keeps the app with the reply. A reopened conversation shows it again while the server still has `apps: true`, the resource can be read and the tool result was at most 256 KB. Otherwise the chat shows "This interactive view is no longer available."
+
+The tool's `_meta.ui` block is part of the pinned definition, so a changed UI reference waits for approval. The HTML itself is not pinned.
 
 ## Input requests
 

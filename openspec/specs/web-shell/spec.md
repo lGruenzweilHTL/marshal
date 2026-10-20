@@ -2,7 +2,9 @@
 
 ## Purpose
 The web app shell: SPA hosting, the generated API client, responsive layout, content security policy and the live-update stream.
+
 ## Requirements
+
 ### Requirement: SPA hosting
 The web UI SHALL be a Vue + Vite + TypeScript SPA in `web/`, compiled into `wwwroot` by the Docker build and served same-origin by `Marshal.Api` under the configured base path. Unknown non-API paths SHALL return the SPA entry page.
 
@@ -33,11 +35,19 @@ Every view SHALL have a designed phone layout and a designed desktop layout; a p
 - **THEN** a phone layout is shown (for example a list of the same chunks) instead of a shrunken desktop graph
 
 ### Requirement: Content Security Policy
-The SPA SHALL be served with a CSP that allows scripts and styles only from the same origin and images only from `'self'` and `data:`.
+The SPA SHALL be served with a CSP that allows scripts and styles only from the same origin, images only from `'self'` and `data:`, and frames only from `'self'`. The MCP app endpoint SHALL be served with its own CSP that allows inline scripts and styles, images from `data:` only, no connections, no frames, and framing only by Marshal's own origin.
 
 #### Scenario: External image blocked
 - **WHEN** a page tries to load an image from another origin
 - **THEN** the browser blocks it by CSP
+
+#### Scenario: External frame blocked
+- **WHEN** a page tries to frame another origin
+- **THEN** the browser blocks it by CSP
+
+#### Scenario: App cannot connect
+- **WHEN** a script in an MCP app tries `fetch("https://example.com")`
+- **THEN** the browser blocks it by the app's CSP
 
 ### Requirement: Live-update stream
 `GET /api/v1/events?topics=...` SHALL deliver server-sent events for the requested topics over one connection, filtered to the current owner. Unknown topics SHALL be rejected. Event payload types SHALL be shared through a small hand-written TypeScript module.

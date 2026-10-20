@@ -17,6 +17,74 @@ namespace Marshal.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
 
+            modelBuilder.Entity("Marshal.Data.Apps.AppInstance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Args")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("args");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Html")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("html");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("ResourceUri")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("resource_uri");
+
+                    b.Property<string>("Result")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("result");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("run_id");
+
+                    b.Property<string>("Server")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("server");
+
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("session_id");
+
+                    b.Property<string>("Tool")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tool");
+
+                    b.Property<string>("ToolCallId")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tool_call_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_app_instances");
+
+                    b.HasIndex("SessionId")
+                        .HasDatabaseName("ix_app_instances_session_id");
+
+                    b.HasIndex("OwnerId", "CreatedAt")
+                        .HasDatabaseName("ix_app_instances_owner_id_created_at");
+
+                    b.ToTable("app_instances", (string)null);
+                });
+
             modelBuilder.Entity("Marshal.Data.Artifacts.StoredArtifact", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2102,6 +2170,21 @@ namespace Marshal.Data.Migrations
                         .HasName("pk_user_tokens");
 
                     b.ToTable("user_tokens", (string)null);
+                });
+
+            modelBuilder.Entity("Marshal.Data.Apps.AppInstance", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_app_instances_users_owner_id");
+
+                    b.HasOne("Marshal.Data.Conversations.Session", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .HasConstraintName("fk_app_instances_sessions_session_id");
                 });
 
             modelBuilder.Entity("Marshal.Data.Artifacts.StoredArtifact", b =>

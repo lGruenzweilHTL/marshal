@@ -50,6 +50,12 @@ public sealed record McpServerDefinition
     /// </summary>
     public bool PinTools { get; init; } = true;
 
+    /// <summary>
+    /// Render the server's MCP Apps UIs (<c>ui://</c> resources) in web chat, sandboxed (default false; never with
+    /// <see cref="Untrusted"/>).
+    /// </summary>
+    public bool Apps { get; init; }
+
     /// <summary>File the server was loaded from.</summary>
     public required string File { get; init; }
 }

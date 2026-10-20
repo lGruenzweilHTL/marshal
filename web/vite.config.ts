@@ -3,6 +3,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 import { appAssets, icons } from './scripts/appAssets.ts'
+import { appContentSecurityPolicy, fakeAppHtml } from './src/preview/fakeApp.ts'
 
 // The API runs on :8080 during development; the proxy marks requests as https (as the TLS reverse proxy does in
 // production) so Secure cookies and the antiforgery check work on http://localhost.
@@ -15,6 +16,14 @@ export default defineConfig(({ mode }) => ({
     mode === 'preview' && {
       name: 'marshal-preview-entry',
       transformIndexHtml: (html: string) => html.replace('src/main.ts', 'src/preview/main.ts'),
+      // MCP app frames load HTML from Marshal's origin; the preview serves its sample app there with the app CSP.
+      configureServer(server: import('vite').ViteDevServer) {
+        server.middlewares.use('/mcp-apps/', (_request, response) => {
+          response.setHeader('Content-Type', 'text/html; charset=utf-8')
+          response.setHeader('Content-Security-Policy', appContentSecurityPolicy)
+          response.end(fakeAppHtml)
+        })
+      },
     },
     appAssets(),
     VitePWA({

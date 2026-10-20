@@ -14,6 +14,7 @@ using Marshal.Abstractions.Sessions;
 using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tokens;
 using Marshal.Abstractions.Tools;
+using Marshal.Data.Apps;
 using Marshal.Data.Artifacts;
 using Marshal.Data.Audit;
 using Marshal.Data.Auth;

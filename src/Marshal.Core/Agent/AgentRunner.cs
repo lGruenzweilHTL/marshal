@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Marshal.Abstractions;
+using Marshal.Abstractions.Apps;
 using Marshal.Abstractions.Artifacts;
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Conversation;
@@ -13,10 +14,11 @@ using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Sessions;
 using Marshal.Abstractions.Templates;
 using Marshal.Abstractions.Tools;
+using Marshal.Abstractions.Widgets;
 using Marshal.Core.AiTasks;
-using Marshal.Core.Context;
 using Marshal.Core.Guard;
 using Marshal.Core.Models;
+using Marshal.Core.Recording;
 using Marshal.Core.Tools;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
@@ -52,12 +54,17 @@ public sealed partial class AgentRunner(
     ISessionToolNamespaces? sessionTools = null,
     IToolLatencyStats? latency = null,
     IOptions<VoiceOptions>? voiceOptions = null,
-    IStructuredOutputShaper? shaper = null) : IAgentRunner
+    IStructuredOutputShaper? shaper = null,
+    IToolCallPipeline? pipeline = null,
+    IEnumerable<IWidgetDataProvider>? widgets = null,
+    IAppInstanceStore? apps = null) : IAgentRunner
 {
+    private readonly IEnumerable<IWidgetDataProvider> _widgets = widgets ?? [];
     private static readonly JsonSerializerOptions _argumentJson = new(AIJsonUtilities.DefaultOptions) { WriteIndented = false };
 
-    private readonly IToolRedaction _redaction = redaction ?? new SensitiveToolRedaction();
     private readonly IToolCallSummarizer _summarizer = summarizer ?? new DefaultToolCallSummarizer(redaction ?? new SensitiveToolRedaction());
+    private readonly IToolCallPipeline _pipeline = pipeline ?? new GuardedToolCallPipeline(
+        guard, pendingActions, recorder, confirmationOptions, timeProvider, Microsoft.Extensions.Logging.Abstractions.NullLogger<GuardedToolCallPipeline>.Instance, approvals, redaction);
 
     public async Task<AgentRunResult> RunAsync(AgentRunRequest request, CancellationToken cancellationToken)
     {
@@ -79,6 +86,7 @@ public sealed partial class AgentRunner(
         ToolSnapshot tools = request.Context.Tools ?? await registry.RefreshAsync(cancellationToken);
         // Every run, subagents included, starts its tool loading from the core namespaces.
         MarshalExecutionContext context = request.Context with { RunId = runId, Tools = tools, LoadedTools = new LoadedToolNamespaces() };
+        span?.SetTag("marshal.run_id", runId.ToString());
         using IDisposable scope = executionContext.Use(context);
         LogRunStarted(logger, runId.Value, request.Trigger);
 
@@ -101,6 +109,10 @@ public sealed partial class AgentRunner(
             result = await HandOffAsync(request, context, transcript, "latency_cap", FixedReplies.Backgrounded(context.Language), cancellationToken)
                 ?? await TooLongAsync(request, context, cancellationToken);
         }
+        catch (Exception exception) when (Traced(span, exception))
+        {
+            throw new UnreachableException();
+        }
 
         // A spoken filler is part of what the user heard.
         if (transcript.Filler is { } filler)
@@ -108,9 +120,10 @@ public sealed partial class AgentRunner(
 
         bool continueConversation = result.Pending is not null;
         await SaveLoadedNamespacesAsync(context, nested, cancellationToken);
-        await RecordAsync(new RunStepRecord { Kind = RunStepKind.Reply, Content = result.Reply, ContinueConversation = continueConversation, Artifacts = transcript.Artifacts.Count == 0 ? null : [.. transcript.Artifacts] }, cancellationToken);
+        await RecordAsync(new RunStepRecord { Kind = RunStepKind.Reply, Content = result.Reply, ContinueConversation = continueConversation, Artifacts = transcript.Artifacts.Count == 0 ? null : [.. transcript.Artifacts], Widgets = transcript.Widgets.Count == 0 ? null : [.. transcript.Widgets], Apps = transcript.Apps.Count == 0 ? null : [.. transcript.Apps] }, cancellationToken);
         if (!nested)
             await recorder.CompleteRunAsync(runId, new RunCompletion(result.Outcome, result.Reason, context.Taint.Sources) { TimeToFirstDeltaMs = transcript.FirstDeltaMs }, cancellationToken);
+        RunTracing.CompleteRun(span, result.Outcome, result.Reason, context.Taint.Sources.Count > 0);
         LogRunCompleted(logger, runId.Value, result.Outcome, result.Reason);
         return new AgentRunResult(runId, result.Reply, continueConversation, result.Outcome, result.Reason, result.Pending) { Data = result.Data };
     }
@@ -438,6 +451,44 @@ public sealed partial class AgentRunner(
         }
     }
 
+    // Built-in widgets render in the web chat only, for successful calls.
+    private async Task ShowWidgetAsync(RegisteredTool tool, string callId, JsonElement arguments, Result<ToolOutput> result, MarshalExecutionContext context, Transcript transcript, CancellationToken ct)
+    {
+        if (context.Source != SessionSource.Web || result.IsFailure || tool.Descriptor.Widget is not { } kind)
+            return;
+
+        IWidgetDataProvider? provider = _widgets.FirstOrDefault(candidate => candidate.Kind == kind);
+        if (provider is null || await provider.GetAsync(new WidgetRequest(tool.Id, arguments, result.Value, context), ct) is not { } data)
+            return;
+
+        var widget = new WidgetRef(kind, callId, data);
+        transcript.Widgets.Add(widget);
+        await transcript.EmitAsync(new WidgetEvent(widget), ct);
+    }
+
+    // MCP apps render in the web chat only; the instance keeps HTML, arguments and result for a reload.
+    private async Task ShowAppAsync(string callId, JsonElement arguments, Result<ToolOutput> result, MarshalExecutionContext context, Transcript transcript, CancellationToken ct)
+    {
+        if (apps is null || context.Source != SessionSource.Web || result.IsFailure || result.Value.App is not { } app)
+            return;
+
+        AppInstanceId id = await apps.CreateAsync(new NewAppInstance(context.OwnerId, context.SessionId, context.RunId!.Value, callId, arguments.GetRawText(), app, result.Value.CallResult), ct);
+        var shown = new AppRef(id, app.Server, app.Tool, callId);
+        transcript.Apps.Add(shown);
+        await transcript.EmitAsync(new AppEvent(shown), ct);
+    }
+
+    // A redacted result makes later reasoning unrecordable; artifacts of a result are shown with the reply.
+    private static async Task ShowAsync(ToolCallOutcome outcome, Transcript transcript, CancellationToken ct)
+    {
+        if (outcome.Result is not { IsSuccess: true } result)
+            return;
+
+        if (outcome.Redacted)
+            transcript.WithholdsReasoning = true;
+        await transcript.ShowAsync(result.Value.Artifacts, ct);
+    }
+
     // A visible tool of a namespace the run has not loaded (the model may know it from earlier sessions) loads the
     // namespace. Retrieval saves tokens; it is not a boundary, so refusing would only cost a round trip.
     private async Task LoadOnCallAsync(string modelName, MarshalExecutionContext context, HashSet<string> offered, CancellationToken ct)
@@ -474,53 +525,6 @@ public sealed partial class AgentRunner(
         await transcript.EmitAsync(new DeltaEvent(line), ct);
     }
 
-    private async Task<string> ExecuteAsync(
-        RegisteredTool tool, FunctionCallContent call, JsonElement arguments, string argumentSummary, GuardVerdict verdict, MarshalExecutionContext context, Transcript transcript, int loadMark, CancellationToken ct)
-    {
-        await SpeakFillerAsync(tool, context, transcript, ct);
-        long started = timeProvider.GetTimestamp();
-        Result<ToolOutput> result = await InvokeAsync(tool, arguments, context, ct);
-        int duration = (int)timeProvider.GetElapsedTime(started).TotalMilliseconds;
-        string text = await CompleteToolCallAsync(tool, call.Name, arguments, verdict.Tier, verdict.Decision, result, duration, context, transcript, ct, loadMark);
-        string? summary = _summarizer.Result(tool.Id, tool.Descriptor.Sensitive, result.IsSuccess ? result.Value.Content : null, result.IsFailure ? result.Error.Code : null);
-        await transcript.EmitAsync(new ToolEvent(call.CallId, tool.Id.ToString(), argumentSummary, result.IsSuccess ? ToolEventState.Ok : ToolEventState.Error, duration, summary), ct);
-        return text;
-    }
-
-    private async Task<string> CompleteToolCallAsync(
-        RegisteredTool tool, string modelName, JsonElement arguments, RiskTier? tier, GuardDecision decision, Result<ToolOutput> result, int duration, MarshalExecutionContext context, Transcript transcript, CancellationToken ct, int? loadMark = null)
-    {
-        int step = await RecordToolStepAsync(
-            tool, modelName, arguments, tier, decision, [], result.IsSuccess ? result.Value : null, result.IsFailure ? result.Error : null, duration, ct, loadMark is { } mark ? LoadNotes(context, mark) : null);
-        if (result.IsFailure)
-            return ErrorText(result.Error);
-
-        if (_redaction.Redacts(tool.Id, tool.Descriptor.Sensitive))
-            transcript.WithholdsReasoning = true;
-        await transcript.ShowAsync(result.Value.Artifacts, ct);
-        if (!tool.Descriptor.UntrustedOutput)
-            return result.Value.Content;
-
-        // Taint is set before the result enters the context and never cleared within the run.
-        string kind = tool.Descriptor.TaintKind ?? tool.Id.Namespace;
-        context.Taint.Mark(kind, step);
-        return UntrustedContent.Wrap(kind, result.Value.Content);
-    }
-
-    private async Task<Result<ToolOutput>> InvokeAsync(RegisteredTool tool, JsonElement arguments, MarshalExecutionContext context, CancellationToken ct)
-    {
-        try
-        {
-            return await tool.Tool.InvokeAsync(new ToolInvocation(arguments, context), ct);
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            // A crashing tool must not end the turn; the model gets an error like for any expected failure.
-            LogToolCrashed(logger, exception, tool.Id.ToString());
-            return new Error("tool.failed", "The tool failed unexpectedly.", ErrorType.Failure);
-        }
-    }
-
     private async Task AppendConfirmationAsync(ConfirmationStep confirmation, MarshalExecutionContext context, List<ChatMessage> messages, Transcript transcript, CancellationToken ct)
     {
         string modelName = confirmation.Tool?.ModelName ?? confirmation.Action.Tool.ToString();
@@ -534,7 +538,6 @@ public sealed partial class AgentRunner(
             return;
         }
 
-        string callId = $"confirmed_{confirmation.Action.Id.Value:N}";
         var argumentMap = arguments.EnumerateObject().ToDictionary(property => property.Name, property => (object?)property.Value.Clone());
         messages.Add(new ChatMessage(ChatRole.Assistant, [new FunctionCallContent(callId, modelName, argumentMap)]));
 
@@ -546,55 +549,18 @@ public sealed partial class AgentRunner(
         }
         else
         {
-            text = await CompleteToolCallAsync(confirmation.Tool, modelName, arguments, RiskTier.Confirm, confirmation.Decision, result, 0, context, transcript, ct);
+            ToolCallOutcome outcome = await _pipeline.CompleteConfirmedAsync(new ConfirmedToolCall(confirmation.Tool, modelName, arguments, confirmation.Decision, result, context), ct);
+            await ShowAsync(outcome, transcript, ct);
+            text = outcome.Text;
         }
 
         messages.Add(new ChatMessage(ChatRole.Tool, [new FunctionResultContent(callId, text)]));
-    }
-
-    private async Task<int> RecordToolStepAsync(
-        RegisteredTool? tool, string modelName, JsonElement arguments, RiskTier? tier, GuardDecision decision,
-        IReadOnlyList<ConfirmationReason> reasons, ToolOutput? output, Error? error, int duration, CancellationToken ct, IReadOnlyList<ContextNote>? notes = null) =>
-        await RecordAsync(new RunStepRecord
-        {
-            Notes = notes ?? [],
-            Kind = RunStepKind.ToolCall,
-            Tool = tool?.Id ?? GuessId(modelName),
-            RiskTier = tier,
-            GuardDecision = decision,
-            Reasons = reasons,
-            Arguments = arguments.GetRawText(),
-            Content = output?.Content,
-            Reference = output?.Reference,
-            Sensitive = tool?.Descriptor.Sensitive ?? false,
-            DurationMs = duration,
-            Error = error is null ? null : $"{error.Code}: {error.Message}",
-        }, ct);
-
-    // Unknown names are recorded with the id they would map to (first '_' separates the namespace).
-    private static ToolId? GuessId(string modelName)
-    {
-        int separator = modelName.IndexOf('_', StringComparison.Ordinal);
-        Result<ToolId> parsed = separator > 0 ? ToolId.Parse($"{modelName[..separator]}.{modelName[(separator + 1)..]}") : ToolId.Parse(modelName);
-        return parsed.IsSuccess ? parsed.Value : null;
     }
 
     private Task<int> RecordAsync(RunStepRecord step, CancellationToken ct)
     {
         MarshalExecutionContext context = executionContext.Current ?? throw new UnreachableException("The run context is set for the whole loop.");
         return recorder.RecordStepAsync(context.RunId!.Value, step with { Depth = context.Depth }, ct);
-    }
-
-    private static string ErrorText(Error error) =>
-        JsonSerializer.Serialize(new { error = new { code = error.Code, message = error.Message } });
-
-    private static string QueuedText(PendingActionRecord action) =>
-        $"Waiting for approval in the review queue. The action was NOT done yet and will run only if the user approves it later: {action.Summary}. Say so in your answer; do not ask for confirmation.";
-
-    private static string PendingText(PendingActionRecord action)
-    {
-        string reasons = string.Join(" ", action.Reasons.Select(reason => reason.Sentence));
-        return $"Confirmation pending. The action was NOT done yet. Ask the user to confirm: {action.Summary}. Include this reason in your question: {reasons}";
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Run {RunId} continues as background task {TaskId} ({Reason})")]
@@ -609,12 +575,6 @@ public sealed partial class AgentRunner(
     [LoggerMessage(Level = LogLevel.Information, Message = "Run {RunId} completed: {Outcome} {Reason}")]
     private static partial void LogRunCompleted(ILogger logger, Guid runId, RunOutcome outcome, string? reason);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Tool call {Tool}: {Decision}")]
-    private static partial void LogToolDecision(ILogger logger, string tool, GuardDecision decision);
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "Tool {Tool} threw an exception")]
-    private static partial void LogToolCrashed(ILogger logger, Exception exception, string tool);
-
     private sealed record LoopResult(string Reply, PendingActionRecord? Pending, RunOutcome Outcome, string? Reason)
     {
         public JsonElement? Data { get; init; }
@@ -628,6 +588,12 @@ public sealed partial class AgentRunner(
 
         /// <summary>Artifacts the turn showed, kept with the reply.</summary>
         public List<ArtifactRef> Artifacts { get; } = [];
+
+        /// <summary>Widgets the turn showed, kept with the reply.</summary>
+        public List<WidgetRef> Widgets { get; } = [];
+
+        /// <summary>MCP apps the turn showed, kept with the reply.</summary>
+        public List<AppRef> Apps { get; } = [];
 
         /// <summary>A redacted tool result entered the run; later reasoning may quote it and is not recorded.</summary>
         public bool WithholdsReasoning { get; set; }

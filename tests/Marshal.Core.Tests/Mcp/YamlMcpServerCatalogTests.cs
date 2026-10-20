@@ -101,6 +101,33 @@ public sealed class YamlMcpServerCatalogTests : IDisposable
         Assert.Contains("untrustedTools", error.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Load_Apps_DefaultsOffAndLoads()
+    {
+        Write("charts.yaml", "id: charts\ntransport: http\nurl: http://charts/mcp\napps: true\n");
+        Write("other.yaml", "id: other\ntransport: http\nurl: http://other/mcp\n");
+
+        using YamlMcpServerCatalog catalog = Load();
+
+        Assert.Empty(catalog.Errors);
+        Assert.True(catalog.Servers.Single(server => server.Id == "charts").Apps);
+        Assert.False(catalog.Servers.Single(server => server.Id == "other").Apps);
+    }
+
+    [Fact]
+    public void Load_UntrustedWithApps_RejectedNamingBothKeys()
+    {
+        Write("bad.yaml", "id: charts\ntransport: http\nurl: http://charts/mcp\nuntrusted: true\napps: true\n");
+        Write("good.yaml", "id: good\ntransport: http\nurl: http://good/mcp\n");
+
+        using YamlMcpServerCatalog catalog = Load();
+
+        Assert.Equal(["good"], catalog.Servers.Select(server => server.Id));
+        ConfigFileError error = Assert.Single(catalog.Errors);
+        Assert.Contains("untrusted:", error.Message, StringComparison.Ordinal);
+        Assert.Contains("apps:", error.Message, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("id: home_assistant\ntransport: http\nurl: http://ha/api/mcp\n", "home_assistant")]
     [InlineData("id: ha\ntoolPrefix: Home\ntransport: http\nurl: http://ha/api/mcp\n", "Home")]

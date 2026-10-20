@@ -28,6 +28,13 @@ public sealed class PrinterToolsTests
     }
 
     [Fact]
+    public async Task Status_DeclaresThePrinterWidget()
+    {
+        Assert.Equal("printer", (await ToolAsync(Voron(), "status")).Descriptor.Widget);
+        Assert.Null((await ToolAsync(Voron(), "pause")).Descriptor.Widget);
+    }
+
+    [Fact]
     public async Task NoPrinterConfigured_NoTools()
     {
         Assert.Empty(await ToolsAsync());

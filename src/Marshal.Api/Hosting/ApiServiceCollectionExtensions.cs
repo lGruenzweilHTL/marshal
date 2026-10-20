@@ -102,7 +102,13 @@ public static class ApiServiceCollectionExtensions
                 }));
 
         services.AddMarshalAuth(configuration);
-        services.AddAuthorization(options => options.AddScopePolicies());
+        services.AddAuthorization(options =>
+        {
+            options.AddScopePolicies();
+            options.AddMcpPolicy();
+        });
+        services.AddMarshalMcpServer();
+        services.AddSingleton<Marshal.Api.Widgets.WidgetRuns>();
 
         services.AddMarshalHealthChecks();
         services.AddHostedService<MarshalStartup>();

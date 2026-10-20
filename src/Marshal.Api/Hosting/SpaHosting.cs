@@ -11,12 +11,13 @@ namespace Marshal.Api.Hosting;
 internal static partial class SpaHosting
 {
     /// <summary>
-    /// Scripts, styles and connections only from the app itself; images also from <c>data:</c>. Model output with
-    /// external image URLs therefore cannot make the browser contact another host.
+    /// Scripts, styles and connections only from the app itself; images also from <c>data:</c>; frames (MCP apps,
+    /// HTML artifacts) only from the app's origin. Model output with external image URLs therefore cannot make the
+    /// browser contact another host.
     /// </summary>
     public const string ContentSecurityPolicy =
         "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; "
-        + "object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
+        + "frame-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
 
     private const string EntryPage = "index.html";
 

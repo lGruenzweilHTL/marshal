@@ -136,6 +136,7 @@ public static class CoreServiceCollectionExtensions
             () => provider.GetService<IInputRequestQueue>(),
             () => provider.GetService<IMcpTaskTracker>()));
         services.AddSingleton<IMcpTaskClient>(provider => provider.GetRequiredService<McpToolSources>());
+        services.AddSingleton<IMcpAppResources>(provider => provider.GetRequiredService<McpToolSources>());
         services.AddSingleton<IHealthWarningProvider, McpPendingToolWarnings>();
         services.AddSingleton<IToolSourceProvider>(provider => provider.GetRequiredService<McpToolSources>());
         services.AddSingleton<ISecretReferenceSource, McpSecretReferences>();

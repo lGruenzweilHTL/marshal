@@ -13,7 +13,7 @@ namespace Marshal.Data.Conversations;
 /// </summary>
 public sealed class DbRunRecorder(IDbContextFactory<MarshalDbContext> contexts, IEnumerable<IRunObserver> observers, IOptions<RecordingOptions> options, TimeProvider timeProvider) : IRunRecorder
 {
-    private const string TruncationMarker = " [truncated]";
+    internal const string TruncationMarker = " [truncated]";
 
     private static readonly JsonSerializerOptions _json = new(JsonSerializerDefaults.Web)
     {
@@ -136,7 +136,10 @@ public sealed class DbRunRecorder(IDbContextFactory<MarshalDbContext> contexts, 
             step.Artifacts,
             step.Reasoning,
             step.ReasoningWithheld ? true : null,
-            step.Sensitive ? true : null);
+            step.Sensitive ? true : null,
+            step.Widgets,
+            step.Apps,
+            step.TurnContext);
         return payload == StepPayload.Empty ? null : JsonSerializer.Serialize(payload, _json);
     }
 
@@ -153,7 +156,10 @@ public sealed class DbRunRecorder(IDbContextFactory<MarshalDbContext> contexts, 
         IReadOnlyList<Abstractions.Artifacts.ArtifactRef>? Artifacts = null,
         string? Reasoning = null,
         bool? ReasoningWithheld = null,
-        bool? Sensitive = null)
+        bool? Sensitive = null,
+        IReadOnlyList<Abstractions.Widgets.WidgetRef>? Widgets = null,
+        IReadOnlyList<Abstractions.Apps.AppRef>? Apps = null,
+        string? TurnContext = null)
     {
         public static StepPayload Empty { get; } = new(null, null, null, null, null, null);
 

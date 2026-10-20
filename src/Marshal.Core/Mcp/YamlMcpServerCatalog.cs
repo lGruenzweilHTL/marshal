@@ -224,6 +224,8 @@ public sealed partial class YamlMcpServerCatalog : IMcpServerCatalog, IDisposabl
 
         if (raw.Untrusted && raw.UntrustedTools.Count > 0)
             return Invalid("untrusted: true already marks every tool; remove untrustedTools or set untrusted: false.");
+        if (raw.Untrusted && raw.Apps)
+            return Invalid("untrusted: true and apps: true cannot be combined; an untrusted server's UI is not rendered.");
         if (raw.UntrustedTools.Any(string.IsNullOrWhiteSpace))
             return Invalid("untrustedTools entries must not be empty.");
 
@@ -254,6 +256,7 @@ public sealed partial class YamlMcpServerCatalog : IMcpServerCatalog, IDisposabl
             Untrusted = raw.Untrusted,
             UntrustedTools = [.. raw.UntrustedTools],
             PinTools = raw.PinTools,
+            Apps = raw.Apps,
             File = file,
         };
 

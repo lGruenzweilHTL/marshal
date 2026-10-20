@@ -1,6 +1,6 @@
 /**
  * Payloads of the turn endpoint's server-sent events (`delta`, `status`, `artifact`, `reasoning`, `tool`,
- * `input_request`, `final`); not described by OpenAPI. `reasoning`, `tool` and `input_request` come only to the web UI
+ * `input_request`, `widget`, `app`, `final`); not described by OpenAPI. `reasoning`, `tool`, `input_request`, `widget` and `app` come only to the web UI
  * (cookie sessions).
  */
 export interface TurnDelta {
@@ -24,6 +24,21 @@ export interface TurnArtifact {
   name: string
   kind: 'image' | 'svg' | 'video' | 'model3d' | 'code' | 'diff' | 'pdf' | 'markdown' | 'html' | 'other'
   url: string
+}
+
+/** A built-in widget a tool call shows (`printer`, `music`); `data` is the widget's starting state. */
+export interface TurnWidget {
+  kind: string
+  toolCallId: string
+  data: unknown
+}
+
+/** An MCP app a tool call shows; load it from `/api/v1/apps/{appId}`, its HTML is `/mcp-apps/{appId}`. */
+export interface TurnApp {
+  appId: string
+  server: string
+  tool: string
+  toolCallId: string
 }
 
 /** A chunk of the model's reasoning. */

@@ -51,3 +51,11 @@ public enum ToolEventState
 /// <summary>An MCP server asked the user for input; the web chat shows the request's form or link (web clients only).</summary>
 /// <param name="Id">The pending input request.</param>
 public sealed record InputRequestEvent(Marshal.Abstractions.InputRequests.InputRequestId Id) : TurnEvent;
+
+/// <summary>A built-in widget for a tool call's result (web clients only).</summary>
+/// <param name="Widget">Kind, call id and data.</param>
+public sealed record WidgetEvent(Marshal.Abstractions.Widgets.WidgetRef Widget) : TurnEvent;
+
+/// <summary>An MCP app for a tool call's result (web clients only); the chat loads it by id.</summary>
+/// <param name="App">App id, server, tool and call id.</param>
+public sealed record AppEvent(Marshal.Abstractions.Apps.AppRef App) : TurnEvent;

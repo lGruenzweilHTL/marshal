@@ -80,6 +80,21 @@ public sealed class FakeMcpServer : IAsyncDisposable
     /// <summary>Received <c>tasks/cancel</c> task ids in order.</summary>
     public ConcurrentQueue<string> CancelledTasks { get; } = new();
 
+    /// <summary>Resources served by <c>resources/read</c> by URI (MIME type, text, optional <c>ttlMs</c>).</summary>
+    public ConcurrentDictionary<string, (string MimeType, string Text, TimeSpan? TimeToLive)> Resources { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>Received <c>resources/read</c> URIs in order.</summary>
+    public ConcurrentQueue<string> ResourceReads { get; } = new();
+
+    /// <summary>Adds a tool whose MCP Apps metadata names <paramref name="resourceUri"/>.</summary>
+    public FakeMcpServer WithAppTool(string name, string resourceUri)
+    {
+        Tool tool = Tool(name);
+        tool.Meta = new JsonObject { ["ui"] = new JsonObject { ["resourceUri"] = resourceUri } };
+        Tools.Enqueue(tool);
+        return this;
+    }
+
     /// <summary>When true, new connections are refused.</summary>
     public bool IsDown { get; set; }
 
@@ -134,6 +149,7 @@ public sealed class FakeMcpServer : IAsyncDisposable
         Capabilities = new ServerCapabilities
         {
             Tools = new ToolsCapability { ListChanged = true },
+            Resources = new ResourcesCapability(),
             Extensions = new Dictionary<string, object> { ["io.modelcontextprotocol/tasks"] = new JsonObject() },
         },
         Handlers = new McpServerHandlers
@@ -144,6 +160,19 @@ public sealed class FakeMcpServer : IAsyncDisposable
                 ClientCapabilities = request.Server.ClientCapabilities;
                 NegotiatedProtocolVersion = request.Server.NegotiatedProtocolVersion;
                 return ValueTask.FromResult(new ListToolsResult { Tools = [.. Tools], TimeToLive = ListTimeToLive });
+            },
+            ReadResourceHandler = (request, _) =>
+            {
+                string uri = request.Params!.Uri;
+                ResourceReads.Enqueue(uri);
+                if (!Resources.TryGetValue(uri, out (string MimeType, string Text, TimeSpan? TimeToLive) resource))
+                    throw new McpProtocolException($"Unknown resource {uri}.", McpErrorCode.InvalidParams);
+
+                return ValueTask.FromResult(new ReadResourceResult
+                {
+                    Contents = [new TextResourceContents { Uri = uri, MimeType = resource.MimeType, Text = resource.Text }],
+                    TimeToLive = resource.TimeToLive,
+                });
             },
             CallToolWithAlternateHandler = (request, _) =>
             {

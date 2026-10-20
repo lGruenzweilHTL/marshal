@@ -28,6 +28,7 @@ public sealed class SpaHostingTests
         Assert.Contains("img-src 'self' data:", csp, StringComparison.Ordinal);
         Assert.Contains("script-src 'self'", csp, StringComparison.Ordinal);
         Assert.Contains("style-src 'self'", csp, StringComparison.Ordinal);
+        Assert.Contains("frame-src 'self'", csp, StringComparison.Ordinal);
         Assert.Equal("no-cache", response.Headers.CacheControl?.ToString());
     }
 

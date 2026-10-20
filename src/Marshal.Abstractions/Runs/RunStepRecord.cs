@@ -48,6 +48,18 @@ public sealed record RunStepRecord
     /// <summary>Artifacts the turn showed (reply steps only), so a reopened session can render them again.</summary>
     public IReadOnlyList<Artifacts.ArtifactRef>? Artifacts { get; init; }
 
+    /// <summary>Widgets the turn showed (reply steps only), so a reopened session can render them again.</summary>
+    public IReadOnlyList<Widgets.WidgetRef>? Widgets { get; init; }
+
+    /// <summary>
+    /// The turn-level context sections (retrieved memory, area, time, task) of a context step, kept apart from the
+    /// static and session parts so an eval replay can rebuild the turn; empty when the turn has none.
+    /// </summary>
+    public string? TurnContext { get; init; }
+
+    /// <summary>MCP apps the turn showed (reply steps only), so a reopened session can render them again.</summary>
+    public IReadOnlyList<Apps.AppRef>? Apps { get; init; }
+
     /// <summary>True when the tool is flagged sensitive; the content is then never stored.</summary>
     public bool Sensitive { get; init; }
 

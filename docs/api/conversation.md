@@ -42,9 +42,11 @@ A turn that carries `satelliteId`, `deviceId` or `haUserId` is recorded as a voi
 | `artifact` | `{ "id", "name", "kind", "url" }` | Once per artifact the turn shows. `url` is the content URL. |
 | `reasoning` | `{ "text": "…" }` | Browser sessions only. Zero or more times. A chunk of the model's reasoning. |
 | `tool` | `{ "id", "tool", "arguments", "state", "durationMs", "result" }` | Browser sessions only. Twice per tool call: when it starts (`state` `running`) and when it ends (same `id`, `state` `ok`, `error`, `denied` or `pending`, with `durationMs` and an optional `result`). |
+| `widget` | `{ "kind", "toolCallId", "data" }` | Browser sessions only. After a successful call of a tool with a built-in widget: `kind` `printer` (from `printer.status`) or `music` (from `music.queue`, `music.play`). `data` is the widget's starting state. |
+| `app` | `{ "appId", "server", "tool", "toolCallId" }` | Browser sessions only. After a call of an MCP server tool with an app (`apps: true`). Load it from `GET /api/v1/apps/{appId}`; its HTML is at `/mcp-apps/{appId}`. |
 | `final` | `{ "speech", "continueConversation", "conversationId" }` | Exactly once, last. |
 
-Token clients (Home Assistant, API) never receive `reasoning` or `tool` events. Their stream is unchanged.
+Token clients (Home Assistant, API) never receive `reasoning`, `tool`, `widget` or `app` events. Their stream is unchanged.
 
 The `tool` event fields:
 
