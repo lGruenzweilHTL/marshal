@@ -314,7 +314,7 @@
         "tags": [
           "Runs"
         ],
-        "summary": "The user\u0027s runs (voice, web, task, api), newest first or slowest time to first delta first (sort=timeToFirstDelta); filter by source, outcome and minimum cost, page with before.",
+        "summary": "The user\u0027s runs (voice, web, task, api), newest first or slowest time to first delta first (sort=timeToFirstDelta); filter by source, outcome, rating and minimum cost, page with before.",
         "operationId": "ListRuns",
         "parameters": [
           {
@@ -327,6 +327,14 @@
           },
           {
             "name": "outcome",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rating",
             "in": "query",
             "description": "",
             "schema": {
@@ -452,6 +460,103 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CostReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{id}/rating": {
+      "put": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Rates one of the user\u0027s runs up or down with an optional note; with \u0022help Marshal learn\u0022 on, the first rating also creates an eval case.",
+        "operationId": "RateRun",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RatingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RatedRun"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Removes the rating of a run; an eval case made from it stays.",
+        "operationId": "ClearRunRating",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{id}/eval-case": {
+      "post": {
+        "tags": [
+          "Evals"
+        ],
+        "summary": "Snapshots a run as an eval case, whatever the learning preference says; returns the existing case when there is one.",
+        "operationId": "SaveRunAsEvalCase",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalCase"
                 }
               }
             }
@@ -1276,6 +1381,284 @@
           },
           "required": true
         },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/evals/cases": {
+      "get": {
+        "tags": [
+          "Evals"
+        ],
+        "summary": "Eval cases, newest first.",
+        "operationId": "ListEvalCases",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EvalCase"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/evals/cases/{id}": {
+      "get": {
+        "tags": [
+          "Evals"
+        ],
+        "summary": "One eval case with its history, turn context, recorded tool calls and reply.",
+        "operationId": "GetEvalCase",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalCase"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Evals"
+        ],
+        "summary": "Deletes an eval case.",
+        "operationId": "DeleteEvalCase",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/evals/cases/{id}/note": {
+      "put": {
+        "tags": [
+          "Evals"
+        ],
+        "summary": "Sets the expected behavior note of a case (at most 1,000 characters).",
+        "operationId": "SetEvalCaseNote",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalCaseNoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/evals/estimate": {
+      "post": {
+        "tags": [
+          "Evals"
+        ],
+        "summary": "Estimated model cost of replaying the cases with the candidate configuration.",
+        "operationId": "EstimateEvalRun",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalEstimate"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/evals/runs": {
+      "get": {
+        "tags": [
+          "Evals"
+        ],
+        "summary": "Eval runs with their totals, newest first.",
+        "operationId": "ListEvalRuns",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EvalRunView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Evals"
+        ],
+        "summary": "Starts an eval run: replays the cases one at a time in the background without executing any tool.",
+        "operationId": "StartEvalRun",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalRunView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/evals/runs/{id}": {
+      "get": {
+        "tags": [
+          "Evals"
+        ],
+        "summary": "An eval run with its totals and per case the replayed calls, reply, outcome and judge score.",
+        "operationId": "GetEvalRun",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalRunReport"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Evals"
+        ],
+        "summary": "Deletes an eval run and its results.",
+        "operationId": "DeleteEvalRun",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/evals/runs/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Evals"
+        ],
+        "summary": "Cancels a queued or running eval run.",
+        "operationId": "CancelEvalRun",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": "No Content"
@@ -4751,6 +5134,435 @@
         },
         "description": "Demo mode as the UI needs it."
       },
+      "EvalCandidateView": {
+        "required": [
+          "models",
+          "template",
+          "basePrompt",
+          "judgeModel"
+        ],
+        "type": "object",
+        "properties": {
+          "models": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Model key per tier (\u0060fast\u0060, \u0060standard\u0060, \u0060advisor\u0060)."
+          },
+          "template": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Agent template override."
+          },
+          "basePrompt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Base prompt override."
+          },
+          "judgeModel": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Judge model, if any."
+          }
+        },
+        "description": "The candidate configuration of an eval run."
+      },
+      "EvalCase": {
+        "required": [
+          "id",
+          "sourceRunId",
+          "expectation",
+          "input",
+          "recordedAt",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/EvalCaseId"
+          },
+          "sourceRunId": {
+            "$ref": "#/components/schemas/RunId"
+          },
+          "expectation": {
+            "$ref": "#/components/schemas/EvalExpectation"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "input": {
+            "type": "string"
+          },
+          "inputMode": {
+            "$ref": "#/components/schemas/InputMode"
+          },
+          "language": {
+            "type": "string"
+          },
+          "satelliteId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "areaId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvalMessage"
+            }
+          },
+          "turnContext": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "toolCalls": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvalToolCall"
+            }
+          },
+          "reply": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "incomplete": {
+            "type": "boolean"
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "EvalCaseId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "EvalCaseNoteRequest": {
+        "required": [
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The note; empty or null removes it."
+          }
+        },
+        "description": "The expected behavior note of an eval case."
+      },
+      "EvalCaseResult": {
+        "required": [
+          "caseId",
+          "outcome",
+          "calls",
+          "reply",
+          "judgeScore",
+          "cost",
+          "error"
+        ],
+        "type": "object",
+        "properties": {
+          "caseId": {
+            "$ref": "#/components/schemas/EvalCaseId"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/EvalOutcome"
+          },
+          "calls": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReplayedCall"
+            }
+          },
+          "reply": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "judgeScore": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "cost": {
+            "type": "number",
+            "format": "double"
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "EvalEstimate": {
+        "required": [
+          "estimatedCost"
+        ],
+        "type": "object",
+        "properties": {
+          "estimatedCost": {
+            "type": "number",
+            "description": "Estimated model cost of the replays and judge calls.",
+            "format": "double"
+          }
+        }
+      },
+      "EvalExpectation": {
+        "enum": [
+          "good",
+          "bad",
+          "unrated"
+        ]
+      },
+      "EvalMessage": {
+        "required": [
+          "role",
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "EvalOutcome": {
+        "enum": [
+          "pass",
+          "changed",
+          "diverged",
+          "failed"
+        ]
+      },
+      "EvalRunId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "EvalRunReport": {
+        "required": [
+          "run",
+          "results"
+        ],
+        "type": "object",
+        "properties": {
+          "run": {
+            "description": "The run with its totals.",
+            "$ref": "#/components/schemas/EvalRunView"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvalCaseResult"
+            },
+            "description": "Per case result in replay order."
+          }
+        },
+        "description": "An eval run and its case results."
+      },
+      "EvalRunRequest": {
+        "required": [
+          "caseIds",
+          "models"
+        ],
+        "type": "object",
+        "properties": {
+          "caseIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "description": "Cases to replay, in order."
+          },
+          "models": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Configured model key per tier (\u0060fast\u0060, \u0060standard\u0060, \u0060advisor\u0060); tiers left out use the current routing."
+          },
+          "template": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Agent template; null keeps \u0060default\u0060."
+          },
+          "basePrompt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Replaces Marshal\u0027s base instructions; null keeps them."
+          },
+          "judgeModel": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Configured model key that scores replies; null for no judge."
+          }
+        },
+        "description": "Cases and the candidate configuration of an eval run."
+      },
+      "EvalRunStatus": {
+        "enum": [
+          "queued",
+          "running",
+          "completed",
+          "cancelled",
+          "failed"
+        ]
+      },
+      "EvalRunView": {
+        "required": [
+          "id",
+          "candidate",
+          "status",
+          "caseIds",
+          "startedBy",
+          "estimatedCost",
+          "cost",
+          "pass",
+          "changed",
+          "diverged",
+          "failed",
+          "createdAt",
+          "endedAt",
+          "error"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/EvalRunId"
+          },
+          "candidate": {
+            "$ref": "#/components/schemas/EvalCandidateView"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EvalRunStatus"
+          },
+          "caseIds": {
+            "type": "array"
+          },
+          "startedBy": {
+            "type": "string"
+          },
+          "estimatedCost": {
+            "type": "number",
+            "format": "double"
+          },
+          "cost": {
+            "type": "number",
+            "format": "double"
+          },
+          "pass": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "changed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "diverged": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "An eval run with its totals."
+      },
+      "EvalToolCall": {
+        "required": [
+          "tool",
+          "arguments",
+          "result",
+          "error",
+          "untrusted"
+        ],
+        "type": "object",
+        "properties": {
+          "tool": {
+            "type": "string"
+          },
+          "arguments": {
+            "type": "string"
+          },
+          "result": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "untrusted": {
+            "type": "boolean"
+          }
+        }
+      },
       "EventSourceInfo": {
         "required": [
           "source",
@@ -4847,6 +5659,7 @@
           "escalatedByTaint",
           "denied",
           "expired",
+          "confirmedInUi",
           null
         ]
       },
@@ -5975,6 +6788,38 @@
           null
         ]
       },
+      "MusicControlRequest": {
+        "required": [
+          "action"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "pause, resume, next, previous, stop or volume."
+          },
+          "volume": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "0\u2013100, for volume.",
+            "format": "int32"
+          }
+        }
+      },
+      "MusicControlResult": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "\u0060done\u0060, or \u0060approval_required\u0060 when a risk rule made the control confirm tier and it waits in the approval queue."
+          }
+        }
+      },
       "NotificationEntry": {
         "required": [
           "id",
@@ -6156,6 +7001,12 @@
         "properties": {
           "token": {
             "type": "string"
+          },
+          "widget": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         },
         "description": "Confirms a frozen control."
@@ -6857,6 +7708,78 @@
           }
         }
       },
+      "RatedRun": {
+        "required": [
+          "run",
+          "rating",
+          "note",
+          "caseId"
+        ],
+        "type": "object",
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/RunId"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/RunRating"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "caseId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EvalCaseId"
+              }
+            ]
+          }
+        }
+      },
+      "RatingRequest": {
+        "required": [
+          "rating"
+        ],
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "string",
+            "description": "\u0060up\u0060 or \u0060down\u0060."
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What should have happened (at most 1,000 characters)."
+          }
+        },
+        "description": "A rating of a run."
+      },
+      "ReplayedCall": {
+        "required": [
+          "tool",
+          "arguments",
+          "recorded"
+        ],
+        "type": "object",
+        "properties": {
+          "tool": {
+            "type": "string"
+          },
+          "arguments": {
+            "type": "string"
+          },
+          "recorded": {
+            "type": "boolean"
+          }
+        }
+      },
       "RiskRuleSummary": {
         "required": [
           "tool",
@@ -6940,6 +7863,26 @@
             "items": {
               "$ref": "#/components/schemas/LoadedToolNamespace"
             }
+          },
+          "taskId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TaskId"
+              }
+            ]
+          },
+          "evalCaseId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EvalCaseId"
+              }
+            ]
           }
         }
       },
@@ -6953,6 +7896,13 @@
           "error",
           "backgrounded",
           "cancelled"
+        ]
+      },
+      "RunRating": {
+        "enum": [
+          "up",
+          "down",
+          null
         ]
       },
       "RunStepDetail": {
@@ -7224,6 +8174,22 @@
               "integer"
             ],
             "format": "int32"
+          },
+          "rating": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunRating"
+              }
+            ]
+          },
+          "ratingNote": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -7342,12 +8308,6 @@
         "properties": {
           "value": {
             "type": "string"
-          },
-          "widget": {
-            "type": [
-              "null",
-              "boolean"
-            ]
           }
         },
         "description": "A secret value to store. It is never returned."
@@ -8152,6 +9112,11 @@
             ],
             "description": "Do-not-disturb end, if active.",
             "format": "date-time"
+          },
+          "helpMarshalLearn": {
+            "type": "boolean",
+            "description": "\u0022Help Marshal learn\u0022 (default off): rated runs become eval cases, and later learning features.",
+            "default": false
           }
         },
         "description": "A user\u0027s preferences. Content preferences (briefing topics, interests) live in memory, not here."
@@ -8189,6 +9154,9 @@
     },
     {
       "name": "Runs"
+    },
+    {
+      "name": "Evals"
     },
     {
       "name": "System"
@@ -8230,6 +9198,12 @@
       "name": "Memory"
     },
     {
+      "name": "Music"
+    },
+    {
+      "name": "Apps"
+    },
+    {
       "name": "Mail"
     },
     {
@@ -8237,12 +9211,6 @@
     },
     {
       "name": "Tasks"
-    },
-    {
-      "name": "Music"
-    },
-    {
-      "name": "Apps"
     },
     {
       "name": "Proposals"

@@ -1,3 +1,4 @@
+import type { Schemas } from '../../api/client'
 import type { Language } from '../../i18n/catalog'
 import { eventStream, FakeServer, json } from '../../testing/fakeServer'
 import { anchor, conversationDetails, normal, runDetails } from './normal'
@@ -118,6 +119,12 @@ export function createPreviewServer(scenario: ScenarioName, language: Language, 
     if (scenario === 'offline') throw new TypeError('Failed to fetch')
     return chatReply(language)
   })
+  server.handle('PUT', '/api/v1/runs/{id}/rating', (request) => {
+    const body = JSON.parse(request.body) as { rating: Schemas['RunRating']; note?: string | null }
+    return json(200, { run: request.path.split('/').at(-2), rating: body.rating, note: body.note ?? null, caseId: null })
+  })
+  server.handle('POST', '/api/v1/evals/estimate', (request) => json(200, { estimatedCost: 0.0113 * ((JSON.parse(request.body) as { caseIds: string[] }).caseIds.length || 1) }))
+  server.handle('POST', '/api/v1/evals/runs', () => json(201, shiftTimes(normal['/api/v1/evals/runs'][0], offset)))
   server.fallback = (request) => {
     if (scenario === 'offline' && !session.has(request.path)) throw new TypeError('Failed to fetch')
     if (scenario === 'failing' && !session.has(request.path)) return problem()

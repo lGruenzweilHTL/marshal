@@ -43,16 +43,18 @@ internal static class PreferencesEndpoints
 /// <param name="QuietHours">Weekly quiet-hour windows; an end before the start ends the next day.</param>
 /// <param name="NotificationTargets">HA <c>person.*</c> entity and <c>notify.*</c> push services.</param>
 /// <param name="DndUntil">Do-not-disturb end, if active.</param>
+/// <param name="HelpMarshalLearn">"Help Marshal learn" (default off): rated runs become eval cases, and later learning features.</param>
 public sealed record UserPreferencesResponse(
     string Language,
     string TimeZone,
     IReadOnlyList<QuietHoursWindow> QuietHours,
     NotificationTargets NotificationTargets,
-    DateTimeOffset? DndUntil)
+    DateTimeOffset? DndUntil,
+    bool HelpMarshalLearn = false)
 {
     public static UserPreferencesResponse From(UserPreferencesRecord record) =>
-        new(record.Language, record.TimeZone, record.QuietHours, record.NotificationTargets, record.DndUntil);
+        new(record.Language, record.TimeZone, record.QuietHours, record.NotificationTargets, record.DndUntil, record.HelpMarshalLearn);
 
     public UserPreferencesRecord ToRecord() =>
-        new(Language, TimeZone, QuietHours ?? [], NotificationTargets ?? NotificationTargets.None, DndUntil);
+        new(Language, TimeZone, QuietHours ?? [], NotificationTargets ?? NotificationTargets.None, DndUntil, HelpMarshalLearn);
 }

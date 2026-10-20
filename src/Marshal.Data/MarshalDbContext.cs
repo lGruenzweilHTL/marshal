@@ -1,6 +1,8 @@
 using System.Linq.Expressions;
+using Marshal.Abstractions.Apps;
 using Marshal.Abstractions.Artifacts;
 using Marshal.Abstractions.Audit;
+using Marshal.Abstractions.Evals;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Executors;
 using Marshal.Abstractions.Guard;
@@ -20,6 +22,7 @@ using Marshal.Data.Audit;
 using Marshal.Data.Auth;
 using Marshal.Data.Conversations;
 using Marshal.Data.Demo;
+using Marshal.Data.Evals;
 using Marshal.Data.Identity;
 using Marshal.Data.InputRequests;
 using Marshal.Data.Mail;
@@ -103,6 +106,17 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
     /// <summary>Server tasks of MCP tool calls that are polled until they end.</summary>
     public DbSet<McpTaskHandle> McpTaskHandles => Set<McpTaskHandle>();
 
+    /// <summary>MCP apps shown in web turns, kept for reload.</summary>
+    public DbSet<AppInstance> AppInstances => Set<AppInstance>();
+
+    /// <summary>Eval cases: snapshots of rated or saved runs; outlive the retention purge.</summary>
+    public DbSet<EvalCaseRow> EvalCases => Set<EvalCaseRow>();
+
+    /// <summary>Eval runs (candidate configuration replays) and their per-case results.</summary>
+    public DbSet<EvalRunRow> EvalRuns => Set<EvalRunRow>();
+
+    public DbSet<EvalResultRow> EvalResults => Set<EvalResultRow>();
+
     /// <summary>The current owner. Throws when there is no execution context (fail closed).</summary>
     internal OwnerId CurrentOwnerId =>
         executionContext.Current?.OwnerId
@@ -136,6 +150,9 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         configurationBuilder.Properties<RunId>().HaveConversion<GuidIdConverter<RunId>>();
         configurationBuilder.Properties<PendingActionId>().HaveConversion<GuidIdConverter<PendingActionId>>();
         configurationBuilder.Properties<InputRequestId>().HaveConversion<GuidIdConverter<InputRequestId>>();
+        configurationBuilder.Properties<AppInstanceId>().HaveConversion<GuidIdConverter<AppInstanceId>>();
+        configurationBuilder.Properties<EvalCaseId>().HaveConversion<GuidIdConverter<EvalCaseId>>();
+        configurationBuilder.Properties<EvalRunId>().HaveConversion<GuidIdConverter<EvalRunId>>();
         configurationBuilder.Properties<ApiTokenId>().HaveConversion<GuidIdConverter<ApiTokenId>>();
         configurationBuilder.Properties<ProjectId>().HaveConversion<GuidIdConverter<ProjectId>>();
         configurationBuilder.Properties<MailAccountId>().HaveConversion<GuidIdConverter<MailAccountId>>();
@@ -146,6 +163,10 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         configurationBuilder.Properties<SessionSource>().HaveConversion<SnakeCaseEnumConverter<SessionSource>>();
         configurationBuilder.Properties<InputMode>().HaveConversion<SnakeCaseEnumConverter<InputMode>>();
         configurationBuilder.Properties<RunOutcome>().HaveConversion<SnakeCaseEnumConverter<RunOutcome>>();
+        configurationBuilder.Properties<RunRating>().HaveConversion<SnakeCaseEnumConverter<RunRating>>();
+        configurationBuilder.Properties<EvalExpectation>().HaveConversion<SnakeCaseEnumConverter<EvalExpectation>>();
+        configurationBuilder.Properties<EvalRunStatus>().HaveConversion<SnakeCaseEnumConverter<EvalRunStatus>>();
+        configurationBuilder.Properties<EvalOutcome>().HaveConversion<SnakeCaseEnumConverter<EvalOutcome>>();
         configurationBuilder.Properties<RunStepKind>().HaveConversion<SnakeCaseEnumConverter<RunStepKind>>();
         configurationBuilder.Properties<RiskTier>().HaveConversion<SnakeCaseEnumConverter<RiskTier>>();
         configurationBuilder.Properties<GuardDecision>().HaveConversion<SnakeCaseEnumConverter<GuardDecision>>();
@@ -294,6 +315,45 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             request.HasOne<AgentTask>().WithMany().HasForeignKey(entity => entity.TaskId);
             request.Property(entity => entity.Status).IsConcurrencyToken();
             OwnerFilter(request);
+        });
+
+        builder.Entity<AppInstance>(app =>
+        {
+            app.ToTable("app_instances");
+            app.HasKey(entity => entity.Id);
+            app.HasIndex(entity => new { entity.OwnerId, entity.CreatedAt });
+            app.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            app.HasOne<Session>().WithMany().HasForeignKey(entity => entity.SessionId);
+            OwnerFilter(app);
+        });
+
+        builder.Entity<EvalCaseRow>(evalCase =>
+        {
+            evalCase.ToTable("eval_cases");
+            evalCase.HasKey(entity => entity.Id);
+            evalCase.HasIndex(entity => new { entity.OwnerId, entity.SourceRunId }).IsUnique();
+            evalCase.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            OwnerFilter(evalCase);
+        });
+
+        builder.Entity<EvalRunRow>(evalRun =>
+        {
+            evalRun.ToTable("eval_runs");
+            evalRun.HasKey(entity => entity.Id);
+            evalRun.HasIndex(entity => new { entity.OwnerId, entity.CreatedAt });
+            evalRun.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            OwnerFilter(evalRun);
+        });
+
+        builder.Entity<EvalResultRow>(result =>
+        {
+            result.ToTable("eval_results");
+            result.HasKey(entity => entity.Id);
+            result.HasIndex(entity => new { entity.RunId, entity.CreatedAt });
+            result.HasIndex(entity => new { entity.OwnerId, entity.CreatedAt });
+            result.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            result.HasOne<EvalRunRow>().WithMany().HasForeignKey(entity => entity.RunId).OnDelete(DeleteBehavior.Cascade);
+            OwnerFilter(result);
         });
 
         builder.Entity<AuditEvent>(audit =>

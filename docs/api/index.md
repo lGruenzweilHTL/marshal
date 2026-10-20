@@ -100,7 +100,8 @@ The web interface uses the following groups. They require a logged-in person (co
 | Auth | `/auth/providers`, `/auth/login/{provider}`, `/auth/logout`, `/auth/antiforgery`, `/auth/local/*` | Login, logout, first-run setup, passkeys |
 | Tokens and secrets | `/me/tokens`, `/me/secrets`, `/secrets/instance` | Manage API tokens and UI-managed secrets |
 | Preferences | `/me/preferences` | Per-user settings |
-| Runs and cost | `/runs`, `/runs/{id}`, `/cost` | Run recording and cost |
+| Runs and cost | `/runs`, `/runs/{id}`, `/runs/{id}/rating`, `/cost` | Run recording, ratings and cost |
+| Evals | `/runs/{id}/eval-case`, `/evals/*` | Eval cases, cost estimates and eval runs (admin). See [evals](../guides/evals.md) |
 | Conversations | `/conversations`, `/conversations/{id}` | Chat history: web, voice and API conversations with their turns and background results |
 | Tasks | `/tasks`, `/tasks/{id}`, `/tasks/kill-switch` | Task list and kill switch |
 | Approvals | `/approvals` | Approval queue |

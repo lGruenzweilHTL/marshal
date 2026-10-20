@@ -3,6 +3,7 @@ using Marshal.Abstractions;
 using Marshal.Abstractions.Memory;
 using Marshal.Abstractions.Tools;
 using Marshal.Memory.Projects;
+using Marshal.Memory.Retrieval;
 
 namespace Marshal.Memory.Tools;
 

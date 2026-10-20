@@ -97,6 +97,19 @@ public sealed class AgentRunnerTests
     }
 
     [Fact]
+    public async Task Run_ContextStep_StoresTurnSectionsApart()
+    {
+        LoopHarness harness = await LoopHarness.CreateAsync(contributors: [new SectionContributor("Memory: likes PETG.", ContextStability.Turn), new SectionContributor("Profile: Lukas.", ContextStability.Session)]);
+        harness.Model.ThenText("ok");
+
+        await harness.Runner.RunAsync(Request("which filament?"), Ct);
+
+        RunStepRecord context = harness.Recorder.OnlyRun.Steps[0];
+        Assert.Equal("Memory: likes PETG.", context.TurnContext);
+        Assert.Contains("Profile: Lukas.", context.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Run_DefaultTemplate_TierByInputMode()
     {
         LoopHarness harness = await LoopHarness.CreateAsync();
@@ -360,6 +373,15 @@ public sealed class AgentRunnerTests
 
     private static List<string> ToolResults(FakeChatRequest request) =>
         [.. request.Messages.SelectMany(message => message.Contents).OfType<FunctionResultContent>().Select(result => result.Result?.ToString() ?? "")];
+
+    private sealed class SectionContributor(string text, ContextStability stability) : IContextContributor
+    {
+        public ContextStability Stability => stability;
+
+        public int Order => 500;
+
+        public Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken) => Task.FromResult<string?>(text);
+    }
 
     private sealed class NotingContributor : IContextContributor
     {

@@ -21,6 +21,7 @@ public sealed class EfUserPreferencesStoreTests
         Assert.Null(preferences.NotificationTargets.Person);
         Assert.Empty(preferences.NotificationTargets.Push);
         Assert.Null(preferences.DndUntil);
+        Assert.False(preferences.HelpMarshalLearn);
     }
 
     [Fact]
@@ -32,7 +33,8 @@ public sealed class EfUserPreferencesStoreTests
             "America/New_York",
             [new QuietHoursWindow(DayOfWeek.Friday, new TimeOnly(23, 30), new TimeOnly(8, 0))],
             new NotificationTargets("person.lukas", ["notify.mobile_app_pixel"]),
-            new DateTimeOffset(2026, 9, 28, 20, 0, 0, TimeSpan.Zero));
+            new DateTimeOffset(2026, 9, 28, 20, 0, 0, TimeSpan.Zero),
+            HelpMarshalLearn: true);
 
         await Store(database).SaveAsync(OwnerA, saved, Ct);
         await Store(database).SaveAsync(OwnerA, saved, Ct);
@@ -44,6 +46,7 @@ public sealed class EfUserPreferencesStoreTests
         Assert.Equal(saved.NotificationTargets.Person, loaded.NotificationTargets.Person);
         Assert.Equal(saved.NotificationTargets.Push, loaded.NotificationTargets.Push);
         Assert.Equal(saved.DndUntil, loaded.DndUntil);
+        Assert.True(loaded.HelpMarshalLearn);
     }
 
     [Fact]

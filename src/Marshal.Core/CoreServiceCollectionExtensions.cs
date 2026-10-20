@@ -199,6 +199,15 @@ public static class CoreServiceCollectionExtensions
         services.AddHostedService<IdleSessionCloser>();
         services.AddHostedService<ModelReasoningCheck>();
 
+        // Evals: replays answer tools from recordings; the runner works through queued eval runs in the background.
+        services.AddSingleton<EvalModels>();
+        services.AddSingleton<EvalCostEstimator>();
+        services.AddSingleton<IEvalReplayer, AgentLoopReplayer>();
+        services.AddSingleton<IReplyJudge>(provider => new EvaluatorReplyJudge(provider.GetRequiredService<EvalModels>(), provider.GetRequiredService<ICostCalculator>()));
+        services.AddSingleton<EvalRunner>();
+        services.AddSingleton<IEvalRunControl>(provider => provider.GetRequiredService<EvalRunner>());
+        services.AddHostedService(provider => provider.GetRequiredService<EvalRunner>());
+
         services.AddSingleton(provider => new EnvironmentFileSecretSource(environment, provider.GetRequiredService<IOptions<PathsOptions>>().Value.Secrets));
         services.AddSingleton<ISecretSource>(provider => provider.GetRequiredService<EnvironmentFileSecretSource>());
         services.AddSingleton<ISecretCatalog>(provider => provider.GetRequiredService<EnvironmentFileSecretSource>());

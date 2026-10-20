@@ -108,6 +108,7 @@ Key dependencies and what they are for. Keep this list current when adding or re
 | Package | Purpose |
 |---|---|
 | `Microsoft.Extensions.AI` (+ `.Abstractions`) | `IChatClient`, `IEmbeddingGenerator`, `AIFunction` — provider-neutral LLM access. `Marshal.Abstractions` references only `.Abstractions` |
+| `Microsoft.Extensions.AI.Evaluation` (+ `.Quality`) | LLM-judged reply scoring for eval replays (`EvaluatorReplyJudge`, Marshal.Core) |
 | `OllamaSharp` | Ollama provider implementing `IChatClient` / `IEmbeddingGenerator` (host only) |
 | `Anthropic` | Official Anthropic C# SDK (v10+; implements `IChatClient`) — Claude API provider (host only) |
 | `Microsoft.Extensions.AI.OpenAI` | OpenAI-compatible provider for local servers (llama.cpp `llama-server`, vLLM, LM Studio) (host only) |

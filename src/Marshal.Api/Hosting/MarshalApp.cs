@@ -7,6 +7,7 @@ using Marshal.Api.Auth;
 using Marshal.Api.Configuration;
 using Marshal.Api.Conversation;
 using Marshal.Api.Displays;
+using Marshal.Api.Evals;
 using Marshal.Api.Executors;
 using Marshal.Api.Health;
 using Marshal.Api.Hooks;
@@ -114,6 +115,7 @@ public static class MarshalApp
         v1.MapPreferencesEndpoints();
         v1.MapLiveEventEndpoints();
         v1.MapRunEndpoints();
+        v1.MapEvalEndpoints();
         v1.MapSystemEndpoints();
         v1.MapConfigEndpoints();
         v1.MapMemoryEndpoints();

@@ -20,5 +20,9 @@ public sealed class BasePromptContributor : IContextContributor
 
     public int Order => 0;
 
-    public Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken) => Task.FromResult<string?>(Prompt);
+    /// <summary>The fixed instructions; an eval replay may test other ones.</summary>
+    public const string Text = Prompt;
+
+    public Task<string?> ContributeAsync(ContextRequest request, CancellationToken cancellationToken) =>
+        Task.FromResult<string?>(request.Context.Replay?.BasePrompt ?? Prompt);
 }

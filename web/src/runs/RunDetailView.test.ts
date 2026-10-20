@@ -86,7 +86,73 @@ async function mountVoice(inputMode: 'voice' | 'text') {
   return wrapper
 }
 
+async function mountRated(roles: string[], evalCaseId: string | null = null) {
+  const rated = { ...detail, run: runSummary({ id: 'r-9', rating: 'down', ratingNote: 'wrong light' }), evalCaseId }
+  const fake = new FakeServer()
+    .antiforgery('t')
+    .on('GET', '/api/v1/me', 200, { ...me, roles })
+    .on('GET', '/api/v1/runs/r-9', 200, rated)
+    .on('POST', '/api/v1/runs/r-9/eval-case', 200, { id: 'c-1' })
+    .on('PUT', '/api/v1/runs/r-9/rating', 200, { run: 'r-9', rating: 'up', note: null, caseId: null })
+  const { options } = await mountOptions(fake, '/runs/r-9')
+  const wrapper = mount(RunDetailView, options)
+  await flushPromises()
+  return Object.assign(wrapper, { fake })
+}
+
 describe('RunDetailView', () => {
+  it('shows the rating with its note and lets the owner change it', async () => {
+    const wrapper = await mountRated(['user'])
+
+    const rating = wrapper.get('[data-test="run-rating"]')
+    expect(rating.get('[data-test="rate-down"]').attributes('aria-pressed')).toBe('true')
+    expect(rating.get('[data-test="rating-note"]').text()).toBe('wrong light')
+    expect(rating.find('[data-test="save-case"]').exists()).toBe(false)
+
+    await rating.get('[data-test="rate-up"]').trigger('click')
+    await flushPromises()
+
+    expect(JSON.parse(wrapper.fake.request('PUT', '/api/v1/runs/r-9/rating')!.body)).toEqual({ rating: 'up', note: null })
+    expect(wrapper.get('[data-test="rate-up"]').attributes('aria-pressed')).toBe('true')
+  })
+
+  it('lets an admin save the run as an eval case and then links to it', async () => {
+    const wrapper = await mountRated(['admin'])
+
+    await wrapper.get('[data-test="save-case"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.fake.request('POST', '/api/v1/runs/r-9/eval-case')).toBeDefined()
+    expect(wrapper.get('[data-test="open-case"]').attributes('href')).toBe('/system/evals/cases/c-1')
+  })
+
+  it('links a step denied by the task tool policy to its task', async () => {
+    const denied = { ...detail, taskId: 't-4', steps: [runStep({ sequence: 1, kind: 'toolCall', tool: 'mail.search', error: 'tool.outside_policy: mail.search is outside this task\'s tool policy.' })] }
+    const fake = new FakeServer().on('GET', '/api/v1/me', 200, me).on('GET', '/api/v1/runs/r-9', 200, denied)
+    const { options } = await mountOptions(fake, '/runs/r-9')
+    const wrapper = mount(RunDetailView, options)
+    await flushPromises()
+
+    expect(wrapper.get('[data-test="widen-policy"]').attributes('href')).toBe('/tasks/t-4')
+  })
+
+  it('offers no policy link for other step errors', async () => {
+    const failed = { ...detail, taskId: 't-4', steps: [runStep({ sequence: 1, kind: 'toolCall', tool: 'mail.search', error: 'timeout' })] }
+    const fake = new FakeServer().on('GET', '/api/v1/me', 200, me).on('GET', '/api/v1/runs/r-9', 200, failed)
+    const { options } = await mountOptions(fake, '/runs/r-9')
+    const wrapper = mount(RunDetailView, options)
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="widen-policy"]').exists()).toBe(false)
+  })
+
+  it('links to an existing eval case', async () => {
+    const wrapper = await mountRated(['admin'], 'c-7')
+
+    expect(wrapper.get('[data-test="open-case"]').attributes('href')).toBe('/system/evals/cases/c-7')
+    expect(wrapper.find('[data-test="save-case"]').exists()).toBe(false)
+  })
+
   it('shows a voice run timeline with the first words marked', async () => {
     const wrapper = await mountVoice('voice')
 

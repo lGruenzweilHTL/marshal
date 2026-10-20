@@ -6,7 +6,7 @@ Tools from Model Context Protocol servers: configuration, namespaces, failure is
 ## Requirements
 
 ### Requirement: MCP server configuration
-MCP servers SHALL be configured in `/config/mcp/*.yaml` with `id`, transport (`stdio` with command and args, or `http` with URL for streamable HTTP), optional `toolPrefix`, optional `description` (one line used for tool retrieval), optional auth header secret reference (`authTokenSecret`), `untrusted` (default false), `untrustedTools` (optional list of globs on the tool names the server reports) and `pinTools` (default true). The server id and `toolPrefix` SHALL match `[a-z][a-z0-9]*`. A server with both `untrusted: true` and a non-empty `untrustedTools` SHALL be rejected with a config error.
+MCP servers SHALL be configured in `/config/mcp/*.yaml` with `id`, transport (`stdio` with command and args, or `http` with URL for streamable HTTP), optional `toolPrefix`, optional `description` (one line used for tool retrieval), optional auth header secret reference (`authTokenSecret`), `untrusted` (default false), `untrustedTools` (optional list of globs on the tool names the server reports), `pinTools` (default true) and `apps` (default false). The server id and `toolPrefix` SHALL match `[a-z][a-z0-9]*`. A server with both `untrusted: true` and a non-empty `untrustedTools` SHALL be rejected with a config error. A server with both `untrusted: true` and `apps: true` SHALL be rejected with a config error.
 
 #### Scenario: Invalid id
 - **WHEN** a server is configured with id `home_assistant`

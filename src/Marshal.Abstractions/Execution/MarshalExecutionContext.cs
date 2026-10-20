@@ -78,4 +78,18 @@ public sealed record MarshalExecutionContext
     /// run; the registry's current snapshot applies then.
     /// </summary>
     public ToolSnapshot? Tools { get; init; }
+
+    /// <summary>
+    /// Set while an eval case is replayed: the turn context comes from the case, no tool executes, and components
+    /// that write outside tools skip the run.
+    /// </summary>
+    public ReplaySettings? Replay { get; init; }
+
+    /// <summary>True during an eval replay.</summary>
+    public bool IsReplay => Replay is not null;
 }
+
+/// <summary>How a replayed turn rebuilds its context.</summary>
+/// <param name="TurnContext">The recorded turn-level context, used in place of the turn contributors.</param>
+/// <param name="BasePrompt">Replaces Marshal's fixed base instructions; null keeps them.</param>
+public sealed record ReplaySettings(string TurnContext, string? BasePrompt = null);

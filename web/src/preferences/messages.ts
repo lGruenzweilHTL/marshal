@@ -33,6 +33,18 @@ export const en = {
     dnd: 'Do not disturb until',
     dndEnd: 'End do-not-disturb',
   },
+  learning: {
+    title: 'Learning',
+    toggle: 'Help Marshal learn',
+    intro: 'Off by default. When on, Marshal may learn from what you do and propose things on its own:',
+    features: {
+      evals: 'Replies you rate become eval cases that test model and prompt changes.',
+      suggestions: 'Proactive suggestions based on repeated requests.',
+      skills: 'Proposals for new skills from things you ask often.',
+      maintenance: 'Suggested maintenance reminders from how you use your devices.',
+    },
+    privacy: 'Eval cases keep the text of the rated turn beyond run retention until you delete them. Ratings are stored either way.',
+  },
 }
 
 export const de: Catalog<typeof en> = {
@@ -67,5 +79,17 @@ export const de: Catalog<typeof en> = {
     pushHint: 'Eines pro Zeile. Kritische Meldungen gehen an alle.',
     dnd: 'Nicht stören bis',
     dndEnd: 'Nicht stören beenden',
+  },
+  learning: {
+    title: 'Lernen',
+    toggle: 'Marshal beim Lernen helfen',
+    intro: 'Standardmäßig aus. Eingeschaltet darf Marshal aus deinem Verhalten lernen und von sich aus Vorschläge machen:',
+    features: {
+      evals: 'Antworten, die du bewertest, werden zu Eval-Fällen, die Modell- und Prompt-Änderungen prüfen.',
+      suggestions: 'Proaktive Vorschläge aus wiederholten Anfragen.',
+      skills: 'Vorschläge für neue Skills aus Dingen, die du oft fragst.',
+      maintenance: 'Vorgeschlagene Wartungserinnerungen aus der Nutzung deiner Geräte.',
+    },
+    privacy: 'Eval-Fälle behalten den Text des bewerteten Durchlaufs über die Aufbewahrung der Läufe hinaus, bis du sie löschst. Bewertungen werden immer gespeichert.',
   },
 }

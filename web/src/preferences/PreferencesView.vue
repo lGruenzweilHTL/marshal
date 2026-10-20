@@ -7,12 +7,12 @@ import { useApi } from '../api/inject'
 import { useLoad } from '../api/useLoad'
 import { useSubmit } from '../api/useSubmit'
 import { useLocale } from '../i18n/locale'
-import { AppButton, Banner, Card, ErrorBanner, Field, LoadBoundary, Page, PageHeader, Segmented, useDesktop } from '../ui'
+import { AppButton, Banner, Card, ErrorBanner, Field, LoadBoundary, Page, PageHeader, Segmented, Switch, useDesktop } from '../ui'
 import { useAppearance, type Appearance } from '../ui/appearance'
 
 /**
  * The user's preferences: language and time zone (applied right after saving, no reload), quiet hours and notification
- * targets. The appearance is per device and never sent to the API.
+ * targets, and "help Marshal learn", which gates every feature that learns from the user's behavior. The appearance is per device and never sent to the API.
  */
 type Day = Schemas['DayOfWeek']
 type Preferences = Schemas['UserPreferencesResponse']
@@ -34,7 +34,7 @@ const desktop = useDesktop()
 const { t } = useI18n()
 const { appearance, setAppearance } = useAppearance()
 
-const draft = reactive({ language: 'en', timeZone: '', windows: [] as QuietWindow[], person: '', push: '', dndUntil: '' })
+const draft = reactive({ language: 'en', timeZone: '', windows: [] as QuietWindow[], person: '', push: '', dndUntil: '', learn: false })
 const saved = shallowRef(false)
 let nextKey = 0
 
@@ -57,6 +57,7 @@ function show(preferences: Preferences) {
     person: preferences.notificationTargets.person ?? '',
     push: preferences.notificationTargets.push.join('\n'),
     dndUntil: toLocalInput(preferences.dndUntil),
+    learn: preferences.helpMarshalLearn,
   })
 }
 
@@ -79,6 +80,7 @@ const save = useSubmit(async () => {
             .filter(Boolean),
         },
         dndUntil: draft.dndUntil ? new Date(draft.dndUntil).toISOString() : null,
+        helpMarshalLearn: draft.learn,
       },
     }),
   )
@@ -89,6 +91,8 @@ const save = useSubmit(async () => {
   }
   return result
 })
+
+const learningFeatures = ['evals', 'suggestions', 'skills', 'maintenance'] as const
 
 const languages = [
   { value: 'de', label: 'Deutsch' },
@@ -167,6 +171,14 @@ function addWindow() {
               <AppButton size="sm" :icon="Plus" data-test="add-window" @click="addWindow">{{ t('preferences.quiet.add') }}</AppButton>
             </div>
           </Card>
+
+          <Card :title="t('preferences.learning.title')" data-test="learning">
+            <Switch v-model="draft.learn" :label="t('preferences.learning.toggle')" :description="t('preferences.learning.intro')" data-test="learn" />
+            <ul class="features t-body-s ink-2">
+              <li v-for="feature in learningFeatures" :key="feature">{{ t(`preferences.learning.features.${feature}`) }}</li>
+            </ul>
+            <p class="t-body-s ink-3">{{ t('preferences.learning.privacy') }}</p>
+          </Card>
         </div>
 
         <AppButton v-if="!desktop" type="submit" variant="primary" size="lg" block :icon="Check" :loading="save.busy.value">{{ t('preferences.save') }}</AppButton>
@@ -193,6 +205,10 @@ function addWindow() {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+.features {
+  margin: 0;
+  padding-left: var(--space-5);
 }
 .window {
   display: grid;

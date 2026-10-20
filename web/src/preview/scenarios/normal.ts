@@ -25,6 +25,9 @@ export const ids = {
   conversation: (n: number) => id(10, n),
   chunk: (n: number) => id(6, n),
   notification: (n: number) => id(5, n),
+  app: id(14, 1),
+  evalCase: (n: number) => id(16, n),
+  evalRun: id(17, 1),
 }
 
 export const me: Schemas['MeResponse'] = {
@@ -49,6 +52,7 @@ export const preferences: Schemas['UserPreferencesResponse'] = {
   ],
   notificationTargets: { person: 'person.lukas', push: ['notify.mobile_app_pixel_9'] },
   dndUntil: null,
+  helpMarshalLearn: true,
 }
 
 const heater = (temperature: number, target: number, power: number): Schemas['HeaterState'] => ({ temperature, target, power })
@@ -199,8 +203,8 @@ const tasks: Schemas['TaskItem'][] = [
 ]
 
 const runs: Schemas['RunSummary'][] = [
-  { id: ids.run(1), sessionId: id(10, 1), source: 'voice', inputMode: 'voice', trigger: 'conversation', satelliteId: 'assist_satellite.kitchen', startedAt: at(-3), endedAt: at(-3), outcome: 'ok', outcomeReason: null, tainted: false, cost: 0.0012, timeToFirstDeltaMs: 1_640 },
-  { id: ids.run(2), sessionId: id(10, 2), source: 'web', inputMode: 'text', trigger: 'conversation', satelliteId: null, startedAt: at(-18), endedAt: at(-18), outcome: 'ok', outcomeReason: null, tainted: false, cost: 0.0094, timeToFirstDeltaMs: 920 },
+  { id: ids.run(1), sessionId: id(10, 1), source: 'voice', inputMode: 'voice', trigger: 'conversation', satelliteId: 'assist_satellite.kitchen', startedAt: at(-3), endedAt: at(-3), outcome: 'ok', outcomeReason: null, tainted: false, cost: 0.0012, timeToFirstDeltaMs: 1_640, rating: 'up', ratingNote: null },
+  { id: ids.run(2), sessionId: id(10, 2), source: 'web', inputMode: 'text', trigger: 'conversation', satelliteId: null, startedAt: at(-18), endedAt: at(-18), outcome: 'ok', outcomeReason: null, tainted: false, cost: 0.0094, timeToFirstDeltaMs: 920, rating: 'down', ratingNote: 'Should have suggested ASA, not PETG.' },
   { id: ids.run(3), sessionId: null, source: 'task', inputMode: null, trigger: 'event', satelliteId: null, startedAt: at(-24), endedAt: at(-23), outcome: 'ok', outcomeReason: null, tainted: false, cost: 0.0031 },
   { id: ids.run(4), sessionId: id(10, 3), source: 'voice', inputMode: 'voice', trigger: 'conversation', satelliteId: 'assist_satellite.living_room', startedAt: at(-41), endedAt: at(-41), outcome: 'backgrounded', outcomeReason: 'Latency cap reached (8 s).', tainted: false, cost: 0.0023, timeToFirstDeltaMs: 7_980 },
   { id: ids.run(5), sessionId: null, source: 'task', inputMode: null, trigger: 'cron', satelliteId: null, startedAt: at(-40), endedAt: at(-40), outcome: 'error', outcomeReason: 'Budget exceeded.', tainted: false, cost: 0.0102 },
@@ -208,6 +212,122 @@ const runs: Schemas['RunSummary'][] = [
   { id: ids.run(7), sessionId: null, source: 'task', inputMode: null, trigger: 'cron', satelliteId: null, startedAt: at(-2), endedAt: at(-1), outcome: 'ok', outcomeReason: null, tainted: false, cost: 0.0044 },
   { id: ids.run(8), sessionId: null, source: 'api', inputMode: 'text', trigger: 'conversation', satelliteId: null, startedAt: at(-95), endedAt: at(-95), outcome: 'ok', outcomeReason: null, tainted: false, cost: 0.0007 },
 ]
+
+const evalCases: Schemas['EvalCase'][] = [
+  {
+    id: id(16, 1),
+    sourceRunId: ids.run(2),
+    expectation: 'bad',
+    note: 'Should have suggested ASA, not PETG.',
+    input: 'Which filament for the garden planter brackets?',
+    inputMode: 'text',
+    language: 'en',
+    satelliteId: null,
+    areaId: null,
+    history: [],
+    turnContext: 'Memory: Prefers PETG for outdoor parts (0.82)\nTime: Wednesday 08:42, Europe/Vienna',
+    toolCalls: [{ tool: 'printer.filament', arguments: '{"printer":"voron"}', result: 'Loaded: PETG black. Spools: PETG black, ASA grey, PLA white', error: null, untrusted: false }],
+    reply: 'Use PETG: it is loaded and handles the sun well.',
+    incomplete: false,
+    recordedAt: at(-18),
+    createdAt: at(-17),
+  },
+  {
+    id: id(16, 2),
+    sourceRunId: ids.run(1),
+    expectation: 'good',
+    note: null,
+    input: 'Is the Voron done yet?',
+    inputMode: 'voice',
+    language: 'en',
+    satelliteId: 'assist_satellite.kitchen',
+    areaId: 'kitchen',
+    history: [],
+    turnContext: 'Area: kitchen\nTime: Wednesday 08:57, Europe/Vienna',
+    toolCalls: [{ tool: 'printer.status', arguments: '{"printer":"voron"}', result: 'Printing benchy_petg_0.2mm.gcode, layer 112 of 268', error: null, untrusted: false }],
+    reply: 'Not yet: layer 112 of 268, about 1 h 12 min left.',
+    incomplete: false,
+    recordedAt: at(-3),
+    createdAt: at(-2),
+  },
+  {
+    id: id(16, 3),
+    sourceRunId: ids.run(8),
+    expectation: 'unrated',
+    note: null,
+    input: 'Summarize the unread mail from the bank',
+    inputMode: 'text',
+    language: 'en',
+    satelliteId: null,
+    areaId: null,
+    history: [{ role: 'user', text: 'Anything new in my inbox?' }, { role: 'assistant', text: 'Three unread mails, one from the bank.' }],
+    turnContext: null,
+    toolCalls: [{ tool: 'mail.read', arguments: '{"id":"m-42"}', result: null, error: null, untrusted: true }],
+    reply: 'The bank confirms the new card arrives next week.',
+    incomplete: true,
+    recordedAt: at(-95),
+    createdAt: at(-90),
+  },
+]
+
+const evalRuns: Schemas['EvalRunView'][] = [
+  {
+    id: id(17, 1),
+    candidate: { models: { standard: 'claude' }, template: null, basePrompt: null, judgeModel: 'claude' },
+    status: 'completed',
+    caseIds: [id(16, 1), id(16, 2), id(16, 3)],
+    startedBy: ids.owner,
+    estimatedCost: 0.034,
+    cost: 0.0291,
+    pass: 2,
+    changed: 0,
+    diverged: 1,
+    failed: 0,
+    createdAt: at(-60),
+    endedAt: at(-59),
+    error: null,
+  },
+]
+
+const evalReport: Schemas['EvalRunReport'] = {
+  run: evalRuns[0]!,
+  results: [
+    {
+      caseId: id(16, 1),
+      outcome: 'pass',
+      calls: [
+        { tool: 'printer.filament', arguments: '{"printer":"voron"}', recorded: true },
+      ],
+      reply: 'Use ASA: it holds up to UV and heat outdoors. You have a grey spool; PETG is loaded right now.',
+      judgeScore: 0.92,
+      cost: 0.0112,
+      error: null,
+    },
+    { caseId: id(16, 2), outcome: 'pass', calls: [{ tool: 'printer.status', arguments: '{"printer":"voron"}', recorded: true }], reply: 'Not yet: layer 112 of 268, about 1 h 12 min left.', judgeScore: 0.97, cost: 0.0061, error: null },
+    {
+      caseId: id(16, 3),
+      outcome: 'diverged',
+      calls: [
+        { tool: 'mail.search', arguments: '{"from":"bank","unread":true}', recorded: false },
+      ],
+      reply: 'I could not find that mail.',
+      judgeScore: 0.31,
+      cost: 0.0118,
+      error: null,
+    },
+  ],
+}
+
+/** The kitchen speaker's queue as the music widget shows it. */
+const musicQueue = {
+  speaker: 'kitchen',
+  state: 'playing',
+  current: { name: 'Innuendo', artists: ['Queen'], album: 'Innuendo' },
+  next: { name: 'Headlong', artists: ['Queen'], album: 'Innuendo' },
+  items: 12,
+  shuffle: false,
+  repeat: null,
+}
 
 type ConversationEntry = Schemas['ConversationDetail']['entries'][number]
 
@@ -248,6 +368,7 @@ const conversations: Schemas['ConversationSummary'][] = [
   conversation(3, 'voice', -41, 1, 'Check all three printers and tell me which one is free', { satelliteId: 'assist_satellite.living_room', areaId: 'living_room' }),
   conversation(4, 'api', -95, 1, 'Summarize the RSS digest for the dashboard'),
   conversation(5, 'web', -26 * 60, 2, 'Draft a reply to the filament invoice from Prusament'),
+  conversation(6, 'web', -9, 2, 'Printer, music and the filament report'),
 ]
 
 /** Conversation details by session id; the preview serves the one asked for. */
@@ -265,8 +386,9 @@ export const conversationDetails: Record<string, Schemas['ConversationDetail']> 
           { tool: 'memory.recall', arguments: 'query=filament outdoor parts', state: 'ok', durationMs: 96, result: 'Prefers PETG for outdoor parts' },
           { tool: 'printer.status', arguments: 'printer=voron', state: 'ok', durationMs: 211, result: 'Idle, spool: black PETG, 640 g left' },
         ],
+        rating: 'down',
       }),
-      turn(21, -22, 'Is that enough for six brackets?', 'Yes. Six brackets take about 210 g with 4 walls and 30 % infill.'),
+      turn(21, -22, 'Is that enough for six brackets?', 'Yes. Six brackets take about 210 g with 4 walls and 30 % infill.', { rating: 'up' }),
       turn(2, -18, 'Queue them on the Voron after the current print', 'Should I add six `planter_bracket.gcode` jobs to the Voron queue?', {
         continueConversation: true,
         tools: [{ tool: 'printer.start_print', arguments: 'printer=voron, file=planter_bracket.gcode, copies=6', state: 'pending', durationMs: 0, result: null }],
@@ -650,8 +772,25 @@ export const normal = {
   '/api/v1/tasks/kill-switch': { active: false, cancelled: null },
   '/api/v1/conversations': conversations,
   '/api/v1/conversations/{id}': conversationDetails[id(10, 2)]!,
+  '/api/v1/apps/{appId}': {
+    appId: ids.app,
+    server: 'filament',
+    tool: 'monthly_report',
+    toolCallId: 'call-61-1',
+    arguments: { month: '2026-10' },
+    result: {
+      content: [{ type: 'text', text: 'PETG 1.2 kg, PLA 0.4 kg, ASA 0.3 kg' }],
+      structuredContent: { title: 'Filament used in October', values: [{ label: 'PETG', amount: 1.2 }, { label: 'PLA', amount: 0.4 }, { label: 'ASA', amount: 0.3 }] },
+    },
+    available: true,
+  },
+  '/api/v1/music/{speaker}': musicQueue,
   '/api/v1/runs': runs,
   '/api/v1/runs/{id}': runDetail,
+  '/api/v1/evals/cases': evalCases,
+  '/api/v1/evals/cases/{id}': evalCases[0]!,
+  '/api/v1/evals/runs': evalRuns,
+  '/api/v1/evals/runs/{id}': evalReport,
   '/api/v1/cost': cost,
   '/api/v1/system': {
     version: '0.1.0',

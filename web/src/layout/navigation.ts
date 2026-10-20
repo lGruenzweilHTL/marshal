@@ -1,4 +1,4 @@
-import { Activity, Files, BookOpen, ClipboardCheck, Cpu, FileCode2, FolderClosed, House, Inbox, LayoutGrid, Mail, MessageSquare, Printer, Share2, ShieldCheck, SlidersHorizontal, SquareCheckBig, Gauge } from 'lucide-vue-next'
+import { Activity, Files, FlaskConical, BookOpen, ClipboardCheck, Cpu, FileCode2, FolderClosed, House, Inbox, LayoutGrid, Mail, MessageSquare, Printer, Share2, ShieldCheck, SlidersHorizontal, SquareCheckBig, Gauge } from 'lucide-vue-next'
 import type { Component } from 'vue'
 
 export type GroupId = 'act' | 'activity' | 'memory' | 'connections' | 'settings'
@@ -34,6 +34,7 @@ export const destinations: Destination[] = [
   { id: 'security', group: 'settings', icon: ShieldCheck, path: '/security' },
   { id: 'system', group: 'settings', icon: Cpu, path: '/system' },
   { id: 'config', group: 'settings', icon: FileCode2, path: '/system/config', admin: true },
+  { id: 'evals', group: 'settings', icon: FlaskConical, path: '/system/evals', admin: true },
 ]
 
 export const groups: GroupId[] = ['act', 'activity', 'memory', 'connections', 'settings']

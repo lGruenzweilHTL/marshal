@@ -19,6 +19,9 @@ public sealed record RunFilter(SessionSource? Source = null, RunOutcome? Outcome
 {
     /// <summary>Order of the list; newest first by default.</summary>
     public RunSort Sort { get; init; } = RunSort.Newest;
+
+    /// <summary>Only runs with this rating.</summary>
+    public Evals.RunRating? Rating { get; init; }
 }
 
 /// <summary>Order of the runs list.</summary>
@@ -62,6 +65,12 @@ public sealed record RunSummary(
 {
     /// <summary>Milliseconds from the request to the first streamed delta; null when the run sent none.</summary>
     public int? TimeToFirstDeltaMs { get; init; }
+
+    /// <summary>The owner's rating; null when unrated.</summary>
+    public Evals.RunRating? Rating { get; init; }
+
+    /// <summary>The note on the rating.</summary>
+    public string? RatingNote { get; init; }
 }
 
 /// <summary>
@@ -75,6 +84,12 @@ public sealed record RunDetail(RunSummary Run, string? Language, IReadOnlyList<T
 {
     /// <summary>Tool namespaces the run loaded, in load order, with why (<c>core</c>, <c>retrieval</c> with its score, ...).</summary>
     public IReadOnlyList<Tools.LoadedToolNamespace> LoadedNamespaces { get; init; } = [];
+
+    /// <summary>The task the run belongs to, if any.</summary>
+    public Tasks.TaskId? TaskId { get; init; }
+
+    /// <summary>The eval case made from this run, if any.</summary>
+    public Evals.EvalCaseId? EvalCaseId { get; init; }
 }
 
 /// <summary>

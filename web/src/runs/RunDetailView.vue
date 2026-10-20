@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { Bot, Cpu, Layers, MessageSquareText, ShieldAlert, Wrench } from 'lucide-vue-next'
-import { computed, nextTick, reactive, watch } from 'vue'
+import { Bot, Cpu, FlaskConical, Layers, MessageSquareText, ShieldAlert, Wrench } from 'lucide-vue-next'
+import { computed, nextTick, reactive, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import type { Schemas } from '../api/client'
 import { useApi } from '../api/inject'
 import { useLoad } from '../api/useLoad'
+import { useSubmit } from '../api/useSubmit'
 import { useFormat } from '../i18n/locale'
-import { AppIcon, Badge, Banner, Card, CodeBlock, KeyValueList, LoadBoundary, Page, PageHeader, useDesktop, type Tone } from '../ui'
+import { useUserSession } from '../session'
+import { AppButton, AppIcon, Badge, Banner, Card, CodeBlock, ErrorBanner, KeyValueList, LoadBoundary, Page, PageHeader, useDesktop, type Tone } from '../ui'
 import ReasoningBlock from '../chat/ReasoningBlock.vue'
+import RatingButtons from './RatingButtons.vue'
 import TaintFlag from './TaintFlag.vue'
 import VoiceTimeline from './VoiceTimeline.vue'
 
@@ -17,7 +20,7 @@ type Step = Schemas['RunStepDetail']
 /**
  * One run as a timeline of its steps: context build (with the projects and memory it used), model calls with
  * tokens, latency and their reasoning (collapsed), tool calls with risk tier and guard decision, and the reply. `#step-<n>` scrolls to a step
- * (Inbox links to the step that tainted a run).
+ * (Inbox links to the step that tainted a run). The owner rates the run; admins can save it as an eval case.
  */
 const api = useApi()
 const route = useRoute()
@@ -25,12 +28,22 @@ const desktop = useDesktop()
 const format = useFormat()
 const { t } = useI18n()
 const id = String(route.params.id)
+const user = useUserSession()
+const isAdmin = computed(() => user.current.value?.roles.includes('admin') === true)
 
 const detail = useLoad(() => api.call((client) => client.GET('/api/v1/runs/{id}', { params: { path: { id } } })), { isEmpty: () => false })
 const run = computed(() => detail.data.value?.run ?? null)
 const outcomeTone: Record<Schemas['RunOutcome'], Tone> = { ok: 'success', error: 'danger', backgrounded: 'warning', cancelled: 'neutral' }
 /** Model calls whose reasoning the user opened, by step sequence. */
 const openReasoning = reactive<Record<number, boolean>>({})
+/** The eval case of the run: from the detail, or created here by a rating or "save as eval case". */
+const createdCase = shallowRef<string | null>(null)
+const caseId = computed(() => createdCase.value ?? detail.data.value?.evalCaseId ?? null)
+const saveCase = useSubmit(async () => {
+  const result = await api.call((client) => client.POST('/api/v1/runs/{id}/eval-case', { params: { path: { id } } }))
+  if (result.data) createdCase.value = result.data.id
+  return result
+})
 const taintedFrom = computed(() => Math.min(...(detail.data.value?.taintSources.map((source) => source.firstStep) ?? [])))
 
 watch(
@@ -180,6 +193,16 @@ const count = (value: number | null) => (value === null ? '–' : format.value.n
                 <span v-if="run.outcomeReason" class="ink-3"> {{ run.outcomeReason }}</span>
               </template>
             </KeyValueList>
+            <section class="rate" data-test="run-rating">
+              <span class="t-overline">{{ t('runs.rating.title') }}</span>
+              <RatingButtons :run-id="run.id" :rating="run.rating" :note="run.ratingNote" @rated="(_rating, _note, created) => created && (createdCase = created)" />
+              <p class="t-body-s ink-3">{{ t('runs.rating.hint') }}</p>
+              <template v-if="isAdmin">
+                <AppButton v-if="caseId" size="sm" :icon="FlaskConical" :to="`/system/evals/cases/${caseId}`" data-test="open-case">{{ t('runs.rating.openCase') }}</AppButton>
+                <AppButton v-else size="sm" :icon="FlaskConical" :loading="saveCase.busy.value" data-test="save-case" @click="saveCase.submit()">{{ t('runs.rating.saveCase') }}</AppButton>
+                <ErrorBanner v-if="saveCase.error.value" :error="saveCase.error.value" />
+              </template>
+            </section>
           </Card>
         </div>
       </template>
@@ -188,6 +211,15 @@ const count = (value: number | null) => (value === null ? '–' : format.value.n
 </template>
 
 <style scoped>
+.rate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
 .headline {
   display: inline-flex;
   flex-wrap: wrap;

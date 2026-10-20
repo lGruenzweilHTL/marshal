@@ -216,7 +216,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The user's runs (voice, web, task, api), newest first or slowest time to first delta first (sort=timeToFirstDelta); filter by source, outcome and minimum cost, page with before. */
+        /** The user's runs (voice, web, task, api), newest first or slowest time to first delta first (sort=timeToFirstDelta); filter by source, outcome, rating and minimum cost, page with before. */
         get: operations["ListRuns"];
         put?: never;
         post?: never;
@@ -254,6 +254,41 @@ export interface paths {
         get: operations["GetCost"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{id}/rating": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Rates one of the user's runs up or down with an optional note; with "help Marshal learn" on, the first rating also creates an eval case. */
+        put: operations["RateRun"];
+        post?: never;
+        /** Removes the rating of a run; an eval case made from it stays. */
+        delete: operations["ClearRunRating"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{id}/eval-case": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Snapshots a run as an eval case, whatever the learning preference says; returns the existing case when there is one. */
+        post: operations["SaveRunAsEvalCase"];
         delete?: never;
         options?: never;
         head?: never;
@@ -598,6 +633,128 @@ export interface paths {
         /** Replaces the user's preferences. */
         put: operations["UpdatePreferences"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/evals/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Eval cases, newest first. */
+        get: operations["ListEvalCases"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/evals/cases/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One eval case with its history, turn context, recorded tool calls and reply. */
+        get: operations["GetEvalCase"];
+        put?: never;
+        post?: never;
+        /** Deletes an eval case. */
+        delete: operations["DeleteEvalCase"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/evals/cases/{id}/note": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Sets the expected behavior note of a case (at most 1,000 characters). */
+        put: operations["SetEvalCaseNote"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/evals/estimate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Estimated model cost of replaying the cases with the candidate configuration. */
+        post: operations["EstimateEvalRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/evals/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Eval runs with their totals, newest first. */
+        get: operations["ListEvalRuns"];
+        put?: never;
+        /** Starts an eval run: replays the cases one at a time in the background without executing any tool. */
+        post: operations["StartEvalRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/evals/runs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** An eval run with its totals and per case the replayed calls, reply, outcome and judge score. */
+        get: operations["GetEvalRun"];
+        put?: never;
+        post?: never;
+        /** Deletes an eval run and its results. */
+        delete: operations["DeleteEvalRun"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/evals/runs/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancels a queued or running eval run. */
+        post: operations["CancelEvalRun"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1971,6 +2128,130 @@ export interface components {
             /** @description Show the "Demo" badge in the navigation. */
             showBadge: boolean;
         };
+        /** @description The candidate configuration of an eval run. */
+        EvalCandidateView: {
+            /** @description Model key per tier (`fast`, `standard`, `advisor`). */
+            models: {
+                [key: string]: string;
+            };
+            /** @description Agent template override. */
+            template: null | string;
+            /** @description Base prompt override. */
+            basePrompt: null | string;
+            /** @description Judge model, if any. */
+            judgeModel: null | string;
+        };
+        EvalCase: {
+            id: components["schemas"]["EvalCaseId"];
+            sourceRunId: components["schemas"]["RunId"];
+            expectation: components["schemas"]["EvalExpectation"];
+            note?: null | string;
+            input: string;
+            inputMode?: components["schemas"]["InputMode"];
+            language?: string;
+            satelliteId?: null | string;
+            areaId?: null | string;
+            history?: components["schemas"]["EvalMessage"][];
+            turnContext?: null | string;
+            toolCalls?: components["schemas"]["EvalToolCall"][];
+            reply?: null | string;
+            incomplete?: boolean;
+            /** Format: date-time */
+            recordedAt: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /** Format: uuid */
+        EvalCaseId: string;
+        /** @description The expected behavior note of an eval case. */
+        EvalCaseNoteRequest: {
+            /** @description The note; empty or null removes it. */
+            note: null | string;
+        };
+        EvalCaseResult: {
+            caseId: components["schemas"]["EvalCaseId"];
+            outcome: components["schemas"]["EvalOutcome"];
+            calls: components["schemas"]["ReplayedCall"][];
+            reply: null | string;
+            /** Format: double */
+            judgeScore: null | number;
+            /** Format: double */
+            cost: number;
+            error: null | string;
+        };
+        EvalEstimate: {
+            /**
+             * Format: double
+             * @description Estimated model cost of the replays and judge calls.
+             */
+            estimatedCost: number;
+        };
+        /** @enum {unknown} */
+        EvalExpectation: "good" | "bad" | "unrated";
+        EvalMessage: {
+            role: string;
+            text: string;
+        };
+        /** @enum {unknown} */
+        EvalOutcome: "pass" | "changed" | "diverged" | "failed";
+        /** Format: uuid */
+        EvalRunId: string;
+        /** @description An eval run and its case results. */
+        EvalRunReport: {
+            /** @description The run with its totals. */
+            run: components["schemas"]["EvalRunView"];
+            /** @description Per case result in replay order. */
+            results: components["schemas"]["EvalCaseResult"][];
+        };
+        /** @description Cases and the candidate configuration of an eval run. */
+        EvalRunRequest: {
+            /** @description Cases to replay, in order. */
+            caseIds: null | unknown[];
+            /** @description Configured model key per tier (`fast`, `standard`, `advisor`); tiers left out use the current routing. */
+            models: null | {
+                [key: string]: string;
+            };
+            /** @description Agent template; null keeps `default`. */
+            template?: null | string;
+            /** @description Replaces Marshal's base instructions; null keeps them. */
+            basePrompt?: null | string;
+            /** @description Configured model key that scores replies; null for no judge. */
+            judgeModel?: null | string;
+        };
+        /** @enum {unknown} */
+        EvalRunStatus: "queued" | "running" | "completed" | "cancelled" | "failed";
+        /** @description An eval run with its totals. */
+        EvalRunView: {
+            id: components["schemas"]["EvalRunId"];
+            candidate: components["schemas"]["EvalCandidateView"];
+            status: components["schemas"]["EvalRunStatus"];
+            caseIds: unknown[];
+            startedBy: string;
+            /** Format: double */
+            estimatedCost: number;
+            /** Format: double */
+            cost: number;
+            /** Format: int32 */
+            pass: number;
+            /** Format: int32 */
+            changed: number;
+            /** Format: int32 */
+            diverged: number;
+            /** Format: int32 */
+            failed: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            endedAt: null | string;
+            error: null | string;
+        };
+        EvalToolCall: {
+            tool: string;
+            arguments: string;
+            result: null | string;
+            error: null | string;
+            untrusted: boolean;
+        };
         /** @description An event source and its state. */
         EventSourceInfo: {
             /** @description Source name, e.g. `ha`, `uptime-kuma`. */
@@ -2000,7 +2281,7 @@ export interface components {
         /** @enum {unknown} */
         ExecutorSessionStatus: "starting" | "running" | "done" | "failed" | "cancelled";
         /** @enum {unknown} */
-        GuardDecision: "safe" | "pending" | "confirmedByKeyword" | "judgePositive" | "judgeNeutral" | "judgeNegative" | "escalatedByTaint" | "denied" | "expired" | null;
+        GuardDecision: "safe" | "pending" | "confirmedByKeyword" | "judgePositive" | "judgeNeutral" | "judgeNegative" | "escalatedByTaint" | "denied" | "expired" | "confirmedInUi" | null;
         /** @description A message in Marshal's two languages. */
         HealthMessageView: {
             /** @description German. */
@@ -2375,6 +2656,19 @@ export interface components {
         };
         /** @enum {unknown} */
         ModelTier: "fast" | "standard" | "advisor" | null;
+        MusicControlRequest: {
+            /** @description pause, resume, next, previous, stop or volume. */
+            action: string;
+            /**
+             * Format: int32
+             * @description 0–100, for volume.
+             */
+            volume?: null | number;
+        };
+        MusicControlResult: {
+            /** @description `done`, or `approval_required` when a risk rule made the control confirm tier and it waits in the approval queue. */
+            status: string;
+        };
         NotificationEntry: {
             /** Format: uuid */
             id: string;
@@ -2628,6 +2922,24 @@ export interface components {
             /** Format: time */
             end: string;
         };
+        RatedRun: {
+            run: components["schemas"]["RunId"];
+            rating: components["schemas"]["RunRating"];
+            note: null | string;
+            caseId: null | components["schemas"]["EvalCaseId"];
+        };
+        /** @description A rating of a run. */
+        RatingRequest: {
+            /** @description `up` or `down`. */
+            rating: string;
+            /** @description What should have happened (at most 1,000 characters). */
+            note?: null | string;
+        };
+        ReplayedCall: {
+            tool: string;
+            arguments: string;
+            recorded: boolean;
+        };
         /** @description An active risk rule. */
         RiskRuleSummary: {
             /** @description Tool id glob. */
@@ -2651,11 +2963,15 @@ export interface components {
             taintSources: components["schemas"]["TaintSource"][];
             steps: components["schemas"]["RunStepDetail"][];
             loadedNamespaces?: components["schemas"]["LoadedToolNamespace"][];
+            taskId?: null | components["schemas"]["TaskId"];
+            evalCaseId?: null | components["schemas"]["EvalCaseId"];
         };
         /** Format: uuid */
         RunId: string;
         /** @enum {unknown} */
         RunOutcome: "ok" | "error" | "backgrounded" | "cancelled";
+        /** @enum {unknown} */
+        RunRating: "up" | "down" | null;
         RunStepDetail: {
             /** Format: int32 */
             sequence: number;
@@ -2710,6 +3026,8 @@ export interface components {
             cost: number;
             /** Format: int32 */
             timeToFirstDeltaMs?: null | number;
+            rating?: null | components["schemas"]["RunRating"];
+            ratingNote?: null | string;
         };
         /** @description A satellite profile. */
         SatelliteSummary: {
@@ -3040,6 +3358,16 @@ export interface components {
              * @description Do-not-disturb end, if active.
              */
             dndUntil: null | string;
+            /**
+             * @description "Help Marshal learn" (default off): rated runs become eval cases, and later learning features.
+             * @default false
+             */
+            helpMarshalLearn: boolean;
+        };
+        WidgetRef: {
+            kind: string;
+            callId: string;
+            data: components["schemas"]["JsonElement"];
         };
     };
     responses: never;
@@ -3325,6 +3653,7 @@ export interface operations {
             query?: {
                 source?: string;
                 outcome?: string;
+                rating?: string;
                 minCost?: number;
                 before?: string;
                 limit?: number;
@@ -3388,6 +3717,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CostReport"];
+                };
+            };
+        };
+    };
+    RateRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatedRun"];
+                };
+            };
+        };
+    };
+    ClearRunRating: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SaveRunAsEvalCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalCase"];
                 };
             };
         };
@@ -4019,6 +4416,222 @@ export interface operations {
                 "application/json": components["schemas"]["UserPreferencesResponse"];
             };
         };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ListEvalCases: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalCase"][];
+                };
+            };
+        };
+    };
+    GetEvalCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalCase"];
+                };
+            };
+        };
+    };
+    DeleteEvalCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SetEvalCaseNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalCaseNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EstimateEvalRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalRunRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalEstimate"];
+                };
+            };
+        };
+    };
+    ListEvalRuns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalRunView"][];
+                };
+            };
+        };
+    };
+    StartEvalRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalRunRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalRunView"];
+                };
+            };
+        };
+    };
+    GetEvalRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalRunReport"];
+                };
+            };
+        };
+    };
+    DeleteEvalRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CancelEvalRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description No Content */
             204: {

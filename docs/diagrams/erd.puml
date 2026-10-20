@@ -129,6 +129,7 @@ package "Identity & Access" {
     notification_targets : json
     dnd_until : DateTimeOffset
     tasks_paused_at : DateTimeOffset  <<kill switch active>>
+    * help_marshal_learn : bool  <<default false; gates learning features>>
   }
 }
 
@@ -172,6 +173,9 @@ package "Conversations & Runs" {
     taint_sources : json  <<mail | rss | notes | web | mcp:<id>, first tainting step>>
     * cost : decimal
     time_to_first_delta_ms : int  <<null when no delta was sent>>
+    rating : up | down  <<owner's rating>>
+    rating_note : string  <<at most 1,000 characters>>
+    rated_at : DateTimeOffset
   }
 
   entity RunStep {
@@ -242,6 +246,74 @@ package "Conversations & Runs" {
     * expires_at : DateTimeOffset  <<approval TTL>>
     * status : pending | answered | declined | expired | dropped
     decided_at : DateTimeOffset
+  }
+
+  entity AppInstance <<app_instances>> {
+    * id : AppInstanceId <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    session_id : SessionId <<FK>>
+    * run_id : RunId  <<run of the call; no FK (retention)>>
+    * server : string  <<MCP server with apps: true>>
+    * tool : string  <<tool name as the server reports it>>
+    * tool_call_id : string
+    * resource_uri : string  <<ui:// resource>>
+    * html : string  <<server-authored, at most 1 MB, sandboxed iframe only>>
+    * args : json
+    result : json  <<CallToolResult; null above 256 KB>>
+    * created_at : DateTimeOffset
+  }
+
+  entity EvalCase <<eval_cases>> {
+    * id : EvalCaseId <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    * source_run_id : RunId  <<unique per owner; no FK (outlives retention)>>
+    * expectation : good | bad | unrated
+    note : string
+    * input : string
+    * input_mode : voice | text
+    * language : de | en
+    satellite_id : string
+    area_id : string
+    * history : json  <<user and assistant text before the turn>>
+    turn_context : string  <<null for runs recorded before snapshots>>
+    * tool_calls : json  <<tool, canonical args, result, error, untrusted>>
+    reply : string
+    * incomplete : bool
+    * recorded_at : DateTimeOffset
+    * created_at : DateTimeOffset
+  }
+
+  entity EvalRun <<eval_runs>> {
+    * id : EvalRunId <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    * candidate : json  <<models per tier, template, base prompt, judge>>
+    * case_ids : json
+    * started_by : string
+    * status : queued | running | completed | cancelled | failed
+    * pass / changed / diverged / failed : int
+    * cost : decimal
+    * estimated_cost : decimal
+    error : string
+    * created_at : DateTimeOffset
+    ended_at : DateTimeOffset
+  }
+
+  entity EvalResult <<eval_results>> {
+    * id : Guid <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    * run_id : EvalRunId <<FK>>
+    * case_id : EvalCaseId  <<no FK: deleted cases keep results>>
+    * outcome : pass | changed | diverged | failed
+    * calls : json  <<replayed calls, recorded or not>>
+    reply : string
+    judge_score : double
+    * cost : decimal  <<counts against the daily cost cap>>
+    error : string
+    * created_at : DateTimeOffset
   }
 
   entity FollowUp {
@@ -577,6 +649,11 @@ User ||--o{ PendingAction
 User ||--o{ PendingInputRequest
 Session |o--o{ PendingInputRequest
 AgentTask |o--o{ PendingInputRequest
+User ||--o{ AppInstance
+User ||--o{ EvalCase
+User ||--o{ EvalRun
+EvalRun ||--o{ EvalResult
+Session |o--o{ AppInstance
 User ||--o{ McpTaskHandle
 AgentTask ||--o{ McpTaskHandle
 User ||--o{ Project

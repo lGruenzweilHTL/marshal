@@ -381,6 +381,18 @@ namespace Marshal.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("owner_id");
 
+                    b.Property<long?>("RatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("rated_at");
+
+                    b.Property<string>("Rating")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("rating");
+
+                    b.Property<string>("RatingNote")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("rating_note");
+
                     b.Property<string>("SatelliteId")
                         .HasColumnType("TEXT")
                         .HasColumnName("satellite_id");
@@ -629,6 +641,228 @@ namespace Marshal.Data.Migrations
                     b.ToTable("demo_seed", (string)null);
                 });
 
+            modelBuilder.Entity("Marshal.Data.Evals.EvalCaseRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AreaId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("area_id");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Expectation")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("expectation");
+
+                    b.Property<string>("History")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("history");
+
+                    b.Property<bool>("Incomplete")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("incomplete");
+
+                    b.Property<string>("Input")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("input");
+
+                    b.Property<string>("InputMode")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("input_mode");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("language");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("note");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<long>("RecordedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("recorded_at");
+
+                    b.Property<string>("Reply")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("reply");
+
+                    b.Property<string>("SatelliteId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("satellite_id");
+
+                    b.Property<Guid>("SourceRunId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("source_run_id");
+
+                    b.Property<string>("ToolCalls")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tool_calls");
+
+                    b.Property<string>("TurnContext")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("turn_context");
+
+                    b.HasKey("Id")
+                        .HasName("pk_eval_cases");
+
+                    b.HasIndex("OwnerId", "SourceRunId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_eval_cases_owner_id_source_run_id");
+
+                    b.ToTable("eval_cases", (string)null);
+                });
+
+            modelBuilder.Entity("Marshal.Data.Evals.EvalResultRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Calls")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("calls");
+
+                    b.Property<Guid>("CaseId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("case_id");
+
+                    b.Property<double>("Cost")
+                        .HasColumnType("REAL")
+                        .HasColumnName("cost");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Error")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("error");
+
+                    b.Property<double?>("JudgeScore")
+                        .HasColumnType("REAL")
+                        .HasColumnName("judge_score");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("outcome");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("Reply")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("reply");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("run_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_eval_results");
+
+                    b.HasIndex("OwnerId", "CreatedAt")
+                        .HasDatabaseName("ix_eval_results_owner_id_created_at");
+
+                    b.HasIndex("RunId", "CreatedAt")
+                        .HasDatabaseName("ix_eval_results_run_id_created_at");
+
+                    b.ToTable("eval_results", (string)null);
+                });
+
+            modelBuilder.Entity("Marshal.Data.Evals.EvalRunRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Candidate")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("candidate");
+
+                    b.Property<string>("CaseIds")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("case_ids");
+
+                    b.Property<int>("Changed")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("changed");
+
+                    b.Property<double>("Cost")
+                        .HasColumnType("REAL")
+                        .HasColumnName("cost");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("Diverged")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("diverged");
+
+                    b.Property<long?>("EndedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ended_at");
+
+                    b.Property<string>("Error")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("error");
+
+                    b.Property<double>("EstimatedCost")
+                        .HasColumnType("REAL")
+                        .HasColumnName("estimated_cost");
+
+                    b.Property<int>("Failed")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("failed");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<int>("Pass")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("pass");
+
+                    b.Property<string>("StartedBy")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("started_by");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_eval_runs");
+
+                    b.HasIndex("OwnerId", "CreatedAt")
+                        .HasDatabaseName("ix_eval_runs_owner_id_created_at");
+
+                    b.ToTable("eval_runs", (string)null);
+                });
+
             modelBuilder.Entity("Marshal.Data.Identity.Role", b =>
                 {
                     b.Property<Guid>("Id")
@@ -759,6 +993,10 @@ namespace Marshal.Data.Migrations
                     b.Property<long?>("DndUntil")
                         .HasColumnType("INTEGER")
                         .HasColumnName("dnd_until");
+
+                    b.Property<bool>("HelpMarshalLearn")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("help_marshal_learn");
 
                     b.Property<string>("Language")
                         .IsRequired()
@@ -2295,6 +2533,43 @@ namespace Marshal.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_demo_seed_users_owner_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Evals.EvalCaseRow", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_eval_cases_users_owner_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Evals.EvalResultRow", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_eval_results_users_owner_id");
+
+                    b.HasOne("Marshal.Data.Evals.EvalRunRow", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_eval_results_eval_runs_run_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Evals.EvalRunRow", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_eval_runs_users_owner_id");
                 });
 
             modelBuilder.Entity("Marshal.Data.Identity.UserPreferences", b =>

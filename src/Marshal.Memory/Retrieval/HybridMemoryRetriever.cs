@@ -38,8 +38,13 @@ public sealed partial class HybridMemoryRetriever(
         var found = new Dictionary<ChunkId, (double Similarity, RetrievalSource Source)>();
         foreach ((ChunkId id, double similarity) in await VectorSeedsAsync(db, owner, embedding, retrieval.SeedCount, cancellationToken))
             Add(found, id, similarity, RetrievalSource.Vector);
-        foreach ((ChunkId id, double similarity) in await KeywordSeedsAsync(db, owner, query.Text, retrieval.SeedCount, cancellationToken))
+        foreach ((ChunkId id, double similarity) in await KeywordSeedsAsync(db, owner, query.Text, retrieval.SeedCount, KeywordIndex.Chunks, cancellationToken))
             Add(found, id, similarity, RetrievalSource.Keyword);
+        if (query.AsOf is not null)
+        {
+            foreach ((ChunkId id, double similarity) in await KeywordSeedsAsync(db, owner, query.Text, retrieval.SeedCount, KeywordIndex.Versions, cancellationToken))
+                Add(found, id, similarity, RetrievalSource.Keyword);
+        }
 
         List<ChunkId> seeds = [.. found.Keys];
         var seedSimilarity = found.ToDictionary(entry => entry.Key, entry => entry.Value.Similarity);

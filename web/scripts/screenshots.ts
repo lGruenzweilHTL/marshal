@@ -50,6 +50,9 @@ const routes: Route[] = [
   { name: 'secrets', path: '/security/secrets' },
   { name: 'system', path: '/system' },
   { name: 'config', path: '/system/config' },
+  { name: 'evals', path: '/system/evals' },
+  { name: 'eval-case', path: `/system/evals/cases/${ids.evalCase(1)}` },
+  { name: 'eval-run', path: `/system/evals/runs/${ids.evalRun}` },
   { name: 'not-found', path: '/does-not-exist' },
 ]
 

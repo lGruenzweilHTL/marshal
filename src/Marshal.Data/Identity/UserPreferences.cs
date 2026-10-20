@@ -20,6 +20,9 @@ public sealed class UserPreferences
 
     public DateTimeOffset? DndUntil { get; set; }
 
+    /// <summary>"Help Marshal learn": learning features (eval cases from ratings, suggestions) are on.</summary>
+    public bool HelpMarshalLearn { get; set; }
+
     /// <summary>Set while the background kill switch is active (new agent task starts are paused).</summary>
     public DateTimeOffset? TasksPausedAt { get; set; }
 }

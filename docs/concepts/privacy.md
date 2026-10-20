@@ -77,6 +77,7 @@ Logs never contain secrets, message bodies, note contents or full prompts.
 | Full run step payloads (prompts, tool arguments and results, replies) | 30 days | `maintenance.payloadRetention` |
 | Run and step metadata (tokens, cost, tools, durations) | 1 year | `maintenance.metadataRetention` |
 | Backups | 7 copies | `maintenance.backupCopies` |
+| Eval cases | Until you delete them | Not affected by the retention purge. Created only by rating a run with "help Marshal learn" on, or by an admin saving a run. See [evals](../guides/evals.md#privacy). |
 | Memory chunks | Until you delete them | Not affected by the retention purge. Deleting soft-deletes; the history view still shows them. |
 | Pending confirmations | 60 seconds | `confirmation.ttl` |
 | Background approvals | 10 minutes | `tasks.approvalTtl` |
@@ -90,6 +91,7 @@ See [`maintenance`](../configuration/marshal-yaml/maintenance.md).
 
 - **Recording is on by design.** Full run payloads make the run detail useful for understanding and debugging what Marshal did. They are also a record of your conversations for 30 days. Shorten `maintenance.payloadRetention` if that is too long for you.
 - **Context is rich.** Memory and area states go into every turn to avoid tool round trips on voice. With a cloud model, that context goes with every call.
+- **Eval cases outlive retention.** A case keeps the text of one turn until you delete it. "Help Marshal learn" is off by default, so no case exists unless you turn it on or an admin saves a run.
 - **Redaction is per tool.** Results of sensitive tools are stored as references, but the model still saw the content during the run, and so did the model provider.
 
 ## Related

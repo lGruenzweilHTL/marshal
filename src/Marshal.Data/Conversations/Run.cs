@@ -49,4 +49,12 @@ public sealed class Run : IOwned
 
     /// <summary>Milliseconds from the request to the first streamed delta; null when none was sent.</summary>
     public int? TimeToFirstDeltaMs { get; set; }
+
+    /// <summary>The owner's rating; null when unrated.</summary>
+    public Abstractions.Evals.RunRating? Rating { get; set; }
+
+    /// <summary>The note on the rating (at most 1,000 characters).</summary>
+    public string? RatingNote { get; set; }
+
+    public DateTimeOffset? RatedAt { get; set; }
 }

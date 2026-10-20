@@ -10,6 +10,7 @@ const stored = {
   quietHours: [{ day: 'sunday', start: '22:00:00', end: '07:00:00' }],
   notificationTargets: { person: 'person.lukas', push: ['notify.mobile_app_pixel'] },
   dndUntil: null as string | null,
+  helpMarshalLearn: false,
 }
 
 function server() {
@@ -47,6 +48,21 @@ describe('PreferencesView', () => {
     expect(wrapper.locale.language.value).toBe('de')
     expect(wrapper.get('h1').text()).toBe('Präferenzen')
     expect(wrapper.find('[data-test="saved"]').exists()).toBe(true)
+  })
+
+  it('lists what "help Marshal learn" enables and saves the toggle', async () => {
+    const fake = server().on('PUT', '/api/v1/me/preferences', 200, { ...stored, helpMarshalLearn: true })
+    const wrapper = await mountPreferences(fake)
+
+    const learning = wrapper.get('[data-test="learning"]')
+    expect(learning.text()).toContain('Help Marshal learn')
+    expect(learning.findAll('li')).toHaveLength(4)
+    expect((learning.get('input[role="switch"]').element as HTMLInputElement).checked).toBe(false)
+    await learning.get('input[role="switch"]').setValue(true)
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(sent(fake).helpMarshalLearn).toBe(true)
   })
 
   it('applies a changed time zone after saving', async () => {

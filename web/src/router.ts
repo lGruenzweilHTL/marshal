@@ -24,6 +24,9 @@ import ProjectsView from './memory/ProjectsView.vue'
 import NotFoundView from './layout/NotFoundView.vue'
 import PreferencesView from './preferences/PreferencesView.vue'
 import PrinterView from './printers/PrinterView.vue'
+import EvalCaseView from './evals/EvalCaseView.vue'
+import EvalRunView from './evals/EvalRunView.vue'
+import EvalsView from './evals/EvalsView.vue'
 import CostView from './runs/CostView.vue'
 import RunDetailView from './runs/RunDetailView.vue'
 import RunsView from './runs/RunsView.vue'
@@ -93,6 +96,9 @@ const routes: RouteRecordRaw[] = [
       { path: 'security/secrets', name: 'secrets', component: SecretsView, meta: { title: 'shell.nav.security', nav: 'security' } },
       { path: 'system', name: 'system', component: SystemView, meta: { title: 'shell.nav.system', nav: 'system' } },
       { path: 'system/config', name: 'config', component: ConfigView, meta: { title: 'shell.nav.config', nav: 'config' } },
+      { path: 'system/evals', name: 'evals', component: EvalsView, meta: { title: 'shell.nav.evals', nav: 'evals' } },
+      { path: 'system/evals/cases/:id', name: 'eval-case', component: EvalCaseView, meta: { title: 'shell.nav.evals', nav: 'evals' } },
+      { path: 'system/evals/runs/:id', name: 'eval-run', component: EvalRunView, meta: { title: 'shell.nav.evals', nav: 'evals' } },
       // Paths of the previous layout; push notifications already sent still link to some of them.
       { path: 'review/:id?', redirect: (to) => (to.params.id ? `/inbox/approvals/${String(to.params.id)}` : '/inbox') },
       { path: 'notifications', redirect: '/inbox' },

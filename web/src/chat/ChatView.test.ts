@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import ChatView from './ChatView.vue'
 import { eventStream, FakeServer, json, type RecordedRequest } from '../testing/fakeServer'
-import { conversationSummary } from '../testing/fixtures'
+import { conversationSummary, printerState } from '../testing/fixtures'
 import { me, mountOptions } from '../testing/mountApp'
 import { useViewport } from '../testing/viewport'
 import type { Schemas } from '../api/client'
@@ -448,7 +448,9 @@ describe('ChatView', () => {
       await flushPromises()
 
       expect(wrapper.router.currentRoute.value.path).toBe('/chat/s-new')
-      expect(server.count('GET', '/api/v1/conversations/s-new')).toBe(0)
+      // Fetched once for the reply's run id (ratings); the thread is not reopened.
+      expect(server.count('GET', '/api/v1/conversations/s-new')).toBe(1)
+      expect(wrapper.findAll('[data-role="user"]')).toHaveLength(1)
       expect(server.count('GET', '/api/v1/conversations')).toBeGreaterThan(listLoads)
       expect(wrapper.findAll('[data-role="assistant"]').at(-1)!.text()).toBe('Hello!')
     })
@@ -563,5 +565,55 @@ describe('ChatView input requests', () => {
 
     expect(wrapper.get('[data-input="i-1"]').text()).toContain('Which correspondent?')
     expect(wrapper.find('[data-input="i-1"] input[name="correspondent"]').exists()).toBe(true)
+  })
+  describe('ratings', () => {
+    it('shows the stored rating of earlier replies', async () => {
+      const server = new FakeServer().on('GET', '/api/v1/conversations/s-9', 200, detail('s-9', [turn({ rating: 'down' }), turn({ runId: 'r-2' })]))
+      const wrapper = await mountChat(server, '/chat/s-9')
+
+      const replies = wrapper.findAll('[data-role="assistant"]')
+      expect(replies[0]!.get('[data-test="rate-down"]').attributes('aria-pressed')).toBe('true')
+      expect(replies[1]!.get('[data-test="rate-down"]').attributes('aria-pressed')).toBe('false')
+    })
+
+    it('offers no rating while the reply streams, then rates its run down with a note', async () => {
+      let release!: () => void
+      const gate = new Promise<void>((resolve) => (release = resolve))
+      const encoder = new TextEncoder()
+      const server = new FakeServer()
+        .handle('POST', turns, () => {
+          const stream = new ReadableStream<Uint8Array>({
+            async start(controller) {
+              controller.enqueue(encoder.encode(sse('delta', { text: 'Lamp off.' })))
+              await gate
+              controller.enqueue(encoder.encode(final('Lamp off.', 's-5')))
+              controller.close()
+            },
+          })
+          return new Response(stream, { headers: { 'Content-Type': 'text/event-stream' } })
+        })
+        .on('GET', '/api/v1/conversations/s-5', 200, detail('s-5', [turn({ runId: 'r-5', input: 'kitchen light off', reply: 'Lamp off.' })]))
+        .on('PUT', '/api/v1/runs/r-5/rating', 200, { run: 'r-5', rating: 'down', note: null, caseId: null })
+      const wrapper = await mountChat(server)
+
+      await send(wrapper, 'kitchen light off')
+      await flushPromises()
+      expect(wrapper.find('[data-test="rating"]').exists()).toBe(false)
+
+      release()
+      await flushPromises()
+      await wrapper.get('[data-test="rate-down"]').trigger('click')
+      await flushPromises()
+      expect(JSON.parse(server.request('PUT', '/api/v1/runs/r-5/rating')!.body)).toEqual({ rating: 'down', note: null })
+
+      server.on('PUT', '/api/v1/runs/r-5/rating', 200, { run: 'r-5', rating: 'down', note: 'wrong light', caseId: null })
+      await wrapper.get('textarea[name="ratingNote"]').setValue('wrong light')
+      await wrapper.get('[data-test="save-note"]').trigger('click')
+      await flushPromises()
+
+      expect(JSON.parse(server.request('PUT', '/api/v1/runs/r-5/rating')!.body)).toEqual({ rating: 'down', note: 'wrong light' })
+      expect(wrapper.get('[data-test="rate-down"]').attributes('aria-pressed')).toBe('true')
+      expect(wrapper.get('[data-test="rating-note"]').text()).toBe('wrong light')
+    })
   })
 })

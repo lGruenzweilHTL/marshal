@@ -47,6 +47,10 @@ interface Message {
   taskId?: string
   /** A turn that ended without a recorded reply. */
   noReply?: boolean
+  /** The run of the reply: rated with thumbs once the reply is complete. */
+  runId?: string
+  /** The stored rating of the reply's run. */
+  rating?: Schemas['RunRating'] | null
 }
 
 type Entry = Schemas['ConversationDetail']['entries'][number]

@@ -27,6 +27,8 @@ public sealed class EfRunQueries(IDbContextFactory<MarshalDbContext> contexts) :
             runs = runs.Where(run => run.StartedAt < before);
         if (filter.TaskId is { } task)
             runs = runs.Where(run => run.TaskId == task);
+        if (filter.Rating is { } rating)
+            runs = runs.Where(run => run.Rating == rating);
 
         IOrderedQueryable<Run> ordered = filter.Sort == RunSort.SlowestFirstDelta
             ? runs.Where(run => run.TimeToFirstDeltaMs != null).OrderByDescending(run => run.TimeToFirstDeltaMs).ThenByDescending(run => run.StartedAt)
@@ -47,6 +49,8 @@ public sealed class EfRunQueries(IDbContextFactory<MarshalDbContext> contexts) :
         RunStepDetail[] details = [.. steps.Select(Step)];
         return new RunDetail(Summary(run), run.Language, taint, details)
         {
+            TaskId = run.TaskId,
+            EvalCaseId = await db.EvalCases.AsNoTracking().Where(candidate => candidate.SourceRunId == id).Select(candidate => (Abstractions.Evals.EvalCaseId?)candidate.Id).FirstOrDefaultAsync(cancellationToken),
             LoadedNamespaces =
             [
                 .. details.Where(step => step.Depth == 0).SelectMany(step => step.Notes)
@@ -108,6 +112,8 @@ public sealed class EfRunQueries(IDbContextFactory<MarshalDbContext> contexts) :
         run.Id, run.SessionId, run.Source, run.InputMode, run.Trigger, run.SatelliteId, run.StartedAt, run.EndedAt, run.Outcome, run.OutcomeReason, run.Tainted, run.Cost)
     {
         TimeToFirstDeltaMs = run.TimeToFirstDeltaMs,
+        Rating = run.Rating,
+        RatingNote = run.RatingNote,
     };
 
     private static RunStepDetail Step(RunStep step)

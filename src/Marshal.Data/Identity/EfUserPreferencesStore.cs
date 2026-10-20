@@ -23,7 +23,8 @@ public sealed class EfUserPreferencesStore(IDbContextFactory<MarshalDbContext> c
             row.TimeZone,
             row.QuietHours is null ? [] : JsonSerializer.Deserialize<List<QuietHoursWindow>>(row.QuietHours, _json) ?? [],
             row.NotificationTargets is null ? NotificationTargets.None : JsonSerializer.Deserialize<NotificationTargets>(row.NotificationTargets, _json) ?? NotificationTargets.None,
-            row.DndUntil);
+            row.DndUntil,
+            row.HelpMarshalLearn);
     }
 
     public async Task SaveAsync(OwnerId owner, UserPreferencesRecord preferences, CancellationToken cancellationToken)
@@ -41,6 +42,7 @@ public sealed class EfUserPreferencesStore(IDbContextFactory<MarshalDbContext> c
         row.QuietHours = JsonSerializer.Serialize(preferences.QuietHours, _json);
         row.NotificationTargets = JsonSerializer.Serialize(preferences.NotificationTargets, _json);
         row.DndUntil = preferences.DndUntil;
+        row.HelpMarshalLearn = preferences.HelpMarshalLearn;
         await db.SaveChangesAsync(cancellationToken);
     }
 }

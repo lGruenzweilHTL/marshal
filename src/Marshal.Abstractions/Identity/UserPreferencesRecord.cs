@@ -8,12 +8,17 @@ namespace Marshal.Abstractions.Identity;
 /// <param name="QuietHours">Weekly quiet-hour windows.</param>
 /// <param name="NotificationTargets">Where notifications reach the user.</param>
 /// <param name="DndUntil">Do-not-disturb end, if active.</param>
+/// <param name="HelpMarshalLearn">
+/// "Help Marshal learn" (default off): gates every feature that learns from the user's behavior or proposes things on
+/// its own, such as rated runs becoming eval cases.
+/// </param>
 public sealed record UserPreferencesRecord(
     string Language,
     string TimeZone,
     IReadOnlyList<QuietHoursWindow> QuietHours,
     NotificationTargets NotificationTargets,
-    DateTimeOffset? DndUntil);
+    DateTimeOffset? DndUntil,
+    bool HelpMarshalLearn = false);
 
 /// <summary>
 /// One quiet-hour window starting on <paramref name="Day"/>; an <paramref name="End"/> before <paramref name="Start"/>

@@ -138,7 +138,7 @@ public sealed partial class AgentRunner(
     // Later turns of the session keep what this turn loaded; the core namespaces load anyway.
     private async Task SaveLoadedNamespacesAsync(MarshalExecutionContext context, bool nested, CancellationToken ct)
     {
-        if (nested || sessionTools is null || context.SessionId is not { } session || !context.LoadedTools.RetrievalActive)
+        if (nested || context.IsReplay || sessionTools is null || context.SessionId is not { } session || !context.LoadedTools.RetrievalActive)
             return;
 
         await sessionTools.SaveAsync(session, [.. context.LoadedTools.All.Where(item => item.Reason != LoadReasons.Core).Select(item => item.Name)], ct);
@@ -188,6 +188,7 @@ public sealed partial class AgentRunner(
             Notes = [.. contextRequest.Notes.All, .. request.UserAttachments.Select(AttachmentNote)],
             Kind = RunStepKind.Context,
             Content = systemPrompt,
+            TurnContext = prompt.Turn,
             DurationMs = (int)timeProvider.GetElapsedTime(contextStarted).TotalMilliseconds,
             Input = request.UserText,
         }, ct);
@@ -408,46 +409,39 @@ public sealed partial class AgentRunner(
         }
 
         await LoadOnCallAsync(call.Name, context, offered, ct);
-        GuardVerdict verdict = await guard.EvaluateAsync(new GuardRequest(call.Name, arguments, context, offered), ct);
-        string toolName = verdict.Tool?.Id.ToString() ?? GuessId(call.Name)?.ToString() ?? call.Name;
-        LogToolDecision(logger, toolName, verdict.Decision);
-        await transcript.EmitAsync(new ToolEvent(call.CallId, toolName, argumentSummary, ToolEventState.Running), ct);
-        switch (verdict.Outcome)
+        string toolName = call.Name;
+        ToolCallOutcome outcome = await _pipeline.CallAsync(new ToolCallRequest(call.Name, call.CallId, arguments, context, offered)
+        {
+            Notes = () => LoadNotes(context, loadMark),
+            OnDecided = async (verdict, token) =>
+            {
+                toolName = verdict.Tool?.Id.ToString() ?? ToolCallSteps.GuessId(call.Name)?.ToString() ?? call.Name;
+                await transcript.EmitAsync(new ToolEvent(call.CallId, toolName, argumentSummary, ToolEventState.Running), token);
+                if (verdict.Outcome == GuardOutcome.Allow)
+                    await SpeakFillerAsync(verdict.Tool!, context, transcript, token);
+            },
+        }, ct);
+
+        GuardVerdict decided = outcome.Verdict!;
+        switch (decided.Outcome)
         {
             case GuardOutcome.Deny:
-                await RecordToolStepAsync(verdict.Tool, call.Name, arguments, verdict.Tier, GuardDecision.Denied, [], null, verdict.Denial, 0, ct, LoadNotes(context, loadMark));
-                await transcript.EmitAsync(new ToolEvent(call.CallId, toolName, argumentSummary, ToolEventState.Denied, 0, verdict.Denial?.Code), ct);
-                return (ErrorText(verdict.Denial!), null);
+                await transcript.EmitAsync(new ToolEvent(call.CallId, toolName, argumentSummary, ToolEventState.Denied, 0, decided.Denial?.Code), ct);
+                return (outcome.Text, null);
 
             case GuardOutcome.RequireConfirmation:
-                RegisteredTool confirmTool = verdict.Tool!;
-                string summary = confirmTool.Tool.Summarize(arguments, context.Language);
-                var freeze = new FreezeRequest(
-                    context.SessionId,
-                    context.SatelliteId,
-                    confirmTool.Id,
-                    arguments.GetRawText(),
-                    summary,
-                    verdict.Reasons,
-                    context.Language,
-                    timeProvider.GetUtcNow() + confirmationOptions.Value.Ttl,
-                    context.TaskId,
-                    context.RunId,
-                    context.Taint.Sources);
-                PendingActionRecord frozen = Queues(context)
-                    ? await approvals!.EnqueueAsync(freeze, ct)
-                    : await pendingActions.FreezeAsync(freeze, ct);
-                await RecordToolStepAsync(confirmTool, call.Name, arguments, verdict.Tier, verdict.Decision, verdict.Reasons, null, null, 0, ct, LoadNotes(context, loadMark));
                 await transcript.EmitAsync(new ToolEvent(call.CallId, toolName, argumentSummary, ToolEventState.Pending, 0), ct);
-
-                // Nobody in a run without a task can confirm: the action waits in the queue and the run goes on.
-                if (Queues(context) && context.TaskId is null)
-                    return (QueuedText(frozen), null);
-
-                return (PendingText(frozen), frozen);
+                return (outcome.Text, outcome.Queued ? null : outcome.Frozen);
 
             default:
-                return (await ExecuteAsync(verdict.Tool!, call, arguments, argumentSummary, verdict, context, transcript, loadMark, ct), null);
+                RegisteredTool tool = decided.Tool!;
+                Result<ToolOutput> result = outcome.Result!;
+                await ShowAsync(outcome, transcript, ct);
+                await ShowWidgetAsync(tool, call.CallId, arguments, result, context, transcript, ct);
+                await ShowAppAsync(call.CallId, arguments, result, context, transcript, ct);
+                string? summary = _summarizer.Result(tool.Id, tool.Descriptor.Sensitive, result.IsSuccess ? result.Value.Content : null, result.IsFailure ? result.Error.Code : null);
+                await transcript.EmitAsync(new ToolEvent(call.CallId, tool.Id.ToString(), argumentSummary, result.IsSuccess ? ToolEventState.Ok : ToolEventState.Error, outcome.DurationMs, summary), ct);
+                return (outcome.Text, null);
         }
     }
 

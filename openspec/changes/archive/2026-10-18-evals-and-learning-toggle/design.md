@@ -49,6 +49,14 @@ Tool comparison is deterministic (sequence of tool ids, then arguments). Reply c
 
 `runs.rating`, `runs.rating_note`, `runs.rated_at`. `PUT /api/v1/runs/{id}/rating` (cookie principals, own runs). The case is created in the same transaction when the owner's preference is on. `user_preferences.help_marshal_learn` (bool, default false). Later changes read the same preference through `IUserPreferences`.
 
+### 6. Decisions made while building
+
+- **Bad cases that repeat themselves:** a `bad` case whose replay makes the same tool calls as the recording is `changed`, not `pass`: the recorded behavior was wrong, so repeating it is a change of nothing worth reporting as success, but it is no failure of the replay either.
+- **Judge threshold:** with a judge, a reply that differs from the recording counts as the same when the judge scores it at least 0.7; below that the case is `changed`.
+- **Cost estimate:** per case, the recorded text (history, turn context, input, tool arguments and results, reply) at about four characters per token plus a fixed 2,000-token allowance for the system prompt and tool definitions, sent once per model call (recorded tool calls plus one), priced with the candidate model of the case's tier (voice cases on `fast`, others on `standard`).
+- **Worker:** eval runs execute on a dedicated background worker (`EvalRunner`, behind `IEvalRunControl` for enqueue and cancel) rather than as a task on the task worker pool, so they never compete with or appear among user tasks; they still draw from the owner's daily cost cap.
+- **Live run id in chat:** the turn stream's final event stays unchanged; after it, the web chat reads the conversation detail to learn the run id of the reply it just finished. Turn entries of the conversation detail carry the stored `rating`.
+
 ## Risks / Trade-offs
 
 - [Eval cases keep personal conversation text beyond retention] → they exist only by explicit user action (rating with the toggle on, or admin save); listed and deletable; documented in the privacy section.

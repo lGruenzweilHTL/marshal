@@ -3,6 +3,7 @@ import * as common from './common'
 import * as artifacts from '../artifacts/messages'
 import * as auth from '../auth/messages'
 import * as chat from '../chat/messages'
+import * as evals from '../evals/messages'
 import * as home from '../home/messages'
 import * as inbox from '../inbox/messages'
 import * as mail from '../mail/messages'
@@ -34,6 +35,7 @@ export const en = {
   preferences: preferences.en,
   security: security.en,
   system: system.en,
+  evals: evals.en,
   auth: auth.en,
 }
 
@@ -52,6 +54,7 @@ export const de: Catalog<typeof en> = {
   preferences: preferences.de,
   security: security.de,
   system: system.de,
+  evals: evals.de,
   auth: auth.de,
 }
 

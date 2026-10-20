@@ -26,6 +26,7 @@ public sealed class PreferencesApiTests : IAsyncLifetime
 
         Assert.Equal("Europe/Vienna", preferences?.TimeZone);
         Assert.Equal("en", preferences?.Language);
+        Assert.False((await browser.GetFromJsonAsync<JsonElement>(Preferences, Ct)).GetProperty("helpMarshalLearn").GetBoolean());
     }
 
     [Fact]
@@ -39,6 +40,7 @@ public sealed class PreferencesApiTests : IAsyncLifetime
             quietHours = new[] { new { day = "friday", start = "23:30:00", end = "08:00:00" } },
             notificationTargets = new { person = "person.lukas", push = new[] { "notify.mobile_app_pixel" } },
             dndUntil = "2026-09-28T20:00:00+00:00",
+            helpMarshalLearn = true,
         };
 
         HttpResponseMessage put = await browser.PutAsJsonAsync(Preferences, body, Ct);
@@ -50,6 +52,7 @@ public sealed class PreferencesApiTests : IAsyncLifetime
         Assert.Equal("friday", stored.GetProperty("quietHours")[0].GetProperty("day").GetString());
         Assert.Equal("person.lukas", stored.GetProperty("notificationTargets").GetProperty("person").GetString());
         Assert.Equal("notify.mobile_app_pixel", stored.GetProperty("notificationTargets").GetProperty("push")[0].GetString());
+        Assert.True(stored.GetProperty("helpMarshalLearn").GetBoolean());
     }
 
     [Fact]
@@ -82,7 +85,7 @@ public sealed class PreferencesApiTests : IAsyncLifetime
         JsonElement document = await _factory.CreateClient().GetFromJsonAsync<JsonElement>("/openapi/v1.json", Ct);
 
         JsonElement properties = document.GetProperty("components").GetProperty("schemas").GetProperty("UserPreferencesResponse").GetProperty("properties");
-        Assert.Equal(["dndUntil", "language", "notificationTargets", "quietHours", "timeZone"], properties.EnumerateObject().Select(property => property.Name).Order(StringComparer.Ordinal));
+        Assert.Equal(["dndUntil", "helpMarshalLearn", "language", "notificationTargets", "quietHours", "timeZone"], properties.EnumerateObject().Select(property => property.Name).Order(StringComparer.Ordinal));
     }
 
     private static object Body(string language, string timeZone) =>

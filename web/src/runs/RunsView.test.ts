@@ -72,6 +72,17 @@ describe('RunsView', () => {
     )
   })
 
+  it('filters by rating through the query', async () => {
+    const fake = server()
+    const { wrapper, router } = await mountRuns(fake)
+
+    await wrapper.get('[data-rating="down"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ rating: 'down' })
+    expect(Object.fromEntries(new URLSearchParams(fake.request('GET', '/api/v1/runs')!.search))).toEqual({ rating: 'down', limit: '50' })
+  })
+
   it('filters automation runs and labels them', async () => {
     const fake = new FakeServer()
       .on('GET', '/api/v1/me', 200, me)

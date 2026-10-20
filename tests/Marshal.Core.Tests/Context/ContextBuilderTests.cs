@@ -51,6 +51,17 @@ public sealed class ContextBuilderTests
     }
 
     [Fact]
+    public async Task Build_Replay_UsesRecordedTurnContextAndBasePromptOverride()
+    {
+        var builder = new ContextBuilder([new BasePromptContributor(), new FixedContributor(160, "memory now", ContextStability.Turn), new FixedContributor(100, "profile", ContextStability.Session)]);
+        MarshalExecutionContext replay = TestExecutionContext.Text() with { Replay = new ReplaySettings("memory then", "Be terse.") };
+
+        SystemPrompt prompt = await builder.BuildAsync(Request(replay), Ct);
+
+        Assert.Equal(("Be terse.\n\nprofile\n\n", "memory then"), (prompt.Stable, prompt.Turn));
+    }
+
+    [Fact]
     public async Task Build_ConsecutiveTurns_IdenticalUpToTheFirstTurnSection()
     {
         ContextBuilder builder = Standard();

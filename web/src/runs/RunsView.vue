@@ -15,9 +15,10 @@ import TaintFlag from './TaintFlag.vue'
 
 const sources: Schemas['SessionSource'][] = ['voice', 'web', 'task', 'api', 'automation']
 const outcomes: Schemas['RunOutcome'][] = ['ok', 'error', 'backgrounded', 'cancelled']
+const ratings = ['up', 'down'] as const
 const tones: Record<Schemas['RunOutcome'], Tone> = { ok: 'success', error: 'danger', backgrounded: 'warning', cancelled: 'neutral' }
 
-/** Every run, newest first; source, outcome and minimum cost filter on the server and live in the query. */
+/** Every run, newest first; source, outcome, rating and minimum cost filter on the server and live in the query. */
 const api = useApi()
 const route = useRoute()
 const router = useRouter()
@@ -28,6 +29,7 @@ const { t } = useI18n()
 const text = (key: string) => (typeof route.query[key] === 'string' ? (route.query[key] as string) : '')
 const source = computed(() => text('source'))
 const outcome = computed(() => text('outcome'))
+const rating = computed(() => text('rating'))
 const sort = computed(() => text('sort'))
 const minCost = shallowRef(text('minCost'))
 
@@ -39,6 +41,7 @@ const runs = usePagedLoad(
           query: {
             source: source.value || undefined,
             outcome: outcome.value || undefined,
+            rating: rating.value || undefined,
             minCost: text('minCost') ? Number(text('minCost')) : undefined,
             sort: sort.value || undefined,
             // Paging by start time does not apply to the latency order.
@@ -60,7 +63,7 @@ watch(
 useLiveEvent('runs', 'run.completed', () => runs.load.refresh())
 
 function apply(change: Record<string, string>) {
-  const query: Record<string, string> = { source: source.value, outcome: outcome.value, minCost: text('minCost'), sort: sort.value, ...change }
+  const query: Record<string, string> = { source: source.value, outcome: outcome.value, rating: rating.value, minCost: text('minCost'), sort: sort.value, ...change }
   void router.replace({ query: Object.fromEntries(Object.entries(query).filter(([, value]) => value)) })
 }
 
@@ -90,6 +93,16 @@ const columns = computed(() => [
           :model-value="outcome === value"
           :data-outcome="value"
           @update:model-value="apply({ outcome: outcome === value ? '' : value })"
+        />
+      </div>
+      <div class="chips" role="group" :aria-label="t('runs.ratings')">
+        <Chip
+          v-for="value in ratings"
+          :key="value"
+          :label="t(`runs.rating.filter.${value}`)"
+          :model-value="rating === value"
+          :data-rating="value"
+          @update:model-value="apply({ rating: rating === value ? '' : value })"
         />
       </div>
       <Chip :label="t('runs.slowestFirst')" :model-value="sort === 'timeToFirstDelta'" data-sort="timeToFirstDelta" @update:model-value="apply({ sort: sort ? '' : 'timeToFirstDelta' })" />
