@@ -30,6 +30,7 @@ Development started on 2026-09-28. The latest work in the history is dated 2026-
 - MCP input requests (elicitation) answered only in the web UI, and MCP server tasks that resume a waiting Marshal task.
 - Health warnings: `GET /api/v1/system/health`, a banner on every web page, the `health` live topic and the `system.health` tool, used by the example briefing.
 - Tool retrieval by namespace (`tools.core`, `tools.retrieval.*`, MCP `description`) and `agent.find_tools`.
+- Marshal as an MCP server at `/mcp` (streamable HTTP, stateless) for Claude Code, VS Code and other MCP clients: scopes `mcp:read` (memory, notes and task read tools) and `mcp:write` (also `tasks_create` and `ask_marshal`). Calls run through the guard as recorded runs and count against the daily cost cap; confirm-tier actions go to the approval queue.
 - `telemetry.captureContent`: opt-in content on spans, redacted like run recording.
 - Spoken fillers before slow tools in voice turns (`voice.fillerThresholdMs`).
 - Time to first delta per run, a voice timeline in the run detail and "slowest first words" sorting in the runs list.

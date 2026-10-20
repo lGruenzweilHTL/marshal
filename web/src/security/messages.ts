@@ -20,6 +20,10 @@ export const en = {
     namePlaceholder: 'e.g. Home Assistant',
     scopes: 'Scopes',
     scopesHint: 'A token can only get scopes you have yourself.',
+    scopeHelp: {
+      mcpRead: 'MCP clients (Claude Code, VS Code) read Marshal’s memory, notes and tasks.',
+      mcpWrite: 'MCP clients also create tasks and ask Marshal to act with its own tools. Approvals stay with you.',
+    },
     expiresOn: 'Expires on (optional)',
     expiresHint: 'Leave empty for a token that never expires.',
     create: 'Create token',
@@ -83,6 +87,10 @@ export const de: Catalog<typeof en> = {
     namePlaceholder: 'z. B. Home Assistant',
     scopes: 'Berechtigungen',
     scopesHint: 'Ein Token kann nur Berechtigungen bekommen, die du selbst hast.',
+    scopeHelp: {
+      mcpRead: 'MCP-Clients (Claude Code, VS Code) lesen Marshals Gedächtnis, Notizen und Aufgaben.',
+      mcpWrite: 'MCP-Clients legen auch Aufgaben an und können Marshal handeln lassen, mit seinen eigenen Werkzeugen. Freigaben bleiben bei dir.',
+    },
     expiresOn: 'Läuft ab am (optional)',
     expiresHint: 'Leer lassen für ein Token, das nie abläuft.',
     create: 'Token erstellen',

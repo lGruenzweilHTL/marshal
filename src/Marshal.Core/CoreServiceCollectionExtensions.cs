@@ -182,9 +182,11 @@ public static class CoreServiceCollectionExtensions
 
         services.TryAddSingleton<IToolRedaction, SensitiveToolRedaction>();
         services.AddSingleton<IToolCallSummarizer, DefaultToolCallSummarizer>();
+        services.AddSingleton<IToolCallPipeline, GuardedToolCallPipeline>();
         services.AddSingleton<IAgentRunner, AgentRunner>();
         services.AddSingleton<IStructuredOutputShaper, ModelStructuredOutputShaper>();
         services.AddSingleton<IAiTaskRunner, AiTaskRunner>();
+        services.AddSingleton<IAskMarshalRunner, AskMarshalRunner>();
         services.AddSingleton<IIdentityResolver, InstanceOwnerIdentityResolver>();
         services.AddOptions<InstanceOptions>().Bind(configuration.GetSection("instance"))
             .Validate(options => options.TimeZone is null || UserPreferencesRules.IsIanaTimeZone(options.TimeZone), "instance.timeZone is not an IANA time zone.")

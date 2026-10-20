@@ -26,6 +26,8 @@ const tokens = useLoad(() => api.call((client) => client.GET('/api/v1/me/tokens'
 const providers = useLoad(() => api.call((client) => client.GET('/api/v1/auth/providers')))
 const localLogin = computed(() => providers.data.value?.some((provider) => provider.type === 'local') === true && passkeys.supported())
 const ownScopes = computed(() => user.current.value?.scopes ?? [])
+const scopeHelpKeys: Record<string, 'mcpRead' | 'mcpWrite'> = { 'mcp:read': 'mcpRead', 'mcp:write': 'mcpWrite' }
+const scopeHelp = (scope: string) => (scopeHelpKeys[scope] ? t(`security.tokens.scopeHelp.${scopeHelpKeys[scope]}`) : undefined)
 
 const draft = reactive({ name: '', scopes: [] as string[], expiresOn: '' })
 const plaintext = shallowRef<string | null>(null)
@@ -159,7 +161,7 @@ const addPasskey = useSubmit(async () => {
             <legend class="t-label">{{ t('security.tokens.scopes') }}</legend>
             <span class="t-body-s ink-3">{{ t('security.tokens.scopesHint') }}</span>
             <div class="scope-grid" :class="{ two: desktop }">
-              <Checkbox v-for="scope in ownScopes" :key="scope" v-model="draft.scopes" name="scope" :value="scope" :label="scope" mono />
+              <Checkbox v-for="scope in ownScopes" :key="scope" v-model="draft.scopes" name="scope" :value="scope" :label="scope" :description="scopeHelp(scope)" mono />
             </div>
           </fieldset>
           <Field v-model="draft.expiresOn" kind="date" name="expiresAt" :label="t('security.tokens.expiresOn')" :hint="t('security.tokens.expiresHint')" />

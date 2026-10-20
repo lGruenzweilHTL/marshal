@@ -387,11 +387,11 @@ public sealed partial class AgentRunner(
         if (pending is not null)
         {
             var notNow = new Error("confirmation.already_pending", "Not executed: another action is waiting for confirmation. Ask about that one first.", ErrorType.Conflict);
-            string unverified = GuessId(call.Name)?.ToString() ?? call.Name;
+            string unverified = ToolCallSteps.GuessId(call.Name)?.ToString() ?? call.Name;
             await transcript.EmitAsync(new ToolEvent(call.CallId, unverified, argumentSummary, ToolEventState.Running), ct);
-            await RecordToolStepAsync(null, call.Name, arguments, null, GuardDecision.Denied, [], null, notNow, 0, ct);
+            await RecordAsync(ToolCallSteps.Step(null, call.Name, arguments, null, GuardDecision.Denied, [], null, notNow, 0), ct);
             await transcript.EmitAsync(new ToolEvent(call.CallId, unverified, argumentSummary, ToolEventState.Denied, 0, notNow.Code), ct);
-            return (ErrorText(notNow), null);
+            return (ToolCallSteps.ErrorText(notNow), null);
         }
 
         await LoadOnCallAsync(call.Name, context, offered, ct);
@@ -530,7 +530,7 @@ public sealed partial class AgentRunner(
         JsonElement arguments = document.RootElement.Clone();
         if (confirmation.Result is not { } result)
         {
-            await RecordToolStepAsync(confirmation.Tool, modelName, arguments, RiskTier.Confirm, confirmation.Decision, confirmation.Action.Reasons, null, null, 0, ct);
+            await RecordAsync(ToolCallSteps.Step(confirmation.Tool, modelName, arguments, RiskTier.Confirm, confirmation.Decision, confirmation.Action.Reasons, null, null, 0), ct);
             return;
         }
 
@@ -541,8 +541,8 @@ public sealed partial class AgentRunner(
         string text;
         if (confirmation.Tool is null)
         {
-            await RecordToolStepAsync(null, modelName, arguments, RiskTier.Confirm, confirmation.Decision, confirmation.Action.Reasons, null, result.IsFailure ? result.Error : null, 0, ct);
-            text = ErrorText(result.Error);
+            await RecordAsync(ToolCallSteps.Step(null, modelName, arguments, RiskTier.Confirm, confirmation.Decision, confirmation.Action.Reasons, null, result.IsFailure ? result.Error : null, 0), ct);
+            text = ToolCallSteps.ErrorText(result.Error);
         }
         else
         {

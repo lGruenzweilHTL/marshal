@@ -49,6 +49,8 @@ In **Settings > Security** choose **Revoke** on the token, or run `marshal token
 |---|---|
 | `conversation:write` | `POST /api/v1/conversation/turns`. Needed by the Home Assistant integration. |
 | `aitasks:write` | `POST /api/v1/ai-tasks`. Needed by the Home Assistant integration's AI Task entity. |
+| `mcp:read` | Marshal's MCP server at `/mcp`: memory, notes and task read tools. See [MCP clients](../integrations/mcp-clients.md). |
+| `mcp:write` | Marshal's MCP server: also `tasks_create` and `ask_marshal`. |
 | `tasks:read` | Read tasks. |
 | `tasks:write` | Create and change tasks. |
 | `admin` | Admin endpoints. |

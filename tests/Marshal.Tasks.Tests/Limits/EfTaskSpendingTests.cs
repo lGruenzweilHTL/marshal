@@ -42,10 +42,24 @@ public sealed class EfTaskSpendingTests
         Assert.Equal(0.75m, cost);
     }
 
-    private static async Task AddRunAsync(TestDatabase database, OwnerId owner, SessionSource source, DateTimeOffset started, decimal cost)
+    [Fact]
+    public async Task CostSince_McpServerRunsCountOtherApiRunsDoNot()
+    {
+        await using TestDatabase database = await TestDatabase.CreateAsync();
+        await AddRunAsync(database, OwnerA, SessionSource.Api, _since.AddHours(1), 0.25m, "mcp:ask_marshal");
+        await AddRunAsync(database, OwnerA, SessionSource.Api, _since.AddHours(1), 0.125m, "mcp:memory_recall");
+        await AddRunAsync(database, OwnerA, SessionSource.Api, _since.AddHours(1), 1m, "turn");
+        database.Accessor.Current = Text(OwnerA);
+
+        decimal cost = await new EfTaskSpending(database.Factory).GetCostSinceAsync(_since, TestContext.Current.CancellationToken);
+
+        Assert.Equal(0.375m, cost);
+    }
+
+    private static async Task AddRunAsync(TestDatabase database, OwnerId owner, SessionSource source, DateTimeOffset started, decimal cost, string trigger = "task")
     {
         await using MarshalDbContext context = database.CreateContext(owner);
-        context.Runs.Add(new Run { Id = RunId.New(), OwnerId = owner, Source = source, Trigger = "task", StartedAt = started, Cost = cost });
+        context.Runs.Add(new Run { Id = RunId.New(), OwnerId = owner, Source = source, Trigger = trigger, StartedAt = started, Cost = cost });
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 }

@@ -59,6 +59,7 @@ package "Clients" {
     component "vitest, @vue/test-utils,\njsdom" <<npm>>
   }
   component "HA companion app\n(actionable push)" as Companion
+  component "External MCP clients\n(Claude Code, VS Code)" as McpClients
 }
 
 package "src/ (.NET 10)" {
@@ -70,6 +71,7 @@ package "src/ (.NET 10)" {
     component "NetEscapades\n.Configuration.Yaml" <<nuget>>
     component "OpenTelemetry.*\n(Extensions.Hosting,\nExporter.OpenTelemetryProtocol)" <<nuget>>
     component "OllamaSharp\nAnthropic (official SDK)\nMicrosoft.Extensions.AI.OpenAI" <<nuget>>
+    component "ModelContextProtocol.AspNetCore\n(MCP server at /mcp)" <<nuget>>
   }
 
   package "Marshal.Core" as Core {
@@ -105,7 +107,7 @@ package "src/ (.NET 10)" {
   }
 
   package "Marshal.Demo" as Demo {
-    component "Simulated integrations (HA,\nprinter, mail, RSS, notes),\ndemo world, seeder, reset" as DemoParts
+    component "Simulated integrations (HA,\nprinter, mail, RSS, notes,\nweb search), demo world, seeder, reset" as DemoParts
   }
 
   package "Marshal.Data" as Data {
@@ -133,6 +135,7 @@ package "tests/" {
 ' ------------------------------------------------------------------
 ' Project references (arrow = "depends on")
 HaComponent ..> Api : HTTP (conversation:write)
+McpClients ..> Api : MCP /mcp (mcp:read, mcp:write)
 Web ..> Api : HTTP + live updates
 Companion ..> Api : via HA events\n(nonce-verified)
 

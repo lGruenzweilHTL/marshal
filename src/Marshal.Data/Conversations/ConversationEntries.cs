@@ -17,7 +17,7 @@ namespace Marshal.Data.Conversations;
 internal static class ConversationEntries
 {
     /// <summary>Run triggers that are user turns; summarizer and task runs are not.</summary>
-    public static readonly string[] TurnTriggers = ["turn", "followup", "confirmation"];
+    public static readonly string[] TurnTriggers = ["turn", "followup", "confirmation", "mcp:ask_marshal"];
 
     /// <summary>
     /// Entries of <paramref name="session"/> after <paramref name="after"/>, oldest first. With

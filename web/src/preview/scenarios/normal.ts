@@ -31,7 +31,7 @@ export const me: Schemas['MeResponse'] = {
   id: ids.owner,
   displayName: 'Lukas',
   roles: ['admin'],
-  scopes: ['conversation:write', 'tasks:read', 'tasks:write', 'memory:read', 'memory:write', 'printers:read', 'printers:control', 'mail:read', 'approvals:write', 'admin'],
+  scopes: ['conversation:write', 'tasks:read', 'tasks:write', 'memory:read', 'memory:write', 'printers:read', 'printers:control', 'mail:read', 'approvals:write', 'mcp:read', 'mcp:write', 'admin'],
   demo: { enabled: false, showBadge: true },
 }
 

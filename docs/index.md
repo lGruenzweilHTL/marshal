@@ -28,7 +28,8 @@ Marshal is a self-hosted AI agent for Home Assistant. This page maps the documen
 3. [Machine tokens](guides/authentication/machine-tokens.md)
 4. [Webhooks](api/webhooks.md)
 5. [Custom MCP servers](guides/integrations/custom-mcp-servers.md)
-6. [Tool reference](reference/tools.md)
+6. [Connect MCP clients (Claude Code, VS Code)](guides/integrations/mcp-clients.md)
+7. [Tool reference](reference/tools.md)
 
 ### Contributor
 

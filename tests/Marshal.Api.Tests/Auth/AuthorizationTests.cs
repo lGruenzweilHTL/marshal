@@ -55,6 +55,17 @@ public sealed class AuthorizationTests : IAsyncLifetime
     }
 
     [Fact]
+    public void McpScopes_KnownAndGrantedToAdminAndUser()
+    {
+        Assert.Equal(("mcp:read", "mcp:write"), (ApiScopes.McpRead, ApiScopes.McpWrite));
+        Assert.Contains(ApiScopes.McpRead, ApiScopes.All);
+        Assert.Contains(ApiScopes.McpWrite, ApiScopes.All);
+        Assert.Contains(ApiScopes.McpRead, Roles.ScopesOf(["user"]));
+        Assert.Contains(ApiScopes.McpWrite, Roles.ScopesOf(["user"]));
+        Assert.Contains(ApiScopes.McpWrite, Roles.ScopesOf(["admin"]));
+    }
+
+    [Fact]
     public void HookScopes_ExistForEveryWebhookSource()
     {
         IWebhookIngest ingest = _factory.Services.GetRequiredService<IWebhookIngest>();

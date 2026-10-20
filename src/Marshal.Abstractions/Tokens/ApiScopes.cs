@@ -13,6 +13,12 @@ public static class ApiScopes
     /// <summary>Running AI tasks (<c>POST /api/v1/ai-tasks</c>), e.g. from Home Assistant automations.</summary>
     public const string AiTasksWrite = "aitasks:write";
 
+    /// <summary>Reading memory, notes and tasks through Marshal's MCP server (<c>/mcp</c>).</summary>
+    public const string McpRead = "mcp:read";
+
+    /// <summary>Creating tasks and asking Marshal to act through its MCP server (<c>/mcp</c>).</summary>
+    public const string McpWrite = "mcp:write";
+
     /// <summary>Prefix of the per-source webhook scopes (<c>hooks:&lt;source&gt;</c>).</summary>
     public const string HooksPrefix = "hooks:";
 
@@ -26,7 +32,7 @@ public static class ApiScopes
     public const string HooksSeerr = HooksPrefix + "seerr";
 
     /// <summary>Every known scope.</summary>
-    public static IReadOnlySet<string> All { get; } = new HashSet<string>(StringComparer.Ordinal) { ConversationWrite, TasksRead, TasksWrite, AiTasksWrite, Admin, HooksUptimeKuma, HooksProxmox, HooksSeerr };
+    public static IReadOnlySet<string> All { get; } = new HashSet<string>(StringComparer.Ordinal) { ConversationWrite, TasksRead, TasksWrite, AiTasksWrite, McpRead, McpWrite, Admin, HooksUptimeKuma, HooksProxmox, HooksSeerr };
 
     /// <summary>The scope that allows posting webhooks of <paramref name="source"/>.</summary>
     public static string Hooks(string source) => HooksPrefix + source;

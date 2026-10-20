@@ -112,6 +112,7 @@ Key dependencies and what they are for. Keep this list current when adding or re
 | `Anthropic` | Official Anthropic C# SDK (v10+; implements `IChatClient`) — Claude API provider (host only) |
 | `Microsoft.Extensions.AI.OpenAI` | OpenAI-compatible provider for local servers (llama.cpp `llama-server`, vLLM, LM Studio) (host only) |
 | `ModelContextProtocol.Core` | Official MCP C# SDK (client and server types, no hosting) — MCP client for HA's MCP server and custom servers; in-process fake servers in tests |
+| `ModelContextProtocol.AspNetCore` | MCP server hosting (streamable HTTP, stateless) for Marshal's own MCP endpoint `/mcp` (host only) |
 | `Asp.Versioning.Http` + `Asp.Versioning.Mvc.ApiExplorer` + `Asp.Versioning.OpenApi` | URL-segment API versioning (`/api/v{version:apiVersion}`), per-version OpenAPI grouping (`MapOpenApi().WithDocumentPerVersion()`) |
 | `Microsoft.AspNetCore.OpenApi` | OpenAPI document generation (one per API version) |
 | `Microsoft.AspNetCore.Authentication.OpenIdConnect` | `oidc` login provider (BFF) |

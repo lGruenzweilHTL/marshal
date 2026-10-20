@@ -70,6 +70,21 @@ describe('SecurityView', () => {
     expect(wrapper.text()).not.toContain('mrs_secret_value')
   })
 
+  it('explains the MCP scopes in the token dialog, in English and German', async () => {
+    const mcpUser = { ...user, scopes: [...user.scopes, 'mcp:read', 'mcp:write'] }
+    const english = await mountSecurity(server().on('GET', '/api/v1/me', 200, mcpUser))
+    const read = english.get('input[name="scope"][value="mcp:read"]').element.closest('label')!
+    const write = english.get('input[name="scope"][value="mcp:write"]').element.closest('label')!
+
+    expect(read.textContent).toContain('memory, notes and tasks')
+    expect(write.textContent).toContain('ask Marshal to act')
+    expect(english.get('input[name="scope"][value="tasks:read"]').element.closest('label')!.querySelector('.description')).toBeNull()
+
+    document.body.innerHTML = ''
+    const german = await mountSecurity(server().on('GET', '/api/v1/me', 200, mcpUser), 'de')
+    expect(german.get('input[name="scope"][value="mcp:write"]').element.closest('label')!.textContent).toContain('Marshal handeln lassen')
+  })
+
   it('sends the expiry as the end of the chosen day', async () => {
     const fake = server().on('POST', '/api/v1/me/tokens', 201, { info: token(), token: 'x' })
     const wrapper = await mountSecurity(fake)

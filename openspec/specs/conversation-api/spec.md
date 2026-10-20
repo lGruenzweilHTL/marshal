@@ -17,11 +17,15 @@ The public API SHALL be versioned by URL segment (`/api/v{version}`) with `Asp.V
 - **THEN** the response is an error naming the supported versions
 
 ### Requirement: Unversioned endpoints
-`/health`, `/api/versions`, `/openapi/{document}.json`, auth protocol callbacks and SPA routes SHALL be unversioned. `GET /api/versions` SHALL list supported and deprecated versions without authentication.
+`/health`, `/api/versions`, `/openapi/{document}.json`, `/mcp` (versioned by the MCP protocol itself), auth protocol callbacks and SPA routes SHALL be unversioned. `GET /api/versions` SHALL list supported and deprecated versions without authentication.
 
 #### Scenario: Version discovery
 - **WHEN** a client calls `GET /api/versions`
 - **THEN** it receives the list of supported versions, including `1.0`
+
+#### Scenario: MCP endpoint path
+- **WHEN** a client connects to `/mcp`
+- **THEN** the MCP server answers without an `/api/v{version}` prefix
 
 ### Requirement: Conversation turn endpoint
 `POST /api/v1/conversation/turns` SHALL accept `conversationId`, `text`, `language`, `deviceId`, `satelliteId`, `areaId`, `haUserId`, `inputMode` (`voice` | `text`) and `followupRef`, and SHALL require the `conversation:write` scope. For token clients `conversationId` SHALL be required. An unknown `followupRef` SHALL be ignored.

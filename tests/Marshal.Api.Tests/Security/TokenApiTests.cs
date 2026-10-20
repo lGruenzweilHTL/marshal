@@ -42,6 +42,16 @@ public sealed class TokenApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Create_McpScopes_Accepted()
+    {
+        (HttpClient browser, _) = await Browser.SignInAsync(_factory, "user");
+
+        HttpResponseMessage response = await browser.PostAsJsonAsync(Tokens, new { name = "Claude Code", scopes = new[] { ApiScopes.McpRead, ApiScopes.McpWrite } }, Ct);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Create_ScopeTheUserDoesNotHold_IsRejected()
     {
         (HttpClient browser, OwnerId user) = await Browser.SignInAsync(_factory, "user");

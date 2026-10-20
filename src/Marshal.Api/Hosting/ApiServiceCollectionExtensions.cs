@@ -9,6 +9,7 @@ using Marshal.Api.Auth;
 using Marshal.Api.Health;
 using Marshal.Api.Hooks;
 using Marshal.Api.Mail;
+using Marshal.Api.McpServer;
 using Marshal.Api.Models;
 using Marshal.Api.Printers;
 using Marshal.Api.Problems;

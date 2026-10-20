@@ -22,6 +22,8 @@ A token is authorized by its own scopes only. A token with `tasks:read` that cal
 | `tasks:read` | Reading tasks |
 | `tasks:write` | Changing tasks |
 | `aitasks:write` | `POST /api/v1/ai-tasks` ([AI tasks](ai-tasks.md)) |
+| `mcp:read` | Marshal's MCP server at `/mcp`, read tools ([MCP clients](../guides/integrations/mcp-clients.md)) |
+| `mcp:write` | Marshal's MCP server, also `tasks_create` and `ask_marshal` |
 | `admin` | Administrative endpoints |
 | `hooks:uptime-kuma` | Posting Uptime Kuma [webhooks](webhooks.md) |
 | `hooks:proxmox` | Posting Proxmox VE webhooks |
