@@ -47,7 +47,7 @@ The sample history belongs to the instance owner and is dated relative to the se
 - runs with their steps
 - a `morning` task with past results, and a task that waits for your approval to cancel the print
 - notifications in the Inbox
-- memory chunks with edges
+- memory chunks with edges, one closed chunk, a chunk with an earlier version and its valid time, and one open duplicate proposal in the audit
 
 Simulated state, such as a light you turned on or a draft, starts over on each restart.
 

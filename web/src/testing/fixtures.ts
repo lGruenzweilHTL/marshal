@@ -118,6 +118,7 @@ export function taskDetail(overrides: Partial<Schemas['TaskDetail']> = {}): Sche
     executorSessions: [],
     toolPolicy: null,
     availableTools: ['agent.extract', 'mail.search', 'mail.read', 'rss.search'],
+    preparation: null,
     ...overrides,
   }
 }

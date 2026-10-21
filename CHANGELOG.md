@@ -4,7 +4,7 @@ All notable changes to Marshal are documented here. The format follows [Keep a C
 
 ## [Unreleased]
 
-Development started on 2026-09-28. The latest work in the history is dated 2026-10-17.
+Development started on 2026-09-28. The latest work in the history is dated 2026-10-20.
 
 ### Added
 
@@ -35,6 +35,9 @@ Development started on 2026-09-28. The latest work in the history is dated 2026-
 - Ratings and evals: thumbs up and down on chat replies and in the run detail, a rating filter in the runs list, and the "help Marshal learn" preference (off by default). With it on, rated runs become eval cases; admins can save any run as a case. The admin evals view replays cases against a candidate model per tier, template or base prompt without executing tools, compares tool calls and replies (pass, changed, diverged, failed) with an optional judge model, and reports totals and cost. Context steps now store the turn-level context text.
 - Quarantined extraction: `agent.extract` answers one typed question about a mail, RSS article or note through a tool-less `fast` tier model, so the content never reaches the main model. Typed answers (yes/no, numbers, dates, enum values) do not taint the run; `text` answers do. Agent tasks have a frozen tool policy (`tools` argument on `tasks.create` and `tasks.watch`, editable only in the task view), enforced by the visibility filter and the guard (`tool.outside_policy`).
 - Web search through a self-hosted SearXNG (`web.searxng`): `web.search` returns titles, snippets, URLs and domains without opening any page and taints the run with `web`; `web.answer` gives only the snippets to the quarantined extractor, so typed answers stay untainted. `agent.extract` accepts `web:<result id>` references for one hour. Queries are safe in every run; the guide states that query text reaches the configured engines.
+- Memory valid time: chunks and versions carry `validFrom` and `validTo`; updates and supersedes close the previous fact. Automatic retrieval skips closed chunks, and `memory.recall` with `asOf` searches what was true at a past time, including earlier versions. The memory view edits valid time, filters closed chunks and shows valid times in the history.
+- Idle-time memory jobs after the nightly consolidation: contradiction and duplicate proposals (`memory.duplicateThreshold`) that you accept or dismiss in the audit, and project summaries added to the context of active projects.
+- Task preparation (`prepare: { before, goal }` on cron tasks): a preparation run up to 12 hours before each scheduled run collects notes the main run reads; the example briefing prepares appointments and the RSS digest at 03:00.
 - `telemetry.captureContent`: opt-in content on spans, redacted like run recording.
 - Spoken fillers before slow tools in voice turns (`voice.fillerThresholdMs`).
 - Time to first delta per run, a voice timeline in the run detail and "slowest first words" sorting in the runs list.

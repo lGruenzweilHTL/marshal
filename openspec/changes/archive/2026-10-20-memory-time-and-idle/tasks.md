@@ -28,16 +28,16 @@
 
 ## 6. Task preparation
 
-- [ ] 6.1 Write failing scheduler tests (`FakeTimeProvider`): a cron task with `prepare.before: 3h` gets a preparation run 3 h before each occurrence with the preparation goal, template, policy and budget; `before` above 12 h fails validation; prepared notes and taint are stored; the main run sees the notes and starts tainted; notes are discarded after the main run or when stale; a failed preparation does not block the main run. Verify they fail.
+- [x] 6.1 Write failing scheduler tests (`FakeTimeProvider`): a cron task with `prepare.before: 3h` gets a preparation run 3 h before each occurrence with the preparation goal, template, policy and budget; `before` above 12 h fails validation; prepared notes and taint are stored; the main run sees the notes and starts tainted; notes are discarded after the main run or when stale; a failed preparation does not block the main run. Verify they fail.
 - [x] 6.2 Add the task columns to the migration, the `prepare` argument to `tasks.create` / `tasks.update` and the task API, and implement the scheduling and context section. Verify the 6.1 tests pass.
-- [ ] 6.3 Add `prepare` to `deploy/config.example/tasks/briefing.yaml` with a comment and update the briefing skill to use prepared notes. Verify the example config loads in the config load test.
+- [x] 6.3 Add `prepare` to `deploy/config.example/tasks/briefing.yaml` with a comment and update the briefing skill to use prepared notes. Verify the example config loads in the config load test.
 
 ## 7. Web UI and docs
 
-- [ ] 7.1 Regenerate the web client; write failing component tests for valid time in the editor, the closed-chunk filter, valid times in history, proposals in the audit (accept / dismiss) and the project summary; implement with German and English strings; add preview scenario data. Verify `npm test`, `npm run build` and the screenshot sweep pass.
-- [ ] 7.2 Document valid time, `asOf`, proposals, idle-time jobs and task preparation in the memory and tasks guides and the configuration reference. Verify the pages follow `docs/development/docs-style.md`.
-- [ ] 7.3 Extend `Marshal.Demo` seed data with a closed chunk, a version with valid time and one open proposal. Verify the demo seeding tests pass.
+- [x] 7.1 Regenerate the web client; write failing component tests for valid time in the editor, the closed-chunk filter, valid times in history, proposals in the audit (accept / dismiss) and the project summary; implement with German and English strings; add preview scenario data. Verify `npm test`, `npm run build` and the screenshot sweep pass.
+- [x] 7.2 Document valid time, `asOf`, proposals, idle-time jobs and task preparation in the memory and tasks guides and the configuration reference. Verify the pages follow `docs/development/docs-style.md`.
+- [x] 7.3 Extend `Marshal.Demo` seed data with a closed chunk, a version with valid time and one open proposal. Verify the demo seeding tests pass.
 
 ## 8. Integration check
 
-- [ ] 8.1 Run `dotnet test`, `npm test`, `npm run build` and `openspec validate memory-time-and-idle --strict`. Verify all pass.
+- [x] 8.1 Run `dotnet test`, `npm test`, `npm run build` and `openspec validate memory-time-and-idle --strict`. Verify all pass.

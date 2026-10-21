@@ -570,6 +570,8 @@ const chunk = (n: number, overrides: Partial<Schemas['MemoryChunk']> & Pick<Sche
   updatedAt: at(-n * 720),
   deletedAt: null,
   lastRetrievedAt: at(-n * 60),
+  validFrom: at(-n * 1440),
+  validTo: null,
   ...overrides,
 })
 
@@ -582,6 +584,32 @@ const chunks: Schemas['MemoryChunk'][] = [
   chunk(6, { type: 'event', title: 'Revo nozzle swap', content: 'Swapped the Revo nozzle to 0.6 mm on 2026-09-20 for faster prints.', scope: 'project', projectId: ids.voron }),
   chunk(7, { type: 'device', title: 'Garden valves', content: 'Four ESPHome valves water the beds; zone 3 leaks when the pressure is above 3 bar.', scope: 'project', projectId: ids.garden }),
   chunk(8, { type: 'preference', title: 'Briefing length', content: 'Keep the morning briefing under one minute; skip the weather on weekends.', importance: 4, createdBy: 'user' }),
+  chunk(9, { type: 'device', title: 'Revo nozzle 0.4 mm', content: 'The Revo hotend has a 0.4 mm nozzle.', scope: 'project', projectId: ids.voron, validFrom: at(-200 * 1440), validTo: at(-30 * 1440) }),
+]
+
+const memoryProposals: Schemas['MemoryProposalView'][] = [
+  {
+    id: id(16, 1),
+    kind: 'contradiction',
+    a: chunk(10, { type: 'device', title: 'Voron nozzle size', content: 'The Voron prints with a 0.4 mm nozzle.', scope: 'project', projectId: ids.voron }),
+    b: chunks[5]!,
+    suggestion: { current: ids.chunk(6), outdated: ids.chunk(10), closeAt: at(-30 * 1440), reason: 'The nozzle was swapped to 0.6 mm on 2026-09-20.' } as unknown as Schemas['JsonElement'],
+    createdAt: at(-5 * 60),
+  },
+  {
+    id: id(16, 2),
+    kind: 'duplicate',
+    a: chunks[0]!,
+    b: chunk(11, { type: 'preference', title: 'PETG outside', content: 'Use PETG for anything that goes outside.', createdBy: 'agent' }),
+    suggestion: {
+      keep: ids.chunk(1),
+      other: ids.chunk(11),
+      title: 'Prefers PETG for outdoor parts',
+      content: 'Lukas prefers PETG for outdoor parts and keeps two spools in the dry box.',
+      similarity: 0.93,
+    } as unknown as Schemas['JsonElement'],
+    createdAt: at(-5 * 60),
+  },
 ]
 
 const edges: Schemas['MemoryEdge'][] = [
@@ -599,6 +627,8 @@ const projects: Schemas['ProjectView'][] = [
     createdAt: at(-60 * 1440),
     lastActiveAt: at(-6),
     chunkCount: 12,
+    summary: 'Voron 2.4 (350 mm) on Klipper with a Stealthburner and a Revo hotend, now with a 0.6 mm nozzle. Bed leveling runs QUAD_GANTRY_LEVEL and a heated bed mesh for PETG. Open: tune input shaping after the nozzle swap.',
+    summaryUpdatedAt: at(-5 * 60),
     aliases: [
       { id: id(11, 1), phrase: 'the Voron', status: 'active', confirmations: 9, createdAt: at(-50 * 1440) },
       { id: id(11, 2), phrase: 'the big printer', status: 'candidate', confirmations: 2, createdAt: at(-2 * 1440) },
@@ -679,6 +709,7 @@ const taskDetail: Schemas['TaskDetail'] = {
   executorSessions: [],
   toolPolicy: ['calendar.*', 'mail.*', 'printers.*', 'agent.extract'],
   availableTools: ['agent.extract', 'calendar.list', 'mail.search', 'mail.read', 'printers.status', 'rss.search', 'notes.search'],
+  preparation: { before: '03:00:00', goal: 'Collect today’s appointments and the RSS digest for the morning briefing.', nextAt: tasks[1]!.nextRunAt ? new Date(Date.parse(tasks[1]!.nextRunAt) - 3 * 3_600_000).toISOString() : null, preparedAt: at(-4 * 60) },
 }
 
 const files: Schemas['PrinterFile'][] = [
@@ -887,11 +918,12 @@ export const normal = {
     edges: edges.filter((edge) => edge.from === ids.chunk(3) || edge.to === ids.chunk(3)),
   },
   '/api/v1/memory/chunks/{id}/history': [
-    { chunkId: ids.chunk(9), kind: 'predecessor', title: 'Bed leveling', content: 'Level the bed with the paper method.', importance: 2, validFrom: at(-90 * 1440) },
-    { chunkId: ids.chunk(3), kind: 'version', title: 'Bed leveling routine', content: 'Run QUAD_GANTRY_LEVEL, then BED_MESH_CALIBRATE.', importance: 3, validFrom: at(-3 * 1440) },
+    { chunkId: ids.chunk(12), kind: 'predecessor', title: 'Bed leveling', content: 'Level the bed with the paper method.', importance: 2, validFrom: at(-90 * 1440), validTo: at(-3 * 1440) },
+    { chunkId: ids.chunk(3), kind: 'version', title: 'Bed leveling routine', content: 'Run QUAD_GANTRY_LEVEL, then BED_MESH_CALIBRATE.', importance: 3, validFrom: at(-3 * 1440), validTo: at(-1500) },
     { chunkId: ids.chunk(3), kind: 'current', title: 'Bed leveling routine', content: chunks[2]!.content, importance: 3, validFrom: at(-1500) },
   ],
   '/api/v1/memory/audit': {
+    proposals: memoryProposals,
     stale: [chunks[3]!],
     contradictions: [{ from: chunks[7]!, to: chunks[4]!, since: at(-900) }],
     orphans: [chunks[4]!],
@@ -906,8 +938,8 @@ export const normal = {
     title: item.title,
     type: item.type,
     projectId: item.projectId,
-    x: [0.42, 0.61, 0.58, -0.51, -0.22, 0.66, -0.12, -0.31][index]!,
-    y: [0.18, 0.44, 0.31, -0.42, -0.08, 0.52, 0.71, -0.16][index]!,
+    x: [0.42, 0.61, 0.58, -0.51, -0.22, 0.66, -0.12, -0.31, 0.71][index]!,
+    y: [0.18, 0.44, 0.31, -0.42, -0.08, 0.52, 0.71, -0.16, 0.38][index]!,
   })),
   '/api/v1/memory/projects': projects,
   '/api/v1/memory/projects/{id}/feedback': [

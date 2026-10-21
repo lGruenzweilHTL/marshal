@@ -2,6 +2,7 @@ using Marshal.Abstractions;
 using Marshal.Abstractions.Audit;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.Memory;
 using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Tasks;
@@ -10,6 +11,7 @@ using Marshal.Data.Audit;
 using Marshal.Data.Conversations;
 using Marshal.Data.Demo;
 using Marshal.Data.Identity;
+using Marshal.Data.Memory;
 using Marshal.Demo.Seeding;
 using Marshal.Memory;
 using Marshal.Testing;
@@ -53,6 +55,23 @@ public sealed class DemoSeederTests : IAsyncLifetime
         Assert.True(await db.Chunks.CountAsync(Ct) >= 4);
         Assert.True(await db.ChunkEdges.AnyAsync(Ct));
         Assert.Equal(recorded, await db.DemoSeeds.CountAsync(Ct));
+    }
+
+    [Fact]
+    public async Task Seed_MemoryHasAClosedChunkAVersionWithValidTimeAndAnOpenProposal()
+    {
+        await Seeder().SeedAsync(Owner, Ct);
+
+        await using MarshalDbContext db = _database.CreateContext(Owner);
+        DateTimeOffset now = _time.GetUtcNow();
+        Assert.Contains(await db.Chunks.ToListAsync(Ct), chunk => chunk.ValidTo is { } end && end <= now);
+        Assert.Contains(await db.ChunkVersions.ToListAsync(Ct), version => version.ValidTo is not null && version.ValidFrom < version.ValidTo);
+        MemoryProposal proposal = Assert.Single(await db.MemoryProposals.ToListAsync(Ct));
+        Assert.Equal((MemoryProposalKind.Duplicate, MemoryProposalStatus.Open), (proposal.Kind, proposal.Status));
+        List<string> chunks = [.. (await db.Chunks.Select(row => row.Id).ToListAsync(Ct)).Select(id => id.ToString())];
+        Assert.Contains(proposal.ChunkA.ToString(), chunks);
+        Assert.Contains(proposal.ChunkB.ToString(), chunks);
+        Assert.Equal([proposal.Id.ToString()], Recorded(await db.DemoSeeds.ToListAsync(Ct), "memory_proposals"));
     }
 
     [Fact]

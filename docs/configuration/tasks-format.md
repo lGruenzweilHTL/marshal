@@ -15,6 +15,10 @@ goal: >-
 trigger:
   kind: cron
   expression: "0 6 * * *"
+prepare:
+  before: 3h
+  goal: >-
+    Collect today's appointments and the RSS digest for the morning briefing.
 deliver:
   - channel: voice
     followUp: true
@@ -37,6 +41,7 @@ No other argument is accepted. Owner, budget and origin satellite cannot be set.
 | `name` | string | none | Unique per owner. Lower-cased; lower-case letters, digits, `-` and `_`, at most 64 characters, not a GUID. |
 | `template` | string | `default` | [Agent template](templates-format.md) of the runs. |
 | `notes` | string | none | Notes passed to runs. |
+| `prepare` | object | none | A preparation run before each scheduled run, `cron` triggers only. See [Preparation](#preparation). `tasks.update` accepts it too; `null` removes it. |
 | `deliver` | list of deliveries | `[]` | Where the result goes. With none, the result is visible in the web UI only. |
 | `overrideQuietHoursUntil` | local time | none | Lets the task notify during quiet hours until then. Makes the call `confirm`. |
 
@@ -50,6 +55,20 @@ No other argument is accepted. Owner, budget and origin satellite cannot be set.
 | `after` | `task` | Run when the named task (id or name) finishes `done`. The task must exist. |
 
 Event triggers exist only through `tasks.watch`.
+
+## Preparation
+
+A `cron` task can collect slow or bulky input ahead of time. `before` each scheduled run, a preparation run works on the preparation `goal` with the task's template, tool policy and budget. Its result is stored as prepared notes, and the next main run gets them in its input together with the time they were collected.
+
+| Key | Type | Description |
+|---|---|---|
+| `prepare.before` | duration | How long before each scheduled run: `3h`, `90m`, `PT3H` or `03:00:00`. More than zero, at most 12 hours. |
+| `prepare.goal` | string | What the preparation run collects. |
+
+- The main run starts with the taint of the preparation run, so prepared notes from mail or RSS keep the main run tainted.
+- Notes older than `before` plus one hour at the main run are dropped. Notes are discarded after the main run uses them.
+- A failed or skipped preparation does not block the main run; it runs without notes and can still call tools.
+- Preparation spend counts against the task's budget but not as a run.
 
 ## Example: watch (`tasks.watch`)
 
@@ -122,6 +141,7 @@ Each delivery goes out independently.
 ## Other validation
 
 - `goal is required.`
+- `Only scheduled (cron) tasks can have a preparation run.`, `prepare.before must be more than zero and at most 12 hours.`, `prepare.before must be a duration like 3h, 90m or PT3H.`, `prepare needs a goal.`
 - `trigger.kind must be now, at, cron or after.`, `An 'at' trigger needs a time.`, `A 'cron' trigger needs an expression.`, `An 'after' trigger needs a task.`
 - `'<x>' is not a five-field cron expression.`, `'<x>' is not a time like 2026-09-30T07:00.`
 - `An event filter is a JSON object with a source, optional type and entity, and payload conditions ...`

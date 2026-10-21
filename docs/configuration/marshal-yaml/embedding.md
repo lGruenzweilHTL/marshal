@@ -1,6 +1,6 @@
 # `embedding` and `memory`
 
-The embedding model that memory depends on, and the tuning of memory retrieval, summarization and project activation. Changes need a restart.
+The embedding model that memory depends on, and the tuning of memory retrieval, summarization, idle-time proposals and project activation. Changes need a restart.
 
 ## Example
 
@@ -14,6 +14,7 @@ memory:
   summarizer: { enabled: true, maxTurns: 50 }
   audit: { staleAfterDays: 180 }
   retrieval: { tokenBudget: 600 }
+  duplicateThreshold: 0.92
 ```
 
 ## `embedding` keys
@@ -29,7 +30,7 @@ memory:
 
 ## `memory` keys
 
-All optional. Defaults are starting points. There is no validator for this section.
+All optional. Defaults are starting points. Only `memory.duplicateThreshold` is validated: startup fails with `memory.duplicateThreshold must be greater than 0 and at most 1.`
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -46,6 +47,7 @@ All optional. Defaults are starting points. There is no validator for this secti
 | `memory.summarizer.maxTurns` | integer | `50` | Most recent turns the summarizer reads. |
 | `memory.summarizer.memoryTokenBudget` | integer | `1500` | Token budget of existing memory shown to the summarizer. |
 | `memory.audit.staleAfterDays` | integer | `180` | A chunk neither updated nor retrieved for this long is stale. |
+| `memory.duplicateThreshold` | number | `0.92` | Embedding similarity (greater than 0, at most 1) from which the nightly job proposes two chunks of the same type and scope as duplicates. |
 | `memory.projects.highConfidence` | number | `0.75` | Score that activates a project stickily. |
 | `memory.projects.mediumConfidence` | number | `0.6` | Score that activates a project for one turn. |
 | `memory.projects.negativeWeight` | number | `0.5` | Weight of similarity to a rejected phrase subtracted from the score. |

@@ -14,6 +14,7 @@ using Marshal.Abstractions.Tools;
 using Marshal.Data;
 using Marshal.Data.Conversations;
 using Marshal.Data.Demo;
+using Marshal.Data.Memory;
 using Marshal.Data.Notifications;
 using Marshal.Data.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -343,6 +344,37 @@ public sealed class DemoSeeder(
             if (ids.TryGetValue(from, out ChunkId fromId) && ids.TryGetValue(to, out ChunkId toId))
                 await memory.LinkAsync(fromId, toId, kind, ct);
         }
+
+        if (ids.TryGetValue("coffee", out ChunkId coffee) && ids.TryGetValue("morning-coffee", out ChunkId morning))
+            await DuplicateProposalAsync(seed, coffee, morning, ct);
+    }
+
+    // What the nightly duplicate job would propose for the two coffee chunks, open in the audit.
+    private async Task DuplicateProposalAsync(Seed seed, ChunkId keep, ChunkId other, CancellationToken ct)
+    {
+        (ChunkId a, ChunkId b) = MemoryProposal.Pair(keep, other);
+        var row = new MemoryProposal
+        {
+            Id = Guid.CreateVersion7(),
+            OwnerId = seed.Owner,
+            Kind = MemoryProposalKind.Duplicate,
+            ChunkA = a,
+            ChunkB = b,
+            SuggestionJson = JsonSerializer.Serialize(new
+            {
+                keep = keep.Value,
+                other = other.Value,
+                title = "Coffee",
+                content = "Drinks a flat white every morning; the kitchen light should be bright at 7:00.",
+                similarity = 0.94,
+            }),
+            Status = MemoryProposalStatus.Open,
+            CreatedAt = seed.Day(0, 3, 0),
+        };
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(ct);
+        db.MemoryProposals.Add(row);
+        await db.SaveChangesAsync(ct);
+        seed.Add("memory_proposals", row.Id.ToString());
     }
 
     private async Task<SessionId> SessionAsync(Seed seed, SessionSource source, DateTimeOffset at, string? satellite, CancellationToken ct)

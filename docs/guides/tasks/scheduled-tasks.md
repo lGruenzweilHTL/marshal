@@ -83,6 +83,12 @@ Inside a run, the agent can call `tasks.schedule_wakeup` (`at` or `inMinutes`, p
 
 Task names are lowercase letters, digits, `-` and `_`, at most 64 characters, unique per owner (`A task named 'briefing' already exists.`).
 
+## Prepare ahead
+
+A scheduled task can do its slow reading before it is due. Ask for it when you create the task, for example "prepare the calendar and news three hours before". Marshal passes `prepare: { before: 3h, goal: ... }` to `tasks.create` or `tasks.update`.
+
+The task detail in the web UI shows the preparation goal, the lead time, the next preparation run and whether prepared notes are waiting. Keys, limits and what happens with stale notes: [Preparation](../../configuration/tasks-format.md#preparation).
+
 ## Tool policy
 
 Each task may use only the tools in its tool policy. When you create a task from a conversation, the policy is the template's tools in the core namespaces plus the namespaces that conversation loaded. Ask for fewer tools to narrow it, for example "only use the printer status and notifications"; Marshal then passes `tools: [printers.status, notifications.notify]`. The confirmation text lists the policy.

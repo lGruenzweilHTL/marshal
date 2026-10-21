@@ -18,6 +18,8 @@ export function chunk(overrides: Partial<Schemas['MemoryChunk']> = {}): Schemas[
     updatedAt: '2026-09-21T10:00:00Z',
     deletedAt: null,
     lastRetrievedAt: null,
+    validFrom: '2026-09-20T10:00:00Z',
+    validTo: null,
     ...overrides,
   }
 }

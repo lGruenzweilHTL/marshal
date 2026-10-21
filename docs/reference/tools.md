@@ -56,8 +56,8 @@ Memory output is trusted: only you or a confirmed write puts content into memory
 
 | Tool id | Tier | Arguments | Returns | Hidden when |
 |---|---|---|---|---|
-| `memory.remember` | safe, persists | `type`, `title`, `content`, `importance?`, `scope?`, `project?`, `sourceRef?` | Stores a chunk. The same type and title update the existing chunk. `type` is `fact`, `preference`, `event`, `procedure`, `person` or `device`; `importance` is 1 to 5 (default 3); `scope` is `general` or `project`. The tool cannot pin a chunk. | Never. |
-| `memory.recall` | safe | `query`, `type?`, `project?`, `limit?` | Chunks matching the query, including pinned chunks. `limit` is 1 to 30 (default 10). | Never. |
+| `memory.remember` | safe, persists | `type`, `title`, `content`, `importance?`, `scope?`, `project?`, `sourceRef?`, `validFrom?`, `validTo?` | Stores a chunk. The same type and title update the existing chunk. `type` is `fact`, `preference`, `event`, `procedure`, `person` or `device`; `importance` is 1 to 5 (default 3); `scope` is `general` or `project`; `validFrom` and `validTo` are dates or ISO 8601 date-times in the owner's time zone (default: valid from now, open). The tool cannot pin a chunk. | Never. |
+| `memory.recall` | safe | `query`, `type?`, `project?`, `limit?`, `asOf?` | Chunks matching the query, including pinned chunks. `limit` is 1 to 30 (default 10). Without `asOf` only chunks valid now; with `asOf` (date or date-time) what was valid then, including closed chunks and earlier versions, each with its valid time. | Never. |
 | `memory.correct_project` | safe | `kind`, `project?` | Records your correction of the inferred project. `kind` is `rejected`, `switched` (needs `project`) or `confirmed`. | No project exists. |
 
 ## Tasks (`tasks`)
@@ -68,10 +68,10 @@ All task tools are safe. Tools that store work for later are `persists`, and an 
 
 | Tool id | Tier | Arguments | Returns | Hidden when |
 |---|---|---|---|---|
-| `tasks.create` | safe, persists | `goal`, `trigger?`, `name?`, `template?`, `notes?`, `deliver?`, `overrideQuietHoursUntil?` | The created task as a summary. | Kill switch active; inside a task run, the task depth limit (`tasks.maxDepth`) or the child limit (`tasks.maxActiveChildren`) is reached. |
+| `tasks.create` | safe, persists | `goal`, `trigger?`, `name?`, `template?`, `notes?`, `tools?`, `prepare?`, `deliver?`, `overrideQuietHoursUntil?` | The created task as a summary. | Kill switch active; inside a task run, the task depth limit (`tasks.maxDepth`) or the child limit (`tasks.maxActiveChildren`) is reached. |
 | `tasks.schedule_wakeup` | safe, persists | `at?` or `inMinutes?`, `notes?` | The wake time. Ends the current run and runs the task again later with its goal and the new notes. | The call is not inside a background task run, or the kill switch is active. |
 | `tasks.watch` | safe, persists | `filter`, `goal`, `name?`, `once?`, `deliver?`, `overrideQuietHoursUntil?` | The created event-triggered task. `filter` needs `source` and can carry `type`, an `entity` glob and payload conditions such as `to` and `from`. | Same as `tasks.create`. |
-| `tasks.update` | safe, persists | `task`, `goal?`, `trigger?`, `deliver?`, `template?`, `name?`, `overrideQuietHoursUntil?` | The updated task. | No task exists. |
+| `tasks.update` | safe, persists | `task`, `goal?`, `trigger?`, `deliver?`, `template?`, `name?`, `prepare?`, `overrideQuietHoursUntil?` | The updated task. | No task exists. |
 | `tasks.run_now` | safe | `task` | `{ started, task }`. Fails with `tasks.running` while the task runs. | Kill switch active. |
 | `tasks.list` | safe | `status?` | Up to 50 tasks. `status` is `active`, `pending`, `running`, `waiting`, `done`, `failed` or `cancelled`. | Never. |
 | `tasks.status` | safe | `task` | The task's status and its latest result with its age. | Never. |

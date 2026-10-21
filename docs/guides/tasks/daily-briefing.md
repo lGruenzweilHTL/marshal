@@ -51,7 +51,7 @@ Change `binary_sensor.kitchen_occupancy` to an occupancy sensor of your room. `$
 
 ### 2. Understand the deliveries
 
-The briefing is prepared at 06:00. The spoken version plays when both conditions hold, for example when you walk into the kitchen at 07:30, and the satellite then listens for "tell me more". If neither happens by 11:00, the spoken text is pushed to your phone instead. The `inbox` delivery keeps the written version with links in the web UI.
+At 03:00 a preparation run collects the appointments and the RSS digest (`prepare.before: 3h`). The briefing is prepared at 06:00 with these notes and checks mail, the weather and the house fresh. The spoken version plays when both conditions hold, for example when you walk into the kitchen at 07:30, and the satellite then listens for "tell me more". If neither happens by 11:00, the spoken text is pushed to your phone instead. The `inbox` delivery keeps the written version with links in the web UI.
 
 ### 3. Know the answer format
 

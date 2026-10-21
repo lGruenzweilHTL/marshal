@@ -10,7 +10,7 @@ import { useSubmit } from '../api/useSubmit'
 import { useFormat } from '../i18n/locale'
 import { AppButton, Dialog, ErrorBanner, Field, IconTile } from '../ui'
 
-/** One project: name, description, aliases (candidates to accept or reject), the correction log, edit and delete. */
+/** One project: name, description, Marshal's read-only summary, aliases (candidates to accept or reject), the correction log, edit and delete. */
 const props = defineProps<{ project: Schemas['ProjectView'] }>()
 const emit = defineEmits<{ changed: [] }>()
 const api = useApi()
@@ -82,6 +82,12 @@ const aliasLabel = (entry: Schemas['ProjectAliasView']) =>
       <template v-if="project.lastActiveAt"> · {{ t('memory.projects.lastActive', { time: format.dateTime(project.lastActiveAt) }) }}</template>
       · <RouterLink :to="{ path: '/memory', query: { project: project.id } }">{{ t('memory.projects.showMemory') }}</RouterLink>
     </p>
+
+    <div v-if="project.summary" class="summary" data-test="summary">
+      <span class="t-overline">{{ t('memory.projects.summary') }}</span>
+      <p>{{ project.summary }}</p>
+      <span v-if="project.summaryUpdatedAt" class="num ink-3">{{ t('memory.projects.summaryUpdated', { time: format.dateTime(project.summaryUpdatedAt) }) }}</span>
+    </div>
 
     <form v-if="editing" class="form" data-test="edit-project" @submit.prevent="save.submit()">
       <Field v-model="edit.name" name="name" :label="t('memory.projects.name')" required />
@@ -168,6 +174,16 @@ const aliasLabel = (entry: Schemas['ProjectAliasView']) =>
 }
 .description,
 .facts {
+  color: var(--ink-2);
+  font: var(--text-body-s);
+}
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
   color: var(--ink-2);
   font: var(--text-body-s);
 }

@@ -7,6 +7,8 @@ import { me, mountOptions } from '../testing/mountApp'
 
 const aliasId = '0199cccc-0000-7000-8000-000000000001'
 const voron = project({
+  summary: 'Voron 2.4 build: new 0.6 mm nozzle, input shaping tuned.',
+  summaryUpdatedAt: '2026-09-22T03:00:00Z',
   aliases: [
     { id: '0199cccc-0000-7000-8000-000000000002', phrase: 'the printer', status: 'active', confirmations: 0, createdAt: '2026-09-01T10:00:00Z' },
     { id: aliasId, phrase: 'the loud thing', status: 'candidate', confirmations: 2, createdAt: '2026-09-02T10:00:00Z' },
@@ -38,6 +40,8 @@ describe('ProjectsView', () => {
     expect(card.text()).toContain('The 3D printer.')
     expect(card.get('[data-alias="the printer"]').text()).toContain('active')
     expect(card.get('[data-alias="the loud thing"]').text()).toContain('candidate (2 confirmations)')
+    expect(card.get('[data-test="summary"]').text()).toContain('input shaping tuned')
+    expect(card.get('[data-test="summary"]').text()).toContain('Sep 22, 2026')
   })
 
   it('creates a project', async () => {

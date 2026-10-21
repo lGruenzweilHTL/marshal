@@ -28,12 +28,23 @@ import {
 } from '../ui'
 import ChunkType from './ChunkType.vue'
 import { chunkTypes } from './memoryLabels'
+import { fromLocalInput, isClosed, toLocalInput } from './validTime'
 
-type Draft = { scope: Schemas['ChunkScope']; projectId: string; type: Schemas['ChunkType']; title: string; content: string; importance: number; sourceRef: string }
+type Draft = {
+  scope: Schemas['ChunkScope']
+  projectId: string
+  type: Schemas['ChunkType']
+  title: string
+  content: string
+  importance: number
+  sourceRef: string
+  validFrom: string
+  validTo: string
+}
 type Importance = '1' | '2' | '3' | '4' | '5'
 
 /**
- * A memory chunk: create, edit content and importance, pin, supersede (new identity for a new title, type or
+ * A memory chunk: create, edit content, importance and valid time, pin, supersede (new identity for a new title, type or
  * scope) and delete, with its history and links. Failed saves keep the text.
  */
 const api = useApi()
@@ -61,7 +72,7 @@ const history = useLoad<Schemas['MemoryHistoryEntry'][]>(
   { isEmpty: () => false },
 )
 
-const emptyDraft = (): Draft => ({ scope: 'general', projectId: '', type: 'fact', title: '', content: '', importance: 3, sourceRef: '' })
+const emptyDraft = (): Draft => ({ scope: 'general', projectId: '', type: 'fact', title: '', content: '', importance: 3, sourceRef: '', validFrom: '', validTo: '' })
 const form = reactive<Draft>(emptyDraft())
 const replacement = reactive<Draft>(emptyDraft())
 const superseding = shallowRef(false)
@@ -69,11 +80,23 @@ const deleting = shallowRef(false)
 const saved = shallowRef<string | null>(null)
 const chunk = computed(() => detail.data.value?.chunk ?? null)
 const deleted = computed(() => chunk.value?.deletedAt != null)
+const closed = computed(() => isClosed(chunk.value?.validTo))
 
 watch(chunk, (value) => {
   if (!value) return
-  Object.assign(form, { scope: value.scope, projectId: value.projectId ?? '', type: value.type, title: value.title, content: value.content, importance: value.importance, sourceRef: value.sourceRef ?? '' })
-  Object.assign(replacement, form)
+  Object.assign(form, {
+    scope: value.scope,
+    projectId: value.projectId ?? '',
+    type: value.type,
+    title: value.title,
+    content: value.content,
+    importance: value.importance,
+    sourceRef: value.sourceRef ?? '',
+    validFrom: toLocalInput(value.validFrom),
+    validTo: toLocalInput(value.validTo),
+  })
+  // A replacement starts its own valid time.
+  Object.assign(replacement, form, { validFrom: '', validTo: '' })
 })
 watch(id, () => {
   saved.value = null
@@ -97,7 +120,17 @@ const body = (draft: Draft): Schemas['ChunkWriteRequest'] => ({
   content: draft.content,
   importance: draft.importance,
   sourceRef: draft.sourceRef.trim() || null,
+  ...(draft.validFrom ? { validFrom: fromLocalInput(draft.validFrom) } : {}),
+  ...(draft.validTo ? { validTo: fromLocalInput(draft.validTo) } : {}),
 })
+
+// The valid time goes along only when it changed; then both ends are sent, so an empty "until" reopens the chunk.
+function validTimeEdit(): Pick<Schemas['ChunkEditRequest'], 'validFrom' | 'validTo'> {
+  const current = chunk.value
+  if (!current || !form.validFrom) return {}
+  if (form.validFrom === toLocalInput(current.validFrom) && form.validTo === toLocalInput(current.validTo)) return {}
+  return { validFrom: fromLocalInput(form.validFrom), validTo: fromLocalInput(form.validTo) }
+}
 
 const save = useSubmit(async () => {
   saved.value = null
@@ -107,7 +140,7 @@ const save = useSubmit(async () => {
     return result
   }
   const result = await api.call((client) =>
-    client.PUT('/api/v1/memory/chunks/{id}', { ...path(), body: { content: form.content, importance: form.importance, sourceRef: form.sourceRef.trim() || null } }),
+    client.PUT('/api/v1/memory/chunks/{id}', { ...path(), body: { content: form.content, importance: form.importance, sourceRef: form.sourceRef.trim() || null, ...validTimeEdit() } }),
   )
   if (result.data) {
     saved.value = result.data.outcome === 'unchanged' ? t('memory.editor.unchanged') : t('states.saved')
@@ -152,6 +185,7 @@ const projectOptions = computed(() => projects.data.value ?? [])
         <span>{{ t('memory.editor.meta', { who: chunk.createdBy, created: format.dateTime(chunk.createdAt) }) }}</span>
         <span v-if="chunk.lastRetrievedAt">· {{ t('memory.editor.lastUsed', { time: format.dateTime(chunk.lastRetrievedAt) }) }}</span>
         <Badge v-if="deleted" tone="danger" :label="t('memory.editor.deleted')" />
+        <Badge v-if="closed && chunk.validTo" tone="warning" data-test="closed" :label="t('memory.editor.closed', { date: format.dateTime(chunk.validTo) })" />
       </p>
 
       <div class="layout" :class="{ split: desktop && !!chunk }">
@@ -176,6 +210,11 @@ const projectOptions = computed(() => projects.data.value ?? [])
                 <span class="t-label">{{ t('memory.editor.importance') }}</span>
                 <Segmented v-model="formImportance" :options="levels" :label="t('memory.editor.importance')" block data-test="importance" />
               </div>
+              <div class="pair">
+                <Field v-model="form.validFrom" kind="datetime-local" name="validFrom" :label="t('memory.editor.validFrom')" :required="!!id" />
+                <Field v-model="form.validTo" kind="datetime-local" name="validTo" :label="t('memory.editor.validTo')" />
+              </div>
+              <p class="hint">{{ t('memory.editor.validHint') }}</p>
               <Field v-model="form.sourceRef" name="sourceRef" :label="t('memory.editor.source')" :placeholder="t('memory.editor.sourceHint')" mono />
               <Switch v-if="chunk && !deleted" v-model="pinned" :label="t('memory.editor.pin')" :description="t('memory.editor.pinHint')" :disabled="pin.busy.value" data-test="pin" />
               <ErrorBanner v-if="pin.error.value" :error="pin.error.value" />
@@ -232,7 +271,14 @@ const projectOptions = computed(() => projects.data.value ?? [])
                     <RouterLink v-if="entry.chunkId !== id" :to="`/memory/chunks/${entry.chunkId}`">{{ entry.title }}</RouterLink>
                     <template v-else>{{ t(`memory.editor.historyKind.${entry.kind}`) }}</template>
                   </template>
-                  <template #subtitle>{{ entry.content }} · <span class="num">{{ format.dateTime(entry.validFrom) }}</span></template>
+                  <template #subtitle>
+                    {{ entry.content }} ·
+                    <span class="num" data-test="valid-time">{{
+                      entry.validTo
+                        ? t('memory.editor.range', { from: format.dateTime(entry.validFrom), to: format.dateTime(entry.validTo) })
+                        : t('memory.editor.since', { from: format.dateTime(entry.validFrom) })
+                    }}</span>
+                  </template>
                   <template #trail>
                     <Badge :tone="entry.kind === 'current' ? 'success' : 'neutral'" :label="t(`memory.editor.historyKind.${entry.kind}`)" />
                   </template>

@@ -136,7 +136,7 @@ public sealed class BriefingEndToEndTests : IAsyncLifetime
         Assert.Equal(2, _harness.Recorder.Runs.Count(run => run.Start.Context.Source == SessionSource.Task));
         Assert.Equal(3, _harness.Model.Requests.Count);
         Assert.Contains(_harness.Model.Requests[1].Messages, message => message.Role == ChatRole.User && message.Text.Contains(PreparedNotes, StringComparison.Ordinal));
-        Assert.Null((await Store().FindAsync("briefing", Ct)).Value.Prepared);
+        Assert.Null((await BriefingAsync()).Prepared);
     }
 
     [Fact]
@@ -200,13 +200,19 @@ public sealed class BriefingEndToEndTests : IAsyncLifetime
         await _scheduler.StartAsync(Ct);
         await WaitIdleAsync();
         _harness.Time.SetUtcNow(new DateTimeOffset(2026, 9, 30, 1, 0, 0, TimeSpan.Zero));
-        await WaitForAsync(async () => (await Store().FindAsync("briefing", Ct)).Value.Prepared is not null);
+        await WaitForAsync(async () => (await BriefingAsync()).Prepared is not null);
         await WaitIdleAsync();
 
         _harness.Model.ThenText($"{Speech}\n\n{Details}");
         _harness.Time.SetUtcNow(new DateTimeOffset(2026, 9, 30, 4, 0, 0, TimeSpan.Zero));
         await WaitForAsync(async () => (await HistoryAsync()).Count > 0);
         await WaitIdleAsync();
+    }
+
+    private async Task<TaskRecord> BriefingAsync()
+    {
+        using (_harness.Accessor.Use(Text(OwnerA)))
+            return (await Store().FindAsync("briefing", Ct)).Value;
     }
 
     private async Task<MarshalExecutionContext> VoiceSessionAsync()

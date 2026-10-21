@@ -13,7 +13,7 @@ const detail = {
 }
 const history = [
   { chunkId: 'PPPPPPPPPPPPPPPPPPPPPPPPPP', kind: 'predecessor', title: 'Printer nozzle', content: '0.4 mm.', importance: 3, validFrom: '2026-09-01T10:00:00Z' },
-  { chunkId: id, kind: 'version', title: 'Voron nozzle', content: '0.5 mm nozzle.', importance: 3, validFrom: '2026-09-20T10:00:00Z' },
+  { chunkId: id, kind: 'version', title: 'Voron nozzle', content: '0.5 mm nozzle.', importance: 3, validFrom: '2026-09-20T10:00:00Z', validTo: '2026-09-21T10:00:00Z' },
   { chunkId: id, kind: 'current', title: 'Voron nozzle', content: '0.6 mm nozzle.', importance: 3, validFrom: '2026-09-21T10:00:00Z' },
 ]
 
@@ -95,6 +95,53 @@ describe('ChunkEditorView', () => {
     expect(entries[0]!.text()).toContain('0.4 mm.')
     expect(entries[0]!.get('a').attributes('href')).toBe('/memory/chunks/PPPPPPPPPPPPPPPPPPPPPPPPPP')
     expect(entries[2]!.text()).toContain('0.6 mm nozzle.')
+  })
+
+  it('shows the valid time of each history entry', async () => {
+    const { wrapper } = await mountEditor(server())
+
+    const version = wrapper.findAll('[data-history]')[1]!
+    expect(version.get('[data-test="valid-time"]').text()).toMatch(/Sep 20, 2026.*–.*Sep 21, 2026/)
+    expect(wrapper.findAll('[data-history]')[2]!.get('[data-test="valid-time"]').text()).toContain('since')
+  })
+
+  it('edits the valid time and sends both ends', async () => {
+    const fake = server().on('PUT', `/api/v1/memory/chunks/${id}`, 200, { id, outcome: 'updated' })
+    const { wrapper } = await mountEditor(fake)
+
+    expect((wrapper.get('input[name="validFrom"]').element as HTMLInputElement).value).not.toBe('')
+    expect((wrapper.get('input[name="validTo"]').element as HTMLInputElement).value).toBe('')
+    await wrapper.get('input[name="validTo"]').setValue('2026-10-01T00:00')
+    await wrapper.get('form[data-test="chunk"]').trigger('submit')
+    await flushPromises()
+
+    expect(JSON.parse(fake.request('PUT', `/api/v1/memory/chunks/${id}`)!.body)).toEqual({
+      content: '0.6 mm nozzle.',
+      importance: 3,
+      sourceRef: null,
+      validFrom: '2026-09-20T10:00:00.000Z',
+      validTo: new Date('2026-10-01T00:00').toISOString(),
+    })
+  })
+
+  it('creates a chunk with a valid time', async () => {
+    const fake = server().on('POST', '/api/v1/memory/chunks', 201, { id, outcome: 'created' })
+    const { wrapper } = await mountEditor(fake, '/memory/new')
+
+    await wrapper.get('input[name="title"]').setValue('Workplace')
+    await wrapper.get('textarea[name="content"]').setValue('Works at Fronius.')
+    await wrapper.get('input[name="validFrom"]').setValue('2025-03-01T00:00')
+    await wrapper.get('form[data-test="chunk"]').trigger('submit')
+    await flushPromises()
+
+    expect(JSON.parse(fake.request('POST', '/api/v1/memory/chunks')!.body)).toMatchObject({ title: 'Workplace', validFrom: new Date('2025-03-01T00:00').toISOString() })
+  })
+
+  it('marks a closed chunk', async () => {
+    const closed = { ...detail, chunk: chunk({ validTo: '2026-09-22T10:00:00Z' }) }
+    const { wrapper } = await mountEditor(server().on('GET', `/api/v1/memory/chunks/${id}`, 200, closed))
+
+    expect(wrapper.get('[data-test="closed"]').text()).toContain('No longer true')
   })
 
   it('supersedes with a new identity and opens the successor', async () => {

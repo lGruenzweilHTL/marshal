@@ -30,6 +30,8 @@ A chunk's id is a hash of owner, scope, project, type and normalized title. Writ
 
 Updating a chunk keeps the previous content, importance and source as a version row, so "Voron nozzle size" shows 0.6 mm and its history shows 0.4 mm. A change of identity (title, scope or project) creates a new chunk with a `supersedes` edge to the old one.
 
+Chunks and versions also carry a valid time (`validFrom`, optional `validTo`): when the fact was true in the world, separate from when Marshal stored it. An update or a supersede ends the previous fact's valid time. Automatic retrieval uses only facts valid now, so ended facts cost no prompt space; `memory.recall` with `asOf` answers "before" and "when" questions from closed chunks and earlier versions. The id does not include valid time, so a fact keeps its identity over its lifetime.
+
 Chunks are linked by four kinds of edges: `supersedes`, `contradicts`, `depends_on` and `relates_to`. Deleting a chunk soft-deletes it: it is no longer retrieved but stays visible in the history view.
 
 ![Entity relationship diagram](../diagrams/erd.svg)
@@ -83,7 +85,7 @@ Notes are never memory by themselves. Content from notes enters memory only when
 
 ## Keeping memory healthy
 
-An audit lists stale chunks (not updated or retrieved for 180 days by default), open contradictions and orphans (chunks of deleted projects, dangling edges). The memory view in the web UI shows chunks, versions, edges and the audit. Every night the backup writes an NDJSON export of each owner's chunks, versions and edges (without embeddings), which you can re-import; embeddings are recomputed.
+An audit lists stale chunks (not updated or retrieved for 180 days by default), open contradictions and orphans (chunks of deleted projects, dangling edges). After the nightly consolidation, idle-time jobs turn open contradictions and near-duplicates into proposals and write project summaries; a proposal changes memory only when you accept it. The memory view in the web UI shows chunks, versions, edges and the audit. Every night the backup writes an NDJSON export of each owner's chunks, versions and edges (without embeddings), which you can re-import; embeddings are recomputed.
 
 See [memory](../guides/memory.md) for working with memory day to day.
 

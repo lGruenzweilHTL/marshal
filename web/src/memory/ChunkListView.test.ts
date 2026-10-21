@@ -47,6 +47,7 @@ describe('ChunkListView', () => {
     await wrapper.get('[data-type="device"]').trigger('click')
     await wrapper.get('select[name="project"]').setValue(projectId)
     await wrapper.get('[data-test="pinned-only"]').trigger('click')
+    await wrapper.get('[data-test="closed-only"]').trigger('click')
     await wrapper.get('form[data-test="search"]').trigger('submit')
     await flushPromises()
 
@@ -55,6 +56,14 @@ describe('ChunkListView', () => {
     expect(search.get('type')).toBe('device')
     expect(search.get('projectId')).toBe(projectId)
     expect(search.get('pinned')).toBe('true')
+    expect(search.get('closed')).toBe('true')
+  })
+
+  it('marks closed chunks', async () => {
+    const closed = chunk({ id: 'DDDDDDDDDDDDDDDDDDDDDDDDDD', title: 'Old workplace', validTo: '2025-03-01T00:00:00Z' })
+    const { wrapper } = await mountList(server().on('GET', '/api/v1/memory/chunks', 200, [closed]))
+
+    expect(wrapper.get('[data-chunk="DDDDDDDDDDDDDDDDDDDDDDDDDD"] [data-test="closed"]').text()).toContain('until')
   })
 
   it('starts filtered by the project from the query', async () => {

@@ -802,7 +802,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Chunks newest first, or ranked by relevance with query; filter by type, scope, projectId and pinned. */
+        /** Chunks newest first, or ranked by relevance with query; filter by type, scope, projectId, pinned and closed. */
         get: operations["ListMemoryChunks"];
         put?: never;
         /** Writes a chunk through its deterministic id (an existing chunk with the same identity is updated). */
@@ -822,7 +822,7 @@ export interface paths {
         };
         /** A chunk (also when deleted) with its earlier versions and its edges. */
         get: operations["GetMemoryChunk"];
-        /** Changes content, importance and source; the previous content becomes a version. */
+        /** Changes content, importance, source and valid time; the previous content becomes a version. */
         put: operations["EditMemoryChunk"];
         post?: never;
         /** Soft-deletes a chunk; it is no longer retrieved. */
@@ -891,10 +891,61 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Stale chunks, open contradictions, orphans and dangling edges. */
+        /** Stale chunks, open contradictions, orphans, dangling edges and open proposals. */
         get: operations["GetMemoryAudit"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Open proposals of the idle-time jobs (contradictions and duplicates), oldest first. */
+        get: operations["ListMemoryProposals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/proposals/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Applies a proposal: closes the outdated chunk, or merges the duplicates. */
+        post: operations["AcceptMemoryProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/proposals/{id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dismisses a proposal; memory stays unchanged and the pair is not proposed again. */
+        post: operations["DismissMemoryProposal"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1924,6 +1975,16 @@ export interface components {
             importance: number;
             /** @description Origin reference, if any. */
             sourceRef: null | string;
+            /**
+             * Format: date-time
+             * @description Since when it is true; with it, the valid time is set exactly as sent (null `ValidTo` reopens the chunk).
+             */
+            validFrom?: null | string;
+            /**
+             * Format: date-time
+             * @description Until when it is true.
+             */
+            validTo?: null | string;
         };
         ChunkId: string;
         /** @enum {unknown} */
@@ -1951,6 +2012,16 @@ export interface components {
             importance: null | number;
             /** @description Origin reference, if any. */
             sourceRef: null | string;
+            /**
+             * Format: date-time
+             * @description Since when it is true (default: now).
+             */
+            validFrom?: null | string;
+            /**
+             * Format: date-time
+             * @description Until when it is true; null leaves it open.
+             */
+            validTo?: null | string;
         };
         ChunkWriteResult: {
             id: components["schemas"]["ChunkId"];
@@ -2546,6 +2617,7 @@ export interface components {
             contradictions: components["schemas"]["MemoryContradiction"][];
             orphans: components["schemas"]["MemoryChunk"][];
             danglingEdges: components["schemas"]["MemoryEdge"][];
+            proposals?: components["schemas"]["MemoryProposalView"][];
         };
         MemoryChunk: {
             id: components["schemas"]["ChunkId"];
@@ -2567,6 +2639,10 @@ export interface components {
             deletedAt: null | string;
             /** Format: date-time */
             lastRetrievedAt: null | string;
+            /** Format: date-time */
+            validFrom?: string;
+            /** Format: date-time */
+            validTo?: null | string;
         };
         /** @description A chunk with its history data. */
         MemoryChunkDetail: {
@@ -2585,6 +2661,10 @@ export interface components {
             sourceRef: null | string;
             /** Format: date-time */
             replacedAt: string;
+            /** Format: date-time */
+            validFrom?: string;
+            /** Format: date-time */
+            validTo?: null | string;
         };
         MemoryContradiction: {
             from: components["schemas"]["MemoryChunk"];
@@ -2621,9 +2701,23 @@ export interface components {
             importance: number;
             /** Format: date-time */
             validFrom: string;
+            /** Format: date-time */
+            validTo?: null | string;
         };
         /** @enum {unknown} */
         MemoryHistoryKind: "predecessor" | "version" | "current";
+        /** @enum {unknown} */
+        MemoryProposalKind: "contradiction" | "duplicate";
+        MemoryProposalView: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["MemoryProposalKind"];
+            a: components["schemas"]["MemoryChunk"];
+            b: components["schemas"]["MemoryChunk"];
+            suggestion: components["schemas"]["JsonElement"];
+            /** Format: date-time */
+            createdAt: string;
+        };
         MemoryScatterPoint: {
             id: components["schemas"]["ChunkId"];
             title: string;
@@ -2904,6 +2998,9 @@ export interface components {
             /** Format: int32 */
             chunkCount: number;
             aliases: components["schemas"]["ProjectAliasView"][];
+            summary?: null | string;
+            /** Format: date-time */
+            summaryUpdatedAt?: null | string;
         };
         /** @enum {unknown} */
         ProposalKind: "notes" | "code";
@@ -3223,6 +3320,8 @@ export interface components {
             toolPolicy: null | string[];
             /** @description Tool ids the task's template allows (what a policy may contain), sorted. */
             availableTools: string[];
+            /** @description The preparation run of a cron task; null without one. */
+            preparation: null | components["schemas"]["TaskPreparationInfo"];
         };
         /** @description A new goal for a task. */
         TaskGoalUpdate: {
@@ -3280,6 +3379,23 @@ export interface components {
         };
         /** @enum {unknown} */
         TaskKind: "agent" | "system";
+        /** @description A cron task's preparation run. */
+        TaskPreparationInfo: {
+            /** @description How long before each scheduled run the preparation runs. */
+            before: string;
+            /** @description What the preparation run collects. */
+            goal: string;
+            /**
+             * Format: date-time
+             * @description When the next preparation run is due.
+             */
+            nextAt: null | string;
+            /**
+             * Format: date-time
+             * @description When the prepared notes waiting for the next run were collected, if any.
+             */
+            preparedAt: null | string;
+        };
         TaskResult: {
             speech: string;
             body: string;
@@ -4721,6 +4837,7 @@ export interface operations {
                 projectId?: string;
                 pinned?: boolean;
                 includeDeleted?: boolean;
+                closed?: boolean;
                 limit?: number;
             };
             header?: never;
@@ -4937,6 +5054,66 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MemoryAuditReport"];
                 };
+            };
+        };
+    };
+    ListMemoryProposals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryProposalView"][];
+                };
+            };
+        };
+    };
+    AcceptMemoryProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DismissMemoryProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

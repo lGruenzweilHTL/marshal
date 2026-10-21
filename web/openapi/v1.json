@@ -1726,7 +1726,7 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Chunks newest first, or ranked by relevance with query; filter by type, scope, projectId and pinned.",
+        "summary": "Chunks newest first, or ranked by relevance with query; filter by type, scope, projectId, pinned and closed.",
         "operationId": "ListMemoryChunks",
         "parameters": [
           {
@@ -1771,6 +1771,14 @@
           },
           {
             "name": "includeDeleted",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "closed",
             "in": "query",
             "description": "",
             "schema": {
@@ -1868,7 +1876,7 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Changes content, importance and source; the previous content becomes a version.",
+        "summary": "Changes content, importance, source and valid time; the previous content becomes a version.",
         "operationId": "EditMemoryChunk",
         "parameters": [
           {
@@ -2058,7 +2066,7 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Stale chunks, open contradictions, orphans and dangling edges.",
+        "summary": "Stale chunks, open contradictions, orphans, dangling edges and open proposals.",
         "operationId": "GetMemoryAudit",
         "responses": {
           "200": {
@@ -2070,6 +2078,82 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/proposals": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Open proposals of the idle-time jobs (contradictions and duplicates), oldest first.",
+        "operationId": "ListMemoryProposals",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemoryProposalView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/proposals/{id}/accept": {
+      "post": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Applies a proposal: closes the outdated chunk, or merges the duplicates.",
+        "operationId": "AcceptMemoryProposal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/memory/proposals/{id}/dismiss": {
+      "post": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Dismisses a proposal; memory stays unchanged and the pair is not proposed again.",
+        "operationId": "DismissMemoryProposal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
           }
         }
       }
@@ -4397,6 +4481,22 @@
               "string"
             ],
             "description": "Origin reference, if any."
+          },
+          "validFrom": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Since when it is true; with it, the valid time is set exactly as sent (null \u0060ValidTo\u0060 reopens the chunk).",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Until when it is true.",
+            "format": "date-time"
           }
         },
         "description": "New content of a chunk; identity fields cannot change (supersede instead)."
@@ -4482,6 +4582,22 @@
               "string"
             ],
             "description": "Origin reference, if any."
+          },
+          "validFrom": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Since when it is true (default: now).",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Until when it is true; null leaves it open.",
+            "format": "date-time"
           }
         },
         "description": "A chunk to write (create or supersede replacement)."
@@ -6391,6 +6507,12 @@
             "items": {
               "$ref": "#/components/schemas/MemoryEdge"
             }
+          },
+          "proposals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryProposalView"
+            }
           }
         }
       },
@@ -6475,6 +6597,17 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -6535,6 +6668,17 @@
           },
           "replacedAt": {
             "type": "string",
+            "format": "date-time"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "date-time"
           }
         }
@@ -6673,6 +6817,13 @@
           "validFrom": {
             "type": "string",
             "format": "date-time"
+          },
+          "validTo": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -6682,6 +6833,45 @@
           "version",
           "current"
         ]
+      },
+      "MemoryProposalKind": {
+        "enum": [
+          "contradiction",
+          "duplicate"
+        ]
+      },
+      "MemoryProposalView": {
+        "required": [
+          "id",
+          "kind",
+          "a",
+          "b",
+          "suggestion",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/MemoryProposalKind"
+          },
+          "a": {
+            "$ref": "#/components/schemas/MemoryChunk"
+          },
+          "b": {
+            "$ref": "#/components/schemas/MemoryChunk"
+          },
+          "suggestion": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       },
       "MemoryScatterPoint": {
         "required": [
@@ -7622,6 +7812,19 @@
             "items": {
               "$ref": "#/components/schemas/ProjectAliasView"
             }
+          },
+          "summary": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "summaryUpdatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -8701,7 +8904,8 @@
           "notifications",
           "executorSessions",
           "toolPolicy",
-          "availableTools"
+          "availableTools",
+          "preparation"
         ],
         "type": "object",
         "properties": {
@@ -8779,6 +8983,17 @@
               "type": "string"
             },
             "description": "Tool ids the task\u0027s template allows (what a policy may contain), sorted."
+          },
+          "preparation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TaskPreparationInfo"
+              }
+            ],
+            "description": "The preparation run of a cron task; null without one."
           }
         },
         "description": "One task with everything the detail view shows."
@@ -8915,6 +9130,43 @@
           "agent",
           "system"
         ]
+      },
+      "TaskPreparationInfo": {
+        "required": [
+          "before",
+          "goal",
+          "nextAt",
+          "preparedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "before": {
+            "pattern": "^-?(\\d\u002B\\.)?\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,7})?$",
+            "type": "string",
+            "description": "How long before each scheduled run the preparation runs."
+          },
+          "goal": {
+            "type": "string",
+            "description": "What the preparation run collects."
+          },
+          "nextAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the next preparation run is due.",
+            "format": "date-time"
+          },
+          "preparedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the prepared notes waiting for the next run were collected, if any.",
+            "format": "date-time"
+          }
+        },
+        "description": "A cron task\u0027s preparation run."
       },
       "TaskResult": {
         "required": [

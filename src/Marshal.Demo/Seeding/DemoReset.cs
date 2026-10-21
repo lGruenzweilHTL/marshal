@@ -48,7 +48,15 @@ public sealed class DemoReset(IDbContextFactory<MarshalDbContext> contexts, IExe
         await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         int deleted = 0;
 
+        // Seeded proposals, and any the nightly jobs made about seeded chunks since.
+        List<Guid> proposals = [.. Ids("memory_proposals").Select(Guid.Parse)];
+        deleted += await db.MemoryProposals
+            .Where(row => proposals.Contains(row.Id) || chunks.Contains(row.ChunkA) || chunks.Contains(row.ChunkB))
+            .ExecuteDeleteAsync(cancellationToken);
         await db.ChunkEdges.Where(edge => chunks.Contains(edge.FromId) || chunks.Contains(edge.ToId)).ExecuteDeleteAsync(cancellationToken);
+        // A soft delete keeps the versions' keyword entries for the history; the hard delete removes them.
+        foreach (ChunkId chunk in chunks)
+            await db.Database.ExecuteSqlAsync($"DELETE FROM chunk_versions_fts WHERE chunk_id = {chunk.Value}", cancellationToken);
         await db.ChunkVersions.Where(version => chunks.Contains(version.ChunkId)).ExecuteDeleteAsync(cancellationToken);
         foreach (ChunkId id in chunks)
             deleted += await TryDeleteAsync(db, transaction, () => db.Chunks.Where(row => row.Id == id).ExecuteDeleteAsync(cancellationToken), cancellationToken);

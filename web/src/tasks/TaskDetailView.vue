@@ -33,11 +33,11 @@ import {
 import BudgetMeter from './BudgetMeter.vue'
 import TaskToolPolicy from './TaskToolPolicy.vue'
 import TriggerLabel from './TriggerLabel.vue'
-import { isUnfinished, taskLabel } from './taskFormat'
+import { isUnfinished, spanLabel, taskLabel } from './taskFormat'
 import { statusTone } from './taskTone'
 
 /**
- * One task: goal (editable), latest result, runs, deliveries and notifications, with its trigger and budget use.
+ * One task: goal (editable), preparation run, latest result, runs, deliveries and notifications, with its trigger and budget use.
  * Push actions for a task result link here.
  */
 const api = useApi()
@@ -135,6 +135,18 @@ function describeDelivery(delivery: Schemas['TaskDelivery']): string {
             <Card v-if="detail.data.value.notes">
               <span class="t-overline">{{ t('tasks.detail.notes') }}</span>
               <p data-test="notes" class="goal">{{ detail.data.value.notes }}</p>
+            </Card>
+
+            <Card v-if="detail.data.value.preparation" data-test="preparation">
+              <span class="t-overline">{{ t('tasks.detail.preparation') }}</span>
+              <p class="goal">{{ detail.data.value.preparation.goal }}</p>
+              <p class="ink-3 prep-facts">
+                {{ t('tasks.detail.prepareBefore', { span: spanLabel(detail.data.value.preparation.before) }) }}
+                <template v-if="detail.data.value.preparation.nextAt">
+                  · <span class="num">{{ t('tasks.detail.prepareNext', { time: format.dateTime(detail.data.value.preparation.nextAt) }) }}</span>
+                </template>
+              </p>
+              <p v-if="detail.data.value.preparation.preparedAt" class="prep-facts num">{{ t('tasks.detail.preparedAt', { time: format.dateTime(detail.data.value.preparation.preparedAt) }) }}</p>
             </Card>
 
             <Card>
@@ -254,6 +266,9 @@ function describeDelivery(delivery: Schemas['TaskDelivery']): string {
   margin: var(--space-2) 0 var(--space-3);
   font: 400 17px/26px var(--font-sans);
   white-space: pre-wrap;
+}
+.prep-facts {
+  font: var(--text-body-s);
 }
 .goal-form {
   display: flex;

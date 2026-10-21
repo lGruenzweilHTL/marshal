@@ -142,7 +142,7 @@ public sealed class DemoResetTests : IAsyncLifetime
     }
 
     private static bool IsShadow(string table, List<string> tables) =>
-        tables.Any(parent => parent != table && table.StartsWith(parent + "_", StringComparison.Ordinal) && parent is "chunks_fts" or "notes_fts" or "chunk_vectors" or "note_vectors");
+        tables.Any(parent => parent != table && table.StartsWith(parent + "_", StringComparison.Ordinal) && parent is "chunks_fts" or "chunk_versions_fts" or "notes_fts" or "chunk_vectors" or "note_vectors");
 
     private DemoSeeder Seeder() => new(
         _database.Factory,

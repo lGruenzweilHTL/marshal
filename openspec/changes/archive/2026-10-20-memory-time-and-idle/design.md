@@ -53,6 +53,18 @@ Duplicate candidates: for each chunk changed since the last run, query sqlite-ve
 
 Alternative: a briefing-specific precompute job. Rejected because the briefing must stay "only a task".
 
+## Implementation notes
+
+Deviations found while building:
+
+- The idle jobs ask the `fast` tier with `ChatResponseFormat.ForJsonSchema` and parse the JSON themselves: `Marshal.Memory` cannot reference the structured output shaper in `Marshal.Core`.
+- `tasks.next_prepare_at` stores when the next preparation run is due, so the scheduler finds due preparations with one query.
+- Closing a chunk at a time not after its `validFrom` moves `validFrom` to one second before the close time, so the valid time stays a non-empty interval.
+- The audit hides contradiction pairs in which one chunk is closed; closing is a resolution.
+- Prepared notes go into the main run's task input with their collection time, not into a separate context contributor.
+- Preparation spend counts against the task budget but not as a run.
+- Demo reset hard-deletes seeded chunks, so it also removes their `chunk_versions_fts` rows and the proposals about them.
+
 ## Risks / Trade-offs
 
 - [The model sets wrong valid times from vague speech] → valid times are visible and editable; `asOf` results show them; the summarizer only sets them when the turns state them.

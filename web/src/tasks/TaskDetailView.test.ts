@@ -106,6 +106,23 @@ describe('TaskDetailView', () => {
     expect(wrapper.find('[data-test="cancel"]').exists()).toBe(false)
   })
 
+  it('shows the preparation run with its next time and waiting notes', async () => {
+    const preparation = { before: '03:30:00', goal: 'Collect appointments and the RSS digest.', nextAt: '2026-10-01T01:00:00Z', preparedAt: '2026-09-30T01:00:00Z' }
+    const { wrapper } = await mountDetail(server(taskDetail({ preparation })))
+
+    const card = wrapper.get('[data-test="preparation"]').text()
+    expect(card).toContain('Collect appointments and the RSS digest.')
+    expect(card).toContain('3 h 30 min before each run')
+    expect(card).toContain('Oct 1, 2026')
+    expect(card).toContain('Notes waiting, collected')
+  })
+
+  it('shows no preparation card without one', async () => {
+    const { wrapper } = await mountDetail(server())
+
+    expect(wrapper.find('[data-test="preparation"]').exists()).toBe(false)
+  })
+
   it('says a task without a policy may use every tool its template allows', async () => {
     const { wrapper } = await mountDetail(server())
 
