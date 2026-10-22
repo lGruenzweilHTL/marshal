@@ -47,9 +47,11 @@ Development started on 2026-09-28. The latest work in the history is dated 2026-
 - Time to first delta per run, a voice timeline in the run detail and "slowest first words" sorting in the runs list.
 - Screenshot sweep (`npm run screenshots`) over every web route at phone and desktop width, with layout checks.
 - Docker image, compose file, example `/config` files and clean startup failure messages that list every configuration problem.
+- Documentation site built with Clay from `docs/`, in Marshal's visual style, with the API v1 reference and request cells generated from the OpenAPI document; deployed to GitHub Pages.
 
 ### Changed
 
+- The OpenAPI document names each operation by its route below `/api/v1` (the former summary is its description) and declares the `apiToken` and `session` security schemes with each operation's requirements.
 - Traces follow the OpenTelemetry GenAI semantic conventions (version 1.41) and are emitted while a run executes. Model and embedding calls get `chat` and `embeddings` spans, and MCP requests carry the trace context. Rename dashboards and queries: `marshal.run` is now `invoke_agent`, `marshal.model_call` is now `chat`, and `marshal.tool_call` is now `execute_tool`. The step spans `marshal.context` and `marshal.reply` are gone; with `telemetry.captureContent: true`, the input and reply are attributes of `invoke_agent`. Step attributes moved to convention names (`marshal.model` and `marshal.tier` to `gen_ai.request.model`, `marshal.tokens_in` and `marshal.tokens_out` to `gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens`).
 - Startup failures list each problem with its file and key instead of failing on the first one.
 - Web UI alignment pass: the chat composer's text line and send button share one centre, and controls in one row share the control heights.
