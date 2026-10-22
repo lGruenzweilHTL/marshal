@@ -22,8 +22,6 @@ The docs follow [Diátaxis](https://diataxis.fr/). Each page has one job:
 | `concepts/` | Explanation | "Why does it work this way?" Background, trade-offs, design rules. |
 | `development/` | Contributor how-to and reference | "How do I change Marshal?" |
 
-`docs/internal/` holds design notes that are not part of the published documentation.
-
 Do not mix kinds on one page. A guide links to the reference for the full key list instead of repeating it; a reference page links to the guide for the walkthrough.
 
 ## Voice

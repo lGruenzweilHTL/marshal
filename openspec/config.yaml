@@ -42,8 +42,7 @@ context: |
   - Conventional Commits.
 
   References: CLAUDE.md (AI guidance, repo map, package index),
-  STYLE_GUIDE.md (design philosophy + C# rules),
-  docs/internal/brainstorm-notes.md (interim design notes until formalized here).
+  STYLE_GUIDE.md (design philosophy + C# rules).
 
 rules:
   proposal:

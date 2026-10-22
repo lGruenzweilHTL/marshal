@@ -6,7 +6,6 @@ Propose, implement, sync and archive a change. Marshal is spec-driven: behavior 
 
 - `openspec/specs/` is authoritative. If code and a spec disagree, the spec wins. Fix the code or propose a spec change; never diverge silently.
 - Do not start implementation without an approved change in `openspec/changes/` that covers it.
-- `docs/internal/` holds informal design notes. A spec supersedes them once a topic exists in `openspec/specs/`.
 
 ## Layout
 
