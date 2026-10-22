@@ -53,8 +53,8 @@ Mach Marshal zum Konversationsagenten einer Assist-Pipeline in Home Assistant, d
 
 ## Fehlerbehebung
 
-- „Marshal refused access“: Das Token ist falsch, widerrufen oder hat kein `conversation:write`. Erstelle ein neues Token und konfiguriere die Integration neu.
-- „Marshal is not reachable right now“: Prüfe die URL in der Integration und den [Health-Endpunkt](../../reference/health-endpoints.md).
+- „Marshal hat den Zugriff abgelehnt“ (englisch: „Marshal refused access“): Das Token ist falsch, widerrufen oder hat kein `conversation:write`. Erstelle ein neues Token und konfiguriere die Integration neu.
+- „Marshal ist gerade nicht erreichbar“ (englisch: „Marshal is not reachable right now“): Prüfe die URL in der Integration und den [Health-Endpunkt](../../reference/health-endpoints.md).
 
 Mehr unter [Fehlerbehebung der Komponente](../../home-assistant-component/troubleshooting.md).
 
