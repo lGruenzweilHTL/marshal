@@ -135,7 +135,7 @@ Every page starts with front matter:
 - `order` where the sidebar order matters (tutorials, installation), in steps of ten,
 - `icon` (a Font Awesome 6 free class such as `fa-solid fa-key`) on every page and folder,
 - `description` on every page: one plain-text sentence (no Markdown), shown on cards that link to the page and in search results,
-- the folder's `index.md`: `title`, `icon`, `order`, `description` and `list: true`.
+- the folder's `index.md`: `title`, `icon`, `order` and `description`. Below its summary, link every page and subfolder of the folder with cards, grouped under `##` headings when the folder is large. Do not use `list: true`.
 
 ## The site
 
