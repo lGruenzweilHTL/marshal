@@ -117,7 +117,8 @@ telemetry:
   captureContent: true
 ```
 
-> **Warning:** With content capture on, your telemetry backend stores personal data: what you said, tool arguments, tool results and replies. Marshal logs a warning at startup while it is on.
+> [!WARNING]
+> With content capture on, your telemetry backend stores personal data: what you said, tool arguments, tool results and replies. Marshal logs a warning at startup while it is on.
 
 Spans then carry exactly what run recording stores: the user input and the reply on `invoke_agent`, and the arguments and result on `execute_tool`. Contents are truncated, results of sensitive tools appear only as their reference, and withheld reasoning stays withheld. System prompts and the full messages sent to the model never appear on any span.
 

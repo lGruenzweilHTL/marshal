@@ -55,7 +55,7 @@ Installiere die Marshal-Integration, gib ihr ein API-Token und wähle Marshal al
 
 ## Prüfen, ob es funktioniert
 
-Öffne den Assist-Dialog in Home Assistant und tippe eine Frage. Die Antwort von Marshal erscheint. In der Weboberfläche taucht ein Durchlauf unter **Durchläufe** auf.
+Öffne den Assist-Dialog in Home Assistant und tippe eine Frage. Die Antwort von Marshal erscheint. In der Weboberfläche taucht ein Durchlauf unter **Läufe** auf.
 
 ## Fehlerbehebung
 
