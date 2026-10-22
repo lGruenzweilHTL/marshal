@@ -108,6 +108,17 @@ Diagrams are Mermaid snippets in `docs/_diagrams/` that the docs pages include (
 - Flow diagrams (voice turn, confirm-tier action, task lifecycle) change with the behavior they show.
 - `clay check` does not parse Mermaid: look at changed diagrams in `npx clay-doc@5 dev` (Node 22+).
 
+## Docs site and versions
+
+The docs are a [Clay](https://clay-doc.github.io/clay-example-repo/) site (Clay 5, always `npx clay-doc@5`). Look up CFM syntax, components, `clay.yaml` keys and commands in the Clay documentation instead of guessing; writing rules are in [docs/development/docs-style.md](docs/development/docs-style.md).
+
+Docs versions follow the **public API version** (`ApiVersions`, major.minor), never the app version: a release that leaves the API contract unchanged (patch or internal change) does not get a docs version. When a change adds a new API version (new major or minor, for example `1.0` → `1.1` or `2.0`):
+
+1. Before you change the docs for the new version, freeze the current state: `npx clay-doc@5 version <current api version>` (for example `1.0`). It copies `docs/latest/` to `docs/<name>/`, including today's OpenAPI document, so the old API reference stays as it was.
+2. Set `version` in `clay.yaml` to the new API version label, then update `docs/latest/` (pages, `openapi` entries, API reference) for the new version.
+3. The first run moves `docs/` into `docs/latest/` and asks first; in a non-interactive shell pass `--yes`. Clay fixes links and `clay.yaml` settings itself and lists the mentions it cannot change; update those and every other path into `docs/` (this file's repository map and diagrams section, `docs/latest/development/docs-style.md`, `docs/latest/diagrams/README.md`).
+4. Run `npx clay-doc@5 check` until it reports no problems.
+
 ## Package index
 
 Key dependencies and what they are for. Keep this list current when adding or removing packages; prefer these over alternatives with the same purpose.
