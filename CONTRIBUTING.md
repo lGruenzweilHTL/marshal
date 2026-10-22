@@ -27,7 +27,7 @@ Tests run on Microsoft.Testing.Platform, one test project per source project. Bu
 - **No real LLM in tests.** Use the fakes in `tests/Marshal.Testing` (`FakeChatClient`, `FakeEmbeddingGenerator`). There are no mocking or assertion libraries.
 - **OpenSpec first.** Do not start implementation without an approved OpenSpec change that covers it. Propose, implement, sync and archive as described in [the OpenSpec workflow](docs/development/openspec-workflow.md).
 - **Keep documentation current.** A change that adds or renames a configuration key, tool, event, endpoint or integration updates the matching page in `docs/` in the same commit.
-- **Keep diagrams current.** Update `docs/diagrams/erd.puml` and `packages.puml` when entities or project references change, and commit the re-rendered SVGs with them.
+- **Keep diagrams current.** Update the Mermaid data model (`docs/diagrams/erd.md`) and the package diagram in `docs/concepts/architecture.md` when entities or project references change.
 
 ## Commits
 

@@ -70,7 +70,7 @@ The Proxmox integration (`src/Marshal.Integrations.Proxmox`) is a compact refere
 9. **Update the repository files**
 
    - `CLAUDE.md`: repository map entry, package index rows for new packages.
-   - `docs/diagrams/packages.puml` and, if you added entities, `docs/diagrams/erd.puml`. Re-render the SVGs and commit both ([diagrams README](../diagrams/README.md)).
+   - The package diagram in [architecture](../concepts/architecture.md#the-parts) and, if you added entities, the [data model](../diagrams/erd.md) ([maintaining the diagrams](../diagrams/README.md)).
    - `deploy/config.example/`: example config for the new section.
    - `src/Marshal.Demo`: if you change an interface that demo mode implements (Home Assistant, printers, mail, RSS, notes), update the simulated implementation in the same change. A new integration is not simulated unless an OpenSpec change adds it to the [demo mode](../guides/demo-mode.md) scope.
 :::

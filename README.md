@@ -124,13 +124,7 @@ There is no published image yet; Marshal is built from this repository with Dock
 
 ## Architecture
 
-For the curious: how Marshal is put together, explained in [Architecture](docs/concepts/architecture.md). The diagrams are kept up to date with the code; sources and details are in [docs/diagrams](docs/diagrams/).
-
-### Packages
-![Package diagram](docs/diagrams/packages.svg)
-
-### Data model
-![Entity relationship diagram](docs/diagrams/erd.svg)
+For the curious: how Marshal is put together, explained in [Architecture](docs/concepts/architecture.md). The diagrams are kept up to date with the code: the [package diagram](docs/concepts/architecture.md#the-parts), the [voice turn](docs/concepts/architecture.md#how-a-request-moves-through-it), the [confirm-tier flow](docs/concepts/risk-and-confirmation.md#frozen-pending-actions), the [task lifecycle](docs/concepts/tasks-and-scheduling.md#the-lifecycle-of-a-run) and the [data model](docs/diagrams/erd.md).
 
 ---
 

@@ -90,7 +90,7 @@ deploy/                      docker-compose.yml, config.example/ (example /confi
                              satellites.yaml, mcp/, skills/, templates/, tasks/ with the example briefing task);
                              Dockerfile at repo root
 docs/                        user and contributor documentation (Clay Flavored Markdown, Diátaxis layout; style rules in
-                             docs/development/docs-style.md), diagrams/, images/; built into a GitHub Pages site by Clay
+                             docs/development/docs-style.md), diagrams/ (data model, Mermaid), images/; built into a GitHub Pages site by Clay
                              (clay.yaml at repo root, .github/workflows/docs.yaml, check with `npx clay-doc@5 check`)
 scripts/                     docs-openapi.mjs: copies web/openapi/v1.json for the docs' API v1 reference (Clay `generate`)
 openspec/                    specifications and changes
@@ -100,12 +100,12 @@ Runtime volumes (not in git): `/config` (skills, templates, MCP servers, risk ru
 
 ## Diagrams — keep up to date
 
-`docs/diagrams/` holds PlantUML diagrams that must always match the code (details and render commands: [docs/diagrams/README.md](docs/diagrams/README.md)):
+Diagrams are Mermaid code blocks written directly in the docs pages (Clay draws them); they must always match the code (details: [docs/diagrams/README.md](docs/diagrams/README.md)):
 
-- **`erd.puml`** — update in the same change that adds, removes or renames an EF Core entity, column or relationship.
-- **`packages.puml`** — update in the same change that adds, removes or renames a project, changes a project reference or adds / removes a key external dependency.
-- Re-render the SVGs after every edit (`java -jar plantuml.jar -tsvg docs/diagrams/*.puml`) and commit `.puml` and `.svg` together.
-- Remove the "(planned)" title marker once the diagrammed structure exists in code.
+- **Data model** (`docs/diagrams/erd.md`, one `erDiagram` per area) — update in the same change that adds, removes or renames an EF Core entity, column or relationship.
+- **Packages** (`docs/concepts/architecture.md`) — update in the same change that adds, removes or renames a project, changes a project reference or adds / removes a key external dependency.
+- Flow diagrams (voice turn, confirm-tier action, task lifecycle) change with the behavior they show.
+- `clay check` does not parse Mermaid: look at changed diagrams in `npx clay-doc@5 dev` (Node 22+).
 
 ## Package index
 

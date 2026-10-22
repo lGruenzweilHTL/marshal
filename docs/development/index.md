@@ -77,7 +77,7 @@ The projects in `src/`:
 - Every integration sits behind a small interface.
 - The model cannot see a tool it cannot use.
 - Tests come first and never need a real LLM.
-- Diagrams in `docs/diagrams/` change in the same commit as the code they describe. See the [diagrams README](../diagrams/README.md).
+- Diagrams (Mermaid, in the pages that explain them) change in the same commit as the code they describe. See [maintaining the diagrams](../diagrams/README.md).
 
 ## Related
 

@@ -40,13 +40,7 @@ Change the EF Core model and create the migration that goes with it.
 
 4. **Update the ERD**
 
-   Update `docs/diagrams/erd.puml` in the same change that adds, removes or renames an entity, column or relationship. Re-render the SVG and commit both:
-
-   ```sh
-   java -jar plantuml.jar -tsvg docs/diagrams/*.puml
-   ```
-
-   See the [diagrams README](../diagrams/README.md) for the Docker alternative.
+   Update the [data model](../diagrams/erd.md) in the same change that adds, removes or renames an entity, column or relationship: the `erDiagram` of the entity's area, and the table of constraints at the end of the page. Check the drawing in `npx clay-doc@5 dev`; see [maintaining the diagrams](../diagrams/README.md).
 
 5. **Update the reference**
 

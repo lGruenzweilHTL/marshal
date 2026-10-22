@@ -39,7 +39,7 @@ Chunks and versions also carry a valid time (`validFrom`, optional `validTo`): w
 
 Chunks are linked by four kinds of edges: `supersedes`, `contradicts`, `depends_on` and `relates_to`. Deleting a chunk soft-deletes it: it is no longer retrieved but stays visible in the history view.
 
-![Entity relationship diagram](../diagrams/erd.svg)
+The tables behind memory, with their columns and relationships, are in the [data model](../diagrams/erd.md#memory).
 
 ### Storage
 

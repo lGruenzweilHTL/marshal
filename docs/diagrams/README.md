@@ -1,42 +1,31 @@
 ---
 title: Maintaining the diagrams
 icon: fa-solid fa-pen-ruler
-description: "Editor previews: the PlantUML extensions for VS Code and JetBrains IDEs render .puml files directly."
+description: "Where the Mermaid diagrams live, when to update them and how to preview them."
 ---
 
-# Diagrams
+# Maintaining the diagrams
 
-| Diagram | Source | Rendered |
-|---|---|---|
-| Entity relationship diagram | [`erd.puml`](erd.puml) | [`erd.svg`](erd.svg) |
-| Package diagram | [`packages.puml`](packages.puml) | [`packages.svg`](packages.svg) |
-| Voice turn request flow | [`request-flow.puml`](request-flow.puml) | [`request-flow.svg`](request-flow.svg) |
-| Confirm-tier action flow | [`confirm-flow.puml`](confirm-flow.puml) | [`confirm-flow.svg`](confirm-flow.svg) |
-| Task lifecycle | [`task-lifecycle.puml`](task-lifecycle.puml) | [`task-lifecycle.svg`](task-lifecycle.svg) |
+The diagrams are [Mermaid](https://mermaid.js.org) code blocks in the Markdown pages. Clay draws them on the site; GitHub draws them when it shows the file.
+
+| Diagram | Page |
+|---|---|
+| Packages | [Architecture](../concepts/architecture.md#the-parts) |
+| Voice turn | [Architecture](../concepts/architecture.md#how-a-request-moves-through-it) |
+| Confirm-tier action | [Risk and confirmation](../concepts/risk-and-confirmation.md#frozen-pending-actions) |
+| Task lifecycle | [Tasks and scheduling](../concepts/tasks-and-scheduling.md#the-lifecycle-of-a-run) |
+| Data model, one diagram per area | [Data model](erd.md) |
 
 ## Keep them up to date
 
-The diagrams must always match the code:
+The diagrams must always match the code. Each block starts with a `%% KEEP UP TO DATE` comment that says what it describes.
 
-- **ERD:** update `erd.puml` in the same change that adds, removes or renames an EF Core entity, column or relationship.
-- **Package diagram:** update `packages.puml` in the same change that adds, removes or renames a project in `src/`, `web/` or `ha/`, or changes a project reference or key external dependency.
-- **Always re-render the SVGs** after editing a `.puml` file and commit both together. The README embeds the SVGs.
-- While a diagram describes planned rather than implemented structure, its title says "(planned)". Remove that marker once the code exists.
+- **Data model:** update [`erd.md`](erd.md) in the same change that adds, removes or renames an EF Core entity, column or relationship. Put the entity in the diagram of its area, and add table names, indexes and constraints to the table at the end of the page.
+- **Packages:** update the diagram in [architecture](../concepts/architecture.md) in the same change that adds, removes or renames a project in `src/`, `web/` or `ha/`, or changes a project reference or key external dependency.
+- **Flows:** update the voice turn, confirm-tier and task lifecycle diagrams in the same change that alters the behavior they show.
 
-## Rendering
+## Preview
 
-The diagrams use PlantUML's built-in `smetana` layout, so Graphviz is not needed. Only Java or Docker is required.
-
-With Java and the PlantUML jar ([download](https://github.com/plantuml/plantuml/releases/latest)):
-
-```sh
-java -jar plantuml.jar -tsvg docs/diagrams/*.puml
-```
-
-With Docker:
-
-```sh
-docker run --rm -v "$PWD":/work -w /work plantuml/plantuml -tsvg docs/diagrams/*.puml
-```
-
-Editor previews: the PlantUML extensions for VS Code and JetBrains IDEs render `.puml` files directly.
+- `npx clay-doc@5 dev` draws the diagrams with live reload (Node.js 22 or newer).
+- `npx clay-doc@5 check` does not draw diagrams, so it does not catch Mermaid syntax errors. Look at the page in the dev server, or paste the block into the [Mermaid live editor](https://mermaid.live).
+- Editors: the Markdown preview of VS Code (with a Mermaid extension) and JetBrains IDEs draws `mermaid` blocks.

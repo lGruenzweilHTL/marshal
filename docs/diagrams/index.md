@@ -2,29 +2,21 @@
 title: Diagrams
 icon: fa-solid fa-diagram-project
 order: 95
-description: "PlantUML diagrams of the packages, the data model and the main flows, rendered from the sources in this folder."
+description: "Mermaid diagrams of the packages, the data model and the main flows, each on the page that explains it."
 ---
 
 # Diagrams
 
-PlantUML diagrams of the packages, the data model and the main flows, rendered from the sources in this folder. How to keep them current and render them is in [maintaining the diagrams](README.md).
+Mermaid diagrams of the packages, the data model and the main flows. Each diagram is written in the Markdown of the page that explains it, and Clay draws it when the site is built. How to keep them current is in [maintaining the diagrams](README.md).
 
-## Packages
-
-![Marshal package diagram](packages.svg)
-
-## Data model
-
-![Entity relationship diagram](erd.svg)
-
-## Voice turn
-
-![Voice turn from Home Assistant Assist through Marshal and back](request-flow.svg)
-
-## Confirm-tier action
-
-![Confirm-tier action frozen with nonce and TTL, confirmed by a user turn, the web UI or a push action](confirm-flow.svg)
-
-## Task lifecycle
-
-![Scheduled or triggered task through worker, approval and delivery](task-lifecycle.svg)
+::: cards
+- [Packages](../concepts/architecture.md#the-parts) {fa-solid fa-sitemap}
+  Projects in src/, web/ and ha/, their references and key packages.
+- [Voice turn](../concepts/architecture.md#how-a-request-moves-through-it) {fa-solid fa-microphone-lines}
+  From Home Assistant Assist through Marshal and back.
+- [Confirm-tier action](../concepts/risk-and-confirmation.md#frozen-pending-actions) {fa-solid fa-hand}
+  Frozen with a nonce and an expiry, confirmed only by a user action.
+- [Task lifecycle](../concepts/tasks-and-scheduling.md#the-lifecycle-of-a-run) {fa-solid fa-list-check}
+  From trigger through worker, approval and delivery.
+- [Data model](erd.md)
+:::

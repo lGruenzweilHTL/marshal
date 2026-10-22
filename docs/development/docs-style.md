@@ -108,7 +108,7 @@ The pages are written in [Clay Flavored Markdown](https://clay-doc.github.io/cla
 - Shell examples use `sh` and no prompt character. Replace values the reader must change with `<angle-brackets>`.
 - YAML examples must be valid and must match the real schema. Never put a secret value in a YAML example; reference a secret name, as `/config` requires.
 - Tables for keys, flags, events and tools. Prose for everything else.
-- Images go in `docs/images/` and need meaningful alt text. Diagrams are PlantUML in `docs/diagrams/` (see [maintaining the diagrams](../diagrams/README.md)); embed the rendered SVG.
+- Images go in `docs/images/` and need meaningful alt text. Diagrams are `mermaid` code blocks in the page that explains them, never images (see [maintaining the diagrams](../diagrams/README.md)).
 - File names: lowercase, hyphen-separated, `.md`.
 
 ### Components

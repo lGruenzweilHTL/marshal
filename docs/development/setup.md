@@ -19,7 +19,6 @@ You need Git and a Linux, macOS or Windows machine that runs Docker.
 | Node.js | 22 | The SPA in `web/`. |
 | uv | current | The Python project in `ha/`. |
 | Docker | current | Testcontainers tests, building the image. |
-| Java or Docker | optional | Rendering PlantUML diagrams. |
 
 ### .NET SDK
 
