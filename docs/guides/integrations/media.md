@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-film
+description: "Connect Marshal to Seerr so you can ask for a movie or show by voice or chat, and optionally to Sonarr and Radarr to ask what airs soon and what is downloading."
+---
+
 # Request and track media with Seerr, Sonarr and Radarr
 
 Connect Marshal to Seerr so you can ask for a movie or show by voice or chat, and optionally to Sonarr and Radarr to ask what airs soon and what is downloading.
@@ -132,8 +137,11 @@ If a tool fails with `media.unavailable`, the message names the service or secre
 
 ## Related
 
+::: cards
 - [`media` in marshal.yaml](../../configuration/marshal-yaml/integrations.md)
-- [Tool reference](../../reference/tools.md) and [event reference](../../reference/events.md)
+- [Tool reference](../../reference/tools.md)
+- [Event reference](../../reference/events.md)
 - [Secrets](../secrets.md)
 - [Machine tokens](../authentication/machine-tokens.md)
 - [Music](music.md)
+:::

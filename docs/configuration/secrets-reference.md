@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-user-secret
+description: "Every secret name that a configuration key can reference, the key that references it, and which stores can supply the value."
+---
+
 # Secrets reference
 
 Every secret name that a configuration key can reference, the key that references it, and which stores can supply the value. `/config` files hold secret names only; values come from the secret store.
@@ -82,6 +87,8 @@ Marshal rejects literal secrets in every `/config` file at startup and on every 
 
 ## Related
 
+::: cards
 - [Secrets guide](../guides/secrets.md)
 - [Environment variables](environment-variables.md)
 - [Security model](../concepts/security-model.md)
+:::

@@ -1,5 +1,7 @@
 ---
+icon: fa-solid fa-circle-up
 order: 70
+description: "Update Marshal to a newer version of the repository."
 ---
 
 # Upgrading
@@ -37,5 +39,8 @@ The `marshal tokens` command runs the same migration step.
 `docker compose logs marshal` shows a clean start, and `GET /health` is not `unhealthy`. After upgrading Marshal, update the Home Assistant integration from the same version. Its setup checks that Marshal supports API version 1.
 
 ## Related
+
+::: cards
 - [Database migrations](../development/database-migrations.md)
 - [Supported versions](../reference/supported-versions.md)
+:::

@@ -2,7 +2,7 @@
 title: Diagrams
 icon: fa-solid fa-diagram-project
 order: 95
-description: PlantUML diagrams of the packages, the data model and the main flows, rendered from the sources in this folder.
+description: "PlantUML diagrams of the packages, the data model and the main flows, rendered from the sources in this folder."
 ---
 
 # Diagrams

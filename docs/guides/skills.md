@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-wand-magic-sparkles
+description: "Write a skill to teach Marshal a procedure, and make it available to the right agent templates."
 ---
 
 # Skills
@@ -69,5 +70,8 @@ Open the configuration view in the web UI (**System**, then configuration) for r
 
 ## Related
 
-- [Agent templates](agent-templates.md), [daily briefing](tasks/daily-briefing.md)
+::: cards
+- [Agent templates](agent-templates.md)
+- [Daily briefing](tasks/daily-briefing.md)
 - [Skills format](../configuration/skills-format.md)
+:::

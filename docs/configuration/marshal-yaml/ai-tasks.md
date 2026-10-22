@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-wand-magic-sparkles
+description: "Limits for AI tasks, the runs Home Assistant automations start through the Marshal AI Task entity (POST /api/v1/ai-tasks)."
+---
+
 # `aiTasks`
 
 Limits for AI tasks, the runs Home Assistant automations start through the Marshal AI Task entity (`POST /api/v1/ai-tasks`). Changes need a restart.
@@ -31,6 +36,8 @@ AI tasks also count against [`tasks.dailyCostCap`](tasks.md): when the cap is us
 
 ## Related
 
+::: cards
 - [AI tasks from Home Assistant](../../home-assistant-component/ai-tasks.md)
 - [AI tasks API](../../api/ai-tasks.md)
 - [Agent templates](../templates-format.md)
+:::

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-list-check
+description: "The files in deploy/config.example/tasks/ are example arguments for the tasks.create and tasks.watch tools."
+---
+
 # Task definitions (`tasks/*.yaml`)
 
 The files in `deploy/config.example/tasks/` are example arguments for the `tasks.create` and `tasks.watch` tools. They show the shape of a task; Marshal does not read a `/config/tasks` directory.
@@ -153,8 +158,10 @@ The task tools are `safe` but persist work: in a tainted run `tasks.create`, `ta
 
 ## Related
 
+::: cards
 - [Scheduled tasks](../guides/tasks/scheduled-tasks.md)
 - [Event triggers](../guides/tasks/event-triggers.md)
 - [Daily briefing](../guides/tasks/daily-briefing.md)
 - [Events reference](../reference/events.md)
 - [Tasks and scheduling](../concepts/tasks-and-scheduling.md)
+:::

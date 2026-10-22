@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-robot
+description: "Limits of the agent loop and the advisor."
+---
+
 # `agent`
 
 Limits of the agent loop and the advisor. Changes need a restart.
@@ -39,6 +44,8 @@ The latency caps are not validated.
 
 ## Related
 
-- [models](models.md)
+::: cards
+- [`models`](models.md)
 - [Agent loop](../../concepts/agent-loop.md)
 - [Agent templates](../../guides/agent-templates.md)
+:::

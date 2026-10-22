@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-puzzle-piece
+description: "Add a new external system to Marshal behind a small interface, with tools, risk tiers, secrets and tests."
+---
+
 # Add an integration
 
 Add a new external system to Marshal behind a small interface, with tools, risk tiers, secrets and tests.
@@ -90,6 +95,8 @@ A new integration is not finished until the docs match:
 
 ## Related
 
+::: cards
 - [Tool visibility](../concepts/tool-visibility.md)
 - [Risk and confirmation](../concepts/risk-and-confirmation.md)
 - [Untrusted content](../concepts/untrusted-content.md)
+:::

@@ -1,6 +1,7 @@
 ---
 icon: fa-solid fa-binoculars
 order: 10
+description: "Marshal is a self-hosted AI agent that Home Assistant talks to."
 ---
 
 # Overview
@@ -34,5 +35,8 @@ See [volumes and layout](../installation/volumes-and-layout.md).
 The [quick start](quick-start.md) builds the image, starts Marshal with Ollama, puts HTTPS in front of it and creates the first account. [Connect Home Assistant](connect-home-assistant.md) then adds the integration and selects Marshal in an Assist pipeline. [Next steps](next-steps.md) lists what to set up afterwards.
 
 ## Related
+
+::: cards
 - [Requirements](requirements.md)
 - [Architecture](../concepts/architecture.md)
+:::

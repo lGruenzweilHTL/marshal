@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-window-maximize
+description: "Work on the Vue single-page app in web/: its folders, the generated API client, texts, tests and PWA setup."
+---
+
 # Web frontend
 
 Work on the Vue single-page app in `web/`: its folders, the generated API client, texts, tests and PWA setup.
@@ -85,5 +90,7 @@ Run it from `web/`. Leave out `sg docker -c` when your user is in the `docker` g
 
 ## Related
 
+::: cards
 - [Building and testing](building-and-testing.md)
 - [Web UI tour](../guides/web-ui/tour.md)
+:::

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-folder-tree
+description: "The layout of the /data volume: every file and folder Marshal creates there, which ones are safe to delete and which you must back up."
+---
+
 # Data directory
 
 The layout of the `/data` volume: every file and folder Marshal creates there, which ones are safe to delete and which you must back up.
@@ -58,7 +63,9 @@ See [volumes and layout](../installation/volumes-and-layout.md) for the installa
 
 ## Related
 
+::: cards
 - [Backups and restore](../guides/backups-and-restore.md)
 - [`maintenance`](../configuration/marshal-yaml/maintenance.md)
 - [Data ownership](../concepts/data-ownership.md)
 - [Database migrations](../development/database-migrations.md)
+:::

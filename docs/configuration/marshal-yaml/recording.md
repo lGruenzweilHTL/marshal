@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-film
+description: "Redaction of run recordings: which tool results are stored in full."
+---
+
 # `recording`
 
 Redaction of run recordings: which tool results are stored in full.
@@ -23,6 +28,9 @@ Globs use `*` against the tool id (for example `mail.*`). Logs never contain sec
 
 ## Related
 
-- [maintenance](maintenance.md) (payload retention)
+::: cards
+- [`maintenance`](maintenance.md)
+  Payload retention
 - [Observability](../../guides/observability.md)
 - [Privacy](../../concepts/privacy.md)
+:::

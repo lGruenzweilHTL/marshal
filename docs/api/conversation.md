@@ -1,6 +1,7 @@
 ---
 icon: fa-solid fa-comments
 order: 20
+description: "POST /api/v1/conversation/turns runs one conversation turn and streams the reply as server-sent events."
 ---
 
 # Conversation endpoint
@@ -108,5 +109,7 @@ When a turn ends with a pending confirm-tier action, `continueConversation` is `
 
 ## Related
 
+::: cards
 - [Examples](examples.md)
 - [How the Home Assistant component handles turns](../home-assistant-component/how-it-works.md)
+:::

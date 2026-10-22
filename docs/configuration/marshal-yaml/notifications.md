@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-bell
+description: "Routing, noise control and follow-up settings for proactive notifications."
+---
+
 # `notifications`
 
 Routing, noise control and follow-up settings for proactive notifications.
@@ -38,7 +43,9 @@ notifications:
 
 ## Related
 
+::: cards
 - [Notifications guide](../../guides/notifications.md)
 - [Notification priorities](../../reference/notifications-priorities.md)
-- [displays](displays.md)
+- [`displays`](displays.md)
 - [Voice follow-ups](../../guides/voice/follow-ups.md)
+:::

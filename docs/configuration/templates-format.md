@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-file-lines
+description: "A template is a Markdown file in /config/templates/ that sets what a run may see and do: model tier, tool allowlist, skills, limits and an extra prompt."
+---
+
 # Agent templates (`templates/*.md`)
 
 A template is a Markdown file in `/config/templates/` that sets what a run may see and do: model tier, tool allowlist, skills, limits and an extra prompt. Marshal reloads templates without a restart.
@@ -18,7 +23,7 @@ Conversation turns use the built-in `default` template (every tool, every skill,
 ```markdown
 ---
 name: house-inspector
-description: Reads the current state of the house and reports what needs attention. Cannot change anything.
+description: "Reads the current state of the house and reports what needs attention. Cannot change anything."
 modelTier: fast
 tools: ["ha.homeassistant__GetLiveContext", "agent.load_skill"]
 skills: [house-status]
@@ -67,6 +72,8 @@ A rejected file is skipped with an error; other templates load.
 
 ## Related
 
+::: cards
 - [Agent templates guide](../guides/agent-templates.md)
 - [Skills format](skills-format.md)
 - [Tool visibility](../concepts/tool-visibility.md)
+:::

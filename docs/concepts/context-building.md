@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-layer-group
+description: "How Marshal assembles what the model sees at the start of each run: the system prompt, its sections and their order."
+---
+
 # Context building
 
 This page explains how Marshal assembles what the model sees at the start of each run: the system prompt, its sections and their order.
@@ -81,7 +86,9 @@ A new capability adds context by registering another contributor with a stabilit
 
 ## Related
 
+::: cards
 - [Agent loop](agent-loop.md)
 - [Memory model](memory-model.md)
 - [Satellites](../guides/voice/satellites.md)
 - [Agent templates](../guides/agent-templates.md)
+:::

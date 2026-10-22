@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-scale-balanced
+description: "Rate Marshal's replies, turn rated runs into eval cases, and replay those cases against another model, template or base prompt before you switch."
+---
+
 # Rate replies and replay eval cases
 
 Rate Marshal's replies, turn rated runs into eval cases, and replay those cases against another model, template or base prompt before you switch.
@@ -103,6 +108,9 @@ Eval cases keep the text of the rated turn (input, history, turn context, tool r
 
 ## Related
 
+::: cards
 - [API: evals endpoints](../api/index.md#spa-internal-endpoints)
-- [Observability](observability.md) for runs and cost
+- [Observability](observability.md)
+  For runs and cost
 - [`tasks.dailyCostCap`](../configuration/marshal-yaml/tasks.md)
+:::

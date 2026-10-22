@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-eye-slash
+description: "Which data leaves your Marshal instance depending on the models and integrations you choose, what Marshal stores, and how long it keeps it."
+---
+
 # Privacy
 
 This page explains which data leaves your Marshal instance depending on the models and integrations you choose, what Marshal stores, and how long it keeps it.
@@ -101,7 +106,9 @@ See [`maintenance`](../configuration/marshal-yaml/maintenance.md).
 
 ## Related
 
+::: cards
 - [Security model](security-model.md)
 - [Data ownership](data-ownership.md)
 - [Context building](context-building.md)
 - [Backups and restore](../guides/backups-and-restore.md)
+:::

@@ -2,6 +2,7 @@
 title: API
 icon: fa-solid fa-code
 order: 70
+description: "Marshal exposes a versioned REST API under /api/v{n}."
 ---
 
 # API overview
@@ -126,6 +127,7 @@ The web interface uses the following groups. They require a logged-in person (co
 
 ## Related
 
+::: cards
 - [Authentication](authentication.md)
 - [Conversation endpoint](conversation.md)
 - [AI tasks](ai-tasks.md)
@@ -134,3 +136,4 @@ The web interface uses the following groups. They require a logged-in person (co
 - [OpenAPI and client generation](openapi.md)
 - [Examples](examples.md)
 - [API versioning (contributors)](../development/api-versioning.md)
+:::

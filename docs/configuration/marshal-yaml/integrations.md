@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-plug
+description: "Keys of the integration sections of marshal.yaml: Home Assistant, CalDAV calendars, printers, FreshRSS, notes, web search, mail OAuth clients, Proxmox, media, music, GitHub and executors."
+---
+
 # Integration sections
 
 Keys of the integration sections of `marshal.yaml`: Home Assistant, CalDAV calendars, printers, FreshRSS, notes, web search, mail OAuth clients, Proxmox, media, music, GitHub and executors. Every section is optional. An integration's tools stay hidden until its section is set. Changes need a restart.
@@ -190,6 +195,16 @@ Validation: `executors.callbackBaseUrl must be an absolute URL.`, and when `clau
 
 ## Related
 
-- [Home Assistant](../../guides/integrations/home-assistant.md), [printers](../../guides/integrations/printers-moonraker.md), [RSS](../../guides/integrations/rss-freshrss.md), [notes](../../guides/integrations/notes.md), [web search](../../guides/integrations/web-search.md), [mail](../../guides/integrations/mail.md)
-- [Proxmox](../../guides/integrations/proxmox.md), [media](../../guides/integrations/media.md), [music](../../guides/integrations/music.md), [GitHub](../../guides/integrations/github.md)
+::: cards
+- [Home Assistant](../../guides/integrations/home-assistant.md)
+- [Printers](../../guides/integrations/printers-moonraker.md)
+- [RSS](../../guides/integrations/rss-freshrss.md)
+- [Notes](../../guides/integrations/notes.md)
+- [Web search](../../guides/integrations/web-search.md)
+- [Mail](../../guides/integrations/mail.md)
+- [Proxmox](../../guides/integrations/proxmox.md)
+- [Media](../../guides/integrations/media.md)
+- [Music](../../guides/integrations/music.md)
+- [GitHub](../../guides/integrations/github.md)
 - [Executor host](../../installation/executor-host.md)
+:::

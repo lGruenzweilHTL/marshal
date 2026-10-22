@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-comments
+description: "When an idle conversation session closes or rests."
+---
+
 # `sessions`
 
 When an idle conversation session closes or rests.
@@ -21,5 +26,7 @@ sessions:
 
 ## Related
 
+::: cards
 - [Data ownership](../../concepts/data-ownership.md)
 - [Voice follow-ups](../../guides/voice/follow-ups.md)
+:::

@@ -1,6 +1,7 @@
 ---
 icon: fa-solid fa-clipboard-check
 order: 20
+description: "What you need before you install Marshal."
 ---
 
 # Requirements
@@ -36,5 +37,8 @@ Browser sessions require HTTPS. Marshal rejects the first-run setup and every st
 - For voice: an Assist pipeline with speech-to-text and text-to-speech.
 
 ## Related
+
+::: cards
 - [Quick start](quick-start.md)
 - [Supported versions](../reference/supported-versions.md)
+:::

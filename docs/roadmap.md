@@ -1,6 +1,7 @@
 ---
 icon: fa-solid fa-map
 order: 110
+description: "Open a feature request. See CONTRIBUTING.md for how changes are proposed."
 ---
 
 # Roadmap

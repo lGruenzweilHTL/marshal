@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-lightbulb
+description: "Thresholds of the acceptance estimate, the expiry of suggestions and the settings of each suggestion detector."
+---
+
 # `suggestions`
 
 Thresholds of the acceptance estimate, the expiry of suggestions and the settings of each suggestion detector. Suggestions run only for owners with "help Marshal learn" on.
@@ -59,6 +64,8 @@ The estimate is (accepted + 1) / (accepted + dismissed + 2) per owner and detect
 
 ## Related
 
+::: cards
 - [Get suggestions](../../guides/suggestions.md)
-- [maintenance](maintenance.md)
-- [notifications](notifications.md)
+- [`maintenance`](maintenance.md)
+- [`notifications`](notifications.md)
+:::

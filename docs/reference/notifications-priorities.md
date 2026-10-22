@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-bell
+description: "Notification priorities, channels, routing rules and the outcomes and reasons Marshal records for each notification."
+---
+
 # Notification priorities
 
 Notification priorities, channels, routing rules and the outcomes and reasons Marshal records for each notification.
@@ -82,7 +87,10 @@ Push notifications for approvals carry Approve and Reject actions through the Ho
 
 ## Related
 
+::: cards
 - [Notifications guide](../guides/notifications.md)
 - [`notifications` configuration](../configuration/marshal-yaml/notifications.md)
-- [Tools](tools.md) (`notifications.*`)
+- [Tools](tools.md)
+  `notifications.*`
 - [Events](events.md)
+:::

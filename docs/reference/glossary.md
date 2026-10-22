@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-spell-check
+description: "The terms Marshal's documentation and specifications use, each with one meaning."
 ---
 
 # Glossary
@@ -194,7 +195,9 @@ The terms Marshal's documentation and specifications use, each with one meaning.
 
 ## Related
 
+::: cards
 - [Tools](tools.md)
 - [Risk tiers](risk-tiers.md)
 - [Events](events.md)
 - [Documentation style](../development/docs-style.md)
+:::

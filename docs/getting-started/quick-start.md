@@ -1,6 +1,7 @@
 ---
 icon: fa-solid fa-play
 order: 30
+description: "Build Marshal, start it with Ollama and HTTPS, and sign in."
 ---
 
 # Quick start
@@ -124,5 +125,8 @@ curl -k https://<host>/health
 - Setup shows that Marshal must be opened over HTTPS: you opened `http://...:8080`. Use the HTTPS address.
 
 ## Related
+
+::: cards
 - [Connect Home Assistant](connect-home-assistant.md)
 - [Docker Compose installation](../installation/docker-compose.md)
+:::

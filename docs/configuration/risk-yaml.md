@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-shield-halved
+description: "/config/risk.yaml holds the ordered rules that set the risk tier of tool calls."
+---
+
 # `risk.yaml`
 
 `/config/risk.yaml` holds the ordered rules that set the [risk tier](../reference/risk-tiers.md) of tool calls. The first matching rule wins. Marshal reloads the file without a restart.
@@ -61,7 +66,9 @@ Startup fails, or a reload keeps the previous rules and logs the error, when:
 
 ## Related
 
+::: cards
 - [Risk tiers](../reference/risk-tiers.md)
 - [Risk rules guide](../guides/risk-rules.md)
 - [Risk and confirmation](../concepts/risk-and-confirmation.md)
 - [`satellites.yaml`](satellites-yaml.md)
+:::

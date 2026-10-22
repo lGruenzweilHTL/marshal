@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-brain
+description: "Teach Marshal facts and preferences, say when they were true, check what it remembers, and manage projects, pinning, the audit and its proposals."
 ---
 
 # Memory
@@ -118,5 +119,9 @@ Say "remember that my favorite coffee is oat flat white", open **Memory** and fi
 
 ## Related
 
-- [Memory model](../concepts/memory-model.md), [untrusted content](../concepts/untrusted-content.md), [context building](../concepts/context-building.md)
+::: cards
+- [Memory model](../concepts/memory-model.md)
+- [Untrusted content](../concepts/untrusted-content.md)
+- [Context building](../concepts/context-building.md)
 - [Data ownership](../concepts/data-ownership.md)
+:::

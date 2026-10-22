@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-screwdriver-wrench
+description: "Get reminded to change a nozzle, a filter or belts after a number of print hours or cycles, not after a fixed date."
+---
+
 # Track maintenance by usage
 
 Get reminded to change a nozzle, a filter or belts after a number of print hours or cycles, not after a fixed date.
@@ -62,7 +67,9 @@ Open Home. The **Maintenance** card lists every item with its usage, for example
 
 ## Related
 
+::: cards
 - [`maintenance` configuration](../configuration/marshal-yaml/maintenance.md)
 - [Tools: maintenance](../reference/tools.md#maintenance-maintenance)
 - [Get suggestions](suggestions.md)
 - [Notifications](notifications.md)
+:::

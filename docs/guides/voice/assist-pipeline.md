@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-microphone-lines
+description: "Make Marshal the conversation agent of a Home Assistant Assist pipeline, so voice satellites and the Assist dialog talk to it."
+---
+
 # Use Marshal in an Assist pipeline
 
 Make Marshal the conversation agent of a Home Assistant Assist pipeline, so voice satellites and the Assist dialog talk to it.
@@ -55,7 +60,9 @@ More in [component troubleshooting](../../home-assistant-component/troubleshooti
 
 ## Related
 
+::: cards
 - [Satellites](satellites.md)
 - [Voice follow-ups](follow-ups.md)
 - [Conversation API](../../api/conversation.md)
 - [How the component works](../../home-assistant-component/how-it-works.md)
+:::

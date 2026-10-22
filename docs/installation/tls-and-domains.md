@@ -1,5 +1,7 @@
 ---
+icon: fa-solid fa-lock
 order: 50
+description: "Choose a hostname and certificate so browsers, passkeys and push links work."
 ---
 
 # TLS and domains
@@ -39,5 +41,8 @@ Home Assistant calls Marshal with an API token, so it can use plain HTTP on the 
 Open `https://<host>/` without a certificate warning, sign in and add a passkey under **Security**.
 
 ## Related
+
+::: cards
 - [`auth`](../configuration/marshal-yaml/auth.md)
 - [Local accounts](../guides/authentication/local-accounts.md)
+:::

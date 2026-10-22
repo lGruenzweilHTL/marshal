@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-lightbulb
+description: "Let Marshal notice things at home and suggest what to do, such as closing a window before rain, and teach it which suggestions you want."
+---
+
 # Get suggestions
 
 Let Marshal notice things at home and suggest what to do, such as closing a window before rain, and teach it which suggestions you want.
@@ -61,7 +66,9 @@ Open a window that has a `binary_sensor` with device class `window` while the fo
 
 ## Related
 
+::: cards
 - [`suggestions` configuration](../configuration/marshal-yaml/suggestions.md)
 - [Turn repeated workflows into skills](skill-proposals.md)
 - [Track maintenance by usage](maintenance.md)
 - [Risk tiers](../reference/risk-tiers.md)
+:::

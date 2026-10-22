@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-dollar-sign
+description: "Every environment variable that Marshal and the executor host read."
+---
+
 # Environment variables
 
 Every environment variable that Marshal and the executor host read. Marshal reads no other variables of its own.
@@ -74,7 +79,9 @@ Marshal clears the default ASP.NET configuration sources and builds its own, so 
 
 ## Related
 
+::: cards
 - [Secrets reference](secrets-reference.md)
 - [Configuration overview](index.md)
 - [Executor host installation](../installation/executor-host.md)
 - [Docker Compose installation](../installation/docker-compose.md)
+:::

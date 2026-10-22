@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-tower-broadcast
+description: "Give individual Assist satellites a reply length, notes, a display, a music speaker and tool limits through /config/satellites.yaml."
+---
+
 # Configure satellite profiles
 
 Give individual Assist satellites a reply length, notes, a display, a music speaker and tool limits through `/config/satellites.yaml`.
@@ -66,6 +71,8 @@ Profiles are optional. A satellite without a profile uses defaults: normal verbo
 
 ## Related
 
+::: cards
 - [`satellites.yaml` reference](../../configuration/satellites-yaml.md)
 - [Tool visibility](../../concepts/tool-visibility.md)
 - [Risk tiers](../../reference/risk-tiers.md)
+:::

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-chart-line
+description: "The OpenTelemetry instruments Marshal emits."
+---
+
 # Metrics and traces
 
 The OpenTelemetry instruments Marshal emits. Traces follow the OpenTelemetry GenAI semantic conventions, version 1.41. Marshal's own metrics come from the data the run recorder stores, so they always match the run records.
@@ -119,6 +124,8 @@ No span carries the system prompt or the full messages sent to the model.
 
 ## Related
 
+::: cards
 - [Observability guide](../guides/observability.md)
 - [Health endpoints](health-endpoints.md)
 - [Risk tiers](risk-tiers.md)
+:::

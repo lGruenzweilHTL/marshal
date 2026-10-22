@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-diagram-next
+description: "Propose, implement, sync and archive a change."
+---
+
 # OpenSpec workflow
 
 Propose, implement, sync and archive a change. Marshal is spec-driven: behavior is defined in `openspec/specs/` before it is built.
@@ -51,5 +56,7 @@ Propose, implement, sync and archive a change. Marshal is spec-driven: behavior 
 
 ## Related
 
+::: cards
 - [Development index](index.md)
 - [Adding an integration](adding-an-integration.md)
+:::

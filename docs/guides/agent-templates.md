@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-file-lines
+description: "Create an agent template to restrict what a task or subagent can see and do, and delegate work to it."
+---
+
 # Agent templates
 
 Create an agent template to restrict what a task or subagent can see and do, and delegate work to it.
@@ -64,6 +69,11 @@ Ask Marshal to use the template ("ask the house inspector how the house is"). In
 
 ## Related
 
-- [Skills](skills.md), [daily briefing](tasks/daily-briefing.md), [risk rules](risk-rules.md)
-- [Templates format](../configuration/templates-format.md), [`agent`](../configuration/marshal-yaml/agent.md)
+::: cards
+- [Skills](skills.md)
+- [Daily briefing](tasks/daily-briefing.md)
+- [Risk rules](risk-rules.md)
+- [Templates format](../configuration/templates-format.md)
+- [`agent`](../configuration/marshal-yaml/agent.md)
 - [Tool visibility](../concepts/tool-visibility.md)
+:::

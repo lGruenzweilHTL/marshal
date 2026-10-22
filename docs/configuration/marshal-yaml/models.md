@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-microchip
+description: "The chat models Marshal can use, grouped into tiers."
+---
+
 # `models`
 
 The chat models Marshal can use, grouped into tiers. Changes need a restart.
@@ -68,6 +73,9 @@ Messages name the model key:
 
 ## Related
 
-- [embedding](embedding.md)
-- [agent](agent.md) (advisor limits)
+::: cards
+- [`embedding`](embedding.md)
+- [`agent`](agent.md)
+  Advisor limits
 - [Models setup](../../installation/models-setup.md)
+:::

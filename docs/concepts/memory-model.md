@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-brain
+description: "How Marshal remembers things across conversations: what a memory chunk is, how chunks reach a turn, how projects scope them, and how memory is written."
+---
+
 # Memory model
 
 This page explains how Marshal remembers things across conversations: what a memory chunk is, how chunks reach a turn, how projects scope them, and how memory is written.
@@ -98,7 +103,9 @@ See [memory](../guides/memory.md) for working with memory day to day.
 
 ## Related
 
+::: cards
 - [Context building](context-building.md)
 - [Untrusted content](untrusted-content.md)
 - [Data ownership](data-ownership.md)
 - [Backups and restore](../guides/backups-and-restore.md)
+:::

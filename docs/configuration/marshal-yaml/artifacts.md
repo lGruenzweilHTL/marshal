@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-paperclip
+description: "Limits of the artifact store in /data/artifacts: uploads, executor output, kept snapshots and saved attachments."
+---
+
 # `artifacts`
 
 Limits of the artifact store in `/data/artifacts`: uploads, executor output, kept snapshots and saved attachments.
@@ -29,5 +34,7 @@ Rendered 3D pages for displays are cached in `/data/cache/renditions`, at most 5
 
 ## Related
 
+::: cards
 - [Artifacts guide](../../guides/artifacts.md)
-- [displays](displays.md)
+- [`displays`](displays.md)
+:::

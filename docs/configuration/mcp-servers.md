@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-plug-circle-bolt
+description: "Each file in /config/mcp/ defines one Model Context Protocol server whose tools Marshal offers to the model."
+---
+
 # MCP servers (`mcp/*.yaml`)
 
 Each file in `/config/mcp/` defines one Model Context Protocol server whose tools Marshal offers to the model. Marshal reloads the directory without a restart; tool lists of running turns do not change mid-turn.
@@ -132,8 +137,10 @@ A rejected file never affects the others. Errors show on `/health` and the confi
 
 ## Related
 
+::: cards
 - [Custom MCP servers](../guides/integrations/custom-mcp-servers.md)
 - [Health endpoints](../reference/health-endpoints.md)
 - [Home Assistant MCP](../guides/integrations/home-assistant-mcp.md)
 - [Untrusted content](../concepts/untrusted-content.md)
 - [Secrets reference](secrets-reference.md)
+:::

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-note-sticky
+description: "Let Marshal search and read your Markdown notes from a git repository, kept separate from its memory."
+---
+
 # Connect your notes
 
 Let Marshal search and read your Markdown notes from a git repository, kept separate from its memory.
@@ -66,7 +71,9 @@ The notes index (path, heading, text, embedding) is derived data. It is not expo
 
 ## Related
 
+::: cards
 - [Memory](../memory.md)
 - [Untrusted content](../../concepts/untrusted-content.md)
 - [Volumes and layout](../../installation/volumes-and-layout.md)
 - [Secrets](../secrets.md)
+:::

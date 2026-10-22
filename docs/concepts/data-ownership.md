@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-user-lock
+description: "How Marshal keeps each user's data apart, even though an instance has one user today."
+---
+
 # Data ownership
 
 This page explains how Marshal keeps each user's data apart, even though an instance has one user today.
@@ -68,7 +73,9 @@ EF Core migrations run automatically at startup. Before any pending migration, M
 
 ## Related
 
+::: cards
 - [Privacy](privacy.md)
 - [Security model](security-model.md)
 - [Memory model](memory-model.md)
 - [Data directory](../reference/data-directory.md)
+:::

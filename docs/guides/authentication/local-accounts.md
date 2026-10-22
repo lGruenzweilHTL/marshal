@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-fingerprint
+description: "Claim the instance owner on first start, then sign in with a passkey or a password."
+---
+
 # Sign in with a local account
 
 Claim the instance owner on first start, then sign in with a passkey or a password.
@@ -59,6 +64,8 @@ The `local` provider covers the instance owner. Marshal prepares for several use
 
 ## Related
 
+::: cards
 - [`auth` reference](../../configuration/marshal-yaml/auth.md)
 - [Machine tokens](machine-tokens.md)
 - [Security model](../../concepts/security-model.md)
+:::

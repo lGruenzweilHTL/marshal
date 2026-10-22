@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-clock
+description: "Create tasks that run now, at a time, on a cron schedule or after another task, and control where their results go."
+---
+
 # Scheduled tasks
 
 Create tasks that run now, at a time, on a cron schedule or after another task, and control where their results go.
@@ -115,6 +120,11 @@ Press **Stop all** on the Tasks page, or say "stop all background tasks". Runnin
 
 ## Related
 
-- [Event triggers](event-triggers.md), [daily briefing](daily-briefing.md), [approvals](approvals.md)
-- [Task definitions](../../configuration/tasks-format.md), [`tasks` settings](../../configuration/marshal-yaml/tasks.md)
+::: cards
+- [Event triggers](event-triggers.md)
+- [Daily briefing](daily-briefing.md)
+- [Approvals](approvals.md)
+- [Task definitions](../../configuration/tasks-format.md)
+- [`tasks` settings](../../configuration/marshal-yaml/tasks.md)
 - [Tasks and scheduling](../../concepts/tasks-and-scheduling.md)
+:::

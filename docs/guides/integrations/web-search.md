@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-magnifying-glass
+description: "Let Marshal look things up on the web through your own SearXNG instance, without opening any result page."
+---
+
 # Connect web search (SearXNG)
 
 Let Marshal look things up on the web through your own SearXNG instance, without opening any result page.
@@ -94,7 +99,9 @@ If a question must not leave your network, do not ask Marshal to search for it. 
 
 ## Related
 
+::: cards
 - [Untrusted content](../../concepts/untrusted-content.md)
 - [Privacy](../../concepts/privacy.md)
 - [Secrets](../secrets.md)
 - [Integration sections reference](../../configuration/marshal-yaml/integrations.md#web-searxng-web-search)
+:::

@@ -1,6 +1,7 @@
 ---
 icon: fa-solid fa-robot
 order: 30
+description: "POST /api/v1/ai-tasks runs one task for an automation and answers with JSON."
 ---
 
 # AI tasks
@@ -86,7 +87,9 @@ The built-in `ai_task` template allows no tools. If you allow tools in `/config/
 
 ## Related
 
+::: cards
 - [AI tasks from Home Assistant](../home-assistant-component/ai-tasks.md)
 - [`aiTasks` configuration](../configuration/marshal-yaml/ai-tasks.md)
 - [Authentication and scopes](authentication.md)
 - [Untrusted content](../concepts/untrusted-content.md)
+:::

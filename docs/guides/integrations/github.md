@@ -1,3 +1,8 @@
+---
+icon: fa-brands fa-github
+description: "Give Marshal read-only access to a short list of GitHub repositories so it can summarize pull requests and issues and explain failed CI runs."
+---
+
 # Read GitHub pull requests, issues and CI runs
 
 Give Marshal read-only access to a short list of GitHub repositories so it can summarize pull requests and issues and explain failed CI runs.
@@ -85,8 +90,10 @@ If every call fails with `repos.unavailable`, check that the token has not expir
 
 ## Related
 
+::: cards
 - [`github` in marshal.yaml](../../configuration/marshal-yaml/integrations.md)
 - [Artifacts](../artifacts.md)
 - [Secrets](../secrets.md)
 - [Executor host](../../installation/executor-host.md)
 - [Tool reference](../../reference/tools.md)
+:::

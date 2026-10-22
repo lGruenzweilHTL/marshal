@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-paperclip
+description: "Upload, view, share and let Marshal show files such as 3D models, code, diffs, images and documents."
 ---
 
 # Work with artifacts
@@ -114,6 +115,10 @@ Chat cards stay with the message when you reopen the session. Previews (`GET /ap
 
 ## Related
 
+::: cards
 - [Displays](displays.md)
 - [Artifact kinds and tools](../reference/tools.md)
-- [Printers](integrations/printers-moonraker.md), [GitHub](integrations/github.md), [mail](integrations/mail.md)
+- [Printers](integrations/printers-moonraker.md)
+- [GitHub](integrations/github.md)
+- [Mail](integrations/mail.md)
+:::

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-calendar-days
+description: "Let Marshal read your calendars, find free time, and create or change events with confirmation."
+---
+
 # Use your calendars
 
 Let Marshal read your calendars, find free time, and create or change events with confirmation. Calendars come from Home Assistant, from CalDAV accounts, or from both.
@@ -148,8 +153,10 @@ Summaries, descriptions, locations, organizers and attendees can come from other
 
 ## Related
 
+::: cards
 - [Integration sections](../../configuration/marshal-yaml/integrations.md#calendarcaldav-caldav-calendars)
 - [Connect Home Assistant](home-assistant.md)
 - [Daily briefing](../tasks/daily-briefing.md)
 - [Risk tiers](../../reference/risk-tiers.md)
 - [Tools reference](../../reference/tools.md)
+:::

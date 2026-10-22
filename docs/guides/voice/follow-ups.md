@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-comment-dots
+description: "When Marshal speaks a question on a satellite, your spoken reply goes to the approval, task or result the question belongs to."
+---
+
 # Answer Marshal by voice
 
 When Marshal speaks a question on a satellite, your spoken reply goes to the approval, task or result the question belongs to.
@@ -48,6 +53,8 @@ If a satellite or Home Assistant version does not pass the nonce, Marshal links 
 
 ## Related
 
+::: cards
 - [Approvals](../tasks/approvals.md)
 - [Notifications](../notifications.md)
 - [Risk and confirmation](../../concepts/risk-and-confirmation.md)
+:::

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-server
+description: "Give Marshal read-only access to your Proxmox VE cluster so it can report on nodes, guests, storage and tasks, with a token that cannot change anything."
+---
+
 # Watch a Proxmox VE cluster
 
 Give Marshal read-only access to your Proxmox VE cluster so it can report on nodes, guests, storage and tasks, with a token that cannot change anything.
@@ -81,7 +86,9 @@ To get a message when a backup fails instead of asking, set up Proxmox notificat
 
 ## Related
 
+::: cards
 - [`proxmox` in marshal.yaml](../../configuration/marshal-yaml/integrations.md)
 - [Secrets](../secrets.md)
 - [Tool reference](../../reference/tools.md)
 - [Security model](../../concepts/security-model.md)
+:::

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-mobile-screen
+description: "Add Marshal to your phone's home screen so it opens like an app, without browser chrome."
+---
+
 # Install the web UI as an app
 
 Add Marshal to your phone's home screen so it opens like an app, without browser chrome.
@@ -41,5 +46,7 @@ Start the app from the home screen. It opens without an address bar and shows Ho
 
 ## Related
 
+::: cards
 - [Tour of the web UI](tour.md)
 - [Reverse proxy](../../installation/reverse-proxy.md)
+:::

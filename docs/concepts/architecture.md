@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-sitemap
+description: "How Marshal is put together: which processes run, how the projects depend on each other, and why the boundaries sit where they do."
 ---
 
 # Architecture
@@ -74,7 +75,9 @@ Background work (scheduled tasks, event watches, approvals) uses the same loop a
 
 ## Related
 
+::: cards
 - [Agent loop](agent-loop.md)
 - [Security model](security-model.md)
 - [Volumes and layout](../installation/volumes-and-layout.md)
 - [Development overview](../development/index.md)
+:::

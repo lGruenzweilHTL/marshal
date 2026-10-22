@@ -1,5 +1,7 @@
 ---
+icon: fa-solid fa-gears
 order: 30
+description: "What the component sends to Marshal for each Assist turn, how it handles the reply, and how timeouts, errors and follow-ups behave."
 ---
 
 # How the Home Assistant component works
@@ -65,6 +67,8 @@ If Marshal is unreachable, times out, rejects the token or returns an error, the
 
 ## Related
 
+::: cards
 - [Conversation endpoint](../api/conversation.md)
 - [Troubleshooting](troubleshooting.md)
 - [Privacy](../concepts/privacy.md)
+:::

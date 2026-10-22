@@ -2,6 +2,7 @@
 title: Development
 icon: fa-solid fa-screwdriver-wrench
 order: 90
+description: "How to change Marshal: set up a machine, build and test, follow the OpenSpec workflow, and add integrations, tools, endpoints and migrations."
 ---
 
 # Development
@@ -10,25 +11,36 @@ How to change Marshal: set up a machine, build and test, follow the OpenSpec wor
 
 ## Where to start
 
-1. Read [`CLAUDE.md`](https://github.com/lGruenzweilHTL/marshal/blob/master/CLAUDE.md) for the non-negotiable rules and the repository map. It is written for AI agents and is equally useful for people.
-2. Read [`STYLE_GUIDE.md`](https://github.com/lGruenzweilHTL/marshal/blob/master/STYLE_GUIDE.md) for the design philosophy and the C# rules.
-3. Read [documentation style](docs-style.md) before you touch a page in `docs/`.
-4. Set up your machine: [setup](setup.md).
-5. Pick up a change through the [OpenSpec workflow](openspec-workflow.md). Marshal does not accept implementation work without an approved change.
+::: steps
+1. **Read [`CLAUDE.md`](https://github.com/lGruenzweilHTL/marshal/blob/master/CLAUDE.md)** for the non-negotiable rules and the repository map. It is written for AI agents and is equally useful for people.
+2. **Read [`STYLE_GUIDE.md`](https://github.com/lGruenzweilHTL/marshal/blob/master/STYLE_GUIDE.md)** for the design philosophy and the C# rules.
+3. **Read [documentation style](docs-style.md)** before you touch a page in `docs/`.
+4. **Set up your machine:** [setup](setup.md).
+5. **Pick up a change** through the [OpenSpec workflow](openspec-workflow.md). Marshal does not accept implementation work without an approved change.
+:::
 
 ## Pages
 
-| Page | Use it to |
-|---|---|
-| [Setup](setup.md) | Install the .NET SDK, Node, uv and Docker. |
-| [Building and testing](building-and-testing.md) | Build and run the .NET, web and Home Assistant test suites. |
-| [OpenSpec workflow](openspec-workflow.md) | Propose, implement, sync and archive a change. |
-| [Adding an integration](adding-an-integration.md) | Add a new external system behind a small interface. |
-| [Adding a tool](adding-a-tool.md) | Add a model-facing tool to an existing source. |
-| [Web frontend](web-frontend.md) | Work on the Vue SPA, its API client and its texts. |
-| [Database migrations](database-migrations.md) | Change the EF Core model. |
-| [API versioning](api-versioning.md) | Add or change a public API endpoint. |
-| [Release process](release-process.md) | Build the image and publish a version. |
+::: cards
+- [Setup](setup.md)
+  Install the .NET SDK, Node, uv and Docker.
+- [Building and testing](building-and-testing.md)
+  Build and run the .NET, web and Home Assistant test suites.
+- [OpenSpec workflow](openspec-workflow.md)
+  Propose, implement, sync and archive a change.
+- [Adding an integration](adding-an-integration.md)
+  Add a new external system behind a small interface.
+- [Adding a tool](adding-a-tool.md)
+  Add a model-facing tool to an existing source.
+- [Web frontend](web-frontend.md)
+  Work on the Vue SPA, its API client and its texts.
+- [Database migrations](database-migrations.md)
+  Change the EF Core model.
+- [API versioning](api-versioning.md)
+  Add or change a public API endpoint.
+- [Release process](release-process.md)
+  Build the image and publish a version.
+:::
 
 ## Repository map
 
@@ -69,5 +81,7 @@ The projects in `src/`:
 
 ## Related
 
+::: cards
 - [Architecture](../concepts/architecture.md)
 - [Security model](../concepts/security-model.md)
+:::

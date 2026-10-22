@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-wrench
+description: "Schedules and retention of the system tasks Marshal seeds for the instance owner (nightly backup, memory consolidation, skill proposals and the retention purge), and the usage-based maintenance items Marshal tracks."
+---
+
 # `maintenance`
 
 Schedules and retention of the system tasks Marshal seeds for the instance owner (nightly backup, memory consolidation, skill proposals and the retention purge), and the usage-based maintenance items Marshal tracks.
@@ -64,8 +69,10 @@ A source has either `ha` or `printer` with `metric`, never both. Marshal stores 
 
 ## Related
 
+::: cards
 - [Backups and restore](../../guides/backups-and-restore.md)
 - [Track maintenance by usage](../../guides/maintenance.md)
-- [suggestions](suggestions.md)
-- [recording](recording.md)
+- [`suggestions`](suggestions.md)
+- [`recording`](recording.md)
 - [Data directory](../../reference/data-directory.md)
+:::

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-rss
+description: "Let Marshal read your news from FreshRSS, mark articles read, and fetch full article text for the daily digest."
+---
+
 # Connect FreshRSS
 
 Let Marshal read your news from FreshRSS, mark articles read, and fetch full article text for the daily digest.
@@ -73,7 +78,9 @@ The digest is shipped as files only, with no digest-specific code: the skill `rs
 
 ## Related
 
+::: cards
 - [Untrusted content](../../concepts/untrusted-content.md)
 - [Daily briefing](../tasks/daily-briefing.md)
 - [Secrets](../secrets.md)
 - [Integration sections reference](../../configuration/marshal-yaml/integrations.md#freshrss)
+:::

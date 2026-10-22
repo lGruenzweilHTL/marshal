@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-code-branch
+description: "Add or change a public API endpoint without breaking a published version."
+---
+
 # API versioning
 
 Add or change a public API endpoint without breaking a published version.
@@ -62,5 +67,7 @@ Adding an optional field or a new endpoint to V1 is compatible. Removing or rena
 
 ## Related
 
+::: cards
 - [OpenAPI](../api/openapi.md)
 - [Web frontend](web-frontend.md)
+:::

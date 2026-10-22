@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-plug-circle-plus
+description: "Connect any Model Context Protocol (MCP) server to Marshal so its tools appear next to the built-in ones."
+---
+
 # Add a custom MCP server
 
 Connect any Model Context Protocol (MCP) server to Marshal so its tools appear next to the built-in ones.
@@ -136,8 +141,10 @@ A server that fails to start, fails discovery, uses a reserved or duplicate name
 
 ## Related
 
+::: cards
 - [`mcp-servers` reference](../../configuration/mcp-servers.md)
 - [Risk rules](../risk-rules.md)
 - [Tool visibility](../../concepts/tool-visibility.md)
 - [Secrets](../secrets.md)
 - [Home Assistant MCP](home-assistant-mcp.md)
+:::

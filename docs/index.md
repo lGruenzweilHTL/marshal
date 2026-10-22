@@ -1,7 +1,7 @@
 ---
 title: Marshal documentation
 icon: fa-solid fa-house-signal
-description: Marshal is a self-hosted AI agent for Home Assistant. Install it, connect your services, call its API and understand how it keeps you in control.
+description: "Marshal is a self-hosted AI agent for Home Assistant. Install it, connect your services, call its API and understand how it keeps you in control."
 hero: true
 ---
 

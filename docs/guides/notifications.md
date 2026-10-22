@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-bell
+description: "Choose where proactive messages reach you, when Marshal stays quiet and how to see why a message went where it did."
 ---
 
 # Control how Marshal notifies you
@@ -100,6 +101,9 @@ A message pushed instead of spoken because of the hourly cap has outcome `delive
 
 ## Related
 
-- [Scheduled tasks](tasks/scheduled-tasks.md) for deliveries, conditions and expiry
+::: cards
+- [Scheduled tasks](tasks/scheduled-tasks.md)
+  For deliveries, conditions and expiry
 - [Voice follow-ups](voice/follow-ups.md)
 - [User preferences](web-ui/language.md)
+:::

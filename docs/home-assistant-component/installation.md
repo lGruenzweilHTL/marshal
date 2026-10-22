@@ -1,5 +1,7 @@
 ---
+icon: fa-solid fa-download
 order: 10
+description: "Install the Marshal custom integration so Home Assistant sends Assist conversations to Marshal, then connect it with an API token."
 ---
 
 # Install the Home Assistant component
@@ -54,5 +56,7 @@ Open the Assist dialog in Home Assistant, pick the assistant that uses Marshal a
 
 ## Related
 
+::: cards
 - [Configuration](configuration.md)
 - [Troubleshooting](troubleshooting.md)
+:::

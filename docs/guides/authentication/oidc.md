@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-id-card
+description: "Let people sign in through your identity provider (Authentik, Keycloak, Pocket ID or another OIDC provider) and map provider groups to Marshal roles."
+---
+
 # Sign in with OpenID Connect
 
 Let people sign in through your identity provider (Authentik, Keycloak, Pocket ID or another OIDC provider) and map provider groups to Marshal roles.
@@ -138,6 +143,9 @@ Open the login page. A button with the provider's display name appears (`GET /ap
 
 ## Related
 
-- [Local accounts](local-accounts.md) as break-glass access
+::: cards
+- [Local accounts](local-accounts.md)
+  As break-glass access
 - [Secrets](../secrets.md)
 - [Security model](../../concepts/security-model.md)
+:::

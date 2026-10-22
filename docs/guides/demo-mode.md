@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-flask
+description: "Run Marshal with only a model configured and still see every view and the main tool flows, with simulated integrations and sample history."
 ---
 
 # Try Marshal in demo mode
@@ -94,6 +95,8 @@ Set `demo.enabled: false` or remove the section, and restart. The sample data st
 
 ## Related
 
+::: cards
 - [`demo` configuration](../configuration/marshal-yaml/demo.md)
 - [`marshal demo`](../reference/cli.md#marshal-demo)
 - [Risk and confirmation](../concepts/risk-and-confirmation.md)
+:::

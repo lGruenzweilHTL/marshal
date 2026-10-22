@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-tower-broadcast
+description: "/config/satellites.yaml holds optional per-satellite profiles, keyed by the satellite entity id."
+---
+
 # `satellites.yaml`
 
 `/config/satellites.yaml` holds optional per-satellite profiles, keyed by the satellite entity id. Marshal reloads the file without a restart.
@@ -46,6 +51,8 @@ Errors name the file and key. A failing first load stops startup; a failing relo
 
 ## Related
 
+::: cards
 - [Satellites guide](../guides/voice/satellites.md)
 - [`risk.yaml`](risk-yaml.md)
 - [Tool visibility](../concepts/tool-visibility.md)
+:::

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-laptop-code
+description: "Install the tools you need to build Marshal, run its tests and work on the web UI and the Home Assistant component."
+---
+
 # Set up a development machine
 
 Install the tools you need to build Marshal, run its tests and work on the web UI and the Home Assistant component.
@@ -74,5 +79,7 @@ The run ends with all tests passing. Continue with [building and testing](buildi
 
 ## Related
 
+::: cards
 - [Development index](index.md)
 - [Web frontend](web-frontend.md)
+:::

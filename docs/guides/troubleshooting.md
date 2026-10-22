@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-stethoscope
+description: "Find the cause of a problem from what you see, using the messages Marshal prints."
 ---
 
 # Troubleshooting
@@ -83,5 +84,9 @@ marshal: startup failed (2 errors)
 
 ## Related
 
-- [Observability](observability.md), [configuration index](../configuration/index.md)
-- [FAQ](../faq.md), [Home Assistant component troubleshooting](../home-assistant-component/troubleshooting.md)
+::: cards
+- [Observability](observability.md)
+- [Configuration index](../configuration/index.md)
+- [FAQ](../faq.md)
+- [Home Assistant component troubleshooting](../home-assistant-component/troubleshooting.md)
+:::

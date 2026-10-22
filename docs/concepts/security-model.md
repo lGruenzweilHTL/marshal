@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-shield-halved
+description: "What Marshal protects against, which design rules carry that protection, and what remains your responsibility."
 ---
 
 # Security model
@@ -109,7 +110,9 @@ To report a vulnerability, follow [SECURITY.md](https://github.com/lGruenzweilHT
 
 ## Related
 
+::: cards
 - [Privacy](privacy.md)
 - [Risk and confirmation](risk-and-confirmation.md)
 - [Untrusted content](untrusted-content.md)
 - [Risk tiers](../reference/risk-tiers.md)
+:::

@@ -1,6 +1,7 @@
 ---
 icon: fa-solid fa-file-code
 order: 70
+description: "Marshal publishes one OpenAPI document per API version."
 ---
 
 # OpenAPI and client generation
@@ -64,6 +65,8 @@ Generate against a version's document and pin that version in your client. A pub
 
 ## Related
 
+::: cards
 - [API v1 reference](v1/index.md)
 - [CLI reference](../reference/cli.md)
 - [Web frontend development](../development/web-frontend.md)
+:::

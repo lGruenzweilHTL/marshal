@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-flask
+description: "Demo mode: simulated integrations and sample history for an instance that has only a model configured."
+---
+
 # `demo`
 
 Demo mode: simulated integrations and sample history for an instance that has only a model configured.
@@ -35,6 +40,8 @@ The section has no validator.
 
 ## Related
 
+::: cards
 - [Try Marshal in demo mode](../../guides/demo-mode.md)
 - [`marshal demo`](../../reference/cli.md#marshal-demo)
-- [integrations](integrations.md)
+- [`integrations`](integrations.md)
+:::

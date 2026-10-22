@@ -1,5 +1,7 @@
 ---
+icon: fa-solid fa-sliders
 order: 20
+description: "The integration is set up through a config flow with two fields and has a reauthentication step for a new token."
 ---
 
 # Configure the Home Assistant component
@@ -54,7 +56,9 @@ One Marshal device with two entities named after it:
 
 ## Related
 
+::: cards
 - [Installation](installation.md)
 - [How it works](how-it-works.md)
 - [Run AI tasks from automations](ai-tasks.md)
 - [Machine tokens](../guides/authentication/machine-tokens.md)
+:::

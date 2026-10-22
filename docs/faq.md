@@ -1,6 +1,7 @@
 ---
 icon: fa-solid fa-circle-question
 order: 100
+description: "Short answers to common questions about what Marshal is, what it can do and what it deliberately cannot do."
 ---
 
 # Frequently asked questions

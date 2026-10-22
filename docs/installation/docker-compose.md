@@ -1,5 +1,7 @@
 ---
+icon: fa-brands fa-docker
 order: 10
+description: "Build the Marshal image and run it with Docker Compose."
 ---
 
 # Install with Docker Compose
@@ -102,6 +104,9 @@ Set `logging.logLevel.default: Debug` to add stack traces. `GET /health` reports
 If you bind-mount `/data` instead of using a named volume, make it writable by the container user `app`.
 
 ## Related
+
+::: cards
 - [Volumes and layout](volumes-and-layout.md)
 - [Environment variables](../configuration/environment-variables.md)
 - [Upgrading](upgrading.md)
+:::

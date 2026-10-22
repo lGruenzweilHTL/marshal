@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-code-compare
+description: "The versions of Marshal's runtime, build tools and external systems that the code and tests are written against."
+---
+
 # Supported versions
 
 The versions of Marshal's runtime, build tools and external systems that the code and tests are written against.
@@ -60,7 +65,9 @@ An embedding model is required. Anthropic offers none; see [models setup](../ins
 
 ## Related
 
+::: cards
 - [Requirements](../getting-started/requirements.md)
 - [Upgrading](../installation/upgrading.md)
 - [Home Assistant component installation](../home-assistant-component/installation.md)
 - [API versioning](../development/api-versioning.md)
+:::

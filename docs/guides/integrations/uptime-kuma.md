@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-heart-pulse
+description: "Send Uptime Kuma and Proxmox VE notifications to Marshal so that watches can react when a monitor goes down, a certificate is about to expire or a backup fails."
+---
+
 # Receive Uptime Kuma and Proxmox webhooks
 
 Send Uptime Kuma and Proxmox VE notifications to Marshal so that watches can react when a monitor goes down, a certificate is about to expire or a backup fails.
@@ -122,9 +127,12 @@ The events of these sources are trusted. Their payloads hold only ids, names and
 
 ## Related
 
+::: cards
 - [Event triggers](../tasks/event-triggers.md)
 - [Machine tokens](../authentication/machine-tokens.md)
 - [Webhook API](../../api/webhooks.md)
 - [`webhooks` in marshal.yaml](../../configuration/marshal-yaml/webhooks.md)
 - [Event reference](../../reference/events.md)
-- [Media requests](media.md) (Seerr webhooks)
+- [Media requests](media.md)
+  Seerr webhooks
+:::

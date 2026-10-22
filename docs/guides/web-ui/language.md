@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-language
+description: "Set the interface language and time zone for your account, and the color scheme for one device."
+---
+
 # Change language, time zone and appearance
 
 Set the interface language and time zone for your account, and the color scheme for one device.
@@ -40,5 +45,8 @@ Set the interface language and time zone for your account, and the color scheme 
 
 ## Related
 
-- [Notifications](../notifications.md) for quiet hours
+::: cards
+- [Notifications](../notifications.md)
+  For quiet hours
 - [Tour of the web UI](tour.md)
+:::

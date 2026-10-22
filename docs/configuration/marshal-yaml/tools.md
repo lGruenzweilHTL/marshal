@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-toolbox
+description: "Which tools reach the model on each call, and when a voice turn speaks a short filler line before a slow tool."
+---
+
 # `tools` and `voice`
 
 Which tools reach the model on each call, and when a voice turn speaks a short filler line before a slow tool. Changes need a restart.
@@ -41,6 +46,9 @@ A `tools.core` entry that is neither a built-in namespace nor the namespace of a
 
 ## Related
 
-- [MCP servers](../mcp-servers.md) (`description` for retrieval)
+::: cards
+- [MCP servers](../mcp-servers.md)
+  `description` for retrieval
 - [Tool visibility](../../concepts/tool-visibility.md)
-- [agent](agent.md)
+- [`agent`](agent.md)
+:::

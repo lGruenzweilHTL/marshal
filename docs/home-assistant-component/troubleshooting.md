@@ -1,5 +1,7 @@
 ---
+icon: fa-solid fa-stethoscope
 order: 50
+description: "Fixes for the common problems when setting up or using the Marshal integration."
 ---
 
 # Troubleshoot the Home Assistant component
@@ -45,5 +47,7 @@ logger:
 
 ## Related
 
+::: cards
 - [Installation](installation.md)
 - [How it works](how-it-works.md)
+:::

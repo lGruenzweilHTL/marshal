@@ -1,6 +1,7 @@
 ---
 icon: fa-solid fa-tower-broadcast
 order: 40
+description: "GET /api/v1/events is a server-sent event stream with live updates for the web interface."
 ---
 
 # Live events
@@ -50,5 +51,7 @@ Field names are camelCase. For the exact types of enum values, see the [OpenAPI 
 
 ## Related
 
+::: cards
 - [Events reference](../reference/events.md)
 - [Examples](examples.md)
+:::

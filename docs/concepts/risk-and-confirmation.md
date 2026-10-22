@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-hand
+description: "How Marshal decides whether a tool call runs, needs your confirmation or never runs, and why confirmed actions are frozen on the server."
+---
+
 # Risk and confirmation
 
 This page explains how Marshal decides whether a tool call runs, needs your confirmation or never runs, and why confirmed actions are frozen on the server.
@@ -116,7 +121,9 @@ Every guard decision is recorded on the run step: `safe`, `pending`, `confirmed_
 
 ## Related
 
+::: cards
 - [Tool visibility](tool-visibility.md)
 - [Untrusted content](untrusted-content.md)
 - [Security model](security-model.md)
 - [Follow-ups](../guides/voice/follow-ups.md)
+:::

@@ -1,5 +1,7 @@
 ---
+icon: fa-solid fa-robot
 order: 40
+description: "Use Marshal as the AI Task provider in Home Assistant (HA), so an automation can ask Marshal a question, optionally with camera snapshots, and use the answer as text or structured data."
 ---
 
 # Run AI tasks from automations
@@ -97,6 +99,8 @@ Use Marshal as the AI Task provider in Home Assistant (HA), so an automation can
 
 ## Related
 
+::: cards
 - [AI tasks API](../api/ai-tasks.md)
 - [Configure the component](configuration.md)
 - [Approval queue and risk tiers](../concepts/risk-and-confirmation.md)
+:::

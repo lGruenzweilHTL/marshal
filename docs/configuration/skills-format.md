@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-wand-magic-sparkles
+description: "A skill is a directory /config/skills/<name>/ with a SKILL.md file in the Agent Skills format, plus optional extra files."
+---
+
 # Skills (`skills/*/SKILL.md`)
 
 A skill is a directory `/config/skills/<name>/` with a `SKILL.md` file in the Agent Skills format, plus optional extra files. Marshal reloads skills without a restart.
@@ -9,7 +14,7 @@ Skills are operator-written configuration, not untrusted content. Loading one do
 ```markdown
 ---
 name: house-status
-description: Gives a short status report of the house. Use when the user asks how the house is.
+description: "Gives a short status report of the house. Use when the user asks how the house is."
 ---
 
 # House status
@@ -57,5 +62,7 @@ A rejected skill is skipped with an error; other skills load. A directory withou
 
 ## Related
 
+::: cards
 - [Skills guide](../guides/skills.md)
 - [Agent templates](templates-format.md)
+:::

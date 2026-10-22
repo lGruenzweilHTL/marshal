@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-biohazard
+description: "How Marshal handles content written by third parties, such as mail, articles and notes, and why reading it changes what a run may do."
 ---
 
 # Untrusted content
@@ -117,7 +118,9 @@ Artifacts from mail attachments, executors and GitHub are stored with `tainted` 
 
 ## Related
 
+::: cards
 - [Risk and confirmation](risk-and-confirmation.md)
 - [Security model](security-model.md)
 - [`/config/mcp/*.yaml`](../configuration/mcp-servers.md)
 - [Mail](../guides/integrations/mail.md)
+:::

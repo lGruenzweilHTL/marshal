@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-key
+description: "Create scoped, revocable tokens for machine clients such as the Home Assistant integration, scripts and webhook senders."
+---
+
 # Create and manage API tokens
 
 Create scoped, revocable tokens for machine clients such as the Home Assistant integration, scripts and webhook senders.
@@ -73,6 +78,8 @@ curl -sS -H "Authorization: Bearer <token>" https://<marshal-host>/api/v1/me
 
 ## Related
 
+::: cards
 - [Assist pipeline](../voice/assist-pipeline.md)
 - [Webhooks](../../api/webhooks.md)
 - [Secrets](../secrets.md)
+:::

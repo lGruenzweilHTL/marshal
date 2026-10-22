@@ -2,6 +2,7 @@
 title: Configuration
 icon: fa-solid fa-sliders
 order: 50
+description: "Marshal reads human-edited files from /config and environment variables."
 ---
 
 # Configuration
@@ -128,6 +129,8 @@ Users without the `admin` role get 403 and see no link. The view does not show t
 
 ## Related
 
+::: cards
 - [Environment variables](environment-variables.md)
 - [Secrets reference](secrets-reference.md)
 - [Volumes and layout](../installation/volumes-and-layout.md)
+:::

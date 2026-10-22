@@ -1,5 +1,7 @@
 ---
+icon: fa-solid fa-shuffle
 order: 40
+description: "Put a TLS reverse proxy in front of Marshal, with or without a path prefix, for Traefik, Caddy or nginx."
 ---
 
 # Reverse proxy
@@ -93,5 +95,8 @@ curl -N -H "Authorization: Bearer <token>" "https://marshal.example.com/api/v1/e
 The first returns 200 with a JSON body. The second streams events as they happen, not in one block.
 
 ## Related
+
+::: cards
 - [`http` configuration](../configuration/marshal-yaml/http.md)
 - [Live events API](../api/live-events.md)
+:::

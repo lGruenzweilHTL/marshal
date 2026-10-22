@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-rotate
+description: "How Marshal runs one turn or one task run: the loop of model calls and tool calls, its limits, and how it behaves when something goes wrong."
+---
+
 # Agent loop
 
 This page explains how Marshal runs one turn or one task run: the loop of model calls and tool calls, its limits, and how it behaves when something goes wrong.
@@ -77,7 +82,9 @@ Every run is recorded with its steps in order: the context build, each model cal
 
 ## Related
 
+::: cards
 - [Tool visibility](tool-visibility.md)
 - [Risk and confirmation](risk-and-confirmation.md)
 - [Context building](context-building.md)
 - [Conversation API](../api/conversation.md)
+:::

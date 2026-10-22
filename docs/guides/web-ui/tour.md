@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-route
+description: "Find your way around Marshal's web app: what each destination shows and what you can do there."
+---
+
 # Tour of the web UI
 
 Find your way around Marshal's web app: what each destination shows and what you can do there.
@@ -105,5 +110,7 @@ See [language and appearance](language.md) and [install as an app](install-as-ap
 
 ## Related
 
+::: cards
 - [Notifications](../notifications.md)
 - [Observability](../observability.md)
+:::

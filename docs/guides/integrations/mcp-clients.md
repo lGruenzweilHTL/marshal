@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-laptop-code
+description: "Give an external AI client access to what Marshal remembers, your notes and Marshal's tasks, and let it ask Marshal to act, through Marshal's own MCP server at /mcp."
+---
+
 # Connect Claude Code or VS Code to Marshal
 
 Give an external AI client access to what Marshal remembers, your notes and Marshal's tasks, and let it ask Marshal to act, through Marshal's own MCP server at `/mcp`.
@@ -91,6 +96,11 @@ In the client, list the MCP tools of `marshal`. A token with both scopes lists s
 
 ## Related
 
-- [Machine tokens](../authentication/machine-tokens.md), [API authentication](../../api/authentication.md)
-- [Risk rules](../risk-rules.md), [Observability](../observability.md)
-- [Custom MCP servers](custom-mcp-servers.md): the other direction, Marshal as an MCP client
+::: cards
+- [Machine tokens](../authentication/machine-tokens.md)
+- [API authentication](../../api/authentication.md)
+- [Risk rules](../risk-rules.md)
+- [Observability](../observability.md)
+- [Custom MCP servers](custom-mcp-servers.md)
+  The other direction, Marshal as an MCP client
+:::

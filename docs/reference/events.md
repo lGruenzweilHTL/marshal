@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-bolt
+description: "The event bus carries normalized events from Home Assistant, printers, mail, executors, MCP server tasks and webhook sources."
+---
+
 # Events
 
 The event bus carries normalized events from Home Assistant, printers, mail, executors, MCP server tasks and webhook sources. This page lists the event envelope, every source and event type with its payload fields, and the filter syntax that watches use.
@@ -188,7 +193,10 @@ Example: a failed print on any printer.
 
 ## Related
 
+::: cards
 - [Event triggers guide](../guides/tasks/event-triggers.md)
 - [Webhooks API](../api/webhooks.md)
 - [Uptime Kuma](../guides/integrations/uptime-kuma.md)
-- [Tools](tools.md) (`tasks.watch`)
+- [Tools](tools.md)
+  `tasks.watch`
+:::

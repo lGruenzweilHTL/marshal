@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-layer-group
+description: "The three risk tiers, how Marshal picks the tier of a tool call, and the reasons, statuses and decisions it records."
+---
+
 # Risk tiers
 
 The three risk tiers, how Marshal picks the tier of a tool call, and the reasons, statuses and decisions it records.
@@ -99,8 +104,10 @@ Tools that persist state and are escalated in a tainted run: `memory.remember`, 
 
 ## Related
 
+::: cards
 - [Tools](tools.md)
 - [`risk.yaml`](../configuration/risk-yaml.md)
 - [Risk rules guide](../guides/risk-rules.md)
 - [Risk and confirmation](../concepts/risk-and-confirmation.md)
 - [Untrusted content](../concepts/untrusted-content.md)
+:::

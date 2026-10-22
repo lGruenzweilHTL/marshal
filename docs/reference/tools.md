@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-toolbox
+description: "Every tool the model can get, grouped by integration, with its risk tier, arguments, result and the conditions that hide it."
 ---
 
 # Tools
@@ -280,7 +281,9 @@ Tools from [MCP servers](../configuration/mcp-servers.md) use the server id (or 
 
 ## Related
 
+::: cards
 - [Risk tiers](risk-tiers.md)
 - [Tool visibility](../concepts/tool-visibility.md)
 - [Adding a tool](../development/adding-a-tool.md)
 - [`risk.yaml`](../configuration/risk-yaml.md)
+:::

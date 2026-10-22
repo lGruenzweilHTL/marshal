@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-house-chimney
+description: "Connect Marshal to Home Assistant (HA) so it reads your home's state, keeps a live cache, and adds the timer, places, energy and context features described below."
+---
+
 # Connect Home Assistant
 
 Connect Marshal to Home Assistant (HA) so it reads your home's state, keeps a live cache, and adds the timer, places, energy and context features described below.
@@ -103,9 +108,11 @@ More in [troubleshooting](../troubleshooting.md).
 
 ## Related
 
+::: cards
 - [Home Assistant MCP server](home-assistant-mcp.md)
 - [Calendar](calendar.md)
 - [Connect Home Assistant (getting started)](../../getting-started/connect-home-assistant.md)
 - [Risk rules](../risk-rules.md)
 - [Integration sections reference](../../configuration/marshal-yaml/integrations.md)
 - [Tools reference](../../reference/tools.md)
+:::

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-mug-hot
+description: "Set up the morning briefing from the example task, template and skills, and tune what it says and where you hear it."
+---
+
 # Daily briefing
 
 Set up the morning briefing from the example task, template and skills, and tune what it says and where you hear it.
@@ -81,5 +86,10 @@ Run `tasks_run_now briefing` ("run the briefing now"), then open **Tasks** and t
 
 ## Related
 
-- [Scheduled tasks](scheduled-tasks.md), [skills](../skills.md), [agent templates](../agent-templates.md), [notifications](../notifications.md)
+::: cards
+- [Scheduled tasks](scheduled-tasks.md)
+- [Skills](../skills.md)
+- [Agent templates](../agent-templates.md)
+- [Notifications](../notifications.md)
 - [Task definitions](../../configuration/tasks-format.md)
+:::

@@ -1,5 +1,7 @@
 ---
+icon: fa-solid fa-microchip
 order: 30
+description: "Configure chat models for the fast and standard tiers, an optional advisor, and the embedding model."
 ---
 
 # Models setup
@@ -116,5 +118,9 @@ Use a multilingual model (`bge-m3`, `multilingual-e5`, `nomic-embed-text-v2`). `
 Restart Marshal after changing models. Validation errors name the key, for example `models.fast.provider must be one of ollama, openai-compatible, anthropic.` Send a chat message; the run view shows the model and cost.
 
 ## Related
-- [`models`](../configuration/marshal-yaml/models.md), [`embedding`](../configuration/marshal-yaml/embedding.md)
+
+::: cards
+- [`models`](../configuration/marshal-yaml/models.md)
+- [`embedding`](../configuration/marshal-yaml/embedding.md)
 - [Agent templates](../guides/agent-templates.md)
+:::

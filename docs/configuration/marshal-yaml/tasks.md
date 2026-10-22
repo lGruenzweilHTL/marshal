@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-list-check
+description: "Worker pool, budgets and limits of background tasks."
+---
+
 # `tasks`
 
 Worker pool, budgets and limits of background tasks.
@@ -45,7 +50,9 @@ tasks:
 
 ## Related
 
-- [maintenance](maintenance.md)
+::: cards
+- [`maintenance`](maintenance.md)
 - [Scheduled tasks](../../guides/tasks/scheduled-tasks.md)
 - [Approvals](../../guides/tasks/approvals.md)
 - [Tasks format](../tasks-format.md)
+:::

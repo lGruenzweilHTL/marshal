@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-terminal
+description: "Every command and flag of the marshal executable."
 ---
 
 # Command line
@@ -128,7 +129,9 @@ The CLI honors the same environment variables as the server, for example `MARSHA
 
 ## Related
 
+::: cards
 - [Machine tokens](../guides/authentication/machine-tokens.md)
 - [Demo mode](../guides/demo-mode.md)
 - [API authentication](../api/authentication.md)
 - [Data directory](data-directory.md)
+:::

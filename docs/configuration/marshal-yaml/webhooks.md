@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-satellite-dish
+description: "Limits of inbound webhooks (POST /api/v1/hooks/<source>)."
+---
+
 # `webhooks`
 
 Limits of inbound webhooks (`POST /api/v1/hooks/<source>`).
@@ -26,6 +31,8 @@ Sources are code, not configuration: `uptime-kuma`, `proxmox` and `seerr`. Each 
 
 ## Related
 
+::: cards
 - [Webhooks API](../../api/webhooks.md)
 - [Uptime Kuma](../../guides/integrations/uptime-kuma.md)
 - [Machine tokens](../../guides/authentication/machine-tokens.md)
+:::

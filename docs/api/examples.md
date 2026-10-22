@@ -1,6 +1,7 @@
 ---
 icon: fa-solid fa-terminal
 order: 60
+description: "Working curl and Python examples for the public endpoints."
 ---
 
 # API examples
@@ -111,7 +112,9 @@ elif not r.ok:
 
 ## Related
 
+::: cards
 - [API v1 reference](v1/index.md)
 - [Conversation endpoint](conversation.md)
 - [Live events](live-events.md)
 - [Webhooks](webhooks.md)
+:::

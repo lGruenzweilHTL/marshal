@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-chart-line
+description: "See what Marshal did and what it cost: runs, cost, health, the audit trail, and OpenTelemetry export."
 ---
 
 # Observability
@@ -138,5 +139,9 @@ Send a chat message, open **Runs** and the new run. With OTLP configured, find t
 
 ## Related
 
-- [Troubleshooting](troubleshooting.md), [metrics and traces](../reference/metrics-and-traces.md), [`recording`](../configuration/marshal-yaml/recording.md)
+::: cards
+- [Troubleshooting](troubleshooting.md)
+- [Metrics and traces](../reference/metrics-and-traces.md)
+- [`recording`](../configuration/marshal-yaml/recording.md)
 - [Privacy](../concepts/privacy.md)
+:::

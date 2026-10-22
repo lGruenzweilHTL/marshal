@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-heart-pulse
+description: "The unversioned endpoints of Marshal and of the executor host that report health and supported versions."
+---
+
 # Health and discovery endpoints
 
 The unversioned endpoints of Marshal and of the executor host that report health and supported versions.
@@ -103,7 +108,9 @@ The separate [executor host](../installation/executor-host.md) answers `GET /hea
 
 ## Related
 
+::: cards
 - [Observability guide](../guides/observability.md)
 - [Metrics and traces](metrics-and-traces.md)
 - [API overview](../api/index.md)
 - [Troubleshooting](../guides/troubleshooting.md)
+:::

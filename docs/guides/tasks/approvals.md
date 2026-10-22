@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-circle-check
+description: "Review and decide the actions that background tasks and automations are not allowed to run without you, and answer input requests of MCP servers."
+---
+
 # Approvals
 
 Review and decide the actions that background tasks and automations are not allowed to run without you, and answer input requests of MCP servers.
@@ -61,6 +66,11 @@ Ask for a task that needs confirmation, for example a watch created after readin
 
 ## Related
 
-- [Risk rules](../risk-rules.md), [scheduled tasks](scheduled-tasks.md), [AI tasks](../../home-assistant-component/ai-tasks.md)
+::: cards
+- [Risk rules](../risk-rules.md)
+- [Scheduled tasks](scheduled-tasks.md)
+- [AI tasks](../../home-assistant-component/ai-tasks.md)
 - [MCP servers](../../configuration/mcp-servers.md)
-- [Risk and confirmation](../../concepts/risk-and-confirmation.md), [risk tiers](../../reference/risk-tiers.md)
+- [Risk and confirmation](../../concepts/risk-and-confirmation.md)
+- [Risk tiers](../../reference/risk-tiers.md)
+:::

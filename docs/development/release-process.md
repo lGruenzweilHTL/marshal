@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-tag
+description: "Build the Marshal image and publish a version."
+---
+
 # Release process
 
 Build the Marshal image and publish a version. Marshal has no release automation yet; this page describes the manual process honestly.
@@ -64,5 +69,7 @@ The coding executor is a separate service with its own image. It is never part o
 
 ## Related
 
+::: cards
 - [Setup](setup.md)
 - [Upgrading](../installation/upgrading.md)
+:::

@@ -1,6 +1,7 @@
 ---
 icon: fa-solid fa-key
 order: 10
+description: "Marshal accepts two kinds of credentials: scoped API tokens for machine clients and a cookie session for people using the web interface."
 ---
 
 # API authentication
@@ -108,6 +109,8 @@ A user with the `user` role who calls an endpoint that needs `admin` gets `403`.
 
 ## Related
 
+::: cards
 - [Machine tokens guide](../guides/authentication/machine-tokens.md)
 - [Webhooks](webhooks.md)
 - [Security model](../concepts/security-model.md)
+:::

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-pen-nib
+description: "How to write and maintain the pages in docs/."
+---
+
 # Documentation style
 
 How to write and maintain the pages in `docs/`. Code style lives in [STYLE_GUIDE.md](https://github.com/lGruenzweilHTL/marshal/blob/master/STYLE_GUIDE.md).
@@ -116,7 +121,7 @@ Use a component where it fits the content, not for decoration:
 | Alternatives the reader picks one of (option A or B, container or source tree) | `::: tabs` with `== Label` lines |
 | The same example in several languages or tools (curl and Python) | `::: code-group` with the label in brackets after each language |
 | FAQ entries, long logs, edge cases | `::: details <question>` |
-| "Where to go next" on start and section pages | `::: cards` |
+| `## Related`, "where to go next" and lists of pages | `::: cards`, one link per line; add a line of text below a link only when the reason for the link is not the page's own description |
 | A call to an API v1 operation | `::: request v1 <operationId>`, with start values in YAML (`body:`) |
 
 Nest a container inside another by giving the outer one more colons (`:::: tabs` … `::::`).
@@ -125,10 +130,11 @@ A step is not a heading, so it has no anchor. When other pages link to a part of
 
 ### Front matter
 
-Front matter is optional. Use it for:
+Every page starts with front matter:
 
 - `order` where the sidebar order matters (tutorials, installation), in steps of ten,
-- `icon` (a Font Awesome class such as `fa-solid fa-key`) on folders and on pages readers look for,
+- `icon` (a Font Awesome 6 free class such as `fa-solid fa-key`) on every page and folder,
+- `description` on every page: one plain-text sentence (no Markdown), shown on cards that link to the page and in search results,
 - the folder's `index.md`: `title`, `icon`, `order`, `description` and `list: true`.
 
 ## The site

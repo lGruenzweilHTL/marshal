@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-envelope
+description: "Give Marshal read access to your mail over IMAP and let it prepare drafts, with no way to send, delete or move anything."
+---
+
 # Connect a mail account
 
 Give Marshal read access to your mail over IMAP and let it prepare drafts, with no way to send, delete or move anything.
@@ -98,8 +103,10 @@ See [troubleshooting](../troubleshooting.md).
 
 ## Related
 
+::: cards
 - [Untrusted content](../../concepts/untrusted-content.md)
 - [Secrets](../secrets.md)
 - [Daily briefing](../tasks/daily-briefing.md)
 - [Risk tiers](../../reference/risk-tiers.md)
 - [Integration sections reference](../../configuration/marshal-yaml/integrations.md)
+:::

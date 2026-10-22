@@ -1,5 +1,7 @@
 ---
+icon: fa-solid fa-hard-drive
 order: 20
+description: "What lives in /config and /data, and what to back up."
 ---
 
 # Volumes and layout
@@ -49,5 +51,8 @@ The system task `maintenance.backupSchedule` (default `0 3 * * *`, in the owner'
 `MARSHAL__Paths__Config`, `MARSHAL__Paths__Data` and `MARSHAL__Paths__Secrets` move the directories.
 
 ## Related
+
+::: cards
 - [Data directory reference](../reference/data-directory.md)
 - [Docker Compose](docker-compose.md)
+:::

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-server
+description: "Instance-wide settings: the default time zone, volume locations, log levels and trace export."
+---
+
 # `instance`, `paths`, `logging`, `telemetry`
 
 Instance-wide settings: the default time zone, volume locations, log levels and trace export.
@@ -33,6 +38,8 @@ telemetry:
 
 ## Related
 
+::: cards
 - [Index](../index.md)
 - [Observability](../../guides/observability.md)
 - [Data directory](../../reference/data-directory.md)
+:::

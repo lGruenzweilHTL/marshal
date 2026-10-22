@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-vial
+description: "Build the solution and run the .NET, web and Home Assistant test suites."
+---
+
 # Building and testing
 
 Build the solution and run the .NET, web and Home Assistant test suites.
@@ -96,5 +101,7 @@ The tests use `pytest-homeassistant-custom-component`, which pins the Home Assis
 
 ## Related
 
+::: cards
 - [Setup](setup.md)
 - [Adding an integration](adding-an-integration.md)
+:::

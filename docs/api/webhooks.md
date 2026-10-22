@@ -1,6 +1,7 @@
 ---
 icon: fa-solid fa-satellite-dish
 order: 50
+description: "POST /api/v1/hooks/{source} receives webhooks from infrastructure tools and turns them into events that event triggers can react to."
 ---
 
 # Webhooks
@@ -111,5 +112,7 @@ The response is `202` with an empty body.
 
 ## Related
 
+::: cards
 - [Event triggers](../guides/tasks/event-triggers.md)
 - [Events reference](../reference/events.md)
+:::

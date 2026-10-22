@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-globe
+description: "Listen address, reverse proxy base path and forwarded header handling."
+---
+
 # `http`
 
 Listen address, reverse proxy base path and forwarded header handling.
@@ -24,5 +29,7 @@ No validator. Marshal does not check these values; a bad `http.urls` fails at li
 
 ## Related
 
+::: cards
 - [Reverse proxy](../../installation/reverse-proxy.md)
 - [TLS and domains](../../installation/tls-and-domains.md)
+:::

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-right-to-bracket
+description: "The login providers for the web UI. Several providers can be active at once. Changes need a restart."
+---
+
 # `auth`
 
 The login providers for the web UI. Several providers can be active at once. Changes need a restart.
@@ -55,6 +60,8 @@ An empty provider list is valid but leaves no way to log in.
 
 ## Related
 
+::: cards
 - [Local accounts](../../guides/authentication/local-accounts.md)
 - [OIDC](../../guides/authentication/oidc.md)
 - [Machine tokens](../../guides/authentication/machine-tokens.md)
+:::

@@ -1,6 +1,7 @@
 ---
 title: Maintaining the diagrams
 icon: fa-solid fa-pen-ruler
+description: "Editor previews: the PlantUML extensions for VS Code and JetBrains IDEs render .puml files directly."
 ---
 
 # Diagrams

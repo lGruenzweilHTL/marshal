@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-hammer
+description: "Add a model-facing tool to an existing tool source."
+---
+
 # Add a tool
 
 Add a model-facing tool to an existing tool source.
@@ -75,6 +80,8 @@ A tool implements `ITool` (`src/Marshal.Abstractions/Tools/ITool.cs`). A group o
 
 ## Related
 
+::: cards
 - [Adding an integration](adding-an-integration.md)
 - [Tool visibility](../concepts/tool-visibility.md)
 - [Risk tiers](../reference/risk-tiers.md)
+:::

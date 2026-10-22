@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-floppy-disk
+description: "Check the nightly backup, copy it off the machine, and restore Marshal from it."
 ---
 
 # Backups and restore
@@ -88,5 +89,9 @@ Open the web UI, sign in, and check **System** for health, **Memory** for your c
 
 ## Related
 
-- [Upgrading](../installation/upgrading.md), [data directory](../reference/data-directory.md), [secrets](secrets.md)
+::: cards
+- [Upgrading](../installation/upgrading.md)
+- [Data directory](../reference/data-directory.md)
+- [Secrets](secrets.md)
 - [Troubleshooting](troubleshooting.md)
+:::

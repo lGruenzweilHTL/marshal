@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-bolt
+description: "Run a task when something happens: a person arrives, a print finishes, a monitor goes down."
+---
+
 # Event triggers
 
 Run a task when something happens: a person arrives, a print finishes, a monitor goes down.
@@ -74,5 +79,9 @@ Trigger the event, or look at **Tasks**: the watch shows as `watch` (or `once`) 
 
 ## Related
 
-- [Scheduled tasks](scheduled-tasks.md), [approvals](approvals.md)
-- [Events reference](../../reference/events.md), [task definitions](../../configuration/tasks-format.md)
+::: cards
+- [Scheduled tasks](scheduled-tasks.md)
+- [Approvals](approvals.md)
+- [Events reference](../../reference/events.md)
+- [Task definitions](../../configuration/tasks-format.md)
+:::

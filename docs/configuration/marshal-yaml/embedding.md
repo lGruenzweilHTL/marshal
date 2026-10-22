@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-vector-square
+description: "The embedding model that memory depends on, and the tuning of memory retrieval, summarization, idle-time proposals and project activation."
+---
+
 # `embedding` and `memory`
 
 The embedding model that memory depends on, and the tuning of memory retrieval, summarization, idle-time proposals and project activation. Changes need a restart.
@@ -70,6 +75,8 @@ Chunk types for `halfLifeDays` and `quotas`: `event`, `fact`, `preference`, `per
 
 ## Related
 
-- [models](models.md)
+::: cards
+- [`models`](models.md)
 - [Memory](../../guides/memory.md)
 - [Memory model](../../concepts/memory-model.md)
+:::

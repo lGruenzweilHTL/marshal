@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-circle-check
+description: "Settings for confirming a confirm-tier action inside a conversation."
+---
+
 # `confirmation`
 
 Settings for confirming a confirm-tier action inside a conversation. Changes need a restart.
@@ -32,6 +37,9 @@ Matching normalizes the utterance and the keywords (trim, lowercase, strip punct
 
 ## Related
 
+::: cards
 - [Risk and confirmation](../../concepts/risk-and-confirmation.md)
 - [Risk tiers](../../reference/risk-tiers.md)
-- [tasks](tasks.md) (`tasks.approvalTtl` for background approvals)
+- [`tasks`](tasks.md)
+  `tasks.approvalTtl` for background approvals
+:::

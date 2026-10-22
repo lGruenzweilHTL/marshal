@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-database
+description: "Change the EF Core model and create the migration that goes with it."
+---
+
 # Database migrations
 
 Change the EF Core model and create the migration that goes with it.
@@ -56,5 +61,7 @@ Change the EF Core model and create the migration that goes with it.
 
 ## Related
 
+::: cards
 - [Data ownership](../concepts/data-ownership.md)
 - [Upgrading](../installation/upgrading.md)
+:::

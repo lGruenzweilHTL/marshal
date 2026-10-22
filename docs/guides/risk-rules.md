@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-shield-halved
+description: "Tune which actions need your confirmation by editing /config/risk.yaml, starting from the example file."
 ---
 
 # Risk rules
@@ -80,5 +81,10 @@ Ask Marshal to do something your rule covers. In **Runs**, open the tool step: t
 
 ## Related
 
-- [Risk and confirmation](../concepts/risk-and-confirmation.md), [tool visibility](../concepts/tool-visibility.md), [security model](../concepts/security-model.md)
-- [`risk.yaml`](../configuration/risk-yaml.md), [risk tiers](../reference/risk-tiers.md)
+::: cards
+- [Risk and confirmation](../concepts/risk-and-confirmation.md)
+- [Tool visibility](../concepts/tool-visibility.md)
+- [Security model](../concepts/security-model.md)
+- [`risk.yaml`](../configuration/risk-yaml.md)
+- [Risk tiers](../reference/risk-tiers.md)
+:::

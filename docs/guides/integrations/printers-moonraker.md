@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-print
+description: "Connect a Klipper printer through Moonraker so you can ask for its status, look at the webcam, control prints with confirmation, and let the print babysitter pause a failing print."
+---
+
 # Connect a Moonraker printer
 
 Connect a Klipper printer through Moonraker so you can ask for its status, look at the webcam, control prints with confirmation, and let the print babysitter pause a failing print.
@@ -124,8 +129,10 @@ See [troubleshooting](../troubleshooting.md).
 
 ## Related
 
+::: cards
 - [Integration sections reference](../../configuration/marshal-yaml/integrations.md#printers-and-printersnapshots-moonraker)
 - [Notifications and `critical` priority](../notifications.md)
 - [Risk rules](../risk-rules.md)
 - [Risk tiers](../../reference/risk-tiers.md)
 - [Secrets](../secrets.md)
+:::

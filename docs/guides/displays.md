@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-tv
+description: "Let Marshal show images, video, code, diffs, Markdown and 3D models on a screen in your home, and tie each screen to the satellite in the same room."
 ---
 
 # Show artifacts on a TV
@@ -74,6 +75,8 @@ Marshal gives the TV an absolute link under the media base URL. It needs no sign
 
 ## Related
 
+::: cards
 - [Artifacts](artifacts.md)
 - [Satellites](voice/satellites.md)
 - [Tool visibility](../concepts/tool-visibility.md)
+:::

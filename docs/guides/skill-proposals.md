@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-seedling
+description: "Let Marshal notice requests you repeat, draft a skill for them, and add the skills you want to /config/skills."
+---
+
 # Turn repeated workflows into skills
 
 Let Marshal notice requests you repeat, draft a skill for them, and add the skills you want to `/config/skills`.
@@ -48,7 +53,9 @@ After you saved the file, open **System**, then the configuration view, and chec
 
 ## Related
 
+::: cards
 - [Skills](skills.md)
 - [Skills format](../configuration/skills-format.md)
 - [`maintenance` configuration](../configuration/marshal-yaml/maintenance.md)
 - [Get suggestions](suggestions.md)
+:::

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-user
+description: "The profile of the instance owner that Marshal creates on first start."
+---
+
 # `owner`
 
 The profile of the instance owner that Marshal creates on first start.
@@ -26,5 +31,7 @@ The owner's time zone is `instance.timeZone`. Later changes are made per user in
 
 ## Related
 
-- [instance](instance.md)
+::: cards
+- [`instance`](instance.md)
 - [Local accounts](../../guides/authentication/local-accounts.md)
+:::

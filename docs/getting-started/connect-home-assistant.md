@@ -1,6 +1,7 @@
 ---
 icon: fa-solid fa-house-signal
 order: 40
+description: "Install the Marshal integration, give it an API token and select Marshal as the conversation agent of an Assist pipeline."
 ---
 
 # Connect Home Assistant
@@ -61,5 +62,8 @@ Open the Assist dialog in Home Assistant and type a question. Marshal's reply ap
 See [component troubleshooting](../home-assistant-component/troubleshooting.md).
 
 ## Related
+
+::: cards
 - [Home Assistant integration guide](../guides/integrations/home-assistant.md)
 - [Satellites](../guides/voice/satellites.md)
+:::

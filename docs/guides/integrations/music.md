@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-music
+description: "Let Marshal search, play, queue, move and group music on named speakers, with the speaker of the asking satellite as the default."
+---
+
 # Play music on speakers with Music Assistant
 
 Let Marshal search, play, queue, move and group music on named speakers, with the speaker of the asking satellite as the default.
@@ -86,8 +91,10 @@ All music tools are in the safe tier. Each fails with `ha.unreachable` when Home
 
 ## Related
 
+::: cards
 - [Home Assistant](home-assistant.md)
 - [`music` in marshal.yaml](../../configuration/marshal-yaml/integrations.md)
 - [Voice satellites](../voice/satellites.md)
 - [Tool reference](../../reference/tools.md)
 - [Media requests](media.md)
+:::

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-house-signal
+description: "Let the model control your home through Home Assistant's MCP server, with Marshal's risk rules deciding which calls need confirmation."
+---
+
 # Home Assistant MCP server
 
 Let the model control your home through Home Assistant's MCP server, with Marshal's risk rules deciding which calls need confirmation.
@@ -106,8 +111,10 @@ Characters outside `[a-zA-Z0-9_-]` become `_`. Names over 64 characters are shor
 
 ## Related
 
+::: cards
 - [Connect Home Assistant](home-assistant.md)
 - [Custom MCP servers](custom-mcp-servers.md)
 - [MCP servers reference](../../configuration/mcp-servers.md)
 - [Risk rules](../risk-rules.md)
 - [Tool visibility](../../concepts/tool-visibility.md)
+:::

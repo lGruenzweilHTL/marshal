@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-tv
+description: "Screens (Home Assistant media players) on which artifacts_show plays images, video, 3D models and code pages."
+---
+
 # `displays`
 
 Screens (Home Assistant media players) on which `artifacts_show` plays images, video, 3D models and code pages.
@@ -32,6 +37,8 @@ displays:
 
 ## Related
 
+::: cards
 - [Displays guide](../../guides/displays.md)
-- [satellites.yaml](../satellites-yaml.md)
-- [notifications](notifications.md)
+- [Satellites.yaml](../satellites-yaml.md)
+- [`notifications`](notifications.md)
+:::

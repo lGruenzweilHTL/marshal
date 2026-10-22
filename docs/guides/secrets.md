@@ -1,5 +1,6 @@
 ---
 icon: fa-solid fa-user-secret
+description: "Give Marshal API keys, tokens and passwords without ever writing them into /config."
 ---
 
 # Manage secrets
@@ -76,6 +77,8 @@ Every create, replace and delete is audited without the value.
 
 ## Related
 
+::: cards
 - [`secrets-reference`](../configuration/secrets-reference.md)
 - [Environment variables](../configuration/environment-variables.md)
 - [Security model](../concepts/security-model.md)
+:::

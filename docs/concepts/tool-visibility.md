@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-eye
+description: "Why Marshal hides tools from the model instead of refusing them, and which rules decide what the model sees."
+---
+
 # Tool visibility
 
 This page explains why Marshal hides tools from the model instead of refusing them, and which rules decide what the model sees.
@@ -82,7 +87,9 @@ Some capabilities are not hidden; they are absent. There is no tool and no code 
 
 ## Related
 
+::: cards
 - [Risk and confirmation](risk-and-confirmation.md)
 - [`risk.yaml`](../configuration/risk-yaml.md)
 - [`satellites.yaml`](../configuration/satellites-yaml.md)
 - [Templates format](../configuration/templates-format.md)
+:::

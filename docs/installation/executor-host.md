@@ -1,5 +1,7 @@
 ---
+icon: fa-solid fa-terminal
 order: 60
+description: "Run the separate executor host so Marshal can start coding sessions with Claude Code in sandbox containers."
 ---
 
 # Executor host
@@ -93,5 +95,8 @@ curl http://executor-host:8080/health
 returns `{"status":"ok"}`. Ask Marshal for a small coding task and review the resulting proposal.
 
 ## Related
+
+::: cards
 - [Concepts: security model](../concepts/security-model.md)
 - [Approvals](../guides/tasks/approvals.md)
+:::

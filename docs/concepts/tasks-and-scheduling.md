@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-calendar-days
+description: "How Marshal does work when nobody is talking to it: durable tasks, triggers, the worker pool, approvals, budgets and how results reach you."
+---
+
 # Tasks and scheduling
 
 This page explains how Marshal does work when nobody is talking to it: durable tasks, triggers, the worker pool, approvals, budgets and how results reach you.
@@ -103,7 +108,9 @@ You can also define tasks as files; see [tasks format](../configuration/tasks-fo
 
 ## Related
 
+::: cards
 - [Scheduled tasks](../guides/tasks/scheduled-tasks.md)
 - [Daily briefing](../guides/tasks/daily-briefing.md)
 - [Risk and confirmation](risk-and-confirmation.md)
 - [Follow-ups](../guides/voice/follow-ups.md)
+:::

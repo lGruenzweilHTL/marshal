@@ -1,5 +1,7 @@
 ---
+icon: fa-solid fa-trash-can
 order: 80
+description: "Remove Marshal and decide what to keep."
 ---
 
 # Uninstall
@@ -45,4 +47,7 @@ Remove Marshal and decide what to keep.
 :::
 
 ## Related
+
+::: cards
 - [Backups and restore](../guides/backups-and-restore.md)
+:::
