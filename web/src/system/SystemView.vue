@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Activity, Bot, Database, FileCog, FlaskConical, HeartPulse, House, KeyRound, Mail, NotebookText, Plug, Printer, Radio, Rss, Terminal } from 'lucide-vue-next'
+import { Activity, Bot, CalendarDays, Database, FileCog, FlaskConical, HeartPulse, House, KeyRound, Mail, NotebookText, Plug, Printer, Radio, Rss, Terminal } from 'lucide-vue-next'
 import { computed, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useApi } from '../api/inject'
@@ -28,8 +28,8 @@ const tones: Record<HealthCheck['status'], Tone> = { healthy: 'success', degrade
 const icons: Record<string, Component> = { database: Database, config: FileCog, secrets: KeyRound, mcp: Plug, memory: Bot, homeassistant: House }
 const checkName = (name: string) => (te(`system.checks.${name}`) ? t(`system.checks.${name}`) : name)
 const checkDetail = (check: HealthCheck) => [check.description, ...(check.warnings ?? [])].filter(Boolean).join(' · ') || undefined
-const sourceIcons: Record<string, Component> = { ha: House, printer: Printer, mail: Mail, executor: Terminal, 'uptime-kuma': Activity }
-const simulatedIcons: Record<string, Component> = { home_assistant: House, printers: Printer, mail: Mail, rss: Rss, notes: NotebookText }
+const sourceIcons: Record<string, Component> = { ha: House, calendar: CalendarDays, printer: Printer, mail: Mail, executor: Terminal, 'uptime-kuma': Activity }
+const simulatedIcons: Record<string, Component> = { home_assistant: House, caldav: CalendarDays, printers: Printer, mail: Mail, rss: Rss, notes: NotebookText }
 const simulatedName = (name: string) => (te(`system.demo.names.${name}`) ? t(`system.demo.names.${name}`) : name)
 const sourceName = (source: string) => (te(`system.sources.names.${source}`) ? t(`system.sources.names.${source}`) : source)
 const sourceDetail = (source: Schemas['EventSourceInfo']) =>

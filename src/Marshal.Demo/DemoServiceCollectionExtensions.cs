@@ -1,5 +1,6 @@
 using Marshal.Abstractions.Calendar;
 using Marshal.Abstractions.Events;
+using Marshal.Abstractions.Maintenance;
 using Marshal.Abstractions.Mail;
 using Marshal.Abstractions.Music;
 using Marshal.Abstractions.Notes;
@@ -7,6 +8,7 @@ using Marshal.Abstractions.Printers;
 using Marshal.Abstractions.Rss;
 using Marshal.Abstractions.Tools;
 using Marshal.Abstractions.Web;
+using Marshal.Demo.Calendar;
 using Marshal.Demo.HomeAssistant;
 using Marshal.Demo.Mail;
 using Marshal.Demo.Notes;
@@ -15,9 +17,11 @@ using Marshal.Demo.Rss;
 using Marshal.Demo.Seeding;
 using Marshal.Demo.Web;
 using Marshal.Integrations.HomeAssistant;
+using Marshal.Integrations.HomeAssistant.Calendar;
 using Marshal.Integrations.HomeAssistant.Energy;
 using Marshal.Integrations.HomeAssistant.Music;
 using Marshal.Integrations.Mail.Imap;
+using Marshal.Integrations.Moonraker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -37,6 +41,13 @@ public static class DemoServiceCollectionExtensions
 
     /// <summary>The URL simulated integrations report, so the real tool sources offer their tools; never contacted.</summary>
     internal static readonly Uri DemoUrl = new("http://demo.invalid/");
+
+    /// <summary>
+    /// Whether demo mode simulates the printer: demo mode on and no printer configured. The host then adds
+    /// <see cref="DemoMaintenance"/> as a maintenance item.
+    /// </summary>
+    public static bool SimulatesPrinters(IConfiguration configuration) =>
+        (configuration.GetSection(Section).Get<DemoOptions>() ?? new()).Enabled && !configuration.GetSection("printers").GetChildren().Any();
 
     public static IServiceCollection AddMarshalDemo(this IServiceCollection services, IConfiguration configuration)
     {
@@ -62,7 +73,13 @@ public static class DemoServiceCollectionExtensions
             simulated.Add(DemoIntegration.HomeAssistant);
         }
 
-        if (!configuration.GetSection("printers").GetChildren().Any())
+        if (!configuration.GetSection("calendar:caldav:accounts").GetChildren().Any())
+        {
+            AddCalDav(services);
+            simulated.Add(DemoIntegration.Caldav);
+        }
+
+        if (SimulatesPrinters(configuration))
         {
             AddPrinters(services);
             simulated.Add(DemoIntegration.Printers);
@@ -110,7 +127,9 @@ public static class DemoServiceCollectionExtensions
         services.Replace(ServiceDescriptor.Singleton<IHomeAssistantClient, DemoHomeAssistantClient>());
         services.Replace(ServiceDescriptor.Singleton<IHomeAssistantCache, DemoHomeAssistantCache>());
         services.Replace(ServiceDescriptor.Singleton<IHomeAssistantCommands, DemoHomeAssistantCommands>());
-        services.Replace(ServiceDescriptor.Singleton<ICalendarProvider, DemoCalendarProvider>());
+        // Only the HA calendars are simulated; CalDAV accounts stay as configured.
+        services.RemoveImplementation(typeof(ICalendarSource), typeof(HomeAssistantCalendarProvider));
+        services.AddSingleton<ICalendarSource, DemoCalendarProvider>();
         services.Replace(ServiceDescriptor.Singleton<IMusicPlayer, DemoMusicPlayer>());
         if (!musicConfigured)
             services.Replace(ServiceDescriptor.Singleton<ISpeakerDirectory, DemoSpeakerDirectory>());
@@ -129,6 +148,16 @@ public static class DemoServiceCollectionExtensions
         }
 
         services.AddSingleton<IToolSource, DemoHaToolSource>();
+    }
+
+    // Next to the real CalDAV provider, which stays unconfigured and so out of the composite's routing.
+    private static void AddCalDav(IServiceCollection services)
+    {
+        services.AddSingleton<DemoCalDavCalendars>();
+        services.AddSingleton<ICalendarSource>(provider => provider.GetRequiredService<DemoCalDavCalendars>());
+        services.AddSingleton<DemoCalDavEventSource>();
+        services.AddSingleton<IEventSource>(provider => provider.GetRequiredService<DemoCalDavEventSource>());
+        services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<DemoCalDavEventSource>());
     }
 
     private static void AddMail(IServiceCollection services)
@@ -158,5 +187,10 @@ public static class DemoServiceCollectionExtensions
         services.AddSingleton<DemoPrinterStateCache>();
         services.Replace(ServiceDescriptor.Singleton<IPrinterStateCache>(provider => provider.GetRequiredService<DemoPrinterStateCache>()));
         services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<DemoPrinterStateCache>());
+
+        services.RemoveImplementation(typeof(IMaintenanceCounterSource), typeof(MoonrakerCounterSource));
+        services.AddSingleton<IMaintenanceCounterSource, DemoPrinterCounterSource>();
+        // The seeded history starts the demo maintenance item, which the host adds with the simulated printer.
+        services.Replace(ServiceDescriptor.Singleton(DemoSeedParts.All with { MaintenanceItem = true }));
     }
 }

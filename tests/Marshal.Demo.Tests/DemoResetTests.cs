@@ -152,7 +152,7 @@ public sealed class DemoResetTests : IAsyncLifetime
         new DbAuditLog(_database.Factory, _database.Accessor, _time),
         Options.Create(new RecordingOptions()),
         _time,
-        DemoSeedParts.All);
+        DemoSeedParts.All with { MaintenanceItem = true });
 
     private DemoReset Reset() => new(_database.Factory, _database.Accessor, Memory(), new DbAuditLog(_database.Factory, _database.Accessor, _time));
 

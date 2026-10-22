@@ -9,6 +9,7 @@ public enum DemoIntegration
     Rss,
     Notes,
     Web,
+    Caldav,
 }
 
 /// <summary>The integrations simulated in this process because they were not configured.</summary>

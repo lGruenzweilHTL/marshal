@@ -13,6 +13,12 @@ public sealed class DemoPrinter
     public static readonly IReadOnlyList<string> Macros = ["PARK", "LOAD_FILAMENT", "UNLOAD_FILAMENT", "CLEAN_NOZZLE"];
 
     private const int Layers = 268;
+
+    // Lifetime job totals: 900 h on 2026-01-01, then about six print hours a day at 2.4 m of filament per hour.
+    private static readonly DateTimeOffset _totalsEpoch = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private const decimal HoursAtEpoch = 900m;
+    private const decimal PrintedShare = 0.25m;
+    private const decimal MetersPerHour = 2.4m;
     private const double FilamentPerJob = 11_800;
 
     private readonly Lock _gate = new();
@@ -21,6 +27,13 @@ public sealed class DemoPrinter
     private readonly List<QueuedJob> _queue = [];
     private Job? _job;
     private int _nextJob = 412;
+
+    /// <summary>Moonraker's <c>total_print_time</c> in hours at <paramref name="now"/>; grows with the clock.</summary>
+    public static decimal TotalPrintHours(DateTimeOffset now) =>
+        Math.Round(HoursAtEpoch + (decimal)(now - _totalsEpoch).TotalHours * PrintedShare, 1, MidpointRounding.AwayFromZero);
+
+    /// <summary>Moonraker's <c>total_filament_used</c> in meters at <paramref name="now"/>.</summary>
+    public static decimal TotalFilamentMeters(DateTimeOffset now) => Math.Round(TotalPrintHours(now) * MetersPerHour, 1, MidpointRounding.AwayFromZero);
 
     internal DemoPrinter(TimeProvider time)
     {

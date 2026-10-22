@@ -6,11 +6,15 @@
 ## Requirements
 
 ### Requirement: Printer configuration
-Printers SHALL be configured as `printers: [{ name, url, apiKeySecret }]`. Printer tools SHALL take an optional `printer` argument that defaults to the only configured printer; with several printers and no argument, the tool SHALL return an error listing the names.
+Printers SHALL be configured as `printers: [{ name, url, apiKeySecret, powerEntity? }]`. `powerEntity`, when set, SHALL be a Home Assistant `switch.*` entity that powers the printer; another domain SHALL fail startup with a configuration error naming the key. Printer tools SHALL take an optional `printer` argument that defaults to the only configured printer; with several printers and no argument, the tool SHALL return an error listing the names.
 
 #### Scenario: Single printer default
 - **WHEN** one printer `voron` is configured and `printer_status` is called without `printer`
 - **THEN** the status of `voron` is returned
+
+#### Scenario: Power entity of the wrong domain
+- **WHEN** a printer sets `powerEntity: light.voron`
+- **THEN** startup fails with an error naming `printers[0].powerEntity`
 
 ### Requirement: State cache from the websocket
 The system SHALL connect to Moonraker's websocket (`/websocket`, JSON-RPC 2.0) with the API key, identify itself, subscribe to `print_stats`, `virtual_sdcard`, `extruder`, `heater_bed`, `webhooks` and `display_status`, and maintain a state cache by merging `notify_status_update` diffs into the initial state. It SHALL resubscribe after `notify_klippy_ready` and reconnect with exponential backoff, re-reading the full state after every reconnect. Status tools and the printer page SHALL read the cache.

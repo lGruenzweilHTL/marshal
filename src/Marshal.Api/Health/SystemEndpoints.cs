@@ -44,7 +44,7 @@ internal static class SystemEndpoints
 /// <param name="SupportedApiVersions">API versions this build serves, e.g. <c>1.0</c>.</param>
 /// <param name="DeprecatedApiVersions">Supported versions that will be removed.</param>
 /// <param name="EventSources">What publishes events on the event bus (HA, printers, mail, webhook sources).</param>
-/// <param name="SimulatedIntegrations">Integrations demo mode simulates (<c>home_assistant</c>, <c>printers</c>, <c>mail</c>, <c>rss</c>, <c>notes</c>); empty without demo mode.</param>
+/// <param name="SimulatedIntegrations">Integrations demo mode simulates (<c>home_assistant</c>, <c>caldav</c>, <c>printers</c>, <c>mail</c>, <c>rss</c>, <c>notes</c>, <c>web</c>); empty without demo mode.</param>
 public sealed record SystemInfo(string Version, IReadOnlyList<string> SupportedApiVersions, IReadOnlyList<string> DeprecatedApiVersions, IReadOnlyList<EventSourceInfo> EventSources, IReadOnlyList<string> SimulatedIntegrations);
 
 /// <summary>An event source and its state.</summary>

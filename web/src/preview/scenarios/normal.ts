@@ -28,6 +28,8 @@ export const ids = {
   app: id(14, 1),
   evalCase: (n: number) => id(16, n),
   evalRun: id(17, 1),
+  suggestion: (n: number) => id(18, n),
+  skillProposal: id(19, 1),
 }
 
 export const me: Schemas['MeResponse'] = {
@@ -692,6 +694,58 @@ const proposals: Schemas['ProposalRecord'][] = [
   },
 ]
 
+const suggestions: Schemas['SuggestionItem'][] = [
+  {
+    id: ids.suggestion(1),
+    detector: 'window_rain',
+    text: 'The bedroom window is open and rain is 80% likely within the hour.',
+    snippet: null,
+    delivery: 'inbox',
+    status: 'open',
+    actionSummary: null,
+    actionReasons: [],
+    createdAt: at(-12),
+    expiresAt: at(348),
+  },
+  {
+    id: ids.suggestion(2),
+    detector: 'maintenance_counter',
+    text: 'The Voron has printed 412 hours with no maintenance item. Track the nozzle every 200 hours?',
+    snippet: 'maintenance:\n  items:\n    voron_nozzle:\n      name: Voron nozzle\n      source: { printer: voron, metric: printHours }\n      every: 200\n      warnBefore: 20\n',
+    delivery: 'inbox',
+    status: 'open',
+    actionSummary: null,
+    actionReasons: [],
+    createdAt: at(-240),
+    expiresAt: at(9_840),
+  },
+]
+
+const skillProposal: Schemas['SkillProposalRecord'] = {
+  id: ids.skillProposal,
+  name: 'nightly-backup-check',
+  description: 'Checks last night\'s Proxmox backup jobs and reports the failed ones.',
+  content:
+    '---\nname: nightly-backup-check\ndescription: Checks last night\'s Proxmox backup jobs and reports the failed ones.\n---\n\n# Nightly backup check\n\n1. Call `infra.tasks` with `type: vzdump` for the last 24 hours.\n2. For every failed job, call `infra.task_log` and quote the last error line.\n3. Answer with one line per failed job, or "All backups ran." when none failed.\n',
+  diff: null,
+  sourceRuns: [ids.run(1), ids.run(2), ids.run(3)],
+  status: 'open',
+  createdAt: at(-330),
+  decidedAt: null,
+}
+
+const maintenance: Schemas['MaintenanceItemStatus'][] = [
+  { id: 'voron_nozzle', name: 'Voron nozzle', usage: 186.4, every: 200, warnBefore: 20, unit: 'h', state: 'soon', lastDoneAt: at(-171_000), error: null },
+  { id: 'dishwasher_filter', name: 'Dishwasher filter', usage: 31, every: 60, warnBefore: 5, unit: null, state: 'ok', lastDoneAt: at(-40_000), error: null },
+]
+
+const detectors: Schemas['DetectorItem'][] = [
+  { detector: 'energy_anomaly', sent: 4, accepted: 0, dismissed: 3, estimate: 0.2, muted: true, mutedUntil: at(10_080) },
+  { detector: 'maintenance_counter', sent: 1, accepted: 0, dismissed: 0, estimate: 0.5, muted: false, mutedUntil: null },
+  { detector: 'print_done_away', sent: 6, accepted: 5, dismissed: 1, estimate: 0.75, muted: false, mutedUntil: null },
+  { detector: 'window_rain', sent: 3, accepted: 2, dismissed: 0, estimate: 0.75, muted: false, mutedUntil: null },
+]
+
 const taskDetail: Schemas['TaskDetail'] = {
   task: tasks[1]!,
   notes: 'Skip the weather on weekends (memory: "Briefing length").',
@@ -799,6 +853,11 @@ export const normal = {
   ],
   '/api/v1/proposals': proposals,
   '/api/v1/proposals/{id}': proposals[0]!,
+  '/api/v1/suggestions': suggestions,
+  '/api/v1/suggestions/detectors': detectors,
+  '/api/v1/skill-proposals': [{ id: skillProposal.id, name: skillProposal.name, description: skillProposal.description, status: 'open', hasDiff: false, sourceRunCount: 3, createdAt: skillProposal.createdAt }],
+  '/api/v1/skill-proposals/{id}': skillProposal,
+  '/api/v1/maintenance': maintenance,
   '/api/v1/notifications': notifications,
   '/api/v1/tasks': tasks,
   '/api/v1/tasks/{id}': taskDetail,

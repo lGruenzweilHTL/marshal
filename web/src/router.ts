@@ -14,6 +14,7 @@ import InputRequestView from './inbox/InputRequestView.vue'
 import InboxView from './inbox/InboxView.vue'
 import NotificationView from './inbox/NotificationView.vue'
 import ProposalView from './inbox/ProposalView.vue'
+import SkillProposalView from './inbox/SkillProposalView.vue'
 import MailAccountsView from './mail/MailAccountsView.vue'
 import AuditView from './memory/AuditView.vue'
 import ChunkEditorView from './memory/ChunkEditorView.vue'
@@ -66,6 +67,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'inbox/approvals/:id', name: 'approval', component: ApprovalView, meta: { title: 'inbox.approval', nav: 'inbox' } },
       { path: 'inbox/inputs/:id', name: 'input-request', component: InputRequestView, meta: { title: 'inbox.input.title', nav: 'inbox' } },
       { path: 'inbox/proposals/:id', name: 'proposal', component: ProposalView, meta: { title: 'inbox.proposals', nav: 'inbox' } },
+      { path: 'inbox/skills/:id', name: 'skill-proposal', component: SkillProposalView, meta: { title: 'inbox.skills', nav: 'inbox' } },
       { path: 'inbox/notifications/:id', name: 'notification', component: NotificationView, meta: { title: 'inbox.notification.title', nav: 'inbox' } },
       { path: 'printers/:name?', name: 'printers', component: PrinterView, meta: { title: 'shell.nav.printer', nav: 'printer' } },
       // Activity

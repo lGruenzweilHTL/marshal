@@ -88,6 +88,43 @@ public sealed class HomeAssistantCalendarProviderTests : IAsyncLifetime
         Assert.Null(holiday.Start.DateTime);
     }
 
+    [Fact]
+    public async Task ListEvents_NoAttendeesOrSeriesFields()
+    {
+        _ha.CalendarEvents["calendar.personal"] = JsonNode.Parse("""
+            [{"start":{"dateTime":"2026-09-30T07:00:00+00:00"},"end":{"dateTime":"2026-09-30T08:00:00+00:00"},"summary":"Dentist","uid":"evt-1"}]
+            """)!.AsArray();
+        var start = new DateTimeOffset(2026, 9, 30, 0, 0, 0, TimeSpan.FromHours(2));
+
+        CalendarEvent dentist = Assert.Single((await _provider.ListEventsAsync("calendar.personal", start, start.AddDays(1), _vienna, Ct)).Value);
+
+        Assert.Null(dentist.Organizer);
+        Assert.Null(dentist.Attendees);
+        Assert.False(dentist.Recurring);
+        Assert.Null(dentist.SeriesId);
+        Assert.Null(dentist.OriginalStart);
+        Assert.False(dentist.Transparent);
+    }
+
+    [Theory]
+    [InlineData("calendar.personal", true)]
+    [InlineData("caldav:nextcloud/personal", false)]
+    public void Owns_EntityIdsOnly(string calendar, bool owned) => Assert.Equal(owned, _provider.Owns(calendar));
+
+    [Theory]
+    [InlineData(CalendarUpdateScope.Occurrence)]
+    [InlineData(CalendarUpdateScope.Series)]
+    public async Task Update_WithScope_InvalidWithoutCommand(CalendarUpdateScope scope)
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+
+        Result updated = await _provider.UpdateEventAsync("calendar.personal", "evt-1", "20260930", new CalendarEventData("x", CalendarTime.At(now), CalendarTime.At(now.AddHours(1))), scope, Ct);
+
+        Assert.Equal(("calendar.invalid_arguments", ErrorType.Validation), (updated.Error.Code, updated.Error.Type));
+        Assert.Contains("scope", updated.Error.Message, StringComparison.Ordinal);
+        Assert.Equal(0, _ha.CountCommands("calendar/event/update"));
+    }
+
     [Theory]
     [InlineData("light.kitchen")]
     [InlineData("calendar.personal/../../api/states")]
@@ -142,7 +179,7 @@ public sealed class HomeAssistantCalendarProviderTests : IAsyncLifetime
     {
         var start = new DateTimeOffset(2026, 9, 30, 10, 0, 0, TimeSpan.FromHours(2));
 
-        Result updated = await _provider.UpdateEventAsync("calendar.personal", "evt-1", "20260930", new CalendarEventData("Dentist", CalendarTime.At(start), CalendarTime.At(start.AddHours(1)), "Moved"), Ct);
+        Result updated = await _provider.UpdateEventAsync("calendar.personal", "evt-1", "20260930", new CalendarEventData("Dentist", CalendarTime.At(start), CalendarTime.At(start.AddHours(1)), "Moved"), null, Ct);
 
         Assert.True(updated.IsSuccess);
         JsonObject command = _ha.Commands.Last(candidate => (string?)candidate["type"] == "calendar/event/update");
@@ -157,7 +194,7 @@ public sealed class HomeAssistantCalendarProviderTests : IAsyncLifetime
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
 
-        Result updated = await _provider.UpdateEventAsync("calendar.work", "evt-1", null, new CalendarEventData("x", CalendarTime.At(now), CalendarTime.At(now.AddHours(1))), Ct);
+        Result updated = await _provider.UpdateEventAsync("calendar.work", "evt-1", null, new CalendarEventData("x", CalendarTime.At(now), CalendarTime.At(now.AddHours(1))), null, Ct);
 
         Assert.Equal("calendar.unsupported", updated.Error.Code);
         Assert.Equal(0, _ha.CountCommands("calendar/event/update"));
@@ -169,7 +206,7 @@ public sealed class HomeAssistantCalendarProviderTests : IAsyncLifetime
         _ha.FailingCommands["calendar/event/update"] = "Event not found";
         DateTimeOffset now = DateTimeOffset.UtcNow;
 
-        Result updated = await _provider.UpdateEventAsync("calendar.personal", "missing", null, new CalendarEventData("x", CalendarTime.At(now), CalendarTime.At(now.AddHours(1))), Ct);
+        Result updated = await _provider.UpdateEventAsync("calendar.personal", "missing", null, new CalendarEventData("x", CalendarTime.At(now), CalendarTime.At(now.AddHours(1))), null, Ct);
 
         Assert.Equal("calendar.failed", updated.Error.Code);
         Assert.Contains("Event not found", updated.Error.Message, StringComparison.Ordinal);

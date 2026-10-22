@@ -11,6 +11,7 @@ using Marshal.Data.Audit;
 using Marshal.Data.Conversations;
 using Marshal.Data.Demo;
 using Marshal.Data.Identity;
+using Marshal.Data.Maintenance;
 using Marshal.Data.Memory;
 using Marshal.Demo.Seeding;
 using Marshal.Memory;
@@ -146,6 +147,27 @@ public sealed class DemoSeederTests : IAsyncLifetime
         Assert.DoesNotContain(await db.AgentTasks.ToListAsync(Ct), task => task.OriginSessionId is not null);
         Assert.DoesNotContain(await db.RunSteps.ToListAsync(Ct), step => step.Payload != null && step.Payload.Contains("\"reasoning\"", StringComparison.Ordinal));
         Assert.True(await db.Runs.AnyAsync(Ct));
+    }
+
+    [Fact]
+    public async Task Seed_WithTheMaintenanceItem_TheDemoNozzleIsDueSoon()
+    {
+        await Seeder(DemoSeedParts.All with { MaintenanceItem = true }).SeedAsync(Owner, Ct);
+
+        await using MarshalDbContext db = _database.CreateContext(Owner);
+        MaintenanceState state = Assert.Single(await db.MaintenanceStates.ToListAsync(Ct));
+        Assert.Equal((DemoMaintenance.ItemId, DemoMaintenance.SeededUsage, "h"), (state.ItemId, state.LastValue - state.Baseline, state.Unit));
+        Assert.Equal(DemoPrinter.TotalPrintHours(_time.GetUtcNow()), state.LastValue);
+        Assert.Contains(await db.DemoSeeds.ToListAsync(Ct), seed => seed.Entity == "maintenance_state" && seed.RowId == DemoMaintenance.ItemId);
+    }
+
+    [Fact]
+    public async Task Seed_WithoutTheMaintenanceItem_NoState()
+    {
+        await Seeder().SeedAsync(Owner, Ct);
+
+        await using MarshalDbContext db = _database.CreateContext(Owner);
+        Assert.False(await db.MaintenanceStates.AnyAsync(Ct));
     }
 
     [Fact]

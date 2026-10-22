@@ -13,6 +13,7 @@ using Marshal.Api.Health;
 using Marshal.Api.Hooks;
 using Marshal.Api.LiveEvents;
 using Marshal.Api.Mail;
+using Marshal.Api.Maintenance;
 using Marshal.Api.McpServer;
 using Marshal.Api.Notifications;
 using Marshal.Api.Memory;
@@ -21,6 +22,7 @@ using Marshal.Api.Printers;
 using Marshal.Api.Proposals;
 using Marshal.Api.Runs;
 using Marshal.Api.Security;
+using Marshal.Api.Suggestions;
 using Marshal.Api.Tasks;
 using Marshal.Api.Versioning;
 using Marshal.Artifacts;
@@ -28,6 +30,7 @@ using Marshal.Core;
 using Marshal.Core.Configuration;
 using Marshal.Data;
 using Marshal.Demo;
+using Marshal.Integrations.CalDav;
 using Marshal.Integrations.FreshRss;
 using Marshal.Integrations.Web;
 using Marshal.Integrations.GitHub;
@@ -64,6 +67,7 @@ public static class MarshalApp
         builder.Services.AddMarshalMemory(builder.Configuration);
         builder.Services.AddMarshalPrinters(builder.Configuration, SnapshotDirectory);
         builder.Services.AddMarshalMail(builder.Configuration);
+        builder.Services.AddMarshalCalDav(builder.Configuration);
         builder.Services.AddMarshalFreshRss(builder.Configuration);
         builder.Services.AddMarshalWeb(builder.Configuration);
         builder.Services.AddMarshalGitHub(builder.Configuration);
@@ -76,6 +80,7 @@ public static class MarshalApp
         builder.Services.AddMarshalApi(builder.Configuration);
         // Last: demo mode replaces the registrations of unconfigured integrations.
         builder.Services.AddMarshalDemo(builder.Configuration);
+        builder.Services.AddDemoMaintenanceItem();
         builder.Services.AddSingleton(new ProcessEnvironment(environment));
 
         WebApplication app = builder.Build();
@@ -131,6 +136,8 @@ public static class MarshalApp
         v1.MapTaskEndpoints();
         v1.MapNotificationEndpoints();
         v1.MapProposalEndpoints();
+        v1.MapSuggestionEndpoints();
+        v1.MapMaintenanceEndpoints();
         v1.MapExecutorCallbackEndpoints();
         v1.MapArtifactEndpoints();
         v1.MapAiTaskEndpoints();

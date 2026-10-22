@@ -112,6 +112,7 @@ Users without the `admin` role get 403 and see no link. The view does not show t
 | `aiTasks` | [ai-tasks.md](marshal-yaml/ai-tasks.md) |
 | `maintenance` | [maintenance.md](marshal-yaml/maintenance.md) |
 | `notifications` | [notifications.md](marshal-yaml/notifications.md) |
+| `suggestions` | [suggestions.md](marshal-yaml/suggestions.md) |
 | `artifacts` | [artifacts.md](marshal-yaml/artifacts.md) |
 | `displays` | [displays.md](marshal-yaml/displays.md) |
 | `webhooks` | [webhooks.md](marshal-yaml/webhooks.md) |

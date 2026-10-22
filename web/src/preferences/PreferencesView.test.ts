@@ -2,6 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import PreferencesView from './PreferencesView.vue'
 import { FakeServer } from '../testing/fakeServer'
+import { detectorItem } from '../testing/fixtures'
 import { me, mountOptions } from '../testing/mountApp'
 
 const stored = {
@@ -14,7 +15,11 @@ const stored = {
 }
 
 function server() {
-  return new FakeServer().antiforgery('t').on('GET', '/api/v1/me', 200, me).on('GET', '/api/v1/me/preferences', 200, stored)
+  return new FakeServer()
+    .antiforgery('t')
+    .on('GET', '/api/v1/me', 200, me)
+    .on('GET', '/api/v1/me/preferences', 200, stored)
+    .on('GET', '/api/v1/suggestions/detectors', 200, [])
 }
 
 async function mountPreferences(fake: FakeServer) {
@@ -126,5 +131,54 @@ describe('PreferencesView', () => {
     const wrapper = await mountPreferences(server())
 
     expect(wrapper.text().toLowerCase()).not.toMatch(/briefing|interest/)
+  })
+
+  it('lists suggestion detectors with their counts and estimate', async () => {
+    const fake = server().on('GET', '/api/v1/suggestions/detectors', 200, [
+      detectorItem(),
+      detectorItem({ detector: 'energy_anomaly', sent: 2, accepted: 0, dismissed: 2, estimate: 0.25, muted: true, mutedUntil: null }),
+    ])
+    const wrapper = await mountPreferences(fake)
+
+    const rain = wrapper.get('[data-detector="window_rain"]')
+    expect(rain.text()).toContain('Window open before rain')
+    expect(rain.text()).toContain('3 of 4 accepted')
+    expect(rain.text()).toContain('66.7%')
+    expect(wrapper.get('[data-detector="energy_anomaly"]').text()).toContain('Muted')
+    expect(wrapper.find('[data-detector="energy_anomaly"] [data-test="unmute"]').exists()).toBe(true)
+  })
+
+  it('mutes a detector for a week or indefinitely, unmutes it and resets its counts', async () => {
+    const fake = server()
+      .on('GET', '/api/v1/suggestions/detectors', 200, [detectorItem()])
+      .on('PUT', '/api/v1/suggestions/detectors/window_rain/mute', 200, detectorItem({ muted: true }))
+      .on('DELETE', '/api/v1/suggestions/detectors/window_rain/mute', 200, detectorItem())
+      .on('POST', '/api/v1/suggestions/detectors/window_rain/reset', 200, detectorItem({ sent: 0, accepted: 0, dismissed: 0, estimate: 0.5 }))
+    const wrapper = await mountPreferences(fake)
+    const row = () => wrapper.get('[data-detector="window_rain"]')
+
+    await row().get('[data-test="mute-week"]').trigger('click')
+    await flushPromises()
+    const until = (JSON.parse(fake.request('PUT', '/api/v1/suggestions/detectors/window_rain/mute')!.body) as { until: string }).until
+    expect(Date.parse(until) - Date.now()).toBeGreaterThan(6.9 * 86_400_000)
+    expect(row().text()).toContain('Muted')
+
+    await row().get('[data-test="unmute"]').trigger('click')
+    await flushPromises()
+    await row().get('[data-test="mute"]').trigger('click')
+    await flushPromises()
+    expect(JSON.parse(fake.request('PUT', '/api/v1/suggestions/detectors/window_rain/mute')!.body)).toEqual({ until: null })
+    expect(fake.count('DELETE', '/api/v1/suggestions/detectors/window_rain/mute')).toBe(1)
+
+    await row().get('[data-test="reset"]').trigger('click')
+    await flushPromises()
+    expect(fake.count('POST', '/api/v1/suggestions/detectors/window_rain/reset')).toBe(1)
+    expect(row().text()).toContain('0 of 0 accepted')
+  })
+
+  it('leaves out the suggestions card when no detector exists', async () => {
+    const wrapper = await mountPreferences(server())
+
+    expect(wrapper.find('[data-test="detectors"]').exists()).toBe(false)
   })
 })

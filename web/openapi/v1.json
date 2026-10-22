@@ -3769,6 +3769,396 @@
         }
       }
     },
+    "/api/v1/suggestions": {
+      "get": {
+        "tags": [
+          "Suggestions"
+        ],
+        "summary": "The user\u0027s open suggestions, newest first.",
+        "operationId": "ListSuggestions",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SuggestionItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/suggestions/{id}/accept": {
+      "post": {
+        "tags": [
+          "Suggestions"
+        ],
+        "summary": "Accepts a suggestion; its proposed action, if any, runs once through the guard.",
+        "operationId": "AcceptSuggestion",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionAnswerItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/suggestions/{id}/dismiss": {
+      "post": {
+        "tags": [
+          "Suggestions"
+        ],
+        "summary": "Dismisses a suggestion; nothing runs.",
+        "operationId": "DismissSuggestion",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionAnswerItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/suggestions/detectors": {
+      "get": {
+        "tags": [
+          "Suggestions"
+        ],
+        "summary": "Every detector with the user\u0027s counts, acceptance estimate and mute.",
+        "operationId": "ListSuggestionDetectors",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DetectorItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/suggestions/detectors/{detector}/mute": {
+      "put": {
+        "tags": [
+          "Suggestions"
+        ],
+        "summary": "Mutes a detector until a time, or indefinitely without one.",
+        "operationId": "MuteSuggestionDetector",
+        "parameters": [
+          {
+            "name": "detector",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MuteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetectorItem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Suggestions"
+        ],
+        "summary": "Unmutes a detector.",
+        "operationId": "UnmuteSuggestionDetector",
+        "parameters": [
+          {
+            "name": "detector",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetectorItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/suggestions/detectors/{detector}/reset": {
+      "post": {
+        "tags": [
+          "Suggestions"
+        ],
+        "summary": "Sets a detector\u0027s counts back to zero; a mute stays.",
+        "operationId": "ResetSuggestionDetector",
+        "parameters": [
+          {
+            "name": "detector",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetectorItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skill-proposals": {
+      "get": {
+        "tags": [
+          "Suggestions"
+        ],
+        "summary": "Open and downloaded skill proposals, newest first.",
+        "operationId": "ListSkillProposals",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SkillProposalSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skill-proposals/{id}": {
+      "get": {
+        "tags": [
+          "Suggestions"
+        ],
+        "summary": "One skill proposal with its SKILL.md and diff.",
+        "operationId": "GetSkillProposal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillProposalRecord"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skill-proposals/{id}/download": {
+      "get": {
+        "tags": [
+          "Suggestions"
+        ],
+        "summary": "The drafted SKILL.md as a file; marks the proposal downloaded.",
+        "operationId": "DownloadSkillProposal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/skill-proposals/{id}/dismiss": {
+      "post": {
+        "tags": [
+          "Suggestions"
+        ],
+        "summary": "Dismisses a skill proposal; the same workflow is not proposed again.",
+        "operationId": "DismissSkillProposal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillProposalSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maintenance": {
+      "get": {
+        "tags": [
+          "Maintenance"
+        ],
+        "summary": "Maintenance items read now: due first, then soon, then by name; empty without configured items.",
+        "operationId": "ListMaintenanceItems",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MaintenanceItemStatus"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maintenance/{id}/done": {
+      "post": {
+        "tags": [
+          "Maintenance"
+        ],
+        "summary": "Marks a maintenance item done: its usage starts again from the counter\u0027s current value.",
+        "operationId": "MarkMaintenanceDone",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaintenanceItemStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/artifacts": {
       "get": {
         "tags": [
@@ -5292,6 +5682,57 @@
         },
         "description": "Demo mode as the UI needs it."
       },
+      "DetectorItem": {
+        "required": [
+          "detector",
+          "sent",
+          "accepted",
+          "dismissed",
+          "estimate",
+          "muted",
+          "mutedUntil"
+        ],
+        "type": "object",
+        "properties": {
+          "detector": {
+            "type": "string",
+            "description": "Detector id."
+          },
+          "sent": {
+            "type": "integer",
+            "description": "Suggestions sent since the last reset.",
+            "format": "int32"
+          },
+          "accepted": {
+            "type": "integer",
+            "description": "Accepted ones.",
+            "format": "int32"
+          },
+          "dismissed": {
+            "type": "integer",
+            "description": "Dismissed ones.",
+            "format": "int32"
+          },
+          "estimate": {
+            "type": "number",
+            "description": "(accepted \u002B 1) / (accepted \u002B dismissed \u002B 2).",
+            "format": "double"
+          },
+          "muted": {
+            "type": "boolean",
+            "description": "Whether it is muted now."
+          },
+          "mutedUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "End of the mute; null when indefinite or not muted.",
+            "format": "date-time"
+          }
+        },
+        "description": "One detector\u0027s counts for the user."
+      },
       "EvalCandidateView": {
         "required": [
           "models",
@@ -6299,6 +6740,67 @@
           "none"
         ]
       },
+      "MaintenanceItemStatus": {
+        "required": [
+          "id",
+          "name",
+          "usage",
+          "every",
+          "warnBefore",
+          "unit",
+          "state",
+          "lastDoneAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "usage": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "every": {
+            "type": "number",
+            "format": "double"
+          },
+          "warnBefore": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "unit": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "state": {
+            "type": "string"
+          },
+          "lastDoneAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "McpServerState": {
         "enum": [
           "connecting",
@@ -7051,6 +7553,22 @@
             "description": "\u0060done\u0060, or \u0060approval_required\u0060 when a risk rule made the control confirm tier and it waits in the approval queue."
           }
         }
+      },
+      "MuteRequest": {
+        "required": [
+          "until"
+        ],
+        "type": "object",
+        "properties": {
+          "until": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        },
+        "description": "Mute a detector until \u0060Until\u0060, or indefinitely when it is null."
       },
       "NotificationEntry": {
         "required": [
@@ -8570,6 +9088,105 @@
           "automation"
         ]
       },
+      "SkillProposalRecord": {
+        "required": [
+          "id",
+          "name",
+          "description",
+          "content",
+          "diff",
+          "sourceRuns",
+          "status",
+          "createdAt",
+          "decidedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "diff": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sourceRuns": {
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SkillProposalStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decidedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "SkillProposalStatus": {
+        "enum": [
+          "open",
+          "downloaded",
+          "dismissed",
+          "covered"
+        ]
+      },
+      "SkillProposalSummary": {
+        "required": [
+          "id",
+          "name",
+          "description",
+          "status",
+          "hasDiff",
+          "sourceRunCount",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "hasDiff": {
+            "type": "boolean"
+          },
+          "sourceRunCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A skill proposal in the Inbox list."
+      },
       "SkillSummary": {
         "required": [
           "name",
@@ -8679,6 +9296,95 @@
         },
         "description": "Where the browser goes to sign in with the provider."
       },
+      "SuggestionAnswerItem": {
+        "required": [
+          "suggestion",
+          "actionResult"
+        ],
+        "type": "object",
+        "properties": {
+          "suggestion": {
+            "$ref": "#/components/schemas/SuggestionItem"
+          },
+          "actionResult": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "The answered suggestion and what its proposed action returned."
+      },
+      "SuggestionItem": {
+        "required": [
+          "id",
+          "detector",
+          "text",
+          "snippet",
+          "delivery",
+          "status",
+          "actionSummary",
+          "actionReasons",
+          "createdAt",
+          "expiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Suggestion id.",
+            "format": "uuid"
+          },
+          "detector": {
+            "type": "string",
+            "description": "Detector id, e.g. \u0060window_rain\u0060."
+          },
+          "text": {
+            "type": "string",
+            "description": "The worded suggestion."
+          },
+          "snippet": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Text to show verbatim below the suggestion (a YAML snippet); null for none."
+          },
+          "delivery": {
+            "type": "string",
+            "description": "\u0060inbox\u0060 or \u0060push\u0060."
+          },
+          "status": {
+            "type": "string",
+            "description": "\u0060open\u0060, \u0060accepted\u0060, \u0060dismissed\u0060 or \u0060expired\u0060."
+          },
+          "actionSummary": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What Accept runs; null without a proposed action."
+          },
+          "actionReasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Why the proposed action is confirm tier (Accept confirms it); empty for a safe one."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When it was sent.",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "When it expires unanswered.",
+            "format": "date-time"
+          }
+        },
+        "description": "An open suggestion in the Inbox."
+      },
       "SystemHealthView": {
         "required": [
           "warnings"
@@ -8735,7 +9441,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Integrations demo mode simulates (\u0060home_assistant\u0060, \u0060printers\u0060, \u0060mail\u0060, \u0060rss\u0060, \u0060notes\u0060); empty without demo mode."
+            "description": "Integrations demo mode simulates (\u0060home_assistant\u0060, \u0060caldav\u0060, \u0060printers\u0060, \u0060mail\u0060, \u0060rss\u0060, \u0060notes\u0060, \u0060web\u0060); empty without demo mode."
           }
         },
         "description": "Version information."
@@ -9546,6 +10252,12 @@
     },
     {
       "name": "Proposals"
+    },
+    {
+      "name": "Suggestions"
+    },
+    {
+      "name": "Maintenance"
     }
   ]
 }

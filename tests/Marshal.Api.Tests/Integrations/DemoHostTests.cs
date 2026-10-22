@@ -6,6 +6,7 @@ using Marshal.Api.Tests.Auth;
 using Marshal.Api.Tests.Http;
 using Marshal.Demo;
 using Marshal.Integrations.HomeAssistant;
+using Marshal.Tasks.Maintenance;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -73,7 +74,7 @@ public sealed class DemoHostTests
         JsonElement system = await browser.GetFromJsonAsync<JsonElement>("/api/v1/system", Ct);
 
         Assert.Equal((true, false), (demo.GetProperty("enabled").GetBoolean(), demo.GetProperty("showBadge").GetBoolean()));
-        Assert.Equal(["home_assistant", "printers", "mail", "rss", "notes", "web"], system.GetProperty("simulatedIntegrations").EnumerateArray().Select(item => item.GetString()));
+        Assert.Equal(["home_assistant", "caldav", "printers", "mail", "rss", "notes", "web"], system.GetProperty("simulatedIntegrations").EnumerateArray().Select(item => item.GetString()));
     }
 
     [Fact]
@@ -89,15 +90,45 @@ public sealed class DemoHostTests
         Assert.Empty(system.GetProperty("simulatedIntegrations").EnumerateArray());
     }
 
-    private static async Task<MarshalApiFactory> DemoAsync(bool showBadge = true)
+    [Fact]
+    public async Task SimulatedPrinter_NozzleIsAMaintenanceItemReadFromTheDemoCounter()
     {
-        Dictionary<string, string?> settings = AuthFactory.Local().ToSettings(0);
-        settings["demo:enabled"] = "true";
-        settings["demo:showBadge"] = showBadge ? "true" : "false";
+        await using MarshalApiFactory factory = await DemoAsync();
+        _ = factory.CreateClient();
+
+        MaintenanceTracker tracker = factory.Services.GetRequiredService<MaintenanceTracker>();
+        MaintenanceItemStatus status = Assert.Single(await tracker.StatusAsync(Ct));
+
+        Assert.Equal((DemoMaintenance.ItemId, "Voron nozzle", "h"), (status.Id, status.Name, status.Unit));
+        Assert.NotNull(status.Usage);
+        Assert.Null(status.Error);
+    }
+
+    [Fact]
+    public async Task ConfiguredItems_NoDemoItemAdded()
+    {
+        await using MarshalApiFactory factory = await DemoAsync(settings: new()
+        {
+            ["maintenance:items:dishwasher_filter:name"] = "Dishwasher filter",
+            ["maintenance:items:dishwasher_filter:source:ha"] = "sensor.dishwasher_cycles",
+            ["maintenance:items:dishwasher_filter:every"] = "60",
+        });
+        _ = factory.CreateClient();
+
+        Assert.Equal(["dishwasher_filter"], factory.Services.GetRequiredService<MaintenanceTracker>().Items.Keys);
+    }
+
+    private static async Task<MarshalApiFactory> DemoAsync(bool showBadge = true, Dictionary<string, string?>? settings = null)
+    {
+        Dictionary<string, string?> all = AuthFactory.Local().ToSettings(0);
+        foreach ((string key, string? value) in settings ?? [])
+            all[key] = value;
+        all["demo:enabled"] = "true";
+        all["demo:showBadge"] = showBadge ? "true" : "false";
         // The factory's settings reach the host configuration only after the services are registered, so demo mode is
         // registered again here, at the same point in the composition root (after every integration).
         IConfiguration demo = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["demo:enabled"] = "true" }).Build();
-        var factory = new MarshalApiFactory(settings) { TestServices = services => services.AddMarshalDemo(demo) };
+        var factory = new MarshalApiFactory(all) { TestServices = services => services.AddMarshalDemo(demo) };
         await AuthFactory.WriteClientSecretAsync(factory);
         return factory;
     }

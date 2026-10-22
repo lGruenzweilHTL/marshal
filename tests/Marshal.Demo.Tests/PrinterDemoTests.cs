@@ -1,8 +1,10 @@
 using Marshal.Abstractions;
+using Marshal.Abstractions.Maintenance;
 using Marshal.Abstractions.Printers;
 using Marshal.Abstractions.Tools;
 using Marshal.Demo.Printers;
 using Marshal.Integrations.Moonraker;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -162,5 +164,57 @@ public sealed class PrinterDemoTests
             if (service is DemoPrinterStateCache or MoonrakerEventSource)
                 await service.StartAsync(Ct);
         }
+    }
+
+    [Fact]
+    public async Task NoPrinters_CounterSourceReadsTheDemoPrinterTotals()
+    {
+        await using var demo = DemoServices.Create();
+        IMaintenanceCounterSource[] sources = [.. demo.Provider.GetServices<IMaintenanceCounterSource>().Where(source => source.Handles(new MaintenanceSource(Printer: DemoPrinter.Name)))];
+
+        IMaintenanceCounterSource source = Assert.Single(sources);
+        MaintenanceReading hours = (await source.ReadAsync(new MaintenanceSource(Printer: DemoPrinter.Name, Metric: MaintenanceMetric.PrintHours), Ct)).Value;
+        MaintenanceReading meters = (await source.ReadAsync(new MaintenanceSource(Printer: DemoPrinter.Name, Metric: MaintenanceMetric.FilamentMeters), Ct)).Value;
+        Result<MaintenanceReading> unknown = await source.ReadAsync(new MaintenanceSource(Printer: "trident", Metric: MaintenanceMetric.PrintHours), Ct);
+        MaintenanceCounter counter = Assert.Single(await source.ListCountersAsync(Ct));
+
+        Assert.IsType<DemoPrinterCounterSource>(source);
+        Assert.Equal((DemoPrinter.TotalPrintHours(demo.Time.GetUtcNow()), "h"), (hours.Value, hours.Unit));
+        Assert.Equal("m", meters.Unit);
+        Assert.True(meters.Value > hours.Value);
+        Assert.True(unknown.IsFailure);
+        Assert.Equal((DemoPrinter.Name, MaintenanceMetric.PrintHours), (counter.Source.Printer, counter.Source.Metric));
+    }
+
+    [Fact]
+    public void TotalPrintHours_GrowsWithTime()
+    {
+        var now = new DateTimeOffset(2026, 10, 21, 12, 0, 0, TimeSpan.Zero);
+
+        Assert.True(DemoPrinter.TotalPrintHours(now.AddDays(1)) > DemoPrinter.TotalPrintHours(now));
+    }
+
+    [Fact]
+    public async Task PrintersConfigured_MoonrakerCounterSourceStays()
+    {
+        await using var demo = DemoServices.Create(new()
+        {
+            ["printers:0:name"] = "trident",
+            ["printers:0:url"] = "http://trident.local",
+        });
+
+        Assert.Contains(demo.Provider.GetServices<IMaintenanceCounterSource>(), source => source is MoonrakerCounterSource);
+        Assert.DoesNotContain(demo.Provider.GetServices<IMaintenanceCounterSource>(), source => source is DemoPrinterCounterSource);
+    }
+
+    [Fact]
+    public void SimulatesPrinters_OnlyInDemoModeWithoutPrinters()
+    {
+        static IConfiguration Config(Dictionary<string, string?> values) =>
+            new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+
+        Assert.True(DemoServiceCollectionExtensions.SimulatesPrinters(Config(new() { ["demo:enabled"] = "true" })));
+        Assert.False(DemoServiceCollectionExtensions.SimulatesPrinters(Config(new() { ["demo:enabled"] = "false" })));
+        Assert.False(DemoServiceCollectionExtensions.SimulatesPrinters(Config(new() { ["demo:enabled"] = "true", ["printers:0:name"] = "trident" })));
     }
 }

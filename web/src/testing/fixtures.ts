@@ -206,3 +206,66 @@ export function conversationSummary(overrides: Partial<Schemas['ConversationSumm
     ...overrides,
   }
 }
+
+export function suggestionItem(overrides: Partial<Schemas['SuggestionItem']> = {}): Schemas['SuggestionItem'] {
+  return {
+    id: 'sg-1',
+    detector: 'window_rain',
+    text: 'The bedroom window is open and rain is likely within the hour. Close it?',
+    snippet: null,
+    delivery: 'inbox',
+    status: 'open',
+    actionSummary: 'Close cover.bedroom_window',
+    actionReasons: [],
+    createdAt: '2026-09-30T08:00:00Z',
+    expiresAt: '2026-09-30T14:00:00Z',
+    ...overrides,
+  }
+}
+
+export function skillProposalSummary(overrides: Partial<Schemas['SkillProposalSummary']> = {}): Schemas['SkillProposalSummary'] {
+  return {
+    id: 'sp-1',
+    name: 'nightly-backup-check',
+    description: 'Checks last night\'s backup jobs and reports failures.',
+    status: 'open',
+    hasDiff: false,
+    sourceRunCount: 3,
+    createdAt: '2026-09-30T03:10:00Z',
+    ...overrides,
+  }
+}
+
+export function skillProposal(overrides: Partial<Schemas['SkillProposalRecord']> = {}): Schemas['SkillProposalRecord'] {
+  return {
+    id: 'sp-1',
+    name: 'nightly-backup-check',
+    description: 'Checks last night\'s backup jobs and reports failures.',
+    content: '---\nname: nightly-backup-check\ndescription: Checks last night\'s backup jobs and reports failures.\n---\n\n1. Call `infra.backups`.\n',
+    diff: null,
+    sourceRuns: ['r-1', 'r-2', 'r-3'],
+    status: 'open',
+    createdAt: '2026-09-30T03:10:00Z',
+    decidedAt: null,
+    ...overrides,
+  }
+}
+
+export function maintenanceItem(overrides: Partial<Schemas['MaintenanceItemStatus']> = {}): Schemas['MaintenanceItemStatus'] {
+  return {
+    id: 'voron_nozzle',
+    name: 'Voron nozzle',
+    usage: 182.5,
+    every: 200,
+    warnBefore: 20,
+    unit: 'h',
+    state: 'soon',
+    lastDoneAt: '2026-06-02T10:00:00Z',
+    error: null,
+    ...overrides,
+  }
+}
+
+export function detectorItem(overrides: Partial<Schemas['DetectorItem']> = {}): Schemas['DetectorItem'] {
+  return { detector: 'window_rain', sent: 5, accepted: 3, dismissed: 1, estimate: 0.667, muted: false, mutedUntil: null, ...overrides }
+}

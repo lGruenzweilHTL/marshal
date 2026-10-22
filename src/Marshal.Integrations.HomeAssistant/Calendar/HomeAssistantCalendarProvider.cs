@@ -12,19 +12,22 @@ namespace Marshal.Integrations.HomeAssistant.Calendar;
 /// Home Assistant <c>calendar.*</c> entities: the list and events over REST (<c>/api/calendars</c>, which includes
 /// the event uid), creation through the <c>calendar.create_event</c> action and updates through the websocket command
 /// <c>calendar/event/update</c> (there is no update action). What a calendar supports comes from the entity's
-/// <c>supported_features</c> in the state cache.
+/// <c>supported_features</c> in the state cache. HA has no attendee data and cannot be told whether its integration
+/// edits single occurrences, so these calendars take no update scope.
 /// </summary>
 public sealed partial class HomeAssistantCalendarProvider(
     IHomeAssistantClient client,
     IHomeAssistantCommands commands,
     IHomeAssistantCache cache,
-    IOptions<HomeAssistantOptions> options) : ICalendarProvider
+    IOptions<HomeAssistantOptions> options) : ICalendarSource
 {
     // CalendarEntityFeature in homeassistant/components/calendar/const.py.
     private const int CreateEvent = 1;
     private const int UpdateEvent = 4;
 
     public bool IsConfigured => options.Value.Url is not null;
+
+    public bool Owns(string calendarId) => calendarId.StartsWith("calendar.", StringComparison.Ordinal);
 
     public CalendarOverview Overview
     {
@@ -100,8 +103,11 @@ public sealed partial class HomeAssistantCalendarProvider(
         return created.IsSuccess ? Result.Success() : CalendarErrors.Failed(created.Error.Message);
     }
 
-    public async Task<Result> UpdateEventAsync(string calendarId, string eventId, string? recurrenceId, CalendarEventData data, CancellationToken cancellationToken)
+    public async Task<Result> UpdateEventAsync(string calendarId, string eventId, string? recurrenceId, CalendarEventData data, CalendarUpdateScope? scope, CancellationToken cancellationToken)
     {
+        if (scope is not null)
+            return CalendarErrors.ScopeUnsupported(calendarId);
+
         Result supported = await RequireAsync(calendarId, CalendarCapabilities.Update, "updating", cancellationToken);
         if (supported.IsFailure)
             return supported;

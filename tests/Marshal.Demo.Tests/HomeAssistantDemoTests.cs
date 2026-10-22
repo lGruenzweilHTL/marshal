@@ -6,6 +6,7 @@ using Marshal.Abstractions.Events;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Music;
+using Marshal.Abstractions.Suggestions;
 using Marshal.Abstractions.Tools;
 using Marshal.Demo.HomeAssistant;
 using Marshal.Integrations.HomeAssistant;
@@ -49,7 +50,7 @@ public sealed class HomeAssistantDemoTests
         Assert.IsType<DemoHomeAssistantClient>(demo.Get<IHomeAssistantClient>());
         Assert.IsType<DemoHomeAssistantCache>(demo.Get<IHomeAssistantCache>());
         Assert.IsType<DemoHomeAssistantCommands>(demo.Get<IHomeAssistantCommands>());
-        Assert.IsType<DemoCalendarProvider>(demo.Get<ICalendarProvider>());
+        Assert.Single(demo.Provider.GetServices<ICalendarSource>(), source => source is DemoCalendarProvider);
         Assert.Contains(DemoIntegration.HomeAssistant, demo.Get<DemoIntegrations>().SimulatedAtStartup);
         Assert.Contains(demo.Provider.GetServices<IEventSource>(), source => source is DemoHomeAssistantEventSource { Source: "ha", IsConnected: true });
         Assert.DoesNotContain(demo.Provider.GetServices<IEventSource>(), source => source is HomeAssistantEventSource);
@@ -201,4 +202,41 @@ public sealed class HomeAssistantDemoTests
         RiskTarget target = Assert.Single(targets.Value);
         Assert.Equal("lock", target.Attributes["domain"]);
     }
+
+    [Fact]
+    public async Task WeatherForecasts_HourlyAndDaily_HaveAPrecipitationProbability()
+    {
+        await using var demo = DemoServices.Create();
+        IHomeAssistantCommands commands = demo.Get<IHomeAssistantCommands>();
+
+        JsonElement hourly = (await commands.CommandAsync("call_service", Forecasts("hourly"), Ct)).Value;
+        JsonElement daily = (await commands.CommandAsync("call_service", Forecasts("daily"), Ct)).Value;
+
+        JsonElement[] hours = [.. hourly.GetProperty("response").GetProperty("weather.home").GetProperty("forecast").EnumerateArray()];
+        Assert.True(hours.Length >= 12);
+        Assert.True(hours[0].GetProperty("precipitation_probability").GetInt32() >= 60);
+        Assert.True(DateTimeOffset.Parse(hours[0].GetProperty("datetime").GetString()!, System.Globalization.CultureInfo.InvariantCulture) <= demo.Time.GetUtcNow());
+        Assert.NotEmpty(daily.GetProperty("response").GetProperty("weather.home").GetProperty("forecast").EnumerateArray());
+    }
+
+    [Fact]
+    public async Task WindowRainDetector_OpenWorkshopWindowBeforeRain_Suggests()
+    {
+        await using var demo = DemoServices.Create();
+        ISuggestionDetector detector = demo.Provider.GetServices<ISuggestionDetector>().Single(candidate => candidate.Id == "window_rain");
+
+        IReadOnlyList<SuggestionCandidate> candidates = await detector.EvaluateAsync(new SuggestionContext(TestExecutionContext.OwnerA, "en", TimeZoneInfo.Utc, null), Ct);
+
+        SuggestionCandidate candidate = Assert.Single(candidates);
+        Assert.Contains("binary_sensor.garage_window", candidate.DedupeKey, StringComparison.Ordinal);
+    }
+
+    private static JsonObject Forecasts(string type) => new()
+    {
+        ["domain"] = "weather",
+        ["service"] = "get_forecasts",
+        ["service_data"] = new JsonObject { ["type"] = type },
+        ["target"] = new JsonObject { ["entity_id"] = "weather.home" },
+        ["return_response"] = true,
+    };
 }

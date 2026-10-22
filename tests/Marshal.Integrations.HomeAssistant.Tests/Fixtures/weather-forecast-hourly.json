@@ -1,0 +1,12 @@
+{
+  "context": { "id": "01JAQ3M2X9K4T8V6B1N5C7D0EF", "parent_id": null, "user_id": "31ddb597e03147118cf8d2f8fbea5553" },
+  "response": {
+    "weather.demo_weather_north": {
+      "forecast": [
+        { "condition": "cloudy", "datetime": "2026-10-21T08:00:00+00:00", "wind_bearing": 241.19, "temperature": 11.2, "dew_point": 8.1, "wind_speed": 16.88, "precipitation": 0.0, "precipitation_probability": 20, "humidity": 81 },
+        { "condition": "rainy", "datetime": "2026-10-21T09:00:00+00:00", "wind_bearing": 238.4, "temperature": 10.8, "dew_point": 8.6, "wind_speed": 18.2, "precipitation": 1.4, "precipitation_probability": 80, "humidity": 88 },
+        { "condition": "rainy", "datetime": "2026-10-21T10:00:00+00:00", "wind_bearing": 236.0, "temperature": 10.5, "dew_point": 8.9, "wind_speed": 19.0, "precipitation": 2.1, "precipitation_probability": 90, "humidity": 91 }
+      ]
+    }
+  }
+}

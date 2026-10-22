@@ -7,8 +7,9 @@ using Marshal.Integrations.HomeAssistant;
 namespace Marshal.Demo.HomeAssistant;
 
 /// <summary>
-/// Home Assistant's websocket commands, simulated: service calls, the energy dashboard with hourly statistics for
-/// grid and solar, and zone creation. Other commands return <c>ha.service_not_supported</c>.
+/// Home Assistant's websocket commands, simulated: service calls, weather forecasts with rain in the next hours, the
+/// energy dashboard with hourly statistics for grid and solar, and zone creation. Other commands return
+/// <c>ha.service_not_supported</c>.
 /// </summary>
 public sealed class DemoHomeAssistantCommands(DemoWorld world) : IHomeAssistantCommands
 {
@@ -37,11 +38,32 @@ public sealed class DemoHomeAssistantCommands(DemoWorld world) : IHomeAssistantC
 
     private Result<JsonElement> CallService(JsonObject fields)
     {
+        if ((string?)fields["domain"] == "weather" && (string?)fields["service"] == "get_forecasts")
+            return Forecasts(fields);
+
         JsonObject data = (fields["service_data"] as JsonObject)?.DeepClone().AsObject() ?? [];
         if ((fields["target"] as JsonObject)?["entity_id"] is { } target)
             data["entity_id"] = target.DeepClone();
         Result<IReadOnlyList<HaState>> called = DemoServiceCalls.Call(world.Home, (string?)fields["domain"] ?? "", (string?)fields["service"] ?? "", data);
         return called.IsSuccess ? DemoServiceCalls.Response(called.Value) : called.Error;
+    }
+
+    // Rain is likely now and in the next two hours, then it clears: enough for the window_rain suggestion.
+    private Result<JsonElement> Forecasts(JsonObject fields)
+    {
+        bool daily = (string?)(fields["service_data"] as JsonObject)?["type"] == "daily";
+        DateTimeOffset now = world.Time.GetUtcNow();
+        DateTimeOffset hour = new(now.Year, now.Month, now.Day, now.Hour, 0, 0, TimeSpan.Zero);
+        int[] probabilities = daily ? [70, 20, 10] : [80, 85, 65, 40, 20, 10, 10, 10, 10, 10, 10, 10];
+        object[] forecast = [.. probabilities.Select((probability, index) => new
+        {
+            datetime = (daily ? hour.Date.AddDays(index) : hour.AddHours(index).UtcDateTime).ToString("O", CultureInfo.InvariantCulture),
+            condition = probability >= 60 ? "rainy" : "cloudy",
+            precipitation_probability = probability,
+            temperature = 9.5,
+        })];
+        string entity = (string?)(fields["target"] as JsonObject)?["entity_id"] ?? "weather.home";
+        return JsonSerializer.SerializeToElement(new { response = new Dictionary<string, object> { [entity] = new { forecast } } });
     }
 
     // A plausible household: grid draw peaks in the morning and evening, solar follows the daylight hours.

@@ -22,7 +22,7 @@ export function shiftTimes<T>(value: T, offset: number): T {
 /** Demo mode: the normal data, with the badge on and every demo integration simulated. */
 function demo(path: string, body: unknown): unknown {
   if (path === '/api/v1/me') return { ...(body as object), demo: { enabled: true, showBadge: true } }
-  if (path === '/api/v1/system') return { ...(body as object), simulatedIntegrations: ['home_assistant', 'printers', 'mail', 'rss', 'notes'] }
+  if (path === '/api/v1/system') return { ...(body as object), simulatedIntegrations: ['home_assistant', 'caldav', 'printers', 'mail', 'rss', 'notes', 'web'] }
   return body
 }
 
@@ -125,6 +125,12 @@ export function createPreviewServer(scenario: ScenarioName, language: Language, 
   })
   server.handle('POST', '/api/v1/evals/estimate', (request) => json(200, { estimatedCost: 0.0113 * ((JSON.parse(request.body) as { caseIds: string[] }).caseIds.length || 1) }))
   server.handle('POST', '/api/v1/evals/runs', () => json(201, shiftTimes(normal['/api/v1/evals/runs'][0], offset)))
+  for (const answer of ['accept', 'dismiss']) {
+    server.handle('POST', `/api/v1/suggestions/{id}/${answer}`, () =>
+      json(200, { suggestion: { ...normal['/api/v1/suggestions'][0]!, status: answer === 'accept' ? 'accepted' : 'dismissed' }, actionResult: answer === 'accept' ? 'Closed.' : null }),
+    )
+  }
+  server.handle('POST', '/api/v1/maintenance/{id}/done', () => json(200, { ...normal['/api/v1/maintenance'][0]!, usage: 0, state: 'ok', lastDoneAt: new Date(now).toISOString() }))
   server.fallback = (request) => {
     if (scenario === 'offline' && !session.has(request.path)) throw new TypeError('Failed to fetch')
     if (scenario === 'failing' && !session.has(request.path)) return problem()

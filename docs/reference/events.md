@@ -26,6 +26,7 @@ Event payloads are untrusted by default. A run started by an event gets the payl
 | `ha` | No |
 | `printer` | No |
 | `mail` | No |
+| `calendar` | Yes |
 | `executor` | No |
 | `mcp` | No |
 | `uptime-kuma` | Yes |
@@ -77,6 +78,25 @@ All printer events share one payload.
 | `new_mail` | The account alias | `account` (alias), `id` (message id for `mail.read_message`), `from` (address), `subject`, `date`. |
 
 Marshal watches the inbox with IMAP IDLE and polls where IDLE is not available. The event carries the account's owner.
+
+## Calendar (`calendar`)
+
+Published for CalDAV calendars only, after polling each calendar every `pollMinutes`. The entity is the calendar id (`caldav:<account>/<calendar>`). The event carries the instance owner. Events that exist when Marshal starts produce none.
+
+| Type | Published when |
+|---|---|
+| `event_created` | A new event appeared. |
+| `event_updated` | An event changed. |
+| `event_removed` | An event was deleted. |
+| `invitation` | A new event lists the account's address as an attendee with RSVP `needs-action`. Published together with `event_created`. |
+
+| Field | Description |
+|---|---|
+| `calendar` | Calendar id. |
+| `eventId` | Event id (the iCalendar `UID`) for `calendar_update_event`. Null when the uid is not a plain identifier (letters, digits, `@._:+-`, at most 200 characters). |
+| `start`, `end` | Start and end in UTC. Null for `event_removed`. For a recurring event, those of the first occurrence. |
+
+The payload holds no summaries, descriptions or attendees, so the source is trusted.
 
 ## Executors (`executor`)
 

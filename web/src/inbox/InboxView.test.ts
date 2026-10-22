@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import InboxView from './InboxView.vue'
 import { FakeServer, json } from '../testing/fakeServer'
-import { approvalItem, notificationEntry, proposal } from '../testing/fixtures'
+import { approvalItem, notificationEntry, proposal, skillProposalSummary, suggestionItem } from '../testing/fixtures'
 import { me, mountOptions } from '../testing/mountApp'
 import { useViewport } from '../testing/viewport'
 
@@ -18,6 +18,8 @@ function server() {
     ])
     .on('GET', '/api/v1/approvals/inputs', 200, [])
     .on('GET', '/api/v1/proposals', 200, [proposal()])
+    .on('GET', '/api/v1/skill-proposals', 200, [])
+    .on('GET', '/api/v1/suggestions', 200, [])
     .on('GET', '/api/v1/notifications', 200, [
       notificationEntry(),
       notificationEntry({ id: 'n-2', priority: 'critical', content: 'Print failure suspected.', outcome: 'held' }),
@@ -124,6 +126,8 @@ describe('InboxView', () => {
       .on('GET', '/api/v1/approvals', 200, [])
       .on('GET', '/api/v1/approvals/inputs', 200, [])
       .on('GET', '/api/v1/proposals', 200, [])
+      .on('GET', '/api/v1/skill-proposals', 200, [])
+      .on('GET', '/api/v1/suggestions', 200, [])
       .on('GET', '/api/v1/notifications', 200, [])
     const { wrapper } = await mountInbox(fake)
 
@@ -154,5 +158,65 @@ describe('InboxView', () => {
     expect(sections.slice(0, 2)).toEqual(['approvals', 'inputs'])
     expect(wrapper.get('[data-input="i-1"]').text()).toContain('Log in to Paperless.')
     expect(wrapper.get('[data-test="filter"]').text()).toContain('Approvals 3')
+  })
+
+  it('lists skill proposals after change proposals and suggestions before notifications', async () => {
+    useViewport('phone')
+    const fake = server()
+      .on('GET', '/api/v1/skill-proposals', 200, [skillProposalSummary(), skillProposalSummary({ id: 'sp-2', name: 'old-one', status: 'downloaded' })])
+      .on('GET', '/api/v1/suggestions', 200, [suggestionItem()])
+    const { wrapper } = await mountInbox(fake)
+
+    const sections = wrapper.findAll('[data-section]').map((section) => section.attributes('data-section'))
+    expect(sections).toEqual(['approvals', 'proposals', 'skills', 'suggestions', 'notifications'])
+    expect(wrapper.get('a[href="/inbox/skills/sp-1"]').text()).toContain('nightly-backup-check')
+    expect(wrapper.get('a[href="/inbox/skills/sp-2"]').text()).toContain('Downloaded')
+    expect(wrapper.get('[data-suggestion="sg-1"]').text()).toContain('The bedroom window is open')
+    expect(wrapper.get('[data-suggestion="sg-1"]').text()).toContain('Close cover.bedroom_window')
+  })
+
+  it('accepts a suggestion, removes it and shows what the action returned', async () => {
+    useViewport('phone')
+    const fake = server()
+      .on('GET', '/api/v1/suggestions', 200, [suggestionItem()])
+      .on('POST', '/api/v1/suggestions/sg-1/accept', 200, { suggestion: suggestionItem({ status: 'accepted' }), actionResult: 'Closed.' })
+    const { wrapper, toasts } = await mountInbox(fake)
+
+    fake.on('GET', '/api/v1/suggestions', 200, [])
+    await wrapper.get('[data-suggestion="sg-1"] [data-test="accept"]').trigger('click')
+    await flushPromises()
+
+    expect(fake.count('POST', '/api/v1/suggestions/sg-1/accept')).toBe(1)
+    expect(wrapper.find('[data-suggestion="sg-1"]').exists()).toBe(false)
+    expect(toasts.items.value.map((toast) => toast.message)).toContain('Accepted. Closed.')
+  })
+
+  it('dismisses a suggestion without running anything', async () => {
+    useViewport('phone')
+    const fake = server()
+      .on('GET', '/api/v1/suggestions', 200, [suggestionItem()])
+      .on('POST', '/api/v1/suggestions/sg-1/dismiss', 200, { suggestion: suggestionItem({ status: 'dismissed' }), actionResult: null })
+    const { wrapper, toasts } = await mountInbox(fake)
+
+    fake.on('GET', '/api/v1/suggestions', 200, [])
+    await wrapper.get('[data-suggestion="sg-1"] [data-test="dismiss"]').trigger('click')
+    await flushPromises()
+
+    expect(fake.count('POST', '/api/v1/suggestions/sg-1/accept')).toBe(0)
+    expect(fake.count('POST', '/api/v1/suggestions/sg-1/dismiss')).toBe(1)
+    expect(toasts.items.value.map((toast) => toast.message)).toContain('Dismissed. Marshal suggests this kind of thing less often.')
+  })
+
+  it('shows why accepting confirms an action, and a suggested snippet verbatim', async () => {
+    useViewport('phone')
+    const fake = server().on('GET', '/api/v1/suggestions', 200, [
+      suggestionItem({ actionSummary: 'Turn off switch.voron_power', actionReasons: ['Switching off a printer is confirm tier.'] }),
+      suggestionItem({ id: 'sg-2', detector: 'maintenance_counter', actionSummary: null, snippet: 'maintenance:\n  items:\n' }),
+    ])
+    const { wrapper } = await mountInbox(fake)
+
+    expect(wrapper.get('[data-suggestion="sg-1"] [data-test="reasons"]').text()).toContain('Switching off a printer is confirm tier.')
+    expect(wrapper.get('[data-suggestion="sg-2"] pre').text()).toBe('maintenance:\n  items:')
+    expect(wrapper.find('[data-suggestion="sg-2"] [data-test="reasons"]').exists()).toBe(false)
   })
 })

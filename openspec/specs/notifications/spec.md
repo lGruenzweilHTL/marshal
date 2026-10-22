@@ -2,7 +2,9 @@
 
 ## Purpose
 How proactive messages reach the user: priorities, channels chosen by presence, quiet hours, noise control, the inbox, history and actionable push.
+
 ## Requirements
+
 ### Requirement: Priorities
 Notifications SHALL have priority `critical`, `normal` or `low`. Only system-defined sources (e.g. the print babysitter, e-stop, printer error) SHALL send `critical`; the agent's `notifications.notify` SHALL accept only `normal` and `low`. `critical` SHALL always be delivered by voice and push, ignoring quiet hours, DND and caps. `low` SHALL never use voice and SHALL go to the inbox (or a push digest).
 
@@ -62,9 +64,12 @@ Every notification SHALL be recorded with content, priority, chosen channel, out
 - **THEN** its history entry has outcome `delivered`, channel `push` and reason `voice_cap`
 
 ### Requirement: Actionable push
-Push notifications for approvals SHALL carry Approve / Reject actions through the HA companion app. The reply SHALL arrive as a `mobile_app_notification_action` event and SHALL be accepted only with a valid, unexpired nonce.
+Push notifications for approvals SHALL carry Approve / Reject actions, and push notifications for suggestions SHALL carry Accept / Dismiss actions, through the HA companion app. The reply SHALL arrive as a `mobile_app_notification_action` event and SHALL be accepted only with a valid, unexpired nonce.
 
 #### Scenario: Wrong nonce
 - **WHEN** a push action arrives with an unknown nonce
 - **THEN** nothing is approved and the event is logged
 
+#### Scenario: Accept a suggestion by push
+- **WHEN** an Accept action with the suggestion's valid nonce arrives
+- **THEN** the suggestion is accepted and its proposed action, if any, runs once

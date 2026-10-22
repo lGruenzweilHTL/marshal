@@ -22,6 +22,15 @@ export const en = {
   healthProblem: 'Some checks report problems',
   healthDown: 'Marshal is not healthy',
   healthFailed: 'The health check did not answer',
+  maintenance: {
+    title: 'Maintenance',
+    done: 'Done',
+    usage: 'Usage of {name}',
+    state: { due: 'due', soon: 'soon', ok: 'ok' },
+    confirmTitle: 'Mark {name} as done?',
+    confirmBody: 'Counting starts again from the current value. Do this only after the maintenance is done.',
+    doneToast: '{name} marked done. Counting starts again.',
+  },
 }
 
 export const de: Catalog<typeof en> = {
@@ -46,4 +55,13 @@ export const de: Catalog<typeof en> = {
   healthProblem: 'Einige Prüfungen melden Probleme',
   healthDown: 'Marshal läuft nicht fehlerfrei',
   healthFailed: 'Die Gesundheitsprüfung hat nicht geantwortet',
+  maintenance: {
+    title: 'Wartung',
+    done: 'Erledigt',
+    usage: 'Nutzung von {name}',
+    state: { due: 'fällig', soon: 'bald', ok: 'ok' },
+    confirmTitle: '{name} als erledigt markieren?',
+    confirmBody: 'Die Zählung beginnt beim aktuellen Wert neu. Markiere es erst, wenn die Wartung erledigt ist.',
+    doneToast: '{name} als erledigt markiert. Die Zählung beginnt neu.',
+  },
 }

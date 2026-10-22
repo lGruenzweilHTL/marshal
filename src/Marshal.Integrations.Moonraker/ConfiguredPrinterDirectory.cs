@@ -8,7 +8,7 @@ namespace Marshal.Integrations.Moonraker;
 public sealed class ConfiguredPrinterDirectory(IOptions<PrinterOptions> options) : IPrinterDirectory
 {
     public IReadOnlyList<PrinterInfo> Printers { get; } =
-        [.. options.Value.Printers.Where(printer => printer.Url is not null).Select(printer => new PrinterInfo(printer.Name, [.. printer.Macros.Select(macro => macro.ToUpperInvariant())], printer.WebUrl))];
+        [.. options.Value.Printers.Where(printer => printer.Url is not null).Select(printer => new PrinterInfo(printer.Name, [.. printer.Macros.Select(macro => macro.ToUpperInvariant())], printer.WebUrl, printer.PowerEntity))];
 
     public Result<PrinterInfo> Resolve(string? printer)
     {

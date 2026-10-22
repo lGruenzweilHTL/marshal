@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Marshal.Testing\Marshal.Testing.csproj" />
     <ProjectReference Include="..\..\src\Marshal.Demo\Marshal.Demo.csproj" />
+    <ProjectReference Include="..\..\src\Marshal.Core\Marshal.Core.csproj" />
     <ProjectReference Include="..\..\src\Marshal.Memory\Marshal.Memory.csproj" />
   </ItemGroup>
 

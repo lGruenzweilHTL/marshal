@@ -14,6 +14,7 @@ using Marshal.Abstractions.Tools;
 using Marshal.Data;
 using Marshal.Data.Conversations;
 using Marshal.Data.Demo;
+using Marshal.Data.Maintenance;
 using Marshal.Data.Memory;
 using Marshal.Data.Notifications;
 using Marshal.Data.Tasks;
@@ -40,15 +41,22 @@ public interface IDemoSeeder
 /// </summary>
 public sealed record DemoSeedParts(bool BackgroundResults, bool Reasoning)
 {
+    /// <summary>
+    /// The state of <see cref="DemoMaintenance"/>, due soon. Only while the printer is simulated, since the item exists
+    /// only then.
+    /// </summary>
+    public bool MaintenanceItem { get; init; }
+
     public static DemoSeedParts All { get; } = new(BackgroundResults: true, Reasoning: true);
 }
 
 /// <summary>
 /// Writes the demo history: conversations (web and voice from the kitchen and office satellites, one turn moved to the
 /// background), runs with steps, the morning task with two past results, notifications, one pending approval and
-/// memory chunks with edges. Runs, sessions, approvals and memory go through the app's own stores and recorder,
-/// driven by a clock set to each item's time, so payloads are valid by construction; tasks and notifications are
-/// written as rows, because their stores cannot backdate results. Every top-level row is recorded in
+/// memory chunks with edges, valid times and one open duplicate proposal. Runs, sessions, approvals and memory go
+/// through the app's own stores and recorder, driven by a clock set to each item's time, so payloads are valid by
+/// construction; tasks, notifications and the proposal are written as rows, because their stores cannot backdate
+/// results or create proposals. Every top-level row is recorded in
 /// <c>demo_seed</c>; times count back from the seed time.
 /// </summary>
 public sealed class DemoSeeder(
@@ -104,6 +112,8 @@ public sealed class DemoSeeder(
             await ApprovalAsync(seed, cancellationToken);
             await NotificationsAsync(seed, cancellationToken);
             await MemoryAsync(seed, cancellationToken);
+            if (parts.MaintenanceItem)
+                await MaintenanceAsync(seed, cancellationToken);
         }
         finally
         {
@@ -307,23 +317,51 @@ public sealed class DemoSeeder(
         await db.SaveChangesAsync(ct);
     }
 
+    // The nozzle was changed some weeks ago and is due soon. A state the tracker already keeps stays as it is.
+    private async Task MaintenanceAsync(Seed seed, CancellationToken ct)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(ct);
+        if (await db.MaintenanceStates.AnyAsync(row => row.ItemId == DemoMaintenance.ItemId, ct))
+            return;
+
+        decimal hours = DemoPrinter.TotalPrintHours(seed.Now);
+        db.MaintenanceStates.Add(new MaintenanceState
+        {
+            OwnerId = seed.Owner,
+            ItemId = DemoMaintenance.ItemId,
+            Baseline = hours - DemoMaintenance.SeededUsage,
+            LastValue = hours,
+            Unit = "h",
+            LastReadAt = seed.Now,
+            LastDoneAt = seed.Now.AddDays(-DemoMaintenance.SeededDaysSinceDone),
+        });
+        await db.SaveChangesAsync(ct);
+        seed.Add("maintenance_state", DemoMaintenance.ItemId);
+    }
+
     private async Task MemoryAsync(Seed seed, CancellationToken ct)
     {
-        (string Key, ChunkType Type, string Title, string Content, int Importance)[] chunks =
+        // The nozzle is written twice, so its 0.4 mm version carries a valid time; the old workplace is closed.
+        (string Key, ChunkType Type, string Title, string Content, int Importance, DateTimeOffset? ValidFrom, DateTimeOffset? ValidTo)[] chunks =
         [
-            ("climbing", ChunkType.Event, "Climbing on Thursdays", "Goes climbing with Jana Berger on Thursday evenings at 18:00.", 3),
-            ("jana", ChunkType.Person, "Jana Berger", "Climbing partner; mail jana@example.org.", 3),
-            ("voron", ChunkType.Device, "Voron 2.4 printer", "The printer is called voron (Voron 2.4, 350 mm). PETG prints at 240 °C nozzle and 80 °C bed.", 4),
-            ("petg", ChunkType.Preference, "PETG for outdoor parts", "Prefers PETG Jet Black for parts that live outside, such as the planter brackets.", 3),
-            ("coffee", ChunkType.Preference, "Coffee", "Drinks a flat white in the morning; the kitchen light should be bright at 7:00.", 2),
+            ("climbing", ChunkType.Event, "Climbing on Thursdays", "Goes climbing with Jana Berger on Thursday evenings at 18:00.", 3, null, null),
+            ("jana", ChunkType.Person, "Jana Berger", "Climbing partner; mail jana@example.org.", 3, null, null),
+            ("voron", ChunkType.Device, "Voron 2.4 printer", "The printer is called voron (Voron 2.4, 350 mm). PETG prints at 240 °C nozzle and 80 °C bed.", 4, null, null),
+            ("petg", ChunkType.Preference, "PETG for outdoor parts", "Prefers PETG Jet Black for parts that live outside, such as the planter brackets.", 3, null, null),
+            ("coffee", ChunkType.Preference, "Coffee", "Drinks a flat white in the morning; the kitchen light should be bright at 7:00.", 2, null, null),
+            ("morning-coffee", ChunkType.Preference, "Morning coffee", "Has a flat white every morning.", 2, null, null),
+            ("nozzle", ChunkType.Device, "Voron nozzle", "The voron printer has a 0.4 mm brass nozzle.", 3, seed.Now.AddDays(-200), null),
+            ("nozzle", ChunkType.Device, "Voron nozzle", "The voron printer has a 0.6 mm hardened steel nozzle.", 3, seed.Now.AddDays(-30), null),
+            ("workplace", ChunkType.Fact, "Workplace", "Worked as a technician at the Linz print shop.", 2, seed.Now.AddDays(-3 * 365), seed.Now.AddDays(-365)),
         ];
         var ids = new Dictionary<string, ChunkId>();
-        foreach ((string key, ChunkType type, string title, string content, int importance) in chunks)
+        foreach ((string key, ChunkType type, string title, string content, int importance, DateTimeOffset? validFrom, DateTimeOffset? validTo) in chunks)
         {
             Result<ChunkWriteResult> written;
             try
             {
-                written = await memory.WriteAsync(new ChunkDraft(ChunkScope.General, null, type, title, content, importance, "demo"), ChunkAuthor.User, ct);
+                var draft = new ChunkDraft(ChunkScope.General, null, type, title, content, importance, "demo") { ValidFrom = validFrom, ValidTo = validTo };
+                written = await memory.WriteAsync(draft, ChunkAuthor.User, ct);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {

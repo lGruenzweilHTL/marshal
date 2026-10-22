@@ -20,6 +20,7 @@ instance:
 #     apiKeySecret: moonraker_voron
 #     macros: [PARK, LOAD_FILAMENT, UNLOAD_FILAMENT]
 #     babysitter: { enabled: true, interval: "00:01:00" }   # snapshot checks during prints; pauses after two failed ones
+#     powerEntity: switch.voron_power  # HA switch that powers the printer; offered by the print_done_away suggestion
 # printerSnapshots: { maxSize: 1024, quality: 85, retention: 20 }
 
 # FreshRSS (optional). The API password is set in FreshRSS under Profile → API management.
@@ -38,6 +39,24 @@ instance:
 #     authHeaderSecret: searxng_auth                 # optional Authorization header value, for a reverse proxy
 #     engines: [google, bing, duckduckgo, wikipedia]
 #     maxResults: 8
+
+# CalDAV calendars (optional), next to the Home Assistant calendars: Nextcloud, Radicale, Baikal, Fastmail, iCloud.
+# Calendars appear as caldav:<account>/<calendar> and are discovered from the URL. Use an app password where the
+# server offers one (Nextcloud, Fastmail, iCloud). Every pollMinutes Marshal asks for changes and publishes
+# calendar.event_created / event_updated / event_removed / invitation events for watches.
+# calendar:
+#   caldav:
+#     accounts:
+#       nextcloud:
+#         url: https://cloud.example.org/remote.php/dav/
+#         username: lukas
+#         passwordSecret: nextcloud_caldav           # secret name; the value lives in /run/secrets or the database
+#         calendars: [personal, family]              # optional; default: every calendar found
+#         pollMinutes: 5                             # 1-60
+#       icloud:
+#         url: https://caldav.icloud.com/
+#         username: lukas@icloud.com
+#         passwordSecret: icloud_app_password
 
 # Notes (optional): Markdown files in a git repository. Without a remote, put a repository into /data/notes; with
 # one, Marshal clones it there and mirrors it read-only. credentialSecret holds an https token or an SSH deploy key.
@@ -162,8 +181,31 @@ maintenance:                # system tasks, seeded for the instance owner (cron 
   backupCopies: 7
   consolidationSchedule: "30 2 * * *" # memory summaries of the day's closed sessions the close path missed
   retentionSchedule: "30 3 * * *"
+  skillProposalSchedule: "0 4 * * *"  # skill proposals from repeated workflows (owners with "help Marshal learn" on)
   payloadRetention: "30.00:00:00"     # full run step payloads
   metadataRetention: "365.00:00:00"   # runs and their step metadata
+  # Usage-based maintenance items (optional). Without items there are no maintenance tools and no Home widget.
+  # items:
+  #   voron_nozzle:
+  #     name: Voron nozzle
+  #     source: { printer: voron, metric: printHours }   # printHours or filamentMeters from Moonraker
+  #     every: 300
+  #     warnBefore: 20                                    # a "soon" notification this much before
+  #   dishwasher_filter:
+  #     name: Dishwasher filter
+  #     source: { ha: sensor.dishwasher_cycles }          # HA entity or statistic id with an increasing value
+  #     every: 60
+
+# Proactive suggestions (only for owners with "help Marshal learn" on). Mute detectors in Preferences.
+# suggestions:
+#   explore: 3              # the first candidates of a detector go to the Inbox whatever the estimate
+#   minAcceptance: 0.3      # below this acceptance estimate a candidate is dropped
+#   pushAcceptance: 0.6     # at or above it a candidate is pushed
+#   expiry: "06:00:00"
+#   detectors:
+#     window_rain: { minProbability: 60 }
+#     energy_anomaly: { factor: 1.5 }
+#     maintenance_counter: { enabled: true }
 
 notifications:
   quietHoursMode: hold      # hold (deliver when quiet hours end) or silentPush
@@ -284,9 +326,9 @@ recording:
 #   otlpEndpoint: "http://otel-collector:4317"
 #   captureContent: false   # true adds inputs, tool arguments, results and replies to spans (personal data)
 
-# Demo mode: simulates Home Assistant, a printer, mail, FreshRSS and notes where they are not configured above, and
-# seeds sample history (conversations, runs, tasks, notifications, an approval, memory) for the owner. Configured
-# integrations stay real. A model is still required. Remove the sample data with `marshal demo reset`.
+# Demo mode: simulates Home Assistant, CalDAV calendars, a printer, mail, FreshRSS, notes and web search where they are
+# not configured above, and seeds sample history (conversations, runs, tasks, notifications, an approval, memory)
+# for the owner. Configured integrations stay real. A model is still required. Remove the sample data with `marshal demo reset`.
 # demo:
 #   enabled: true
 #   showBadge: true                         # false hides the "Demo" badge, e.g. for screenshots

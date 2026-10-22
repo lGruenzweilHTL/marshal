@@ -233,6 +233,39 @@ namespace Marshal.Data.Migrations
                     b.ToTable("auth_tickets", (string)null);
                 });
 
+            modelBuilder.Entity("Marshal.Data.Calendar.CalDavSyncState", b =>
+                {
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("Account")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("account");
+
+                    b.Property<string>("Calendar")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("calendar");
+
+                    b.Property<string>("EtagMapJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("etag_map_json");
+
+                    b.Property<long>("LastPoll")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("last_poll");
+
+                    b.Property<string>("SyncToken")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("sync_token");
+
+                    b.HasKey("OwnerId", "Account", "Calendar")
+                        .HasName("pk_caldav_sync_state");
+
+                    b.ToTable("caldav_sync_state", (string)null);
+                });
+
             modelBuilder.Entity("Marshal.Data.Conversations.PendingAction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -359,6 +392,10 @@ namespace Marshal.Data.Migrations
                     b.Property<long?>("EndedAt")
                         .HasColumnType("INTEGER")
                         .HasColumnName("ended_at");
+
+                    b.Property<byte[]>("InputEmbedding")
+                        .HasColumnType("BLOB")
+                        .HasColumnName("input_embedding");
 
                     b.Property<string>("InputMode")
                         .HasColumnType("TEXT")
@@ -1215,6 +1252,50 @@ namespace Marshal.Data.Migrations
                     b.ToTable("mail_accounts", (string)null);
                 });
 
+            modelBuilder.Entity("Marshal.Data.Maintenance.MaintenanceState", b =>
+                {
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("ItemId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("item_id");
+
+                    b.Property<double>("Baseline")
+                        .HasColumnType("REAL")
+                        .HasColumnName("baseline");
+
+                    b.Property<long?>("LastDoneAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("last_done_at");
+
+                    b.Property<long>("LastReadAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("last_read_at");
+
+                    b.Property<double>("LastValue")
+                        .HasColumnType("REAL")
+                        .HasColumnName("last_value");
+
+                    b.Property<bool>("NotifiedDue")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("notified_due");
+
+                    b.Property<bool>("NotifiedSoon")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("notified_soon");
+
+                    b.Property<string>("Unit")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("unit");
+
+                    b.HasKey("OwnerId", "ItemId")
+                        .HasName("pk_maintenance_state");
+
+                    b.ToTable("maintenance_state", (string)null);
+                });
+
             modelBuilder.Entity("Marshal.Data.Mcp.McpTaskHandle", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1916,6 +1997,197 @@ namespace Marshal.Data.Migrations
                     b.ToTable("secrets", (string)null);
                 });
 
+            modelBuilder.Entity("Marshal.Data.Suggestions.SkillProposal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("content");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<long?>("DecidedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("decided_at");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Diff")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("diff");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("SequenceHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("sequence_hash");
+
+                    b.Property<string>("SourceRunIds")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("source_run_ids");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_skill_proposals");
+
+                    b.HasIndex("OwnerId", "SequenceHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_skill_proposals_owner_id_sequence_hash");
+
+                    b.HasIndex("OwnerId", "Status")
+                        .HasDatabaseName("ix_skill_proposals_owner_id_status");
+
+                    b.ToTable("skill_proposals", (string)null);
+                });
+
+            modelBuilder.Entity("Marshal.Data.Suggestions.Suggestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ActionSummary")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("action_summary");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("created_at");
+
+                    b.Property<long?>("DecidedAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("decided_at");
+
+                    b.Property<string>("DedupeKey")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("dedupe_key");
+
+                    b.Property<string>("Delivery")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("delivery");
+
+                    b.Property<string>("Detector")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("detector");
+
+                    b.Property<long>("ExpiresAt")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("FactsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("facts_json");
+
+                    b.Property<string>("Nonce")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("nonce");
+
+                    b.Property<Guid?>("NotificationId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("notification_id");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<Guid?>("PendingActionId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("pending_action_id");
+
+                    b.Property<string>("Snippet")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("snippet");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("text");
+
+                    b.HasKey("Id")
+                        .HasName("pk_suggestions");
+
+                    b.HasIndex("Nonce")
+                        .IsUnique()
+                        .HasDatabaseName("ix_suggestions_nonce");
+
+                    b.HasIndex("PendingActionId")
+                        .HasDatabaseName("ix_suggestions_pending_action_id");
+
+                    b.HasIndex("Status", "ExpiresAt")
+                        .HasDatabaseName("ix_suggestions_status_expires_at");
+
+                    b.HasIndex("OwnerId", "Detector", "DedupeKey", "CreatedAt")
+                        .HasDatabaseName("ix_suggestions_owner_id_detector_dedupe_key_created_at");
+
+                    b.ToTable("suggestions", (string)null);
+                });
+
+            modelBuilder.Entity("Marshal.Data.Suggestions.SuggestionDetectorStat", b =>
+                {
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("Detector")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("detector");
+
+                    b.Property<int>("Accepted")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("accepted");
+
+                    b.Property<int>("Dismissed")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("dismissed");
+
+                    b.Property<long?>("MutedUntil")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("muted_until");
+
+                    b.Property<int>("Sent")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("sent");
+
+                    b.HasKey("OwnerId", "Detector")
+                        .HasName("pk_suggestion_detector_stats");
+
+                    b.ToTable("suggestion_detector_stats", (string)null);
+                });
+
             modelBuilder.Entity("Marshal.Data.Tasks.AgentTask", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2581,6 +2853,16 @@ namespace Marshal.Data.Migrations
                         .HasConstraintName("fk_auth_tickets_users_owner_id");
                 });
 
+            modelBuilder.Entity("Marshal.Data.Calendar.CalDavSyncState", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_caldav_sync_state_users_owner_id");
+                });
+
             modelBuilder.Entity("Marshal.Data.Conversations.PendingAction", b =>
                 {
                     b.HasOne("Marshal.Data.Identity.User", null)
@@ -2731,6 +3013,16 @@ namespace Marshal.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_mail_accounts_users_owner_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Maintenance.MaintenanceState", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_maintenance_state_users_owner_id");
                 });
 
             modelBuilder.Entity("Marshal.Data.Mcp.McpTaskHandle", b =>
@@ -2887,6 +3179,41 @@ namespace Marshal.Data.Migrations
                         .WithMany()
                         .HasForeignKey("OwnerId")
                         .HasConstraintName("fk_secrets_users_owner_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Suggestions.SkillProposal", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_skill_proposals_users_owner_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Suggestions.Suggestion", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_suggestions_users_owner_id");
+
+                    b.HasOne("Marshal.Data.Conversations.PendingAction", null)
+                        .WithMany()
+                        .HasForeignKey("PendingActionId")
+                        .HasConstraintName("fk_suggestions_pending_actions_pending_action_id");
+                });
+
+            modelBuilder.Entity("Marshal.Data.Suggestions.SuggestionDetectorStat", b =>
+                {
+                    b.HasOne("Marshal.Data.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_suggestion_detector_stats_users_owner_id");
                 });
 
             modelBuilder.Entity("Marshal.Data.Tasks.AgentTask", b =>

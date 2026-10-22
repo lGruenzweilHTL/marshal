@@ -57,4 +57,9 @@ public sealed class Run : IOwned
     public string? RatingNote { get; set; }
 
     public DateTimeOffset? RatedAt { get; set; }
+
+    /// <summary>
+    /// Cached embedding of the user input (float32, little endian), computed by the skill proposal job; null until then.
+    /// </summary>
+    public byte[]? InputEmbedding { get; set; }
 }

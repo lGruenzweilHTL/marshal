@@ -1,6 +1,6 @@
 # Integration sections
 
-Keys of the integration sections of `marshal.yaml`: Home Assistant, printers, FreshRSS, notes, web search, mail OAuth clients, Proxmox, media, music, GitHub and executors. Every section is optional. An integration's tools stay hidden until its section is set. Changes need a restart.
+Keys of the integration sections of `marshal.yaml`: Home Assistant, CalDAV calendars, printers, FreshRSS, notes, web search, mail OAuth clients, Proxmox, media, music, GitHub and executors. Every section is optional. An integration's tools stay hidden until its section is set. Changes need a restart.
 
 Secret keys (`...Secret`) hold secret names, never values. See [secrets reference](../secrets-reference.md).
 
@@ -32,6 +32,21 @@ github:
 
 Validation: `ha.url must be an absolute http(s) URL.`, `ha.tokenSecret is required when ha.url is set.` The token must resolve at startup.
 
+## `calendar.caldav` (CalDAV calendars)
+
+CalDAV accounts of the instance owner, next to the Home Assistant calendars. Calendars are discovered from the URL (principal, then calendar home set) and addressed as `caldav:<account>/<calendar>`. An account that fails discovery or login raises a health warning and does not affect other calendars. Setup per server: [use your calendars](../../guides/integrations/calendar.md).
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `calendar.caldav.accounts` | map | empty | Accounts by id. The id matches `[a-z][a-z0-9_]*`. Empty: no CalDAV calendars. |
+| `calendar.caldav.accounts.<id>.url` | URL | required | DAV URL. `https`, or `http` for a host on the local network (private address, `localhost`, a single-label name or `.lan`, `.local`, `.home.arpa`, `.internal`, `.localdomain`). |
+| `calendar.caldav.accounts.<id>.username` | string | required | Login name. |
+| `calendar.caldav.accounts.<id>.passwordSecret` | secret name | required | Secret holding the password or app password. Read per request, so a changed value needs no restart. |
+| `calendar.caldav.accounts.<id>.calendars` | list of strings | all | Calendar names (last path segment of the calendar URL) to use. |
+| `calendar.caldav.accounts.<id>.pollMinutes` | integer | `5` | Minutes between change polls. 1 to 60. |
+
+Validation: `calendar.caldav.accounts.<id>: the account id must match [a-z][a-z0-9_]*.`, `calendar.caldav.accounts.<id>.url must be an absolute https URL (http only for a host on the local network).`, `calendar.caldav.accounts.<id>.username is required.`, `calendar.caldav.accounts.<id>.passwordSecret must be a secret name (^[a-z][a-z0-9_]{0,63}$).`, `calendar.caldav.accounts.<id>.calendars must not contain empty names.`, `calendar.caldav.accounts.<id>.pollMinutes must be 1-60.`
+
 ## `printers` and `printerSnapshots` (Moonraker)
 
 `printers` is a list at the top level of the file.
@@ -42,6 +57,7 @@ Validation: `ha.url must be an absolute http(s) URL.`, `ha.tokenSecret is requir
 | `printers[].url` | URL | none | Moonraker base URL, for example `http://voron.lan:7125`. |
 | `printers[].webUrl` | URL | unset | Mainsail or Fluidd, linked for actions Marshal does not offer. |
 | `printers[].apiKeySecret` | secret name | unset | Only needed when Moonraker requires an API key. |
+| `printers[].powerEntity` | string | unset | Home Assistant `switch.*` entity that powers the printer. The `print_done_away` [suggestion](suggestions.md) offers to switch it off. |
 | `printers[].macros` | list of strings | `[]` | Allowlist for `printer.run_macro`. Upper-cased. No arguments are ever passed. Raw G-code does not exist as a tool. |
 | `printers[].babysitter.enabled` | boolean | `false` | Snapshot checks during prints. Pauses after two failed checks. Needs a webcam and a vision model. |
 | `printers[].babysitter.interval` | duration | `00:01:00` | Time between checks. |
@@ -49,7 +65,7 @@ Validation: `ha.url must be an absolute http(s) URL.`, `ha.tokenSecret is requir
 | `printerSnapshots.quality` | integer | `85` | JPEG quality. |
 | `printerSnapshots.retention` | integer | `20` | Snapshots kept per printer. |
 
-Validation: `printers[].name must be letters, digits, '-' or '_'.`, `printers[].name must be unique.`, `printers[].url must be an absolute http(s) URL.`, `printers[].webUrl must be an absolute http(s) URL.`, `printers[].babysitter.interval must be at least 10 seconds.` (when enabled), `printerSnapshots.maxSize must be at least 64.`, `printerSnapshots.quality must be between 1 and 100.`, `printerSnapshots.retention must be at least 1.`
+Validation: `printers[].name must be letters, digits, '-' or '_'.`, `printers[].name must be unique.`, `printers[].url must be an absolute http(s) URL.`, `printers[].webUrl must be an absolute http(s) URL.`, `printers[].powerEntity must be a switch.* entity, not '<entity>'.`, `printers[].babysitter.interval must be at least 10 seconds.` (when enabled), `printerSnapshots.maxSize must be at least 64.`, `printerSnapshots.quality must be between 1 and 100.`, `printerSnapshots.retention must be at least 1.`
 
 ## `freshrss`
 

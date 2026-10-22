@@ -1722,6 +1722,211 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The user's open suggestions, newest first. */
+        get: operations["ListSuggestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/suggestions/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accepts a suggestion; its proposed action, if any, runs once through the guard. */
+        post: operations["AcceptSuggestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/suggestions/{id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dismisses a suggestion; nothing runs. */
+        post: operations["DismissSuggestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/suggestions/detectors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every detector with the user's counts, acceptance estimate and mute. */
+        get: operations["ListSuggestionDetectors"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/suggestions/detectors/{detector}/mute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mutes a detector until a time, or indefinitely without one. */
+        put: operations["MuteSuggestionDetector"];
+        post?: never;
+        /** Unmutes a detector. */
+        delete: operations["UnmuteSuggestionDetector"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/suggestions/detectors/{detector}/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sets a detector's counts back to zero; a mute stays. */
+        post: operations["ResetSuggestionDetector"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skill-proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Open and downloaded skill proposals, newest first. */
+        get: operations["ListSkillProposals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skill-proposals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One skill proposal with its SKILL.md and diff. */
+        get: operations["GetSkillProposal"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skill-proposals/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The drafted SKILL.md as a file; marks the proposal downloaded. */
+        get: operations["DownloadSkillProposal"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skill-proposals/{id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dismisses a skill proposal; the same workflow is not proposed again. */
+        post: operations["DismissSkillProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Maintenance items read now: due first, then soon, then by name; empty without configured items. */
+        get: operations["ListMaintenanceItems"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance/{id}/done": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marks a maintenance item done: its usage starts again from the counter's current value. */
+        post: operations["MarkMaintenanceDone"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/artifacts": {
         parameters: {
             query?: never;
@@ -2216,6 +2421,38 @@ export interface components {
             /** @description Show the "Demo" badge in the navigation. */
             showBadge: boolean;
         };
+        /** @description One detector's counts for the user. */
+        DetectorItem: {
+            /** @description Detector id. */
+            detector: string;
+            /**
+             * Format: int32
+             * @description Suggestions sent since the last reset.
+             */
+            sent: number;
+            /**
+             * Format: int32
+             * @description Accepted ones.
+             */
+            accepted: number;
+            /**
+             * Format: int32
+             * @description Dismissed ones.
+             */
+            dismissed: number;
+            /**
+             * Format: double
+             * @description (accepted + 1) / (accepted + dismissed + 2).
+             */
+            estimate: number;
+            /** @description Whether it is muted now. */
+            muted: boolean;
+            /**
+             * Format: date-time
+             * @description End of the mute; null when indefinite or not muted.
+             */
+            mutedUntil: null | string;
+        };
         /** @description The candidate configuration of an eval run. */
         EvalCandidateView: {
             /** @description Model key per tier (`fast`, `standard`, `advisor`). */
@@ -2547,6 +2784,21 @@ export interface components {
         };
         /** @enum {unknown} */
         MailSecurity: "tls" | "startTls" | "none";
+        MaintenanceItemStatus: {
+            id: string;
+            name: string;
+            /** Format: double */
+            usage: null | number;
+            /** Format: double */
+            every: number;
+            /** Format: double */
+            warnBefore: null | number;
+            unit: null | string;
+            state: string;
+            /** Format: date-time */
+            lastDoneAt: null | string;
+            error?: null | string;
+        };
         /** @enum {unknown} */
         McpServerState: "connecting" | "connected" | "down";
         /** @description A configured MCP server. */
@@ -2779,6 +3031,11 @@ export interface components {
         MusicControlResult: {
             /** @description `done`, or `approval_required` when a risk rule made the control confirm tier and it waits in the approval queue. */
             status: string;
+        };
+        /** @description Mute a detector until `Until`, or indefinitely when it is null. */
+        MuteRequest: {
+            /** Format: date-time */
+            until: null | string;
         };
         NotificationEntry: {
             /** Format: uuid */
@@ -3187,6 +3444,35 @@ export interface components {
         SessionId: string;
         /** @enum {unknown} */
         SessionSource: "voice" | "web" | "task" | "api" | "automation";
+        SkillProposalRecord: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: string;
+            content: string;
+            diff: null | string;
+            sourceRuns: unknown[];
+            status: components["schemas"]["SkillProposalStatus"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            decidedAt: null | string;
+        };
+        /** @enum {unknown} */
+        SkillProposalStatus: "open" | "downloaded" | "dismissed" | "covered";
+        /** @description A skill proposal in the Inbox list. */
+        SkillProposalSummary: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: string;
+            status: string;
+            hasDiff: boolean;
+            /** Format: int32 */
+            sourceRunCount: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
         /** @description A loaded skill. */
         SkillSummary: {
             /** @description Skill name. */
@@ -3220,6 +3506,43 @@ export interface components {
             /** Format: uri */
             authorizationUrl: string;
         };
+        /** @description The answered suggestion and what its proposed action returned. */
+        SuggestionAnswerItem: {
+            suggestion: components["schemas"]["SuggestionItem"];
+            actionResult: null | string;
+        };
+        /** @description An open suggestion in the Inbox. */
+        SuggestionItem: {
+            /**
+             * Format: uuid
+             * @description Suggestion id.
+             */
+            id: string;
+            /** @description Detector id, e.g. `window_rain`. */
+            detector: string;
+            /** @description The worded suggestion. */
+            text: string;
+            /** @description Text to show verbatim below the suggestion (a YAML snippet); null for none. */
+            snippet: null | string;
+            /** @description `inbox` or `push`. */
+            delivery: string;
+            /** @description `open`, `accepted`, `dismissed` or `expired`. */
+            status: string;
+            /** @description What Accept runs; null without a proposed action. */
+            actionSummary: null | string;
+            /** @description Why the proposed action is confirm tier (Accept confirms it); empty for a safe one. */
+            actionReasons: string[];
+            /**
+             * Format: date-time
+             * @description When it was sent.
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description When it expires unanswered.
+             */
+            expiresAt: string;
+        };
         /** @description The current health warnings. */
         SystemHealthView: {
             /** @description Errors first, then by component and code; empty when everything is fine. */
@@ -3235,7 +3558,7 @@ export interface components {
             deprecatedApiVersions: string[];
             /** @description What publishes events on the event bus (HA, printers, mail, webhook sources). */
             eventSources: components["schemas"]["EventSourceInfo"][];
-            /** @description Integrations demo mode simulates (`home_assistant`, `printers`, `mail`, `rss`, `notes`); empty without demo mode. */
+            /** @description Integrations demo mode simulates (`home_assistant`, `caldav`, `printers`, `mail`, `rss`, `notes`, `web`); empty without demo mode. */
             simulatedIntegrations: string[];
         };
         TaintSource: {
@@ -6231,6 +6554,286 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProposalRecord"];
+                };
+            };
+        };
+    };
+    ListSuggestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestionItem"][];
+                };
+            };
+        };
+    };
+    AcceptSuggestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestionAnswerItem"];
+                };
+            };
+        };
+    };
+    DismissSuggestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestionAnswerItem"];
+                };
+            };
+        };
+    };
+    ListSuggestionDetectors: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetectorItem"][];
+                };
+            };
+        };
+    };
+    MuteSuggestionDetector: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                detector: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MuteRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetectorItem"];
+                };
+            };
+        };
+    };
+    UnmuteSuggestionDetector: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                detector: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetectorItem"];
+                };
+            };
+        };
+    };
+    ResetSuggestionDetector: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                detector: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetectorItem"];
+                };
+            };
+        };
+    };
+    ListSkillProposals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillProposalSummary"][];
+                };
+            };
+        };
+    };
+    GetSkillProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillProposalRecord"];
+                };
+            };
+        };
+    };
+    DownloadSkillProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DismissSkillProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillProposalSummary"];
+                };
+            };
+        };
+    };
+    ListMaintenanceItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceItemStatus"][];
+                };
+            };
+        };
+    };
+    MarkMaintenanceDone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceItemStatus"];
                 };
             };
         };

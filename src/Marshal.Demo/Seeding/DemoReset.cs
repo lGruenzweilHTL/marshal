@@ -76,6 +76,9 @@ public sealed class DemoReset(IDbContextFactory<MarshalDbContext> contexts, IExe
             }, cancellationToken);
         }
 
+        List<string> items = Ids("maintenance_state");
+        deleted += await db.MaintenanceStates.Where(row => items.Contains(row.ItemId)).ExecuteDeleteAsync(cancellationToken);
+
         foreach (TaskId id in Ids("agent_tasks").Select(id => TaskId.Parse(id, null)))
             deleted += await TryDeleteAsync(db, transaction, () => db.AgentTasks.Where(row => row.Id == id).ExecuteDeleteAsync(cancellationToken), cancellationToken);
 

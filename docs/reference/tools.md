@@ -22,7 +22,7 @@ Every tool the model can get, grouped by integration, with its risk tier, argume
 | `timers` | `start`, `cancel`, `status` | Built in (Home Assistant) |
 | `places` | `find`, `create_here` | Built in (Home Assistant) |
 | `energy` | `usage` | Built in (Home Assistant) |
-| `calendar` | `list_calendars`, `list_events`, `create_event`, `update_event` | Built in (Home Assistant) |
+| `calendar` | `list_calendars`, `list_events`, `find_free_time`, `create_event`, `update_event` | Built in (Home Assistant, CalDAV) |
 | `music` | `search`, `play`, `queue`, `control`, `transfer`, `group`, `ungroup` | Built in (Music Assistant through Home Assistant) |
 | `printer` | `status`, `list_files`, `job_queue`, `history`, `snapshot`, `inspect`, `pause`, `emergency_stop`, `start_print`, `resume`, `cancel`, `set_temperature`, `home`, `move`, `edit_queue`, `run_macro` | Built in (Moonraker) |
 | `mail` | `search`, `read_message`, `read_thread`, `list_folders`, `list_labels`, `create_draft`, `update_draft`, `save_attachment` | Built in |
@@ -34,9 +34,10 @@ Every tool the model can get, grouped by integration, with its risk tier, argume
 | `repos` | `prs`, `pr`, `issues`, `issue`, `runs`, `run_log` | Built in (GitHub) |
 | `artifacts` | `list`, `show`, `inspect` | Built in |
 | `system` | `health` | Built in |
+| `maintenance` | `status`, `done` | Built in |
 | `ha` and others | Whatever the server reports | [MCP servers](#mcp-server-tools) |
 
-The namespaces `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra`, `repos`, `media`, `music`, `system` and `web` are reserved for built-in tools. An MCP server with one of these ids is rejected.
+The namespaces `agent`, `memory`, `tasks`, `notifications`, `timers`, `mail`, `rss`, `printer`, `calendar`, `notes`, `places`, `energy`, `artifacts`, `infra`, `repos`, `media`, `music`, `system`, `maintenance` and `web` are reserved for built-in tools. An MCP server with one of these ids is rejected.
 
 Marshal has no tool that sends mail, no tool that sends raw G-code and no tool that deletes mail, files or calendar events. These capabilities do not exist as code paths.
 
@@ -104,14 +105,15 @@ Home Assistant entity control comes from HA's MCP server, see [MCP server tools]
 
 ## Calendar (`calendar`)
 
-Calendars come from Home Assistant calendar entities. Times are local (`2026-09-30T09:00`) or a date (`2026-09-30`) for whole days.
+Calendars come from Home Assistant calendar entities (`calendar.*`) and CalDAV accounts (`caldav:<account>/<calendar>`). Times are local (`2026-09-30T09:00`) or a date (`2026-09-30`) for whole days. Setup: [use your calendars](../guides/integrations/calendar.md).
 
 | Tool id | Tier | Arguments | Returns | Hidden when |
 |---|---|---|---|---|
-| `calendar.list_calendars` | safe | none | Calendars with `id`, `name`, `canCreate`, `canUpdate`. | HA reports no calendar. |
-| `calendar.list_events` | safe, untrusted (`calendar`) | `calendar?`, `start`, `end` | Events in the range, oldest first, from every calendar or one. | HA reports no calendar. |
+| `calendar.list_calendars` | safe | none | Calendars with `id`, `name`, `canCreate`, `canUpdate`. | No calendar is configured. |
+| `calendar.list_events` | safe, untrusted (`calendar`) | `calendar?`, `start`, `end` | Events in the range, oldest first, from every calendar or one. Recurring events come as occurrences with `recurrenceId`, `recurring`, `seriesId` and `originalStart`. CalDAV events add `organizer` and `attendees` (`name`, `address`, `role`, `status`: `needs-action`, `accepted`, `declined`, `tentative`, `delegated`). | No calendar is configured. |
+| `calendar.find_free_time` | safe | `start`, `end`, `duration` (minutes), `calendars?`, `within?` (`08:00-18:00`) | Up to 20 free slots of at least `duration`, earliest first, and the calendars read. Events marked free and meetings the account declined are not busy. Only times and calendar ids, so not untrusted. | No calendar is configured. |
 | `calendar.create_event` | confirm | `calendar`, `summary`, `start`, `end`, `description?`, `location?` | Creates the event. | No calendar can create events. |
-| `calendar.update_event` | confirm | `calendar`, `eventId`, `summary`, `start`, `end`, `recurrenceId?`, `description?`, `location?` | Replaces the event. Pass every field. `recurrenceId` changes one instance of a recurring event. | No calendar can update events. |
+| `calendar.update_event` | confirm | `calendar`, `eventId`, `summary`, `start`, `end`, `recurrenceId?`, `scope?`, `description?`, `location?` | Replaces the event. Pass every field. `scope: occurrence` (default with `recurrenceId`) changes one instance, `scope: series` every instance. `scope` fails with `calendar.invalid_arguments` on calendars that cannot change single instances (Home Assistant). | No calendar can update events. |
 
 ## Music (`music`)
 
@@ -251,6 +253,15 @@ All repos tools are safe and untrusted (taint source `github`). Every tool takes
 | Tool id | Tier | Arguments | Returns | Hidden when |
 |---|---|---|---|---|
 | `system.health` | safe | none | The current [health warnings](health-endpoints.md#health-warnings): component, code, severity, the message in the run's language and since when. Trusted output: the messages are Marshal's own. | There are no warnings. |
+
+## Maintenance (`maintenance`)
+
+| Tool id | Tier | Arguments | Returns | Hidden when |
+|---|---|---|---|---|
+| `maintenance.status` | safe | `item?` (item id; omit for all) | Per item: name, usage, interval, unit, state (`ok`, `soon`, `due`) and when it was last done. | No `maintenance.items` are configured. |
+| `maintenance.done` | safe, persists | `item` | The item after marking it done: usage `0`, state `ok`. | No `maintenance.items` are configured. |
+
+See [track maintenance by usage](../guides/maintenance.md).
 
 ## MCP server tools
 

@@ -13,9 +13,12 @@ import ApprovalContext from './ApprovalContext.vue'
 import InputRequestForm from './InputRequestForm.vue'
 import NotificationRow from './NotificationRow.vue'
 import ProposalRow from './ProposalRow.vue'
+import SkillProposalRow from './SkillProposalRow.vue'
+import SuggestionCard from './SuggestionCard.vue'
 
 type Filter = 'all' | 'approvals' | 'changes' | 'alerts'
 type Outcome = Schemas['NotificationOutcome']
+type Answer = Schemas['SuggestionAnswerItem']
 
 const api = useApi()
 const inbox = useInboxCountOptional()
@@ -24,10 +27,12 @@ const desktop = useDesktop()
 const now = useNow()
 const { t } = useI18n()
 
-// Three loads, so one failing list keeps the other two on screen.
+// One load per list, so one failing list keeps the others on screen.
 const approvals = useLoad(() => api.call((client) => client.GET('/api/v1/approvals')))
 const inputs = useLoad(() => api.call((client) => client.GET('/api/v1/approvals/inputs')))
 const proposals = useLoad(() => api.call((client) => client.GET('/api/v1/proposals')))
+const skills = useLoad(() => api.call((client) => client.GET('/api/v1/skill-proposals')))
+const suggestions = useLoad(() => api.call((client) => client.GET('/api/v1/suggestions')))
 const pageSize = 50
 const outcome = shallowRef<Outcome | null>(null)
 const older = shallowRef<Schemas['NotificationEntry'][]>([])
@@ -61,12 +66,12 @@ const filters = computed(() => {
   return [
     { value: 'all' as const, label: t('inbox.filters.all') },
     { value: 'approvals' as const, label: t('inbox.filters.approvals') + count([...(approvals.data.value ?? []), ...(inputs.data.value ?? [])]) },
-    { value: 'changes' as const, label: t('inbox.filters.changes') + count(proposals.data.value) },
-    { value: 'alerts' as const, label: t('inbox.filters.alerts') + count(notifications.data.value) },
+    { value: 'changes' as const, label: t('inbox.filters.changes') + count([...(proposals.data.value ?? []), ...(skills.data.value ?? [])]) },
+    { value: 'alerts' as const, label: t('inbox.filters.alerts') + count([...(suggestions.data.value ?? []), ...(notifications.data.value ?? [])]) },
   ]
 })
 const show = (kind: Exclude<Filter, 'all'>) => filter.value === 'all' || filter.value === kind
-const allEmpty = computed(() => !outcome.value && [approvals, inputs, proposals, notifications].every((load) => load.state.value === 'empty'))
+const allEmpty = computed(() => !outcome.value && [approvals, inputs, proposals, skills, suggestions, notifications].every((load) => load.state.value === 'empty'))
 
 const outcomes: Outcome[] = ['pending', 'delivered', 'coalesced', 'held', 'inboxed', 'expired', 'fallback']
 const shownNotifications = computed(() => [...(notifications.data.value ?? []), ...older.value])
@@ -91,6 +96,12 @@ function toggleOutcome(value: Outcome) {
 function decided(result: TicketResult) {
   toasts.show(t(result === 'approved' ? 'inbox.ticket.approved' : result === 'rejected' ? 'inbox.ticket.rejected' : 'inbox.ticket.expiredResult'))
   approvals.refresh()
+}
+
+function answered(accepted: boolean, answer: Answer) {
+  const result = answer.actionResult ? ` ${answer.actionResult}` : ''
+  toasts.show(accepted ? t('inbox.suggestion.accepted') + result : t('inbox.suggestion.dismissed'))
+  suggestions.refresh()
 }
 
 onMounted(() => inbox?.markSeen())
@@ -143,6 +154,22 @@ onMounted(() => inbox?.markSeen())
           <LoadBoundary :load="proposals" :empty-title="t('inbox.emptyFilter')">
             <template #default="{ data }">
               <ListCard><ProposalRow v-for="item in data" :key="item.id" :proposal="item" /></ListCard>
+            </template>
+          </LoadBoundary>
+        </Section>
+
+        <Section v-if="show('changes') && skills.state.value !== 'empty'" :title="t('inbox.skills')" :count="skills.data.value?.length" data-section="skills">
+          <LoadBoundary :load="skills">
+            <template #default="{ data }">
+              <ListCard><SkillProposalRow v-for="item in data" :key="item.id" :proposal="item" /></ListCard>
+            </template>
+          </LoadBoundary>
+        </Section>
+
+        <Section v-if="show('alerts') && suggestions.state.value !== 'empty'" :title="t('inbox.suggestions')" :count="suggestions.data.value?.length" data-section="suggestions">
+          <LoadBoundary :load="suggestions">
+            <template #default="{ data }">
+              <div class="tickets"><SuggestionCard v-for="item in data" :key="item.id" :suggestion="item" @answered="answered" /></div>
             </template>
           </LoadBoundary>
         </Section>

@@ -4,11 +4,13 @@ using Marshal.Abstractions.Calendar;
 namespace Marshal.Demo.HomeAssistant;
 
 /// <summary>The simulated Home Assistant calendars (family and work); created and updated events stay for the process run.</summary>
-public sealed class DemoCalendarProvider(DemoWorld world) : ICalendarProvider
+public sealed class DemoCalendarProvider(DemoWorld world) : ICalendarSource
 {
     private const CalendarCapabilities All = CalendarCapabilities.Create | CalendarCapabilities.Update;
 
     public bool IsConfigured => true;
+
+    public bool Owns(string calendarId) => calendarId.StartsWith("calendar.", StringComparison.Ordinal);
 
     public CalendarOverview Overview => new(world.Home.Calendars.Count, All);
 
@@ -38,7 +40,7 @@ public sealed class DemoCalendarProvider(DemoWorld world) : ICalendarProvider
             return Result.Success();
         }));
 
-    public Task<Result> UpdateEventAsync(string calendarId, string eventId, string? recurrenceId, CalendarEventData data, CancellationToken cancellationToken) =>
+    public Task<Result> UpdateEventAsync(string calendarId, string eventId, string? recurrenceId, CalendarEventData data, CalendarUpdateScope? scope, CancellationToken cancellationToken) =>
         Task.FromResult(world.Home.WithCalendars<Result>(calendars =>
         {
             if (calendars.FirstOrDefault(calendar => calendar.Id == calendarId) is not { } found)
@@ -46,7 +48,7 @@ public sealed class DemoCalendarProvider(DemoWorld world) : ICalendarProvider
 
             int index = found.Events.FindIndex(item => item.Id == eventId);
             if (index < 0)
-                return new Error("calendar.event_not_found", $"There is no event '{eventId}'.", ErrorType.NotFound);
+                return CalendarErrors.EventNotFound(eventId);
 
             found.Events[index] = new DemoCalendarEvent(eventId, data.Summary, data.Start, data.End, data.Location, data.Description);
             return Result.Success();

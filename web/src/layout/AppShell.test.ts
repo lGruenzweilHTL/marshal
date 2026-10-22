@@ -10,6 +10,7 @@ function server(user = me) {
     .on('GET', '/api/v1/me', 200, user)
     .on('GET', '/api/v1/approvals', 200, [{ id: 'a-1' }, { id: 'a-2' }])
     .on('GET', '/api/v1/proposals', 200, [{ id: 'p-1', status: 'open' }, { id: 'p-2', status: 'merged' }])
+    .on('GET', '/api/v1/skill-proposals', 200, [{ id: 'sp-1', status: 'open' }, { id: 'sp-2', status: 'downloaded' }])
     .on('GET', '/api/v1/notifications', 200, [{ id: 'n-1', priority: 'critical', createdAt: new Date().toISOString() }, { id: 'n-2', priority: 'normal', createdAt: new Date().toISOString() }])
     .on('GET', '/api/v1/system/health', 200, { warnings: [] })
     .antiforgery('t-9')
@@ -65,12 +66,12 @@ describe('AppShell', () => {
     expect(document.querySelector('[data-test=more-runs]')?.textContent).toContain('Runs')
   })
 
-  it('counts pending approvals, open proposals and unseen critical notifications on the Inbox', async () => {
+  it('counts pending approvals, open change and skill proposals and unseen critical notifications on the Inbox', async () => {
     useViewport('phone')
     const { wrapper } = await shell()
 
-    expect(wrapper.get('[data-test=tab-inbox] .count').text()).toBe('4')
-    expect(wrapper.get('[data-test=tab-inbox] .count').attributes('aria-label')).toBe('4 items need you')
+    expect(wrapper.get('[data-test=tab-inbox] .count').text()).toBe('5')
+    expect(wrapper.get('[data-test=tab-inbox] .count').attributes('aria-label')).toBe('5 items need you')
   })
 
   it('lists Configuration for admins only', async () => {

@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='utf-8'?>
+<multistatus xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav"><response><href>/lukas/personal/weekly-standup.ics</href><propstat><prop><getetag>"7d8f7074fb8c6e5ceb34c38dffc085430f7be062fc31d716cb87ae1bbe3c0525"</getetag><C:calendar-data>BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Marshal//test//EN
+BEGIN:VTIMEZONE
+TZID:Europe/Vienna
+BEGIN:STANDARD
+DTSTART:20001029T030000
+RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10
+TZNAME:CET
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+END:STANDARD
+BEGIN:DAYLIGHT
+DTSTART:20000326T020000
+RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3
+TZNAME:CEST
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+END:DAYLIGHT
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:weekly-standup
+DTSTART;TZID=Europe/Vienna:20261019T090000
+DTEND;TZID=Europe/Vienna:20261019T100000
+ATTENDEE;CN=Anna Huber;PARTSTAT=ACCEPTED;ROLE=CHAIR:mailto:anna@example.org
+ATTENDEE;CN=Lukas;PARTSTAT=NEEDS-ACTION;ROLE=REQ-PARTICIPANT;RSVP=TRUE:mail
+ to:lukas@example.org
+DTSTAMP:20261001T000000Z
+ORGANIZER;CN=Anna Huber:mailto:anna@example.org
+RRULE:FREQ=WEEKLY;COUNT=4
+SUMMARY:Standup
+END:VEVENT
+END:VCALENDAR
+</C:calendar-data></prop><status>HTTP/1.1 200 OK</status></propstat></response></multistatus>

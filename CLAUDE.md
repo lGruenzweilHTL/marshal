@@ -45,7 +45,8 @@ src/                         .NET projects
   Marshal.Api/               ASP.NET host: REST + SSE, auth, serves the SPA
   Marshal.Abstractions/      small shared interfaces (providers, channels, executors, ...)
   Marshal.Core/              agent harness: loop, tool registry, risk engine + guard,
-                             context builder, model router, sessions, AI task runner + structured output shaper
+                             context builder, model router, sessions, AI task runner + structured output shaper,
+                             calendar tools over the composite calendar provider (HA and CalDAV sources)
   Marshal.Memory/            memory chunks, versions and edges, hybrid retrieval, project activation,
                              consolidation (entities and migrations live in Marshal.Data)
   Marshal.Tasks/             durable tasks, scheduler + worker pool, event bus, trigger matcher, deliveries,
@@ -59,6 +60,8 @@ src/                         .NET projects
   Marshal.Integrations.FreshRss/  FreshRSS Google Reader API client, full-text extraction, RSS tools
   Marshal.Integrations.Web/  SearXNG search provider, per-session web results, web tools (search, answer; never
                              fetches a result URL)
+  Marshal.Integrations.CalDav/  CalDAV calendar provider (discovery, calendar-query, sync-collection, iCalendar via
+                             Ical.Net), sync poller publishing calendar.* change events
   Marshal.Integrations.Notes/  git-backed Markdown notes source, own hybrid notes index, notes tools
   Marshal.Integrations.Media/  Seerr client (search, requests), read-only Sonarr/Radarr calendars and queues, Jellyfin
                              links, media tools
@@ -68,7 +71,8 @@ src/                         .NET projects
   Marshal.Artifacts/         artifact store (files in /data/artifacts, per-owner quota), kind detection, media renditions
                              for displays, code highlighter (languages.json and parity cases shared with web/src/artifacts/
                              highlighting/), artifacts tools
-  Marshal.Demo/              demo mode: simulated HA (incl. the ha.* home control tools), printer, mail, RSS, notes and web search
+  Marshal.Demo/              demo mode: simulated HA (incl. the ha.* home control tools and a weather forecast), printer (with job
+                             totals and the demo maintenance item), mail, RSS, notes and web search
                              behind the integrations' interfaces, demo world state, seeder and reset (referenced only by
                              Marshal.Api)
   Marshal.Data/              EF Core DbContext, migrations, owner-scoped query filters
@@ -129,6 +133,7 @@ Key dependencies and what they are for. Keep this list current when adding or re
 | `sqlite-vec` | Vector search in SQLite: upstream NuGet with the native `vec0` binaries per RID (prerelease `0.1.7-alpha.2.1`, `contentFiles` excluded), loaded into every connection by `SqliteVectorExtension` (Marshal.Data) |
 | `Cronos` | Cron expression parsing for the scheduler (owner time zone, DST-aware) |
 | `MailKit` | IMAP provider (search, drafts via `APPEND`, XOAUTH2); never its SMTP client |
+| `Ical.Net` | iCalendar parsing, recurrence expansion and serialization for the CalDAV provider (MIT; brings NodaTime) |
 | `SmartReader` | Readability full-text extraction for RSS articles |
 | `AngleSharp` | HTML parsing (SmartReader's parser): plain text of RSS summaries |
 | `Google.Apis.Gmail.v1`, `Microsoft.Graph` | Gmail API and Graph mail providers (later, build order §14) |

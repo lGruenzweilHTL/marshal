@@ -15,13 +15,14 @@ import RunRow from '../runs/RunRow.vue'
 import KillSwitch from '../tasks/KillSwitch.vue'
 import { AppButton, ListCard, LoadBoundary, Page, PageHeader, Section, useDesktop, useToasts } from '../ui'
 import HealthStrip from './HealthStrip.vue'
+import MaintenanceList from './MaintenanceList.vue'
 import TaskList from './TaskList.vue'
 import TodayCost from './TodayCost.vue'
 
-type Block = 'approvals' | 'printer' | 'tasks' | 'notifications' | 'runs' | 'cost'
+type Block = 'approvals' | 'printer' | 'maintenance' | 'tasks' | 'notifications' | 'runs' | 'cost'
 
 /**
- * Home, ordered by what needs the user: approvals, then printers (alerts first), running tasks with the kill switch,
+ * Home, ordered by what needs the user: approvals, then printers (alerts first), maintenance due soon, running tasks with the kill switch,
  * the latest notifications, recent runs and today's cost. Every block loads and fails on its own.
  */
 const api = useApi()
@@ -35,6 +36,7 @@ const { load: printerLoad, printers } = usePrinters()
 const tasks = useLoad(() => api.call((client) => client.GET('/api/v1/tasks', { params: { query: { status: 'active' } } })), { isEmpty: () => false })
 const notifications = useLoad(() => api.call((client) => client.GET('/api/v1/notifications', { params: { query: { limit: 4 } } })))
 const runs = useLoad(() => api.call((client) => client.GET('/api/v1/runs', { params: { query: { limit: 5 } } })))
+const maintenance = useLoad(() => api.call((client) => client.GET('/api/v1/maintenance')))
 const cost = useLoad(() => api.call((client) => client.GET('/api/v1/cost')), { isEmpty: () => false })
 
 useLiveEvent('tasks', 'task.changed', () => tasks.refresh())
@@ -50,10 +52,11 @@ const today = computed(() => format.value.date(new Date()))
 
 // Phones get one column in priority order; desktops put what needs a decision left and status right.
 const columns = computed<Block[][]>(() =>
-  desktop.value ? [['approvals', 'notifications', 'runs'], ['printer', 'tasks', 'cost']] : [['approvals', 'printer', 'tasks', 'notifications', 'runs', 'cost']],
+  desktop.value ? [['approvals', 'notifications', 'runs'], ['printer', 'maintenance', 'tasks', 'cost']] : [['approvals', 'printer', 'maintenance', 'tasks', 'notifications', 'runs', 'cost']],
 )
-const visible = (block: Block) =>
-  block === 'approvals' ? approvals.state.value !== 'empty' : block === 'printer' ? printerLoad.state.value !== 'empty' : true
+// Approvals, printers and maintenance appear only when there is something to show.
+const optional: Partial<Record<Block, { state: { value: string } }>> = { approvals, printer: printerLoad, maintenance }
+const visible = (block: Block) => optional[block]?.state.value !== 'empty'
 
 function decided(result: TicketResult) {
   toasts.show(t(result === 'approved' ? 'inbox.ticket.approved' : result === 'rejected' ? 'inbox.ticket.rejected' : 'inbox.ticket.expiredResult'))
@@ -94,6 +97,12 @@ function decided(result: TicketResult) {
               <div class="printers">
                 <PrinterCard v-for="printer in sortedPrinters" :key="printer.name" :printer="printer" :density="desktop ? 'full' : 'compact'" :actions="desktop" />
               </div>
+            </LoadBoundary>
+          </Section>
+
+          <Section v-else-if="block === 'maintenance' && visible(block)" :title="t('home.maintenance.title')" data-section="maintenance">
+            <LoadBoundary :load="maintenance">
+              <template #default="{ data }"><MaintenanceList :items="data" @changed="maintenance.refresh()" /></template>
             </LoadBoundary>
           </Section>
 

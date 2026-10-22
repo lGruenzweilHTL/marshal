@@ -112,6 +112,9 @@ The web interface uses the following groups. They require a logged-in person (co
 | Artifacts | `/artifacts/*` | Upload, list, content, previews |
 | Displays | `/displays/*` | Display surfaces |
 | Proposals | `/proposals/*` | Review and merge agent proposals |
+| Suggestions | `/suggestions`, `/suggestions/{id}/accept`, `/suggestions/{id}/dismiss`, `/suggestions/detectors/*` | Open suggestions, accept and dismiss, detector counts, mute and reset. See [suggestions](../guides/suggestions.md) |
+| Skill proposals | `/skill-proposals`, `/skill-proposals/{id}`, `/skill-proposals/{id}/download`, `/skill-proposals/{id}/dismiss` | Drafted skills: preview, download of `SKILL.md`, dismiss. See [skill proposals](../guides/skill-proposals.md) |
+| Maintenance | `/maintenance`, `/maintenance/{id}/done` | Maintenance items of the instance owner and marking one done. See [maintenance](../guides/maintenance.md) |
 | System and config | `/system`, `/config` | System status and configuration summary (admin) |
 | Executor callbacks | `/executor/callbacks/*` | Used by the executor host with its own callback token |
 

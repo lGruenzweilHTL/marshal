@@ -176,6 +176,7 @@ package "Conversations & Runs" {
     rating : up | down  <<owner's rating>>
     rating_note : string  <<at most 1,000 characters>>
     rated_at : DateTimeOffset
+    input_embedding : blob  <<float32, cached by skill proposals>>
   }
 
   entity RunStep {
@@ -553,6 +554,63 @@ package "Background Work" {
     * created_at : DateTimeOffset
     decided_at : DateTimeOffset
   }
+
+  entity Suggestion <<suggestions>> {
+    * id : Guid <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    * detector : string
+    * dedupe_key : string
+    * text : string  <<model-worded from the facts>>
+    * facts_json : json  <<owner's device data only>>
+    * delivery : inbox | push
+    * status : open | accepted | dismissed | expired
+    * nonce : string  <<unique, push actions>>
+    pending_action_id : PendingActionId <<FK>>  <<frozen proposed action>>
+    action_summary : string
+    snippet : string  <<shown verbatim, e.g. a YAML item>>
+    notification_id : Guid
+    * created_at : DateTimeOffset
+    * expires_at : DateTimeOffset
+    decided_at : DateTimeOffset
+    <<index (owner_id, detector, dedupe_key, created_at)>>
+  }
+
+  entity SuggestionDetectorStat <<suggestion_detector_stats>> {
+    * owner_id : OwnerId <<PK, FK>>
+    * detector : string <<PK>>
+    --
+    * sent / accepted / dismissed : int  <<Beta(1,1) acceptance estimate>>
+    muted_until : DateTimeOffset
+  }
+
+  entity SkillProposal <<skill_proposals>> {
+    * id : Guid <<PK>>
+    --
+    * owner_id : OwnerId <<FK>>
+    * name : string
+    * description : string
+    * content : string  <<SKILL.md>>
+    diff : string  <<unified diff against an existing skill>>
+    * source_run_ids : json
+    * sequence_hash : string  <<SHA-256 of the tool sequence>>
+    * status : open | downloaded | dismissed | covered
+    * created_at : DateTimeOffset
+    decided_at : DateTimeOffset
+    <<unique (owner_id, sequence_hash)>>
+  }
+
+  entity MaintenanceState <<maintenance_state>> {
+    * owner_id : OwnerId <<PK, FK>>
+    * item_id : string <<PK>>  <<maintenance.items key>>
+    --
+    * baseline : decimal  <<counter value when last done>>
+    last_done_at : DateTimeOffset
+    * last_value : decimal
+    unit : string
+    * last_read_at : DateTimeOffset
+    * notified_soon / notified_due : bool
+  }
 }
 
 ' ------------------------------------------------------------------
@@ -619,6 +677,16 @@ package "Integrations & Secrets" {
     drafts_folder : string  <<when no folder has special-use Drafts>>
     * created_at : DateTimeOffset
     <<unique (owner_id, alias)>>
+  }
+
+  entity CalDavSyncState <<caldav_sync_state>> {
+    * owner_id : OwnerId <<PK, FK>>
+    * account : string <<PK>>  <<calendar.caldav.accounts key>>
+    * calendar : string <<PK>>  <<last path segment of the collection>>
+    --
+    sync_token : string  <<null without server sync support>>
+    * etag_map_json : json  <<href -> etag and event uid>>
+    * last_poll : DateTimeOffset
   }
 
   entity Artifact <<artifacts>> {
@@ -693,7 +761,13 @@ User ||--o{ Chunk
 User ||--o{ AgentTask
 User ||--o{ Notification
 User ||--o{ Proposal
+User ||--o{ Suggestion
+User ||--o{ SuggestionDetectorStat
+User ||--o{ SkillProposal
+User ||--o{ MaintenanceState
+PendingAction |o--o{ Suggestion
 User ||--o{ MailAccount
+User ||--o{ CalDavSyncState
 User ||--o{ Artifact
 User |o--o{ Secret
 User ||--o{ AuditEvent

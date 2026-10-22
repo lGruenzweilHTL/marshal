@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import HomeView from './HomeView.vue'
 import { FakeServer } from '../testing/fakeServer'
-import { approvalItem, health, notificationEntry, printerState, printerSummary, runSummary, taskItem } from '../testing/fixtures'
+import { approvalItem, health, maintenanceItem, notificationEntry, printerState, printerSummary, runSummary, taskItem } from '../testing/fixtures'
 import { me, mountOptions } from '../testing/mountApp'
 import { useViewport } from '../testing/viewport'
 
@@ -32,6 +32,7 @@ function server() {
     .on('GET', '/api/v1/notifications', 200, [notificationEntry()])
     .on('GET', '/api/v1/runs', 200, [runSummary()])
     .on('GET', '/api/v1/cost', 200, cost)
+    .on('GET', '/api/v1/maintenance', 200, [])
 }
 
 async function mountHome(fake: FakeServer) {
@@ -146,6 +147,45 @@ describe('HomeView', () => {
     const { wrapper } = await mountHome(fake)
 
     expect(wrapper.findAll('[data-printer]').map((card) => card.attributes('data-printer'))).toEqual(['voron', 'prusa'])
+    wrapper.unmount()
+  })
+
+  it('shows maintenance after the printers, items that are due or soon first, and hides it without items', async () => {
+    useViewport('phone')
+    const fake = server().on('GET', '/api/v1/maintenance', 200, [
+      maintenanceItem({ id: 'dishwasher_filter', name: 'Dishwasher filter', usage: 61, every: 60, warnBefore: null, unit: null, state: 'due' }),
+      maintenanceItem(),
+      maintenanceItem({ id: 'belts', name: 'Belts', usage: 12, every: 500, state: 'ok' }),
+    ])
+    const { wrapper } = await mountHome(fake)
+
+    expect(sections(wrapper).slice(0, 3)).toEqual(['approvals', 'printer', 'maintenance'])
+    expect(wrapper.findAll('[data-maintenance]').map((row) => row.attributes('data-maintenance'))).toEqual(['dishwasher_filter', 'voron_nozzle', 'belts'])
+    expect(wrapper.get('[data-maintenance="voron_nozzle"]').text()).toContain('182.5 / 200 h')
+    wrapper.unmount()
+
+    const none = await mountHome(server())
+    expect(sections(none.wrapper)).not.toContain('maintenance')
+    none.wrapper.unmount()
+  })
+
+  it('marks a maintenance item done only after confirmation', async () => {
+    useViewport('phone')
+    const fake = server()
+      .on('GET', '/api/v1/maintenance', 200, [maintenanceItem()])
+      .on('POST', '/api/v1/maintenance/voron_nozzle/done', 200, maintenanceItem({ usage: 0, state: 'ok' }))
+    const { wrapper, toasts } = await mountHome(fake)
+
+    await wrapper.get('[data-maintenance="voron_nozzle"] [data-test="done"]').trigger('click')
+    expect(fake.count('POST', '/api/v1/maintenance/voron_nozzle/done')).toBe(0)
+    expect(document.body.textContent).toContain('Mark Voron nozzle as done?')
+    fake.on('GET', '/api/v1/maintenance', 200, [maintenanceItem({ usage: 0, state: 'ok' })])
+    ;(document.body.querySelector('[data-test="confirm-done"]') as HTMLButtonElement).click()
+    await flushPromises()
+
+    expect(fake.count('POST', '/api/v1/maintenance/voron_nozzle/done')).toBe(1)
+    expect(wrapper.get('[data-maintenance="voron_nozzle"]').text()).toContain('0 / 200 h')
+    expect(toasts.items.value.map((toast) => toast.message)).toContain('Voron nozzle marked done. Counting starts again.')
     wrapper.unmount()
   })
 })

@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest'
 import ApprovalView from './ApprovalView.vue'
 import NotificationView from './NotificationView.vue'
 import ProposalView from './ProposalView.vue'
+import SkillProposalView from './SkillProposalView.vue'
 import { FakeServer } from '../testing/fakeServer'
-import { approvalItem, notificationEntry, proposal } from '../testing/fixtures'
+import { approvalItem, notificationEntry, proposal, skillProposal } from '../testing/fixtures'
 import { me, mountOptions } from '../testing/mountApp'
 
 const future = new Date(Date.now() + 5 * 60_000).toISOString()
@@ -103,5 +104,43 @@ describe('NotificationView', () => {
     const { wrapper } = await mountView(NotificationView, fake, '/inbox/notifications/n-1')
 
     expect(wrapper.text()).toContain('no longer in the list')
+  })
+})
+
+describe('SkillProposalView', () => {
+  it('previews the drafted SKILL.md, the diff and the source runs, and offers the download', async () => {
+    const fake = server().on('GET', '/api/v1/skill-proposals/sp-1', 200, skillProposal({ diff: '--- a/SKILL.md\n+++ b/SKILL.md\n@@ -1 +1 @@\n-old\n+new\n' }))
+    const { wrapper } = await mountView(SkillProposalView, fake, '/inbox/skills/sp-1')
+
+    expect(wrapper.get('[data-test="content"]').text()).toContain('name: nightly-backup-check')
+    expect(wrapper.get('[data-test="diff"]').text()).toContain('+new')
+    expect(wrapper.find('a[href="/runs/r-3"]').exists()).toBe(true)
+    const download = wrapper.get('[data-test="download"]')
+    expect(download.attributes('href')).toMatch(/\/api\/v1\/skill-proposals\/sp-1\/download$/)
+    expect(download.attributes('download')).toBe('SKILL.md')
+  })
+
+  it('tells the user where the file goes after the download', async () => {
+    const fake = server().on('GET', '/api/v1/skill-proposals/sp-1', 200, skillProposal())
+    const { wrapper } = await mountView(SkillProposalView, fake, '/inbox/skills/sp-1')
+
+    await wrapper.get('[data-test="download"]').trigger('click')
+
+    expect(wrapper.get('[data-test="install"]').text()).toContain('/config/skills/nightly-backup-check/SKILL.md')
+    expect(wrapper.text()).toContain('Downloaded')
+  })
+
+  it('dismisses the proposal', async () => {
+    const fake = server()
+      .on('GET', '/api/v1/skill-proposals/sp-1', 200, skillProposal())
+      .on('POST', '/api/v1/skill-proposals/sp-1/dismiss', 200, { id: 'sp-1', status: 'dismissed' })
+    const { wrapper, toasts } = await mountView(SkillProposalView, fake, '/inbox/skills/sp-1')
+
+    await wrapper.get('[data-test="dismiss"]').trigger('click')
+    await flushPromises()
+
+    expect(fake.count('POST', '/api/v1/skill-proposals/sp-1/dismiss')).toBe(1)
+    expect(toasts.items.value.map((toast) => toast.message)).toContain('Dismissed. Marshal will not propose this workflow again.')
+    expect(wrapper.find('[data-test="download"]').exists()).toBe(false)
   })
 })

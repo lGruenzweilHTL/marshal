@@ -13,6 +13,7 @@
 ' Marshal.Integrations.HomeAssistant exists (extensibility), Marshal.Memory exists (memory),
 ' Marshal.Integrations.{Moonraker,Mail,FreshRss,Notes} exist (integrations), Marshal.Integrations.Proxmox (proxmox),
 ' Marshal.Integrations.GitHub (github), Marshal.Integrations.Media (media-requests), Marshal.Integrations.Web (web-search),
+' Marshal.Integrations.CalDav (caldav),
 ' Marshal.Tasks and Marshal.ExecutorHost exist (background-work), including the companion push path.
 ' Marshal.Artifacts exists (artifacts). Marshal.Demo exists (demo-mode).
 ' External packages are drawn inside the project that references them
@@ -98,8 +99,9 @@ package "src/ (.NET 10)" {
   }
 
   package "Marshal.Integrations.*" as Integrations {
-    component "HomeAssistant (REST, websocket,\nMCP, calendar v1, displays), Moonraker,\nMail, FreshRss, Notes, Proxmox,\nGitHub, Media (Seerr, Sonarr, Radarr),\nWeb (SearXNG search)" as IntParts
+    component "HomeAssistant (REST, websocket,\nMCP, calendar, displays), CalDav (calendars,\nsync poller), Moonraker, Mail, FreshRss,\nNotes, Proxmox, GitHub, Media (Seerr,\nSonarr, Radarr), Web (SearXNG search)" as IntParts
     component "MailKit" <<nuget>>
+    component "Ical.Net" <<nuget>>
     component "Google.Apis.Gmail.v1 (later)\nMicrosoft.Graph (later)" <<nuget>>
     component "SmartReader\n+ AngleSharp" <<nuget>>
     component "SkiaSharp" <<nuget>>

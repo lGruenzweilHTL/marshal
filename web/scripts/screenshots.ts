@@ -30,6 +30,7 @@ const routes: Route[] = [
   { name: 'inbox', path: '/inbox' },
   { name: 'approval', path: `/inbox/approvals/${ids.approvalPrint}` },
   { name: 'proposal', path: `/inbox/proposals/${ids.proposal}` },
+  { name: 'skill-proposal', path: `/inbox/skills/${ids.skillProposal}` },
   { name: 'notification', path: `/inbox/notifications/${ids.notification(1)}` },
   { name: 'printers', path: '/printers' },
   { name: 'tasks', path: '/tasks' },

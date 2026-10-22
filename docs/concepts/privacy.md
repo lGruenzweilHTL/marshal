@@ -30,6 +30,8 @@ Each model belongs to a tier, and Marshal picks models by tier. You can mix: for
 | Subagents | the template's tier | The task text and the subagent's own tool results. |
 | `printer.inspect`, the print babysitter | a `vision` model of the run's tier, else `standard` + `vision` | A resized webcam snapshot and the question. |
 | `artifacts.inspect` | a `vision` model | One rendered page or image of the artifact and the question. |
+| Suggestion wording (with "help Marshal learn" on) | `fast` | The detector's facts, for example the window's name and the rain probability. No tools. |
+| Skill proposal drafting (with "help Marshal learn" on) | `standard` | The user requests of repeated runs, the tool names and argument names, and the names and descriptions of existing skills. Never tool results or argument values. |
 
 If a cloud model is in the `fast` tier, every voice turn reaches that provider. If you want voice and home state to stay local, keep `fast` local.
 
@@ -68,6 +70,8 @@ Everything lives in `/data` on your host (see [data directory](../reference/data
 | Printer snapshots | `/data` | Pruned by the snapshot store's retention unless you keep them as artifacts. |
 | Notes repository and index | `/data` | A clone of your notes repository and its derived search index. |
 | Backups | `/data/backups` | SQLite backup, a copy of `/data/keys`, and an NDJSON memory export per owner. |
+| Suggestions and skill proposals | SQLite | Suggestion text and facts, your answers and the counts per detector; drafted `SKILL.md` files with the ids of their source runs. |
+| Maintenance state | SQLite | Per item: the counter baseline, the last value read and when it was last done. |
 
 Logs never contain secrets, message bodies, note contents or full prompts.
 

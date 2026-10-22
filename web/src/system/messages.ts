@@ -26,7 +26,7 @@ export const en = {
     title: 'Demo mode',
     hint: 'These integrations are not configured and are simulated; their data is sample data.',
     simulated: 'simulated',
-    names: { home_assistant: 'Home Assistant', printers: 'Printers', mail: 'Mail', rss: 'RSS', notes: 'Notes', web: 'Web search' },
+    names: { home_assistant: 'Home Assistant', caldav: 'CalDAV calendars', printers: 'Printers', mail: 'Mail', rss: 'RSS', notes: 'Notes', web: 'Web search' },
   },
   sources: {
     title: 'Event sources',
@@ -34,7 +34,7 @@ export const en = {
     disconnected: 'not connected',
     lastWebhook: 'Last webhook {time}',
     noWebhook: 'No webhook received yet',
-    names: { ha: 'Home Assistant', printer: 'Printers', mail: 'Mail', executor: 'Executors', 'uptime-kuma': 'Uptime Kuma', proxmox: 'Proxmox VE' },
+    names: { ha: 'Home Assistant', calendar: 'Calendars (CalDAV)', printer: 'Printers', mail: 'Mail', executor: 'Executors', 'uptime-kuma': 'Uptime Kuma', proxmox: 'Proxmox VE' },
   },
   config: {
     title: 'Configuration',
@@ -133,7 +133,7 @@ export const de: Catalog<typeof en> = {
     title: 'Demomodus',
     hint: 'Diese Integrationen sind nicht konfiguriert und werden simuliert; ihre Daten sind Beispieldaten.',
     simulated: 'simuliert',
-    names: { home_assistant: 'Home Assistant', printers: 'Drucker', mail: 'Mail', rss: 'RSS', notes: 'Notizen', web: 'Websuche' },
+    names: { home_assistant: 'Home Assistant', caldav: 'CalDAV-Kalender', printers: 'Drucker', mail: 'Mail', rss: 'RSS', notes: 'Notizen', web: 'Websuche' },
   },
   sources: {
     title: 'Ereignisquellen',
@@ -141,7 +141,7 @@ export const de: Catalog<typeof en> = {
     disconnected: 'nicht verbunden',
     lastWebhook: 'Letzter Webhook {time}',
     noWebhook: 'Noch kein Webhook empfangen',
-    names: { ha: 'Home Assistant', printer: 'Drucker', mail: 'Mail', executor: 'Executors', 'uptime-kuma': 'Uptime Kuma', proxmox: 'Proxmox VE' },
+    names: { ha: 'Home Assistant', calendar: 'Kalender (CalDAV)', printer: 'Drucker', mail: 'Mail', executor: 'Executors', 'uptime-kuma': 'Uptime Kuma', proxmox: 'Proxmox VE' },
   },
   config: {
     title: 'Konfiguration',

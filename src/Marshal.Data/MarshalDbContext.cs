@@ -13,6 +13,7 @@ using Marshal.Abstractions.Memory;
 using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Sessions;
+using Marshal.Abstractions.Suggestions;
 using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Tokens;
 using Marshal.Abstractions.Tools;
@@ -20,6 +21,7 @@ using Marshal.Data.Apps;
 using Marshal.Data.Artifacts;
 using Marshal.Data.Audit;
 using Marshal.Data.Auth;
+using Marshal.Data.Calendar;
 using Marshal.Data.Conversations;
 using Marshal.Data.Demo;
 using Marshal.Data.Evals;
@@ -32,6 +34,8 @@ using Marshal.Data.Notes;
 using Marshal.Data.Notifications;
 using Marshal.Data.Persistence;
 using Marshal.Data.Secrets;
+using Marshal.Data.Maintenance;
+using Marshal.Data.Suggestions;
 using Marshal.Data.Tasks;
 using Marshal.Data.Tokens;
 using Microsoft.AspNetCore.Identity;
@@ -79,6 +83,17 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
     public DbSet<Project> Projects => Set<Project>();
 
     public DbSet<StoredMailAccount> MailAccounts => Set<StoredMailAccount>();
+
+    public DbSet<Suggestion> Suggestions => Set<Suggestion>();
+
+    public DbSet<SuggestionDetectorStat> SuggestionDetectorStats => Set<SuggestionDetectorStat>();
+
+    public DbSet<SkillProposal> SkillProposals => Set<SkillProposal>();
+
+    public DbSet<MaintenanceState> MaintenanceStates => Set<MaintenanceState>();
+
+    /// <summary>Change poll state per CalDAV calendar.</summary>
+    public DbSet<CalDavSyncState> CalDavSyncStates => Set<CalDavSyncState>();
 
     public DbSet<NoteIndexEntry> NoteIndexEntries => Set<NoteIndexEntry>();
 
@@ -166,6 +181,9 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
         configurationBuilder.Properties<InputMode>().HaveConversion<SnakeCaseEnumConverter<InputMode>>();
         configurationBuilder.Properties<RunOutcome>().HaveConversion<SnakeCaseEnumConverter<RunOutcome>>();
         configurationBuilder.Properties<RunRating>().HaveConversion<SnakeCaseEnumConverter<RunRating>>();
+        configurationBuilder.Properties<SuggestionDelivery>().HaveConversion<SnakeCaseEnumConverter<SuggestionDelivery>>();
+        configurationBuilder.Properties<SuggestionStatus>().HaveConversion<SnakeCaseEnumConverter<SuggestionStatus>>();
+        configurationBuilder.Properties<SkillProposalStatus>().HaveConversion<SnakeCaseEnumConverter<SkillProposalStatus>>();
         configurationBuilder.Properties<EvalExpectation>().HaveConversion<SnakeCaseEnumConverter<EvalExpectation>>();
         configurationBuilder.Properties<EvalRunStatus>().HaveConversion<SnakeCaseEnumConverter<EvalRunStatus>>();
         configurationBuilder.Properties<EvalOutcome>().HaveConversion<SnakeCaseEnumConverter<EvalOutcome>>();
@@ -431,6 +449,52 @@ public sealed class MarshalDbContext(DbContextOptions<MarshalDbContext> options,
             account.HasIndex(entity => new { entity.OwnerId, entity.Alias }).IsUnique();
             account.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
             OwnerFilter(account);
+        });
+
+        builder.Entity<Suggestion>(suggestion =>
+        {
+            suggestion.ToTable("suggestions");
+            suggestion.HasKey(entity => entity.Id);
+            suggestion.HasIndex(entity => entity.Nonce).IsUnique();
+            suggestion.HasIndex(entity => new { entity.OwnerId, entity.Detector, entity.DedupeKey, entity.CreatedAt });
+            suggestion.HasIndex(entity => new { entity.Status, entity.ExpiresAt });
+            suggestion.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            suggestion.HasOne<PendingAction>().WithMany().HasForeignKey(entity => entity.PendingActionId);
+            OwnerFilter(suggestion);
+        });
+
+        builder.Entity<SuggestionDetectorStat>(stat =>
+        {
+            stat.ToTable("suggestion_detector_stats");
+            stat.HasKey(entity => new { entity.OwnerId, entity.Detector });
+            stat.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            OwnerFilter(stat);
+        });
+
+        builder.Entity<SkillProposal>(proposal =>
+        {
+            proposal.ToTable("skill_proposals");
+            proposal.HasKey(entity => entity.Id);
+            proposal.HasIndex(entity => new { entity.OwnerId, entity.SequenceHash }).IsUnique();
+            proposal.HasIndex(entity => new { entity.OwnerId, entity.Status });
+            proposal.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            OwnerFilter(proposal);
+        });
+
+        builder.Entity<MaintenanceState>(state =>
+        {
+            state.ToTable("maintenance_state");
+            state.HasKey(entity => new { entity.OwnerId, entity.ItemId });
+            state.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            OwnerFilter(state);
+        });
+
+        builder.Entity<CalDavSyncState>(state =>
+        {
+            state.ToTable("caldav_sync_state");
+            state.HasKey(entity => new { entity.OwnerId, entity.Account, entity.Calendar });
+            state.HasOne<User>().WithMany().HasForeignKey(entity => entity.OwnerId);
+            OwnerFilter(state);
         });
 
         builder.Entity<NoteIndexEntry>(entry =>

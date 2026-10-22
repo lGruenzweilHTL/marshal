@@ -112,6 +112,22 @@ public sealed class DeclarativeTriggerMatcherTests : IAsyncLifetime
         Assert.Equal((AgentTaskStatus.Pending, _time.GetUtcNow()), (fired.Status, fired.NextRunAt));
     }
 
+    [Fact]
+    public async Task Match_CalendarInvitation_FiresTheWatch()
+    {
+        TaskRecord watch = await CreateAsync(OwnerA, TaskTrigger.Event("""{"source":"calendar","type":"invitation"}"""));
+        TaskRecord created = await CreateAsync(OwnerA, TaskTrigger.Event("""{"source":"calendar","type":"event_created"}"""));
+        JsonElement payload = JsonDocument.Parse("""{"calendar":"caldav:nextcloud/personal","eventId":"invite-1","start":"2026-10-22T08:00:00+00:00","end":"2026-10-22T09:00:00+00:00"}""").RootElement.Clone();
+
+        await Matcher().MatchAsync(new MarshalEvent("calendar", "invitation", "caldav:nextcloud/personal", payload, OwnerA, _time.GetUtcNow(), Trusted: true), Ct);
+
+        TaskRecord fired = await GetAsync(OwnerA, watch.Id);
+        Assert.Equal((AgentTaskStatus.Pending, _time.GetUtcNow()), (fired.Status, fired.NextRunAt));
+        using var stored = JsonDocument.Parse(fired.TriggerPayload!);
+        Assert.Equal("invite-1", stored.RootElement.GetProperty("payload").GetProperty("eventId").GetString());
+        Assert.Null((await GetAsync(OwnerA, created.Id)).NextRunAt);
+    }
+
     private DeclarativeTriggerMatcher Matcher() =>
         new(Store(), _signals, _database.Accessor, _time, NullLogger<DeclarativeTriggerMatcher>.Instance);
 

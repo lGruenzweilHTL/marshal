@@ -1,4 +1,5 @@
 using Marshal.Abstractions.Secrets;
+using Microsoft.Extensions.Options;
 
 namespace Marshal.Integrations.Moonraker;
 
@@ -24,6 +25,12 @@ public sealed class PrinterConfig
 
     /// <summary>The printer's web UI (Mainsail / Fluidd), linked from the printer page for actions Marshal does not offer.</summary>
     public Uri? WebUrl { get; set; }
+
+    /// <summary>
+    /// Home Assistant <c>switch.*</c> entity that powers the printer; the print-done-away suggestion offers to switch
+    /// it off. Optional.
+    /// </summary>
+    public string? PowerEntity { get; set; }
 
     /// <summary>Name of the secret holding the Moonraker API key; none when Moonraker trusts the network.</summary>
     public string? ApiKeySecret { get; set; }
@@ -63,4 +70,22 @@ public sealed class SnapshotOptions
 
     /// <summary>Snapshots kept per printer; older ones are deleted.</summary>
     public int Retention { get; set; } = 20;
+}
+
+/// <summary>Checks the keys whose error names the printer's index.</summary>
+public sealed class PrinterOptionsValidator : IValidateOptions<PrinterOptions>
+{
+    public ValidateOptionsResult Validate(string? name, PrinterOptions options)
+    {
+        for (int index = 0; index < options.Printers.Count; index++)
+        {
+            if (options.Printers[index].PowerEntity is { } entity && !IsSwitch(entity))
+                return ValidateOptionsResult.Fail($"printers[{index}].powerEntity must be a switch.* entity, not '{entity}'.");
+        }
+
+        return ValidateOptionsResult.Success;
+    }
+
+    private static bool IsSwitch(string entity) =>
+        entity.StartsWith("switch.", StringComparison.Ordinal) && entity.Length > "switch.".Length && !entity.Contains(' ', StringComparison.Ordinal);
 }

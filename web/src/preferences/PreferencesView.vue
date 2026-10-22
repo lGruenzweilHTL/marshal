@@ -9,10 +9,12 @@ import { useSubmit } from '../api/useSubmit'
 import { useLocale } from '../i18n/locale'
 import { AppButton, Banner, Card, ErrorBanner, Field, LoadBoundary, Page, PageHeader, Segmented, Switch, useDesktop } from '../ui'
 import { useAppearance, type Appearance } from '../ui/appearance'
+import DetectorList from './DetectorList.vue'
 
 /**
  * The user's preferences: language and time zone (applied right after saving, no reload), quiet hours and notification
- * targets, and "help Marshal learn", which gates every feature that learns from the user's behavior. The appearance is per device and never sent to the API.
+ * targets, "help Marshal learn", which gates every feature that learns from the user's behavior, and the suggestion
+ * detectors with mute and reset. The appearance is per device and never sent to the API.
  */
 type Day = Schemas['DayOfWeek']
 type Preferences = Schemas['UserPreferencesResponse']
@@ -91,6 +93,17 @@ const save = useSubmit(async () => {
   }
   return result
 })
+
+// Detectors load on their own: a failing list leaves the form usable.
+const detectors = useLoad(() => api.call((client) => client.GET('/api/v1/suggestions/detectors')))
+
+// A mute or reset answers with the detector as it is now; shown instead of the loaded one.
+const changedDetectors = shallowRef<Record<string, Schemas['DetectorItem']>>({})
+const shownDetectors = (loaded: Schemas['DetectorItem'][]) => loaded.map((item) => changedDetectors.value[item.detector] ?? item)
+
+function detectorChanged(changed: Schemas['DetectorItem']) {
+  changedDetectors.value = { ...changedDetectors.value, [changed.detector]: changed }
+}
 
 const learningFeatures = ['evals', 'suggestions', 'skills', 'maintenance'] as const
 
@@ -178,6 +191,13 @@ function addWindow() {
               <li v-for="feature in learningFeatures" :key="feature">{{ t(`preferences.learning.features.${feature}`) }}</li>
             </ul>
             <p class="t-body-s ink-3">{{ t('preferences.learning.privacy') }}</p>
+          </Card>
+
+          <Card v-if="detectors.state.value !== 'empty'" :title="t('preferences.detectors.title')" data-test="detectors">
+            <p class="t-body-s ink-2">{{ t('preferences.detectors.intro') }}</p>
+            <LoadBoundary :load="detectors">
+              <template #default="{ data }"><DetectorList :detectors="shownDetectors(data)" @changed="detectorChanged" /></template>
+            </LoadBoundary>
           </Card>
         </div>
 

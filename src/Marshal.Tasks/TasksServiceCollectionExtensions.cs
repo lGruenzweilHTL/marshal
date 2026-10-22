@@ -10,6 +10,7 @@ using Marshal.Abstractions.Media;
 using Marshal.Abstractions.Notifications;
 using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Secrets;
+using Marshal.Abstractions.Suggestions;
 using Marshal.Abstractions.Tasks;
 using Marshal.Abstractions.Templates;
 using Marshal.Abstractions.Tools;
@@ -31,7 +32,9 @@ using Marshal.Tasks.Notifications;
 using Marshal.Tasks.Policies;
 using Marshal.Tasks.Running;
 using Marshal.Tasks.Scheduling;
+using Marshal.Tasks.SkillProposals;
 using Marshal.Tasks.Store;
+using Marshal.Tasks.Suggestions;
 using Marshal.Tasks.Tools;
 using Marshal.Tasks.Webhooks;
 using Microsoft.Extensions.Configuration;
@@ -111,6 +114,17 @@ public static class TasksServiceCollectionExtensions
         services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<PollingMcpTaskTracker>());
         services.AddSingleton<IHostedService, ApprovalPushActions>();
 
+        services.AddOptions<SuggestionOptions>().Bind(configuration.GetSection(SuggestionOptions.Section))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<SuggestionOptions>, SuggestionOptionsValidator>();
+        services.AddSingleton<ISuggestionStore, EfSuggestionStore>();
+        services.AddSingleton<ISuggestionPolicy, BetaAcceptancePolicy>();
+        services.AddSingleton<BackgroundModelCalls>();
+        services.AddSingleton<ISuggestionWriter, ModelSuggestionWriter>();
+        services.AddSingleton<SuggestionPipeline>();
+        services.AddSingleton<SuggestionResponder>();
+        services.AddSingleton<IHostedService, SuggestionScheduler>();
+
         services.AddOptions<ExecutorOptions>().Bind(configuration.GetSection("executors"))
             .Validate(options => options.CallbackBaseUrl is null || options.CallbackBaseUrl.IsAbsoluteUri, "executors.callbackBaseUrl must be an absolute URL.")
             .Validate(options => options.ClaudeCode.Url is null
@@ -132,13 +146,22 @@ public static class TasksServiceCollectionExtensions
             .Validate(options => IsCron(options.BackupSchedule), "maintenance.backupSchedule must be a five-field cron expression.")
             .Validate(options => IsCron(options.ConsolidationSchedule), "maintenance.consolidationSchedule must be a five-field cron expression.")
             .Validate(options => IsCron(options.RetentionSchedule), "maintenance.retentionSchedule must be a five-field cron expression.")
+            .Validate(options => IsCron(options.SkillProposalSchedule), "maintenance.skillProposalSchedule must be a five-field cron expression.")
             .Validate(options => options.BackupCopies >= 1, "maintenance.backupCopies must be at least 1.")
             .Validate(options => options.PayloadRetention >= TimeSpan.FromDays(1) && options.MetadataRetention >= options.PayloadRetention,
                 "maintenance.payloadRetention must be at least a day and metadataRetention at least as long.")
             .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<MaintenanceOptions>, MaintenanceOptionsValidator>();
+        services.AddSingleton<MaintenanceTracker>();
+        services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<MaintenanceTracker>());
+        services.AddSingleton<IToolSource, MaintenanceToolSource>();
+        services.AddSingleton<ISuggestionDetector, MaintenanceCounterDetector>();
         services.AddSingleton<MemoryExportJob>();
         services.AddSingleton<ISystemJob, BackupJob>();
         services.AddSingleton<ISystemJob, RetentionPurgeJob>();
+        services.AddSingleton<IWorkflowRunReader, EfWorkflowRunReader>();
+        services.AddSingleton<ISkillProposalStore, EfSkillProposalStore>();
+        services.AddSingleton<ISystemJob, SkillProposalJob>();
         services.AddSingleton<ITaskRunner, SystemTaskRunner>();
         services.AddSingleton<IHostedService, SystemTaskSeeder>();
 

@@ -4,14 +4,18 @@ using Marshal.Abstractions.Displays;
 using Marshal.Abstractions.Events;
 using Marshal.Abstractions.Guard;
 using Marshal.Abstractions.Identity;
+using Marshal.Abstractions.Maintenance;
 using Marshal.Abstractions.Notifications;
+using Marshal.Abstractions.Printers;
 using Marshal.Abstractions.Satellites;
+using Marshal.Abstractions.Suggestions;
 using Marshal.Abstractions.Tools;
 using Marshal.Integrations.HomeAssistant.Calendar;
 using Marshal.Integrations.HomeAssistant.Displays;
 using Marshal.Integrations.HomeAssistant.Energy;
 using Marshal.Integrations.HomeAssistant.Music;
 using Marshal.Integrations.HomeAssistant.Notifications;
+using Marshal.Integrations.HomeAssistant.Suggestions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -48,6 +52,11 @@ public static class HomeAssistantServiceCollectionExtensions
         services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<HomeAssistantCache>());
         services.AddSingleton<IHomeAssistantCommands>(provider => provider.GetRequiredService<HomeAssistantCache>());
 
+        services.AddSingleton<IMaintenanceCounterSource, HaCounterSource>();
+        services.AddSingleton<ISuggestionDetector, WindowRainDetector>();
+        services.AddSingleton<ISuggestionDetector, EnergyAnomalyDetector>();
+        services.AddSingleton<ISuggestionDetector>(provider => new PrintDoneAwayDetector(
+            provider.GetRequiredService<IHomeAssistantCache>(), provider.GetRequiredService<IPresenceProvider>(), provider.GetService<IPrinterDirectory>()));
         services.AddSingleton<IConditionEvaluator, HaStateConditionEvaluator>();
         services.AddSingleton<IPresenceProvider, HaPresenceProvider>();
         services.AddSingleton<INotificationChannel, HaVoiceAnnounceChannel>();
@@ -71,8 +80,7 @@ public static class HomeAssistantServiceCollectionExtensions
         services.AddSingleton<IToolSource, TimerToolSource>();
         services.AddSingleton<IToolSource, PlacesToolSource>();
         services.AddSingleton<IToolSource, EnergyToolSource>();
-        services.AddSingleton<ICalendarProvider, HomeAssistantCalendarProvider>();
-        services.AddSingleton<IToolSource, CalendarToolSource>();
+        services.AddSingleton<ICalendarSource, HomeAssistantCalendarProvider>();
         services.AddSingleton<IMusicPlayer, HomeAssistantMusicPlayer>();
         services.AddSingleton<IToolSource, MusicToolSource>();
         services.AddSingleton<Marshal.Abstractions.Widgets.IWidgetDataProvider, MusicWidgetData>();

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Artifacts;
+using Marshal.Abstractions.Calendar;
 using Marshal.Abstractions.Events;
 using Marshal.Abstractions.Execution;
 using Marshal.Abstractions.Extraction;
@@ -16,6 +17,7 @@ using Marshal.Abstractions.Runs;
 using Marshal.Abstractions.Secrets;
 using Marshal.Abstractions.Templates;
 using Marshal.Abstractions.Tools;
+using Marshal.Core.Calendar;
 using Marshal.Demo.Seeding;
 using Marshal.Integrations.FreshRss;
 using Marshal.Integrations.HomeAssistant;
@@ -90,6 +92,9 @@ internal sealed class DemoServices : IAsyncDisposable
         services.AddSingleton<INotificationSender>(new FakeNotificationSender());
         services.AddSingleton<IInstanceOwner>(new FixedOwner());
         services.AddMarshalHomeAssistant(configuration);
+        // What Marshal.Core registers for calendars: the composite over the sources and the calendar tools.
+        services.AddSingleton<ICalendarProvider, CompositeCalendarProvider>();
+        services.AddSingleton<IToolSource, CalendarToolSource>();
         services.AddMarshalPrinters(configuration, _ => Path.Combine(Path.GetTempPath(), "marshal-demo-tests", "snapshots"));
         AddMail(services, configuration);
         services.AddMarshalFreshRss(configuration);

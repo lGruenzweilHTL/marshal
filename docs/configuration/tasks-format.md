@@ -100,7 +100,7 @@ The filter is matched deterministically, without a model call. A watch fires onc
 
 | Key | Type | Description |
 |---|---|---|
-| `source` | string | Required. Event source, matched case-insensitively (`ha`, `printer`, `mail`, `uptime-kuma`, `seerr`, ...). |
+| `source` | string | Required. Event source, matched case-insensitively (`ha`, `printer`, `mail`, `calendar`, `uptime-kuma`, `seerr`, ...). |
 | `type` | string glob | Optional event type, for example `state_changed`, `complete`, `monitor.down`. |
 | `entity` | string glob | Optional entity, for example `person.lukas`. |
 | any other key | text, number, boolean, `null`, or a list of those | Payload condition. A dotted key (`attributes.battery`) walks into the payload. Text is a case-insensitive glob (`*` matches anything). Numbers also match numeric strings. `null` matches a missing field. A list matches any of its values. |

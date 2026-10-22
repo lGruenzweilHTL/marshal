@@ -1,5 +1,6 @@
 using System.Collections;
 using Marshal.Abstractions.Apps;
+using Marshal.Abstractions.Calendar;
 using Marshal.Abstractions.Context;
 using Marshal.Abstractions.Displays;
 using Marshal.Abstractions.Evals;
@@ -23,6 +24,7 @@ using Marshal.Abstractions.Tools;
 using Marshal.Core.Agent;
 using Marshal.Core.AiTasks;
 using Marshal.Core.McpServer;
+using Marshal.Core.Calendar;
 using Marshal.Core.Configuration;
 using Marshal.Core.Evals;
 using Marshal.Core.Extraction;
@@ -108,6 +110,9 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ITool>(provider => new SystemHealthTool(provider.GetService<ISystemHealth>()));
         services.AddSingleton(new ToolNamespace("system", "Marshal's own health: problems with integrations, configuration and approvals that need an admin"));
         services.AddSingleton<IToolSource, BuiltInToolSource>();
+        // The calendar sources (HA, CalDAV) register themselves; the tools see them through the composite.
+        services.AddSingleton<ICalendarProvider, CompositeCalendarProvider>();
+        services.AddSingleton<IToolSource, CalendarToolSource>();
         services.AddSingleton<IToolRegistry, ToolRegistry>();
         services.AddSingleton<INamespaceEmbeddings, CachedNamespaceEmbeddings>();
         services.AddSingleton<IToolSelector, NamespaceToolSelector>();

@@ -1,7 +1,10 @@
 using System.Collections;
 using Marshal.Abstractions;
 using Marshal.Abstractions.Mcp;
+using Marshal.Abstractions.Maintenance;
 using Marshal.Abstractions.Models;
+using Marshal.Abstractions.Printers;
+using Marshal.Abstractions.Suggestions;
 using Marshal.Abstractions.Templates;
 using Marshal.Api.Configuration;
 using Marshal.Artifacts;
@@ -16,6 +19,8 @@ using Marshal.Core.Satellites;
 using Marshal.Core.Skills;
 using Marshal.Core.Templates;
 using Marshal.Core.Tools;
+using Marshal.Integrations.CalDav;
+using Marshal.Tasks.Maintenance;
 using Marshal.Tasks.Webhooks;
 using Marshal.Testing;
 using Microsoft.Extensions.Configuration;
@@ -134,6 +139,66 @@ public sealed class ExampleConfigTests
     }
 
     [Fact]
+    public void ExampleConfig_CalDavBlockUncommented_BindsAndValidates()
+    {
+        string[] lines = File.ReadAllLines(Path.Combine(_directory, "marshal.yaml"));
+        int start = Array.IndexOf(lines, "# calendar:");
+        string[] block = [.. lines.Skip(start).TakeWhile(line => line.StartsWith('#') && (line == "# calendar:" || line.StartsWith("#   ", StringComparison.Ordinal))).Select(line => line[2..])];
+        string directory = Directory.CreateTempSubdirectory("marshal-caldav-example").FullName;
+        try
+        {
+            File.WriteAllLines(Path.Combine(directory, "marshal.yaml"), block);
+            IConfiguration configuration = new ConfigurationBuilder().AddMarshalConfiguration(directory, new Hashtable()).Build();
+            var services = new ServiceCollection();
+            services.AddMarshalCalDav(configuration);
+
+            CalDavOptions options = services.BuildServiceProvider().GetRequiredService<IOptions<CalDavOptions>>().Value;
+
+            Assert.Equal(["icloud", "nextcloud"], options.Accounts.Keys.Order(StringComparer.Ordinal));
+            Assert.Equal(["personal", "family"], options.Accounts["nextcloud"].Calendars);
+            Assert.Equal(5, options.Accounts["nextcloud"].PollMinutes);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ExampleConfig_MaintenanceItemsAndSuggestionsUncommented_BindAndValidate()
+    {
+        // Uncomment the item block inside `maintenance` and the whole `suggestions` block.
+        string[] lines = [.. File.ReadAllLines(Path.Combine(_directory, "marshal.yaml"))
+            .Select(line => line.StartsWith("  # ", StringComparison.Ordinal) && !line.StartsWith("  # Usage", StringComparison.Ordinal) ? "  " + line[4..] : line)
+            .Select(line => line == "# suggestions:" || line.StartsWith("#   ", StringComparison.Ordinal) && !line.StartsWith("#   - ", StringComparison.Ordinal) ? line[2..] : line)];
+        int start = Array.FindIndex(lines, line => line.StartsWith("maintenance:", StringComparison.Ordinal));
+        int suggestions = Array.IndexOf(lines, "suggestions:");
+        string[] block =
+        [
+            .. lines.Skip(start).TakeWhile((line, index) => index == 0 || line.StartsWith(' ')),
+            .. lines.Skip(suggestions).TakeWhile((line, index) => index == 0 || line.StartsWith(' ')),
+        ];
+        string directory = Directory.CreateTempSubdirectory("marshal-maintenance-example").FullName;
+        try
+        {
+            File.WriteAllLines(Path.Combine(directory, "marshal.yaml"), block);
+            IConfiguration configuration = new ConfigurationBuilder().AddMarshalConfiguration(directory, new Hashtable()).Build();
+            MaintenanceOptions maintenance = configuration.GetSection("maintenance").Get<MaintenanceOptions>()!;
+            SuggestionOptions options = configuration.GetSection(SuggestionOptions.Section).Get<SuggestionOptions>()!;
+
+            Assert.Equal(["dishwasher_filter", "voron_nozzle"], maintenance.Items.Keys.Order(StringComparer.Ordinal));
+            Assert.Equal((MaintenanceMetric.PrintHours, 300m, 20m), (maintenance.Items["voron_nozzle"].Source.Metric, maintenance.Items["voron_nozzle"].Every, maintenance.Items["voron_nozzle"].WarnBefore));
+            Assert.True(new MaintenanceOptionsValidator([new OnePrinter()]).Validate(null, maintenance).Succeeded);
+            Assert.Null(options.Validate());
+            Assert.Equal(["energy_anomaly", "maintenance_counter", "window_rain"], options.Detectors.Keys.Order(StringComparer.Ordinal));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void ExampleMcpServerSkillAndTemplate_LoadWithoutErrors()
     {
         var scanner = new ConfigSecretScanner();
@@ -206,5 +271,12 @@ public sealed class ExampleConfigTests
             directory = directory.Parent;
 
         return directory?.FullName ?? throw new InvalidOperationException("Repository root not found.");
+    }
+
+    private sealed class OnePrinter : IPrinterDirectory
+    {
+        public IReadOnlyList<PrinterInfo> Printers { get; } = [new("voron", [])];
+
+        public Result<PrinterInfo> Resolve(string? printer) => Printers[0];
     }
 }

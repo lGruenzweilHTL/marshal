@@ -1,12 +1,14 @@
 using System.Text.RegularExpressions;
 using Marshal.Abstractions.Events;
 using Marshal.Abstractions.Images;
+using Marshal.Abstractions.Maintenance;
 using Marshal.Abstractions.Printers;
 using Marshal.Abstractions.Tools;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
+using Microsoft.Extensions.Options;
 
 namespace Marshal.Integrations.Moonraker;
 
@@ -29,6 +31,7 @@ public static partial class PrinterServiceCollectionExtensions
             .Validate(options => options.PrinterSnapshots is { Quality: >= 1 and <= 100 }, "printerSnapshots.quality must be between 1 and 100.")
             .Validate(options => options.PrinterSnapshots is { Retention: >= 1 }, "printerSnapshots.retention must be at least 1.")
             .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<PrinterOptions>, PrinterOptionsValidator>();
 
         // Commands are not idempotent (a retried start could print twice): retries only for safe methods.
         services.AddHttpClient(MoonrakerRest.HttpClientName).AddStandardResilienceHandler(options => options.Retry.DisableForUnsafeHttpMethods());
@@ -37,6 +40,7 @@ public static partial class PrinterServiceCollectionExtensions
 
         services.AddSingleton<IPrinterDirectory, ConfiguredPrinterDirectory>();
         services.AddSingleton<IPrinterClient, MoonrakerPrinterClient>();
+        services.AddSingleton<IMaintenanceCounterSource, MoonrakerCounterSource>();
         services.AddSingleton<IPrinterWebcams, MoonrakerWebcams>();
         services.AddSingleton<IImageResizer, SkiaImageResizer>();
         services.AddSingleton(provider => new SnapshotStorage(snapshotDirectory(provider)));

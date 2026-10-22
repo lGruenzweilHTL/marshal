@@ -1,0 +1,2 @@
+<?xml version='1.0' encoding='utf-8'?>
+<multistatus xmlns="DAV:"><sync-token>http://radicale.org/ns/sync/dd8fbe2a06df3f4b96bfb85fb5852f02becea9e6d9fda7fd63555ebebcef3367</sync-token><response><href>/lukas/personal/weekly-standup.ics</href><propstat><prop><getetag>"7d8f7074fb8c6e5ceb34c38dffc085430f7be062fc31d716cb87ae1bbe3c0525"</getetag></prop><status>HTTP/1.1 200 OK</status></propstat></response></multistatus>
