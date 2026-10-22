@@ -2,8 +2,23 @@ title: "Marshal"
 baseURL: "/marshal/"
 siteURL: "https://lgruenzweilhtl.github.io"
 editURL: "https://github.com/lGruenzweilHTL/marshal/edit/master/docs/"
+favicon: "web/src/ui/logo/icon.svg"
+
+# Marshal's own design tokens (web/src/ui/tokens.css): warm grey canvas, ember accent, Instrument Sans and JetBrains Mono
+theme:
+  primary: "#B94608"
+  background: "#F1F2EE"
+  text: "#14171A"
+  radius: "10px"
+  font: "Instrument Sans, system-ui, sans-serif"
+  codeFont: "JetBrains Mono, monospace"
+  dark:
+    primary: "#FF8A3D"
+    background: "#0C0E10"
+    text: "#ECEEEB"
 
 navbar:
+  logo: "web/src/ui/logo/icon.svg"
   source:
     name: "GitHub"
     icon: "fa-brands fa-github"
@@ -22,3 +37,10 @@ openapi:
     title: API v1 reference
     route: api/v1
     icon: fa-solid fa-plug
+
+
+# Headings in Marshal's display face, like the web interface (font files in docs/assets/fonts)
+head:
+  link:
+    - rel: "stylesheet"
+      href: "/marshal/assets/marshal.css"
