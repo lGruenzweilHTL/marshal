@@ -20,12 +20,12 @@ internal static class MeEndpoints
             .RequireAuthorization()
             .WithTags("Me")
             .WithName("GetMe")
-            .WithSummary("The current user: id, display name, roles and scopes.");
+            .WithDescription("The current user: id, display name, roles and scopes.");
         group.MapGet("/auth/antiforgery", GetAntiforgeryToken)
             .AllowAnonymous()
             .WithTags("Auth")
             .WithName("GetAntiforgeryToken")
-            .WithSummary("A token for the X-XSRF-TOKEN header of state-changing requests. Fetch a new one after login or logout.");
+            .WithDescription("A token for the X-XSRF-TOKEN header of state-changing requests. Fetch a new one after login or logout.");
         return group;
     }
 

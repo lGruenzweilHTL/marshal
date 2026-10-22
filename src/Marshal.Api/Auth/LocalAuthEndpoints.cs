@@ -18,19 +18,19 @@ internal static class LocalAuthEndpoints
     {
         RouteGroupBuilder local = group.MapGroup("/auth/local").WithTags("Auth").AddEndpointFilter(RequireLocalProvider);
         local.MapGet("/setup", GetSetupAsync).AllowAnonymous().WithName("GetLocalSetup")
-            .WithSummary("200 while the instance owner is unclaimed and the first-run setup is available, otherwise 404.");
+            .WithDescription("200 while the instance owner is unclaimed and the first-run setup is available, otherwise 404.");
         local.MapPost("/setup", SetupAsync).AllowAnonymous().WithName("CompleteLocalSetup")
-            .WithSummary("Claims the instance owner: sets user name, display name and password, grants admin and signs in.");
+            .WithDescription("Claims the instance owner: sets user name, display name and password, grants admin and signs in.");
         local.MapPost("/login", PasswordLoginAsync).AllowAnonymous().WithName("LocalPasswordLogin")
-            .WithSummary("Signs in with user name and password.");
+            .WithDescription("Signs in with user name and password.");
         local.MapPost("/passkey/options", PasskeyRequestOptionsAsync).AllowAnonymous().WithName("LocalPasskeyRequestOptions")
-            .WithSummary("WebAuthn request options (PublicKeyCredentialRequestOptions JSON) for passkey login.");
+            .WithDescription("WebAuthn request options (PublicKeyCredentialRequestOptions JSON) for passkey login.");
         local.MapPost("/passkey", PasskeyLoginAsync).AllowAnonymous().WithName("LocalPasskeyLogin")
-            .WithSummary("Signs in with a passkey assertion (PublicKeyCredential JSON).");
+            .WithDescription("Signs in with a passkey assertion (PublicKeyCredential JSON).");
         local.MapPost("/passkeys/creation-options", PasskeyCreationOptionsAsync).RequireAuthorization().WithName("LocalPasskeyCreationOptions")
-            .WithSummary("WebAuthn creation options (PublicKeyCredentialCreationOptions JSON) to add a passkey to the signed-in user.");
+            .WithDescription("WebAuthn creation options (PublicKeyCredentialCreationOptions JSON) to add a passkey to the signed-in user.");
         local.MapPost("/passkeys", RegisterPasskeyAsync).RequireAuthorization().WithName("RegisterLocalPasskey")
-            .WithSummary("Stores a passkey attestation for the signed-in user.");
+            .WithDescription("Stores a passkey attestation for the signed-in user.");
         return group;
     }
 

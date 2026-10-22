@@ -24,9 +24,9 @@ internal static class MusicEndpoints
     {
         RouteGroupBuilder music = group.MapGroup("/music").WithTags("Music").RequireAuthorization(Policies.Human);
         music.MapGet("/{speaker}", GetAsync).WithName("GetMusicQueue")
-            .WithSummary("The speaker's queue as the music widget shows it: state, current and next item, item count, shuffle and repeat.");
+            .WithDescription("The speaker's queue as the music widget shows it: state, current and next item, item count, shuffle and repeat.");
         music.MapPost("/{speaker}/control", ControlAsync).WithName("ControlMusic")
-            .WithSummary("Runs a playback control (pause, resume, next, previous, stop, volume) through the guard, recorded as a run with trigger widget:music.");
+            .WithDescription("Runs a playback control (pause, resume, next, previous, stop, volume) through the guard, recorded as a run with trigger widget:music.");
         return group;
     }
 

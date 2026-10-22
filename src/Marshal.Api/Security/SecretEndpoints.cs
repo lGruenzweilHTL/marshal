@@ -19,23 +19,23 @@ internal static class SecretEndpoints
     {
         RouteGroupBuilder own = group.MapGroup("/me/secrets").WithTags("Secrets").RequireAuthorization(Policies.Human);
         own.MapGet("/", OverviewAsync).WithName("GetSecretOverview")
-            .WithSummary("Every secret visible to the user (own, instance, environment) without values, plus unresolved references.");
+            .WithDescription("Every secret visible to the user (own, instance, environment) without values, plus unresolved references.");
         own.MapPut("/{name}", (string name, SecretValueRequest request, ClaimsPrincipal user, ISecretWriter writer, IAuditLog audit, CancellationToken ct) =>
                 SetAsync(name, request, user.Owner(), user, writer, audit, ct))
-            .WithName("SetOwnSecret").WithSummary("Creates or replaces one of the user's secrets.");
+            .WithName("SetOwnSecret").WithDescription("Creates or replaces one of the user's secrets.");
         own.MapDelete("/{name}", (string name, ClaimsPrincipal user, ISecretWriter writer, IAuditLog audit, CancellationToken ct) =>
                 DeleteAsync(name, user.Owner(), user, writer, audit, ct))
-            .WithName("DeleteOwnSecret").WithSummary("Deletes one of the user's secrets.");
+            .WithName("DeleteOwnSecret").WithDescription("Deletes one of the user's secrets.");
 
         RouteGroupBuilder instance = group.MapGroup("/secrets/instance").WithTags("Secrets").RequireAuthorization(Policies.Human, Policies.Admin);
         instance.MapGet("/", InstanceAsync).WithName("ListInstanceSecrets")
-            .WithSummary("Instance secrets (database and environment) without values.");
+            .WithDescription("Instance secrets (database and environment) without values.");
         instance.MapPut("/{name}", (string name, SecretValueRequest request, ClaimsPrincipal user, ISecretWriter writer, IAuditLog audit, CancellationToken ct) =>
                 SetAsync(name, request, null, user, writer, audit, ct))
-            .WithName("SetInstanceSecret").WithSummary("Creates or replaces an instance secret.");
+            .WithName("SetInstanceSecret").WithDescription("Creates or replaces an instance secret.");
         instance.MapDelete("/{name}", (string name, ClaimsPrincipal user, ISecretWriter writer, IAuditLog audit, CancellationToken ct) =>
                 DeleteAsync(name, null, user, writer, audit, ct))
-            .WithName("DeleteInstanceSecret").WithSummary("Deletes an instance secret.");
+            .WithName("DeleteInstanceSecret").WithDescription("Deletes an instance secret.");
         return group;
     }
 

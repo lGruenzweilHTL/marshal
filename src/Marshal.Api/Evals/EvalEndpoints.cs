@@ -20,23 +20,23 @@ internal static class EvalEndpoints
     public static RouteGroupBuilder MapEvalEndpoints(this RouteGroupBuilder group)
     {
         group.MapPut("/runs/{id}/rating", RateAsync).RequireAuthorization(Policies.Human).WithTags("Runs").WithName("RateRun")
-            .WithSummary("Rates one of the user's runs up or down with an optional note; with \"help Marshal learn\" on, the first rating also creates an eval case.");
+            .WithDescription("Rates one of the user's runs up or down with an optional note; with \"help Marshal learn\" on, the first rating also creates an eval case.");
         group.MapDelete("/runs/{id}/rating", ClearAsync).RequireAuthorization(Policies.Human).WithTags("Runs").WithName("ClearRunRating")
-            .WithSummary("Removes the rating of a run; an eval case made from it stays.");
+            .WithDescription("Removes the rating of a run; an eval case made from it stays.");
         group.MapPost("/runs/{id}/eval-case", SaveCaseAsync).RequireAuthorization(Policies.Human, Policies.Admin).WithTags("Evals").WithName("SaveRunAsEvalCase")
-            .WithSummary("Snapshots a run as an eval case, whatever the learning preference says; returns the existing case when there is one.");
+            .WithDescription("Snapshots a run as an eval case, whatever the learning preference says; returns the existing case when there is one.");
 
         RouteGroupBuilder evals = group.MapGroup("/evals").WithTags("Evals").RequireAuthorization(Policies.Human, Policies.Admin);
-        evals.MapGet("/cases", ListCasesAsync).WithName("ListEvalCases").WithSummary("Eval cases, newest first.");
-        evals.MapGet("/cases/{id}", GetCaseAsync).WithName("GetEvalCase").WithSummary("One eval case with its history, turn context, recorded tool calls and reply.");
-        evals.MapPut("/cases/{id}/note", NoteAsync).WithName("SetEvalCaseNote").WithSummary("Sets the expected behavior note of a case (at most 1,000 characters).");
-        evals.MapDelete("/cases/{id}", DeleteCaseAsync).WithName("DeleteEvalCase").WithSummary("Deletes an eval case.");
-        evals.MapPost("/estimate", EstimateAsync).WithName("EstimateEvalRun").WithSummary("Estimated model cost of replaying the cases with the candidate configuration.");
-        evals.MapGet("/runs", ListRunsAsync).WithName("ListEvalRuns").WithSummary("Eval runs with their totals, newest first.");
-        evals.MapPost("/runs", StartAsync).WithName("StartEvalRun").WithSummary("Starts an eval run: replays the cases one at a time in the background without executing any tool.");
-        evals.MapGet("/runs/{id}", GetRunAsync).WithName("GetEvalRun").WithSummary("An eval run with its totals and per case the replayed calls, reply, outcome and judge score.");
-        evals.MapPost("/runs/{id}/cancel", CancelAsync).WithName("CancelEvalRun").WithSummary("Cancels a queued or running eval run.");
-        evals.MapDelete("/runs/{id}", DeleteRunAsync).WithName("DeleteEvalRun").WithSummary("Deletes an eval run and its results.");
+        evals.MapGet("/cases", ListCasesAsync).WithName("ListEvalCases").WithDescription("Eval cases, newest first.");
+        evals.MapGet("/cases/{id}", GetCaseAsync).WithName("GetEvalCase").WithDescription("One eval case with its history, turn context, recorded tool calls and reply.");
+        evals.MapPut("/cases/{id}/note", NoteAsync).WithName("SetEvalCaseNote").WithDescription("Sets the expected behavior note of a case (at most 1,000 characters).");
+        evals.MapDelete("/cases/{id}", DeleteCaseAsync).WithName("DeleteEvalCase").WithDescription("Deletes an eval case.");
+        evals.MapPost("/estimate", EstimateAsync).WithName("EstimateEvalRun").WithDescription("Estimated model cost of replaying the cases with the candidate configuration.");
+        evals.MapGet("/runs", ListRunsAsync).WithName("ListEvalRuns").WithDescription("Eval runs with their totals, newest first.");
+        evals.MapPost("/runs", StartAsync).WithName("StartEvalRun").WithDescription("Starts an eval run: replays the cases one at a time in the background without executing any tool.");
+        evals.MapGet("/runs/{id}", GetRunAsync).WithName("GetEvalRun").WithDescription("An eval run with its totals and per case the replayed calls, reply, outcome and judge score.");
+        evals.MapPost("/runs/{id}/cancel", CancelAsync).WithName("CancelEvalRun").WithDescription("Cancels a queued or running eval run.");
+        evals.MapDelete("/runs/{id}", DeleteRunAsync).WithName("DeleteEvalRun").WithDescription("Deletes an eval run and its results.");
         return group;
     }
 

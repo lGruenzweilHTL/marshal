@@ -42,7 +42,7 @@ internal static class HookEndpoints
             .ProducesProblem(StatusCodes.Status413PayloadTooLarge)
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .WithTags("Hooks").WithName("PostWebhook")
-            .WithSummary("Receives a webhook of a source (e.g. uptime-kuma) and publishes its events.");
+            .WithDescription("Receives a webhook of a source (e.g. uptime-kuma) and publishes its events.");
         return group;
     }
 

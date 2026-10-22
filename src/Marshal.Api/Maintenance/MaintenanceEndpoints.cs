@@ -19,9 +19,9 @@ internal static class MaintenanceEndpoints
     {
         RouteGroupBuilder maintenance = group.MapGroup("/maintenance").WithTags("Maintenance").RequireAuthorization(Policies.Human);
         maintenance.MapGet("/", ListAsync).WithName("ListMaintenanceItems")
-            .WithSummary("Maintenance items read now: due first, then soon, then by name; empty without configured items.");
+            .WithDescription("Maintenance items read now: due first, then soon, then by name; empty without configured items.");
         maintenance.MapPost("/{id}/done", DoneAsync).WithName("MarkMaintenanceDone")
-            .WithSummary("Marks a maintenance item done: its usage starts again from the counter's current value.");
+            .WithDescription("Marks a maintenance item done: its usage starts again from the counter's current value.");
         return group;
     }
 

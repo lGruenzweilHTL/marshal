@@ -29,25 +29,25 @@ internal static class TaskEndpoints
     {
         RouteGroupBuilder tasks = group.MapGroup("/tasks").WithTags("Tasks").RequireAuthorization(Policies.Human);
         tasks.MapGet("/", ListAsync).WithName("ListTasks")
-            .WithSummary("The user's tasks and watches, oldest first; status filters by one status or active (pending, running, waiting).");
+            .WithDescription("The user's tasks and watches, oldest first; status filters by one status or active (pending, running, waiting).");
         tasks.MapGet("/kill-switch", async (IKillSwitch killSwitch, CancellationToken ct) => TypedResults.Ok(new KillSwitchState(await killSwitch.IsActiveAsync(ct))))
-            .WithName("GetKillSwitch").WithSummary("Whether background work is stopped.");
+            .WithName("GetKillSwitch").WithDescription("Whether background work is stopped.");
         tasks.MapPost("/kill-switch/activate", async (IKillSwitch killSwitch, CancellationToken ct) => TypedResults.Ok(new KillSwitchState(true, await killSwitch.ActivateAsync(ct))))
-            .WithName("ActivateKillSwitch").WithSummary("Stops every unfinished agent task and pauses new ones until released.");
+            .WithName("ActivateKillSwitch").WithDescription("Stops every unfinished agent task and pauses new ones until released.");
         tasks.MapPost("/kill-switch/release", async (IKillSwitch killSwitch, CancellationToken ct) =>
             {
                 await killSwitch.ReleaseAsync(ct);
                 return TypedResults.Ok(new KillSwitchState(false));
             })
-            .WithName("ReleaseKillSwitch").WithSummary("Lets background tasks run again; tasks paused while it was active become due.");
+            .WithName("ReleaseKillSwitch").WithDescription("Lets background tasks run again; tasks paused while it was active become due.");
         tasks.MapGet("/{id}", GetAsync).WithName("GetTask")
-            .WithSummary("One task with notes, the latest result, deliveries, recent runs, notifications and executor sessions.");
+            .WithDescription("One task with notes, the latest result, deliveries, recent runs, notifications and executor sessions.");
         tasks.MapPut("/{id}/goal", SetGoalAsync).WithName("SetTaskGoal")
-            .WithSummary("Replaces the task's goal; the next run uses it.");
+            .WithDescription("Replaces the task's goal; the next run uses it.");
         tasks.MapPut("/{id}/tool-policy", SetToolPolicyAsync).WithName("SetTaskToolPolicy")
-            .WithSummary("Replaces the task's tool policy (tool ids or globs inside its template's allowlist); the next run sees only those tools.");
+            .WithDescription("Replaces the task's tool policy (tool ids or globs inside its template's allowlist); the next run sees only those tools.");
         tasks.MapPost("/{id}/cancel", CancelAsync).WithName("CancelTask")
-            .WithSummary("Cancels the task and its unfinished child tasks.");
+            .WithDescription("Cancels the task and its unfinished child tasks.");
         return group;
     }
 

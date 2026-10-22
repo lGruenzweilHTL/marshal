@@ -21,9 +21,9 @@ internal static class McpToolApprovalEndpoints
     {
         RouteGroupBuilder tools = group.MapGroup("/config/mcp-tools").WithTags("Config");
         tools.MapGet("/pending", ListPendingAsync).RequireAuthorization(Policies.Admin).WithName("ListPendingMcpTools")
-            .WithSummary("MCP tools that are new or changed since the last approval, with the previous and current definitions.");
+            .WithDescription("MCP tools that are new or changed since the last approval, with the previous and current definitions.");
         tools.MapPost("/decisions", DecideAsync).RequireAuthorization(Policies.Human, Policies.Admin).WithName("DecideMcpTool")
-            .WithSummary("Approves (the current definition becomes trusted) or rejects (hidden until it changes again) a waiting MCP tool.");
+            .WithDescription("Approves (the current definition becomes trusted) or rejects (hidden until it changes again) a waiting MCP tool.");
         return group;
     }
 

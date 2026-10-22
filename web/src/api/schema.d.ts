@@ -11,7 +11,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lists the active login providers. */
+        /**
+         * /auth/providers
+         * @description Lists the active login providers.
+         */
         get: operations["ListLoginProviders"];
         put?: never;
         post?: never;
@@ -28,7 +31,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Starts a login with the provider and redirects back to returnUrl (an app-relative path) afterwards. */
+        /**
+         * /auth/login/{provider}
+         * @description Starts a login with the provider and redirects back to returnUrl (an app-relative path) afterwards.
+         */
         get: operations["StartLogin"];
         put?: never;
         post?: never;
@@ -47,7 +53,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Ends the session (and the IdP session for OIDC logins) and redirects to the login page. */
+        /**
+         * /auth/logout
+         * @description Ends the session (and the IdP session for OIDC logins) and redirects to the login page.
+         */
         post: operations["Logout"];
         delete?: never;
         options?: never;
@@ -62,10 +71,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 200 while the instance owner is unclaimed and the first-run setup is available, otherwise 404. */
+        /**
+         * /auth/local/setup
+         * @description 200 while the instance owner is unclaimed and the first-run setup is available, otherwise 404.
+         */
         get: operations["GetLocalSetup"];
         put?: never;
-        /** Claims the instance owner: sets user name, display name and password, grants admin and signs in. */
+        /**
+         * /auth/local/setup
+         * @description Claims the instance owner: sets user name, display name and password, grants admin and signs in.
+         */
         post: operations["CompleteLocalSetup"];
         delete?: never;
         options?: never;
@@ -82,7 +97,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Signs in with user name and password. */
+        /**
+         * /auth/local/login
+         * @description Signs in with user name and password.
+         */
         post: operations["LocalPasswordLogin"];
         delete?: never;
         options?: never;
@@ -99,7 +117,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** WebAuthn request options (PublicKeyCredentialRequestOptions JSON) for passkey login. */
+        /**
+         * /auth/local/passkey/options
+         * @description WebAuthn request options (PublicKeyCredentialRequestOptions JSON) for passkey login.
+         */
         post: operations["LocalPasskeyRequestOptions"];
         delete?: never;
         options?: never;
@@ -116,7 +137,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Signs in with a passkey assertion (PublicKeyCredential JSON). */
+        /**
+         * /auth/local/passkey
+         * @description Signs in with a passkey assertion (PublicKeyCredential JSON).
+         */
         post: operations["LocalPasskeyLogin"];
         delete?: never;
         options?: never;
@@ -133,7 +157,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** WebAuthn creation options (PublicKeyCredentialCreationOptions JSON) to add a passkey to the signed-in user. */
+        /**
+         * /auth/local/passkeys/creation-options
+         * @description WebAuthn creation options (PublicKeyCredentialCreationOptions JSON) to add a passkey to the signed-in user.
+         */
         post: operations["LocalPasskeyCreationOptions"];
         delete?: never;
         options?: never;
@@ -150,7 +177,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Stores a passkey attestation for the signed-in user. */
+        /**
+         * /auth/local/passkeys
+         * @description Stores a passkey attestation for the signed-in user.
+         */
         post: operations["RegisterLocalPasskey"];
         delete?: never;
         options?: never;
@@ -165,7 +195,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The current user: id, display name, roles and scopes. */
+        /**
+         * /me
+         * @description The current user: id, display name, roles and scopes.
+         */
         get: operations["GetMe"];
         put?: never;
         post?: never;
@@ -182,7 +215,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** A token for the X-XSRF-TOKEN header of state-changing requests. Fetch a new one after login or logout. */
+        /**
+         * /auth/antiforgery
+         * @description A token for the X-XSRF-TOKEN header of state-changing requests. Fetch a new one after login or logout.
+         */
         get: operations["GetAntiforgeryToken"];
         put?: never;
         post?: never;
@@ -199,7 +235,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Server-sent live updates for the comma-separated topics (event name = event type, data = LiveEventMessage). */
+        /**
+         * /events
+         * @description Server-sent live updates for the comma-separated topics (event name = event type, data = LiveEventMessage).
+         */
         get: operations["SubscribeLiveEvents"];
         put?: never;
         post?: never;
@@ -216,7 +255,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The user's runs (voice, web, task, api), newest first or slowest time to first delta first (sort=timeToFirstDelta); filter by source, outcome, rating and minimum cost, page with before. */
+        /**
+         * /runs
+         * @description The user's runs (voice, web, task, api), newest first or slowest time to first delta first (sort=timeToFirstDelta); filter by source, outcome, rating and minimum cost, page with before.
+         */
         get: operations["ListRuns"];
         put?: never;
         post?: never;
@@ -233,7 +275,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One run: context build, model calls, tool calls with guard decisions, taint sources and the reply. */
+        /**
+         * /runs/{id}
+         * @description One run: context build, model calls, tool calls with guard decisions, taint sources and the reply.
+         */
         get: operations["GetRun"];
         put?: never;
         post?: never;
@@ -250,7 +295,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Cost per day and tier in the user's time zone, advisor separately (default: the last 30 days). */
+        /**
+         * /cost
+         * @description Cost per day and tier in the user's time zone, advisor separately (default: the last 30 days).
+         */
         get: operations["GetCost"];
         put?: never;
         post?: never;
@@ -268,10 +316,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Rates one of the user's runs up or down with an optional note; with "help Marshal learn" on, the first rating also creates an eval case. */
+        /**
+         * /runs/{id}/rating
+         * @description Rates one of the user's runs up or down with an optional note; with "help Marshal learn" on, the first rating also creates an eval case.
+         */
         put: operations["RateRun"];
         post?: never;
-        /** Removes the rating of a run; an eval case made from it stays. */
+        /**
+         * /runs/{id}/rating
+         * @description Removes the rating of a run; an eval case made from it stays.
+         */
         delete: operations["ClearRunRating"];
         options?: never;
         head?: never;
@@ -287,7 +341,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Snapshots a run as an eval case, whatever the learning preference says; returns the existing case when there is one. */
+        /**
+         * /runs/{id}/eval-case
+         * @description Snapshots a run as an eval case, whatever the learning preference says; returns the existing case when there is one.
+         */
         post: operations["SaveRunAsEvalCase"];
         delete?: never;
         options?: never;
@@ -302,7 +359,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The app version, the supported and deprecated API versions and the event sources. */
+        /**
+         * /system
+         * @description The app version, the supported and deprecated API versions and the event sources.
+         */
         get: operations["GetSystem"];
         put?: never;
         post?: never;
@@ -319,7 +379,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The current health warnings (codes, components, messages in German and English). Changes are published on the health live topic. */
+        /**
+         * /system/health
+         * @description The current health warnings (codes, components, messages in German and English). Changes are published on the health live topic.
+         */
         get: operations["GetSystemHealth"];
         put?: never;
         post?: never;
@@ -336,7 +399,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Loaded skills, templates, MCP servers, risk rules, models and satellites, plus the last load error per file. */
+        /**
+         * /config
+         * @description Loaded skills, templates, MCP servers, risk rules, models and satellites, plus the last load error per file.
+         */
         get: operations["GetConfigSummary"];
         put?: never;
         post?: never;
@@ -355,7 +421,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Runs one conversation turn and streams the reply as server-sent events (delta, status, artifact, final; web sessions also reasoning and tool). */
+        /**
+         * /conversation/turns
+         * @description Runs one conversation turn and streams the reply as server-sent events (delta, status, artifact, final; web sessions also reasoning and tool).
+         */
         post: operations["CreateConversationTurn"];
         delete?: never;
         options?: never;
@@ -370,7 +439,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The user's conversations (web, voice, api), newest last turn first; page with before (a lastTurnAt) and limit. */
+        /**
+         * /conversations
+         * @description The user's conversations (web, voice, api), newest last turn first; page with before (a lastTurnAt) and limit.
+         */
         get: operations["ListConversations"];
         put?: never;
         post?: never;
@@ -387,7 +459,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One conversation: its turns and background results in time order. */
+        /**
+         * /conversations/{id}
+         * @description One conversation: its turns and background results in time order.
+         */
         get: operations["GetConversation"];
         put?: never;
         post?: never;
@@ -404,7 +479,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The user's notifications, newest first, with channel, outcome and reason; filter by outcome, page with before. */
+        /**
+         * /notifications
+         * @description The user's notifications, newest first, with channel, outcome and reason; filter by outcome, page with before.
+         */
         get: operations["ListNotifications"];
         put?: never;
         post?: never;
@@ -421,7 +499,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The artifact's content (session or token). */
+        /**
+         * /artifacts/{id}/content
+         * @description The artifact's content (session or token).
+         */
         get: operations["GetArtifactContent"];
         put?: never;
         post?: never;
@@ -438,7 +519,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** A PNG preview within 480 × 270 pixels for 3D models and images; 404 for other kinds. */
+        /**
+         * /artifacts/{id}/preview
+         * @description A PNG preview within 480 × 270 pixels for 3D models and images; 404 for other kinds.
+         */
         get: operations["GetArtifactPreview"];
         put?: never;
         post?: never;
@@ -455,7 +539,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The artifact's content through a signed, expiring link; no sign-in. */
+        /**
+         * /artifacts/{id}/content/signed
+         * @description The artifact's content through a signed, expiring link; no sign-in.
+         */
         get: operations["GetSignedArtifactContent"];
         put?: never;
         post?: never;
@@ -474,7 +561,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Copies a printer snapshot into the artifact store, outside the snapshot retention. */
+        /**
+         * /printers/{printer}/snapshots/{snapshot}/keep
+         * @description Copies a printer snapshot into the artifact store, outside the snapshot retention.
+         */
         post: operations["KeepPrinterSnapshot"];
         delete?: never;
         options?: never;
@@ -491,7 +581,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Runs one AI task (multipart: a 'task' JSON part with taskName, instructions, optional structure and language; optional 'attachment' image parts) and answers with its data: a string, or an object matching structure. */
+        /**
+         * /ai-tasks
+         * @description Runs one AI task (multipart: a 'task' JSON part with taskName, instructions, optional structure and language; optional 'attachment' image parts) and answers with its data: a string, or an object matching structure.
+         */
         post: operations["RunAiTask"];
         delete?: never;
         options?: never;
@@ -508,7 +601,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Receives a webhook of a source (e.g. uptime-kuma) and publishes its events. */
+        /**
+         * /hooks/{source}
+         * @description Receives a webhook of a source (e.g. uptime-kuma) and publishes its events.
+         */
         post: operations["PostWebhook"];
         delete?: never;
         options?: never;
@@ -523,10 +619,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The user's API tokens without secrets; executor callback tokens are read-only. */
+        /**
+         * /me/tokens
+         * @description The user's API tokens without secrets; executor callback tokens are read-only.
+         */
         get: operations["ListApiTokens"];
         put?: never;
-        /** Creates a token with scopes the user holds; the plaintext is returned only in this response. */
+        /**
+         * /me/tokens
+         * @description Creates a token with scopes the user holds; the plaintext is returned only in this response.
+         */
         post: operations["CreateApiToken"];
         delete?: never;
         options?: never;
@@ -544,7 +646,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Revokes one of the user's tokens. */
+        /**
+         * /me/tokens/{id}
+         * @description Revokes one of the user's tokens.
+         */
         delete: operations["RevokeApiToken"];
         options?: never;
         head?: never;
@@ -558,7 +663,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Every secret visible to the user (own, instance, environment) without values, plus unresolved references. */
+        /**
+         * /me/secrets
+         * @description Every secret visible to the user (own, instance, environment) without values, plus unresolved references.
+         */
         get: operations["GetSecretOverview"];
         put?: never;
         post?: never;
@@ -576,10 +684,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Creates or replaces one of the user's secrets. */
+        /**
+         * /me/secrets/{name}
+         * @description Creates or replaces one of the user's secrets.
+         */
         put: operations["SetOwnSecret"];
         post?: never;
-        /** Deletes one of the user's secrets. */
+        /**
+         * /me/secrets/{name}
+         * @description Deletes one of the user's secrets.
+         */
         delete: operations["DeleteOwnSecret"];
         options?: never;
         head?: never;
@@ -593,7 +707,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Instance secrets (database and environment) without values. */
+        /**
+         * /secrets/instance
+         * @description Instance secrets (database and environment) without values.
+         */
         get: operations["ListInstanceSecrets"];
         put?: never;
         post?: never;
@@ -611,10 +728,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Creates or replaces an instance secret. */
+        /**
+         * /secrets/instance/{name}
+         * @description Creates or replaces an instance secret.
+         */
         put: operations["SetInstanceSecret"];
         post?: never;
-        /** Deletes an instance secret. */
+        /**
+         * /secrets/instance/{name}
+         * @description Deletes an instance secret.
+         */
         delete: operations["DeleteInstanceSecret"];
         options?: never;
         head?: never;
@@ -628,9 +751,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Language, time zone, quiet hours, notification targets and do-not-disturb of the user. */
+        /**
+         * /me/preferences
+         * @description Language, time zone, quiet hours, notification targets and do-not-disturb of the user.
+         */
         get: operations["GetPreferences"];
-        /** Replaces the user's preferences. */
+        /**
+         * /me/preferences
+         * @description Replaces the user's preferences.
+         */
         put: operations["UpdatePreferences"];
         post?: never;
         delete?: never;
@@ -646,7 +775,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Eval cases, newest first. */
+        /**
+         * /evals/cases
+         * @description Eval cases, newest first.
+         */
         get: operations["ListEvalCases"];
         put?: never;
         post?: never;
@@ -663,11 +795,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One eval case with its history, turn context, recorded tool calls and reply. */
+        /**
+         * /evals/cases/{id}
+         * @description One eval case with its history, turn context, recorded tool calls and reply.
+         */
         get: operations["GetEvalCase"];
         put?: never;
         post?: never;
-        /** Deletes an eval case. */
+        /**
+         * /evals/cases/{id}
+         * @description Deletes an eval case.
+         */
         delete: operations["DeleteEvalCase"];
         options?: never;
         head?: never;
@@ -682,7 +820,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Sets the expected behavior note of a case (at most 1,000 characters). */
+        /**
+         * /evals/cases/{id}/note
+         * @description Sets the expected behavior note of a case (at most 1,000 characters).
+         */
         put: operations["SetEvalCaseNote"];
         post?: never;
         delete?: never;
@@ -700,7 +841,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Estimated model cost of replaying the cases with the candidate configuration. */
+        /**
+         * /evals/estimate
+         * @description Estimated model cost of replaying the cases with the candidate configuration.
+         */
         post: operations["EstimateEvalRun"];
         delete?: never;
         options?: never;
@@ -715,10 +859,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Eval runs with their totals, newest first. */
+        /**
+         * /evals/runs
+         * @description Eval runs with their totals, newest first.
+         */
         get: operations["ListEvalRuns"];
         put?: never;
-        /** Starts an eval run: replays the cases one at a time in the background without executing any tool. */
+        /**
+         * /evals/runs
+         * @description Starts an eval run: replays the cases one at a time in the background without executing any tool.
+         */
         post: operations["StartEvalRun"];
         delete?: never;
         options?: never;
@@ -733,11 +883,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** An eval run with its totals and per case the replayed calls, reply, outcome and judge score. */
+        /**
+         * /evals/runs/{id}
+         * @description An eval run with its totals and per case the replayed calls, reply, outcome and judge score.
+         */
         get: operations["GetEvalRun"];
         put?: never;
         post?: never;
-        /** Deletes an eval run and its results. */
+        /**
+         * /evals/runs/{id}
+         * @description Deletes an eval run and its results.
+         */
         delete: operations["DeleteEvalRun"];
         options?: never;
         head?: never;
@@ -753,7 +909,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Cancels a queued or running eval run. */
+        /**
+         * /evals/runs/{id}/cancel
+         * @description Cancels a queued or running eval run.
+         */
         post: operations["CancelEvalRun"];
         delete?: never;
         options?: never;
@@ -768,7 +927,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** MCP tools that are new or changed since the last approval, with the previous and current definitions. */
+        /**
+         * /config/mcp-tools/pending
+         * @description MCP tools that are new or changed since the last approval, with the previous and current definitions.
+         */
         get: operations["ListPendingMcpTools"];
         put?: never;
         post?: never;
@@ -787,7 +949,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Approves (the current definition becomes trusted) or rejects (hidden until it changes again) a waiting MCP tool. */
+        /**
+         * /config/mcp-tools/decisions
+         * @description Approves (the current definition becomes trusted) or rejects (hidden until it changes again) a waiting MCP tool.
+         */
         post: operations["DecideMcpTool"];
         delete?: never;
         options?: never;
@@ -802,10 +967,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Chunks newest first, or ranked by relevance with query; filter by type, scope, projectId, pinned and closed. */
+        /**
+         * /memory/chunks
+         * @description Chunks newest first, or ranked by relevance with query; filter by type, scope, projectId, pinned and closed.
+         */
         get: operations["ListMemoryChunks"];
         put?: never;
-        /** Writes a chunk through its deterministic id (an existing chunk with the same identity is updated). */
+        /**
+         * /memory/chunks
+         * @description Writes a chunk through its deterministic id (an existing chunk with the same identity is updated).
+         */
         post: operations["CreateMemoryChunk"];
         delete?: never;
         options?: never;
@@ -820,12 +991,21 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** A chunk (also when deleted) with its earlier versions and its edges. */
+        /**
+         * /memory/chunks/{id}
+         * @description A chunk (also when deleted) with its earlier versions and its edges.
+         */
         get: operations["GetMemoryChunk"];
-        /** Changes content, importance, source and valid time; the previous content becomes a version. */
+        /**
+         * /memory/chunks/{id}
+         * @description Changes content, importance, source and valid time; the previous content becomes a version.
+         */
         put: operations["EditMemoryChunk"];
         post?: never;
-        /** Soft-deletes a chunk; it is no longer retrieved. */
+        /**
+         * /memory/chunks/{id}
+         * @description Soft-deletes a chunk; it is no longer retrieved.
+         */
         delete: operations["DeleteMemoryChunk"];
         options?: never;
         head?: never;
@@ -840,10 +1020,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Pins a chunk: it is injected in full in every turn. */
+        /**
+         * /memory/chunks/{id}/pin
+         * @description Pins a chunk: it is injected in full in every turn.
+         */
         put: operations["PinMemoryChunk"];
         post?: never;
-        /** Unpins a chunk. */
+        /**
+         * /memory/chunks/{id}/pin
+         * @description Unpins a chunk.
+         */
         delete: operations["UnpinMemoryChunk"];
         options?: never;
         head?: never;
@@ -859,7 +1045,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Writes a replacement with a new identity and a supersedes edge to the chunk. */
+        /**
+         * /memory/chunks/{id}/supersede
+         * @description Writes a replacement with a new identity and a supersedes edge to the chunk.
+         */
         post: operations["SupersedeMemoryChunk"];
         delete?: never;
         options?: never;
@@ -874,7 +1063,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Predecessors, earlier versions and the current content, oldest first. */
+        /**
+         * /memory/chunks/{id}/history
+         * @description Predecessors, earlier versions and the current content, oldest first.
+         */
         get: operations["GetMemoryChunkHistory"];
         put?: never;
         post?: never;
@@ -891,7 +1083,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Stale chunks, open contradictions, orphans, dangling edges and open proposals. */
+        /**
+         * /memory/audit
+         * @description Stale chunks, open contradictions, orphans, dangling edges and open proposals.
+         */
         get: operations["GetMemoryAudit"];
         put?: never;
         post?: never;
@@ -908,7 +1103,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Open proposals of the idle-time jobs (contradictions and duplicates), oldest first. */
+        /**
+         * /memory/proposals
+         * @description Open proposals of the idle-time jobs (contradictions and duplicates), oldest first.
+         */
         get: operations["ListMemoryProposals"];
         put?: never;
         post?: never;
@@ -927,7 +1125,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Applies a proposal: closes the outdated chunk, or merges the duplicates. */
+        /**
+         * /memory/proposals/{id}/accept
+         * @description Applies a proposal: closes the outdated chunk, or merges the duplicates.
+         */
         post: operations["AcceptMemoryProposal"];
         delete?: never;
         options?: never;
@@ -944,7 +1145,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Dismisses a proposal; memory stays unchanged and the pair is not proposed again. */
+        /**
+         * /memory/proposals/{id}/dismiss
+         * @description Dismisses a proposal; memory stays unchanged and the pair is not proposed again.
+         */
         post: operations["DismissMemoryProposal"];
         delete?: never;
         options?: never;
@@ -959,7 +1163,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Live chunks and the edges between them, for the force-directed graph. */
+        /**
+         * /memory/graph
+         * @description Live chunks and the edges between them, for the force-directed graph.
+         */
         get: operations["GetMemoryGraph"];
         put?: never;
         post?: never;
@@ -976,7 +1183,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Live chunks' embeddings projected onto their first two principal components. */
+        /**
+         * /memory/scatter
+         * @description Live chunks' embeddings projected onto their first two principal components.
+         */
         get: operations["GetMemoryScatter"];
         put?: never;
         post?: never;
@@ -993,7 +1203,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Chunks, versions, edges and projects as NDJSON (without embeddings). */
+        /**
+         * /memory/export
+         * @description Chunks, versions, edges and projects as NDJSON (without embeddings).
+         */
         get: operations["ExportMemory"];
         put?: never;
         post?: never;
@@ -1010,10 +1223,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Live projects with aliases, alias candidates and chunk counts. */
+        /**
+         * /memory/projects
+         * @description Live projects with aliases, alias candidates and chunk counts.
+         */
         get: operations["ListProjects"];
         put?: never;
-        /** Creates a project; names are unique. */
+        /**
+         * /memory/projects
+         * @description Creates a project; names are unique.
+         */
         post: operations["CreateProject"];
         delete?: never;
         options?: never;
@@ -1029,10 +1248,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Renames or re-describes a project. */
+        /**
+         * /memory/projects/{id}
+         * @description Renames or re-describes a project.
+         */
         put: operations["UpdateProject"];
         post?: never;
-        /** Deletes a project; its chunks stay and show up as orphans in the audit. */
+        /**
+         * /memory/projects/{id}
+         * @description Deletes a project; its chunks stay and show up as orphans in the audit.
+         */
         delete: operations["DeleteProject"];
         options?: never;
         head?: never;
@@ -1048,7 +1273,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Adds an active alias (or activates an existing candidate). */
+        /**
+         * /memory/projects/{id}/aliases
+         * @description Adds an active alias (or activates an existing candidate).
+         */
         post: operations["AddProjectAlias"];
         delete?: never;
         options?: never;
@@ -1064,10 +1292,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Promotes or rejects an alias or alias candidate. */
+        /**
+         * /memory/projects/{id}/aliases/{aliasId}
+         * @description Promotes or rejects an alias or alias candidate.
+         */
         put: operations["SetProjectAliasStatus"];
         post?: never;
-        /** Removes an alias or alias candidate. */
+        /**
+         * /memory/projects/{id}/aliases/{aliasId}
+         * @description Removes an alias or alias candidate.
+         */
         delete: operations["RemoveProjectAlias"];
         options?: never;
         head?: never;
@@ -1081,7 +1315,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The project's correction log, newest first. */
+        /**
+         * /memory/projects/{id}/feedback
+         * @description The project's correction log, newest first.
+         */
         get: operations["GetProjectFeedback"];
         put?: never;
         post?: never;
@@ -1098,7 +1335,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Configured printers with their live state (null while offline), allowlisted macros and babysitter state (null when not enabled). */
+        /**
+         * /printers
+         * @description Configured printers with their live state (null while offline), allowlisted macros and babysitter state (null when not enabled).
+         */
         get: operations["ListPrinters"];
         put?: never;
         post?: never;
@@ -1115,7 +1355,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Live state from the websocket cache. */
+        /**
+         * /printers/{printer}
+         * @description Live state from the websocket cache.
+         */
         get: operations["GetPrinterStatus"];
         put?: never;
         post?: never;
@@ -1132,7 +1375,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Printable files, newest first. */
+        /**
+         * /printers/{printer}/files
+         * @description Printable files, newest first.
+         */
         get: operations["ListPrinterFiles"];
         put?: never;
         post?: never;
@@ -1149,7 +1395,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The job queue. */
+        /**
+         * /printers/{printer}/queue
+         * @description The job queue.
+         */
         get: operations["GetPrinterQueue"];
         put?: never;
         post?: never;
@@ -1166,7 +1415,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Recent jobs, newest first. */
+        /**
+         * /printers/{printer}/history
+         * @description Recent jobs, newest first.
+         */
         get: operations["GetPrinterHistory"];
         put?: never;
         post?: never;
@@ -1185,7 +1437,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Runs a safe control, or freezes a confirm-tier control and returns its confirmation token. */
+        /**
+         * /printers/{printer}/controls
+         * @description Runs a safe control, or freezes a confirm-tier control and returns its confirmation token.
+         */
         post: operations["ControlPrinter"];
         delete?: never;
         options?: never;
@@ -1202,7 +1457,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Runs a frozen control with the token from the confirmation dialog (single use, expires). */
+        /**
+         * /printers/{printer}/controls/confirm
+         * @description Runs a frozen control with the token from the confirmation dialog (single use, expires).
+         */
         post: operations["ConfirmPrinterControl"];
         delete?: never;
         options?: never;
@@ -1219,7 +1477,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Takes, resizes and stores a webcam snapshot. */
+        /**
+         * /printers/{printer}/snapshots
+         * @description Takes, resizes and stores a webcam snapshot.
+         */
         post: operations["CapturePrinterSnapshot"];
         delete?: never;
         options?: never;
@@ -1234,7 +1495,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** A stored snapshot as JPEG. */
+        /**
+         * /printers/{printer}/snapshots/{id}
+         * @description A stored snapshot as JPEG.
+         */
         get: operations["GetPrinterSnapshot"];
         put?: never;
         post?: never;
@@ -1251,7 +1515,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** A stored snapshot as JPEG without signing in, with the signature of a shared link (push notification images; expires after a day). */
+        /**
+         * /printers/{printer}/snapshots/{id}/shared
+         * @description A stored snapshot as JPEG without signing in, with the signature of a shared link (push notification images; expires after a day).
+         */
         get: operations["GetSharedPrinterSnapshot"];
         put?: never;
         post?: never;
@@ -1268,7 +1535,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The webcam's live stream, proxied so the browser never contacts the printer. */
+        /**
+         * /printers/{printer}/webcam/stream
+         * @description The webcam's live stream, proxied so the browser never contacts the printer.
+         */
         get: operations["StreamPrinterWebcam"];
         put?: never;
         post?: never;
@@ -1285,7 +1555,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The speaker's queue as the music widget shows it: state, current and next item, item count, shuffle and repeat. */
+        /**
+         * /music/{speaker}
+         * @description The speaker's queue as the music widget shows it: state, current and next item, item count, shuffle and repeat.
+         */
         get: operations["GetMusicQueue"];
         put?: never;
         post?: never;
@@ -1304,7 +1577,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Runs a playback control (pause, resume, next, previous, stop, volume) through the guard, recorded as a run with trigger widget:music. */
+        /**
+         * /music/{speaker}/control
+         * @description Runs a playback control (pause, resume, next, previous, stop, volume) through the guard, recorded as a run with trigger widget:music.
+         */
         post: operations["ControlMusic"];
         delete?: never;
         options?: never;
@@ -1319,7 +1595,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** An MCP app a turn showed: server, tool, the call's arguments and result, and whether it can still be shown. */
+        /**
+         * /apps/{appId}
+         * @description An MCP app a turn showed: server, tool, the call's arguments and result, and whether it can still be shown.
+         */
         get: operations["GetApp"];
         put?: never;
         post?: never;
@@ -1338,7 +1617,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Calls a tool of the app's own server for the app, through the guard as a run with trigger app:<server>/<tool>; confirm tier is denied. */
+        /**
+         * /apps/{appId}/tool-calls
+         * @description Calls a tool of the app's own server for the app, through the guard as a run with trigger app:<server>/<tool>; confirm tier is denied.
+         */
         post: operations["CallAppTool"];
         delete?: never;
         options?: never;
@@ -1353,10 +1635,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The user's mail accounts without credentials. */
+        /**
+         * /mail/accounts
+         * @description The user's mail accounts without credentials.
+         */
         get: operations["ListMailAccounts"];
         put?: never;
-        /** Adds an IMAP account; the password becomes a write-only owner secret. */
+        /**
+         * /mail/accounts
+         * @description Adds an IMAP account; the password becomes a write-only owner secret.
+         */
         post: operations["CreateMailAccount"];
         delete?: never;
         options?: never;
@@ -1374,7 +1662,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Removes an account and its stored credential. */
+        /**
+         * /mail/accounts/{id}
+         * @description Removes an account and its stored credential.
+         */
         delete: operations["DeleteMailAccount"];
         options?: never;
         head?: never;
@@ -1388,7 +1679,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** OAuth providers and whether this instance has a client for them. */
+        /**
+         * /mail/oauth/providers
+         * @description OAuth providers and whether this instance has a client for them.
+         */
         get: operations["ListMailOAuthProviders"];
         put?: never;
         post?: never;
@@ -1407,7 +1701,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Starts connecting an account: returns the provider's sign-in URL for the browser. */
+        /**
+         * /mail/oauth/{provider}/start
+         * @description Starts connecting an account: returns the provider's sign-in URL for the browser.
+         */
         post: operations["StartMailOAuth"];
         delete?: never;
         options?: never;
@@ -1422,7 +1719,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Undecided approvals of the user's background tasks, oldest first, with reasons and taint sources. */
+        /**
+         * /approvals
+         * @description Undecided approvals of the user's background tasks, oldest first, with reasons and taint sources.
+         */
         get: operations["ListApprovals"];
         put?: never;
         post?: never;
@@ -1441,7 +1741,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Executes the frozen action and resumes the task with its result. */
+        /**
+         * /approvals/{id}/approve
+         * @description Executes the frozen action and resumes the task with its result.
+         */
         post: operations["ApproveApproval"];
         delete?: never;
         options?: never;
@@ -1458,7 +1761,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Resumes the task with the rejection; nothing is executed. */
+        /**
+         * /approvals/{id}/reject
+         * @description Resumes the task with the rejection; nothing is executed.
+         */
         post: operations["RejectApproval"];
         delete?: never;
         options?: never;
@@ -1473,7 +1779,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Pending input requests of MCP servers, oldest first. */
+        /**
+         * /approvals/inputs
+         * @description Pending input requests of MCP servers, oldest first.
+         */
         get: operations["ListInputRequests"];
         put?: never;
         post?: never;
@@ -1490,10 +1799,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One input request in any status. */
+        /**
+         * /approvals/inputs/{id}
+         * @description One input request in any status.
+         */
         get: operations["GetInputRequest"];
         put?: never;
-        /** Answers an input request (form fields, or null when a URL request is done), repeats the frozen call once and resumes the waiting task with its outcome. */
+        /**
+         * /approvals/inputs/{id}
+         * @description Answers an input request (form fields, or null when a URL request is done), repeats the frozen call once and resumes the waiting task with its outcome.
+         */
         post: operations["AnswerInputRequest"];
         delete?: never;
         options?: never;
@@ -1510,7 +1825,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Declines an input request; nothing is sent to the server and the waiting task resumes with the refusal. */
+        /**
+         * /approvals/inputs/{id}/decline
+         * @description Declines an input request; nothing is sent to the server and the waiting task resumes with the refusal.
+         */
         post: operations["DeclineInputRequest"];
         delete?: never;
         options?: never;
@@ -1525,7 +1843,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The user's tasks and watches, oldest first; status filters by one status or active (pending, running, waiting). */
+        /**
+         * /tasks
+         * @description The user's tasks and watches, oldest first; status filters by one status or active (pending, running, waiting).
+         */
         get: operations["ListTasks"];
         put?: never;
         post?: never;
@@ -1542,7 +1863,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Whether background work is stopped. */
+        /**
+         * /tasks/kill-switch
+         * @description Whether background work is stopped.
+         */
         get: operations["GetKillSwitch"];
         put?: never;
         post?: never;
@@ -1561,7 +1885,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Stops every unfinished agent task and pauses new ones until released. */
+        /**
+         * /tasks/kill-switch/activate
+         * @description Stops every unfinished agent task and pauses new ones until released.
+         */
         post: operations["ActivateKillSwitch"];
         delete?: never;
         options?: never;
@@ -1578,7 +1905,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Lets background tasks run again; tasks paused while it was active become due. */
+        /**
+         * /tasks/kill-switch/release
+         * @description Lets background tasks run again; tasks paused while it was active become due.
+         */
         post: operations["ReleaseKillSwitch"];
         delete?: never;
         options?: never;
@@ -1593,7 +1923,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One task with notes, the latest result, deliveries, recent runs, notifications and executor sessions. */
+        /**
+         * /tasks/{id}
+         * @description One task with notes, the latest result, deliveries, recent runs, notifications and executor sessions.
+         */
         get: operations["GetTask"];
         put?: never;
         post?: never;
@@ -1611,7 +1944,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Replaces the task's goal; the next run uses it. */
+        /**
+         * /tasks/{id}/goal
+         * @description Replaces the task's goal; the next run uses it.
+         */
         put: operations["SetTaskGoal"];
         post?: never;
         delete?: never;
@@ -1628,7 +1964,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Replaces the task's tool policy (tool ids or globs inside its template's allowlist); the next run sees only those tools. */
+        /**
+         * /tasks/{id}/tool-policy
+         * @description Replaces the task's tool policy (tool ids or globs inside its template's allowlist); the next run sees only those tools.
+         */
         put: operations["SetTaskToolPolicy"];
         post?: never;
         delete?: never;
@@ -1646,7 +1985,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Cancels the task and its unfinished child tasks. */
+        /**
+         * /tasks/{id}/cancel
+         * @description Cancels the task and its unfinished child tasks.
+         */
         post: operations["CancelTask"];
         delete?: never;
         options?: never;
@@ -1661,7 +2003,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The user's proposals, newest first, without diffs (default: open ones; status=all for every one). */
+        /**
+         * /proposals
+         * @description The user's proposals, newest first, without diffs (default: open ones; status=all for every one).
+         */
         get: operations["ListProposals"];
         put?: never;
         post?: never;
@@ -1678,7 +2023,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One proposal with its diff. */
+        /**
+         * /proposals/{id}
+         * @description One proposal with its diff.
+         */
         get: operations["GetProposal"];
         put?: never;
         post?: never;
@@ -1697,7 +2045,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Merges the change into the branch it started from on the executor host; a conflict leaves it open. */
+        /**
+         * /proposals/{id}/merge
+         * @description Merges the change into the branch it started from on the executor host; a conflict leaves it open.
+         */
         post: operations["MergeProposal"];
         delete?: never;
         options?: never;
@@ -1714,7 +2065,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Rejects the change and drops its branch on the executor host. */
+        /**
+         * /proposals/{id}/reject
+         * @description Rejects the change and drops its branch on the executor host.
+         */
         post: operations["RejectProposal"];
         delete?: never;
         options?: never;
@@ -1729,7 +2083,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The user's open suggestions, newest first. */
+        /**
+         * /suggestions
+         * @description The user's open suggestions, newest first.
+         */
         get: operations["ListSuggestions"];
         put?: never;
         post?: never;
@@ -1748,7 +2105,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Accepts a suggestion; its proposed action, if any, runs once through the guard. */
+        /**
+         * /suggestions/{id}/accept
+         * @description Accepts a suggestion; its proposed action, if any, runs once through the guard.
+         */
         post: operations["AcceptSuggestion"];
         delete?: never;
         options?: never;
@@ -1765,7 +2125,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Dismisses a suggestion; nothing runs. */
+        /**
+         * /suggestions/{id}/dismiss
+         * @description Dismisses a suggestion; nothing runs.
+         */
         post: operations["DismissSuggestion"];
         delete?: never;
         options?: never;
@@ -1780,7 +2143,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Every detector with the user's counts, acceptance estimate and mute. */
+        /**
+         * /suggestions/detectors
+         * @description Every detector with the user's counts, acceptance estimate and mute.
+         */
         get: operations["ListSuggestionDetectors"];
         put?: never;
         post?: never;
@@ -1798,10 +2164,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Mutes a detector until a time, or indefinitely without one. */
+        /**
+         * /suggestions/detectors/{detector}/mute
+         * @description Mutes a detector until a time, or indefinitely without one.
+         */
         put: operations["MuteSuggestionDetector"];
         post?: never;
-        /** Unmutes a detector. */
+        /**
+         * /suggestions/detectors/{detector}/mute
+         * @description Unmutes a detector.
+         */
         delete: operations["UnmuteSuggestionDetector"];
         options?: never;
         head?: never;
@@ -1817,7 +2189,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Sets a detector's counts back to zero; a mute stays. */
+        /**
+         * /suggestions/detectors/{detector}/reset
+         * @description Sets a detector's counts back to zero; a mute stays.
+         */
         post: operations["ResetSuggestionDetector"];
         delete?: never;
         options?: never;
@@ -1832,7 +2207,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Open and downloaded skill proposals, newest first. */
+        /**
+         * /skill-proposals
+         * @description Open and downloaded skill proposals, newest first.
+         */
         get: operations["ListSkillProposals"];
         put?: never;
         post?: never;
@@ -1849,7 +2227,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One skill proposal with its SKILL.md and diff. */
+        /**
+         * /skill-proposals/{id}
+         * @description One skill proposal with its SKILL.md and diff.
+         */
         get: operations["GetSkillProposal"];
         put?: never;
         post?: never;
@@ -1866,7 +2247,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The drafted SKILL.md as a file; marks the proposal downloaded. */
+        /**
+         * /skill-proposals/{id}/download
+         * @description The drafted SKILL.md as a file; marks the proposal downloaded.
+         */
         get: operations["DownloadSkillProposal"];
         put?: never;
         post?: never;
@@ -1885,7 +2269,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Dismisses a skill proposal; the same workflow is not proposed again. */
+        /**
+         * /skill-proposals/{id}/dismiss
+         * @description Dismisses a skill proposal; the same workflow is not proposed again.
+         */
         post: operations["DismissSkillProposal"];
         delete?: never;
         options?: never;
@@ -1900,7 +2287,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Maintenance items read now: due first, then soon, then by name; empty without configured items. */
+        /**
+         * /maintenance
+         * @description Maintenance items read now: due first, then soon, then by name; empty without configured items.
+         */
         get: operations["ListMaintenanceItems"];
         put?: never;
         post?: never;
@@ -1919,7 +2309,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Marks a maintenance item done: its usage starts again from the counter's current value. */
+        /**
+         * /maintenance/{id}/done
+         * @description Marks a maintenance item done: its usage starts again from the counter's current value.
+         */
         post: operations["MarkMaintenanceDone"];
         delete?: never;
         options?: never;
@@ -1934,10 +2327,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The owner's artifacts, newest first, filtered by kind, source and name, with the quota usage. */
+        /**
+         * /artifacts
+         * @description The owner's artifacts, newest first, filtered by kind, source and name, with the quota usage.
+         */
         get: operations["ListArtifacts"];
         put?: never;
-        /** Uploads one file (multipart field 'file'), at most artifacts.maxUploadMb. */
+        /**
+         * /artifacts
+         * @description Uploads one file (multipart field 'file'), at most artifacts.maxUploadMb.
+         */
         post: operations["UploadArtifact"];
         delete?: never;
         options?: never;
@@ -1952,9 +2351,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * /artifacts/{id}
+         * @description One of the user's artifacts: metadata, source, taint and content URL.
+         */
         get: operations["GetArtifact"];
         put?: never;
         post?: never;
+        /**
+         * /artifacts/{id}
+         * @description Deletes one of the user's artifacts.
+         */
         delete: operations["DeleteArtifact"];
         options?: never;
         head?: never;

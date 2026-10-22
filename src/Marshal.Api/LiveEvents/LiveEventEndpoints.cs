@@ -23,7 +23,7 @@ internal static class LiveEventEndpoints
             .RequireAuthorization()
             .WithTags("Events")
             .WithName("SubscribeLiveEvents")
-            .WithSummary("Server-sent live updates for the comma-separated topics (event name = event type, data = LiveEventMessage).");
+            .WithDescription("Server-sent live updates for the comma-separated topics (event name = event type, data = LiveEventMessage).");
         return group;
     }
 

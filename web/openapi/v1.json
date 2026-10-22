@@ -11,7 +11,8 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Lists the active login providers.",
+        "summary": "/auth/providers",
+        "description": "Lists the active login providers.",
         "operationId": "ListLoginProviders",
         "responses": {
           "200": {
@@ -35,7 +36,8 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Starts a login with the provider and redirects back to returnUrl (an app-relative path) afterwards.",
+        "summary": "/auth/login/{provider}",
+        "description": "Starts a login with the provider and redirects back to returnUrl (an app-relative path) afterwards.",
         "operationId": "StartLogin",
         "parameters": [
           {
@@ -68,13 +70,22 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Ends the session (and the IdP session for OIDC logins) and redirects to the login page.",
+        "summary": "/auth/logout",
+        "description": "Ends the session (and the IdP session for OIDC logins) and redirects to the login page.",
         "operationId": "Logout",
         "responses": {
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "apiToken": []
+          },
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/auth/local/setup": {
@@ -82,7 +93,8 @@
         "tags": [
           "Auth"
         ],
-        "summary": "200 while the instance owner is unclaimed and the first-run setup is available, otherwise 404.",
+        "summary": "/auth/local/setup",
+        "description": "200 while the instance owner is unclaimed and the first-run setup is available, otherwise 404.",
         "operationId": "GetLocalSetup",
         "responses": {
           "200": {
@@ -101,7 +113,8 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Claims the instance owner: sets user name, display name and password, grants admin and signs in.",
+        "summary": "/auth/local/setup",
+        "description": "Claims the instance owner: sets user name, display name and password, grants admin and signs in.",
         "operationId": "CompleteLocalSetup",
         "requestBody": {
           "content": {
@@ -125,7 +138,8 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Signs in with user name and password.",
+        "summary": "/auth/local/login",
+        "description": "Signs in with user name and password.",
         "operationId": "LocalPasswordLogin",
         "requestBody": {
           "content": {
@@ -149,7 +163,8 @@
         "tags": [
           "Auth"
         ],
-        "summary": "WebAuthn request options (PublicKeyCredentialRequestOptions JSON) for passkey login.",
+        "summary": "/auth/local/passkey/options",
+        "description": "WebAuthn request options (PublicKeyCredentialRequestOptions JSON) for passkey login.",
         "operationId": "LocalPasskeyRequestOptions",
         "requestBody": {
           "content": {
@@ -179,7 +194,8 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Signs in with a passkey assertion (PublicKeyCredential JSON).",
+        "summary": "/auth/local/passkey",
+        "description": "Signs in with a passkey assertion (PublicKeyCredential JSON).",
         "operationId": "LocalPasskeyLogin",
         "requestBody": {
           "content": {
@@ -203,13 +219,22 @@
         "tags": [
           "Auth"
         ],
-        "summary": "WebAuthn creation options (PublicKeyCredentialCreationOptions JSON) to add a passkey to the signed-in user.",
+        "summary": "/auth/local/passkeys/creation-options",
+        "description": "WebAuthn creation options (PublicKeyCredentialCreationOptions JSON) to add a passkey to the signed-in user.",
         "operationId": "LocalPasskeyCreationOptions",
         "responses": {
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "apiToken": []
+          },
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/auth/local/passkeys": {
@@ -217,7 +242,8 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Stores a passkey attestation for the signed-in user.",
+        "summary": "/auth/local/passkeys",
+        "description": "Stores a passkey attestation for the signed-in user.",
         "operationId": "RegisterLocalPasskey",
         "requestBody": {
           "content": {
@@ -233,7 +259,15 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "apiToken": []
+          },
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/me": {
@@ -241,7 +275,8 @@
         "tags": [
           "Me"
         ],
-        "summary": "The current user: id, display name, roles and scopes.",
+        "summary": "/me",
+        "description": "The current user: id, display name, roles and scopes.",
         "operationId": "GetMe",
         "responses": {
           "200": {
@@ -254,7 +289,15 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "apiToken": []
+          },
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/auth/antiforgery": {
@@ -262,7 +305,8 @@
         "tags": [
           "Auth"
         ],
-        "summary": "A token for the X-XSRF-TOKEN header of state-changing requests. Fetch a new one after login or logout.",
+        "summary": "/auth/antiforgery",
+        "description": "A token for the X-XSRF-TOKEN header of state-changing requests. Fetch a new one after login or logout.",
         "operationId": "GetAntiforgeryToken",
         "responses": {
           "200": {
@@ -283,7 +327,8 @@
         "tags": [
           "Events"
         ],
-        "summary": "Server-sent live updates for the comma-separated topics (event name = event type, data = LiveEventMessage).",
+        "summary": "/events",
+        "description": "Server-sent live updates for the comma-separated topics (event name = event type, data = LiveEventMessage).",
         "operationId": "SubscribeLiveEvents",
         "parameters": [
           {
@@ -306,7 +351,15 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "apiToken": []
+          },
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/runs": {
@@ -314,7 +367,8 @@
         "tags": [
           "Runs"
         ],
-        "summary": "The user\u0027s runs (voice, web, task, api), newest first or slowest time to first delta first (sort=timeToFirstDelta); filter by source, outcome, rating and minimum cost, page with before.",
+        "summary": "/runs",
+        "description": "The user\u0027s runs (voice, web, task, api), newest first or slowest time to first delta first (sort=timeToFirstDelta); filter by source, outcome, rating and minimum cost, page with before.",
         "operationId": "ListRuns",
         "parameters": [
           {
@@ -391,7 +445,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/runs/{id}": {
@@ -399,7 +458,8 @@
         "tags": [
           "Runs"
         ],
-        "summary": "One run: context build, model calls, tool calls with guard decisions, taint sources and the reply.",
+        "summary": "/runs/{id}",
+        "description": "One run: context build, model calls, tool calls with guard decisions, taint sources and the reply.",
         "operationId": "GetRun",
         "parameters": [
           {
@@ -423,7 +483,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/cost": {
@@ -431,7 +496,8 @@
         "tags": [
           "Runs"
         ],
-        "summary": "Cost per day and tier in the user\u0027s time zone, advisor separately (default: the last 30 days).",
+        "summary": "/cost",
+        "description": "Cost per day and tier in the user\u0027s time zone, advisor separately (default: the last 30 days).",
         "operationId": "GetCost",
         "parameters": [
           {
@@ -464,7 +530,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/runs/{id}/rating": {
@@ -472,7 +543,8 @@
         "tags": [
           "Runs"
         ],
-        "summary": "Rates one of the user\u0027s runs up or down with an optional note; with \u0022help Marshal learn\u0022 on, the first rating also creates an eval case.",
+        "summary": "/runs/{id}/rating",
+        "description": "Rates one of the user\u0027s runs up or down with an optional note; with \u0022help Marshal learn\u0022 on, the first rating also creates an eval case.",
         "operationId": "RateRun",
         "parameters": [
           {
@@ -506,13 +578,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "delete": {
         "tags": [
           "Runs"
         ],
-        "summary": "Removes the rating of a run; an eval case made from it stays.",
+        "summary": "/runs/{id}/rating",
+        "description": "Removes the rating of a run; an eval case made from it stays.",
         "operationId": "ClearRunRating",
         "parameters": [
           {
@@ -529,7 +607,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/runs/{id}/eval-case": {
@@ -537,7 +620,8 @@
         "tags": [
           "Evals"
         ],
-        "summary": "Snapshots a run as an eval case, whatever the learning preference says; returns the existing case when there is one.",
+        "summary": "/runs/{id}/eval-case",
+        "description": "Snapshots a run as an eval case, whatever the learning preference says; returns the existing case when there is one.",
         "operationId": "SaveRunAsEvalCase",
         "parameters": [
           {
@@ -561,7 +645,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/system": {
@@ -569,7 +658,8 @@
         "tags": [
           "System"
         ],
-        "summary": "The app version, the supported and deprecated API versions and the event sources.",
+        "summary": "/system",
+        "description": "The app version, the supported and deprecated API versions and the event sources.",
         "operationId": "GetSystem",
         "responses": {
           "200": {
@@ -582,7 +672,15 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "apiToken": []
+          },
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/system/health": {
@@ -590,7 +688,8 @@
         "tags": [
           "System"
         ],
-        "summary": "The current health warnings (codes, components, messages in German and English). Changes are published on the health live topic.",
+        "summary": "/system/health",
+        "description": "The current health warnings (codes, components, messages in German and English). Changes are published on the health live topic.",
         "operationId": "GetSystemHealth",
         "responses": {
           "200": {
@@ -603,7 +702,17 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "apiToken": [
+              "admin"
+            ]
+          },
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/config": {
@@ -611,7 +720,8 @@
         "tags": [
           "Config"
         ],
-        "summary": "Loaded skills, templates, MCP servers, risk rules, models and satellites, plus the last load error per file.",
+        "summary": "/config",
+        "description": "Loaded skills, templates, MCP servers, risk rules, models and satellites, plus the last load error per file.",
         "operationId": "GetConfigSummary",
         "responses": {
           "200": {
@@ -624,7 +734,17 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "apiToken": [
+              "admin"
+            ]
+          },
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/conversation/turns": {
@@ -632,7 +752,8 @@
         "tags": [
           "Marshal"
         ],
-        "summary": "Runs one conversation turn and streams the reply as server-sent events (delta, status, artifact, final; web sessions also reasoning and tool).",
+        "summary": "/conversation/turns",
+        "description": "Runs one conversation turn and streams the reply as server-sent events (delta, status, artifact, final; web sessions also reasoning and tool).",
         "operationId": "CreateConversationTurn",
         "requestBody": {
           "content": {
@@ -655,7 +776,17 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "apiToken": [
+              "conversation:write"
+            ]
+          },
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/conversations": {
@@ -663,7 +794,8 @@
         "tags": [
           "Conversations"
         ],
-        "summary": "The user\u0027s conversations (web, voice, api), newest last turn first; page with before (a lastTurnAt) and limit.",
+        "summary": "/conversations",
+        "description": "The user\u0027s conversations (web, voice, api), newest last turn first; page with before (a lastTurnAt) and limit.",
         "operationId": "ListConversations",
         "parameters": [
           {
@@ -699,7 +831,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/conversations/{id}": {
@@ -707,7 +844,8 @@
         "tags": [
           "Conversations"
         ],
-        "summary": "One conversation: its turns and background results in time order.",
+        "summary": "/conversations/{id}",
+        "description": "One conversation: its turns and background results in time order.",
         "operationId": "GetConversation",
         "parameters": [
           {
@@ -731,7 +869,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/notifications": {
@@ -739,7 +882,8 @@
         "tags": [
           "Notifications"
         ],
-        "summary": "The user\u0027s notifications, newest first, with channel, outcome and reason; filter by outcome, page with before.",
+        "summary": "/notifications",
+        "description": "The user\u0027s notifications, newest first, with channel, outcome and reason; filter by outcome, page with before.",
         "operationId": "ListNotifications",
         "parameters": [
           {
@@ -783,7 +927,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/artifacts/{id}/content": {
@@ -791,7 +940,8 @@
         "tags": [
           "Artifacts"
         ],
-        "summary": "The artifact\u0027s content (session or token).",
+        "summary": "/artifacts/{id}/content",
+        "description": "The artifact\u0027s content (session or token).",
         "operationId": "GetArtifactContent",
         "parameters": [
           {
@@ -809,7 +959,15 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "apiToken": []
+          },
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/artifacts/{id}/preview": {
@@ -817,7 +975,8 @@
         "tags": [
           "Artifacts"
         ],
-        "summary": "A PNG preview within 480 \u00D7 270 pixels for 3D models and images; 404 for other kinds.",
+        "summary": "/artifacts/{id}/preview",
+        "description": "A PNG preview within 480 \u00D7 270 pixels for 3D models and images; 404 for other kinds.",
         "operationId": "GetArtifactPreview",
         "parameters": [
           {
@@ -838,7 +997,15 @@
           "304": {
             "description": "Not Modified"
           }
-        }
+        },
+        "security": [
+          {
+            "apiToken": []
+          },
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/artifacts/{id}/content/signed": {
@@ -846,7 +1013,8 @@
         "tags": [
           "Artifacts"
         ],
-        "summary": "The artifact\u0027s content through a signed, expiring link; no sign-in.",
+        "summary": "/artifacts/{id}/content/signed",
+        "description": "The artifact\u0027s content through a signed, expiring link; no sign-in.",
         "operationId": "GetSignedArtifactContent",
         "parameters": [
           {
@@ -880,7 +1048,8 @@
         "tags": [
           "Printers"
         ],
-        "summary": "Copies a printer snapshot into the artifact store, outside the snapshot retention.",
+        "summary": "/printers/{printer}/snapshots/{snapshot}/keep",
+        "description": "Copies a printer snapshot into the artifact store, outside the snapshot retention.",
         "operationId": "KeepPrinterSnapshot",
         "parameters": [
           {
@@ -913,7 +1082,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/ai-tasks": {
@@ -921,7 +1095,8 @@
         "tags": [
           "AI tasks"
         ],
-        "summary": "Runs one AI task (multipart: a \u0027task\u0027 JSON part with taskName, instructions, optional structure and language; optional \u0027attachment\u0027 image parts) and answers with its data: a string, or an object matching structure.",
+        "summary": "/ai-tasks",
+        "description": "Runs one AI task (multipart: a \u0027task\u0027 JSON part with taskName, instructions, optional structure and language; optional \u0027attachment\u0027 image parts) and answers with its data: a string, or an object matching structure.",
         "operationId": "RunAiTask",
         "requestBody": {
           "content": {
@@ -1014,7 +1189,17 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "apiToken": [
+              "aitasks:write"
+            ]
+          },
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/hooks/{source}": {
@@ -1022,7 +1207,8 @@
         "tags": [
           "Hooks"
         ],
-        "summary": "Receives a webhook of a source (e.g. uptime-kuma) and publishes its events.",
+        "summary": "/hooks/{source}",
+        "description": "Receives a webhook of a source (e.g. uptime-kuma) and publishes its events.",
         "operationId": "PostWebhook",
         "parameters": [
           {
@@ -1103,7 +1289,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "apiToken": []
+          }
+        ]
       }
     },
     "/api/v1/me/tokens": {
@@ -1111,7 +1302,8 @@
         "tags": [
           "Tokens"
         ],
-        "summary": "The user\u0027s API tokens without secrets; executor callback tokens are read-only.",
+        "summary": "/me/tokens",
+        "description": "The user\u0027s API tokens without secrets; executor callback tokens are read-only.",
         "operationId": "ListApiTokens",
         "responses": {
           "200": {
@@ -1127,13 +1319,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "post": {
         "tags": [
           "Tokens"
         ],
-        "summary": "Creates a token with scopes the user holds; the plaintext is returned only in this response.",
+        "summary": "/me/tokens",
+        "description": "Creates a token with scopes the user holds; the plaintext is returned only in this response.",
         "operationId": "CreateApiToken",
         "requestBody": {
           "content": {
@@ -1156,7 +1354,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/me/tokens/{id}": {
@@ -1164,7 +1367,8 @@
         "tags": [
           "Tokens"
         ],
-        "summary": "Revokes one of the user\u0027s tokens.",
+        "summary": "/me/tokens/{id}",
+        "description": "Revokes one of the user\u0027s tokens.",
         "operationId": "RevokeApiToken",
         "parameters": [
           {
@@ -1181,7 +1385,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/me/secrets": {
@@ -1189,7 +1398,8 @@
         "tags": [
           "Secrets"
         ],
-        "summary": "Every secret visible to the user (own, instance, environment) without values, plus unresolved references.",
+        "summary": "/me/secrets",
+        "description": "Every secret visible to the user (own, instance, environment) without values, plus unresolved references.",
         "operationId": "GetSecretOverview",
         "responses": {
           "200": {
@@ -1202,7 +1412,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/me/secrets/{name}": {
@@ -1210,7 +1425,8 @@
         "tags": [
           "Secrets"
         ],
-        "summary": "Creates or replaces one of the user\u0027s secrets.",
+        "summary": "/me/secrets/{name}",
+        "description": "Creates or replaces one of the user\u0027s secrets.",
         "operationId": "SetOwnSecret",
         "parameters": [
           {
@@ -1237,13 +1453,19 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "delete": {
         "tags": [
           "Secrets"
         ],
-        "summary": "Deletes one of the user\u0027s secrets.",
+        "summary": "/me/secrets/{name}",
+        "description": "Deletes one of the user\u0027s secrets.",
         "operationId": "DeleteOwnSecret",
         "parameters": [
           {
@@ -1260,7 +1482,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/secrets/instance": {
@@ -1268,7 +1495,8 @@
         "tags": [
           "Secrets"
         ],
-        "summary": "Instance secrets (database and environment) without values.",
+        "summary": "/secrets/instance",
+        "description": "Instance secrets (database and environment) without values.",
         "operationId": "ListInstanceSecrets",
         "responses": {
           "200": {
@@ -1284,7 +1512,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/secrets/instance/{name}": {
@@ -1292,7 +1525,8 @@
         "tags": [
           "Secrets"
         ],
-        "summary": "Creates or replaces an instance secret.",
+        "summary": "/secrets/instance/{name}",
+        "description": "Creates or replaces an instance secret.",
         "operationId": "SetInstanceSecret",
         "parameters": [
           {
@@ -1319,13 +1553,19 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "delete": {
         "tags": [
           "Secrets"
         ],
-        "summary": "Deletes an instance secret.",
+        "summary": "/secrets/instance/{name}",
+        "description": "Deletes an instance secret.",
         "operationId": "DeleteInstanceSecret",
         "parameters": [
           {
@@ -1342,7 +1582,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/me/preferences": {
@@ -1350,7 +1595,8 @@
         "tags": [
           "Preferences"
         ],
-        "summary": "Language, time zone, quiet hours, notification targets and do-not-disturb of the user.",
+        "summary": "/me/preferences",
+        "description": "Language, time zone, quiet hours, notification targets and do-not-disturb of the user.",
         "operationId": "GetPreferences",
         "responses": {
           "200": {
@@ -1363,13 +1609,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "put": {
         "tags": [
           "Preferences"
         ],
-        "summary": "Replaces the user\u0027s preferences.",
+        "summary": "/me/preferences",
+        "description": "Replaces the user\u0027s preferences.",
         "operationId": "UpdatePreferences",
         "requestBody": {
           "content": {
@@ -1385,7 +1637,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/evals/cases": {
@@ -1393,7 +1650,8 @@
         "tags": [
           "Evals"
         ],
-        "summary": "Eval cases, newest first.",
+        "summary": "/evals/cases",
+        "description": "Eval cases, newest first.",
         "operationId": "ListEvalCases",
         "responses": {
           "200": {
@@ -1409,7 +1667,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/evals/cases/{id}": {
@@ -1417,7 +1680,8 @@
         "tags": [
           "Evals"
         ],
-        "summary": "One eval case with its history, turn context, recorded tool calls and reply.",
+        "summary": "/evals/cases/{id}",
+        "description": "One eval case with its history, turn context, recorded tool calls and reply.",
         "operationId": "GetEvalCase",
         "parameters": [
           {
@@ -1441,13 +1705,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "delete": {
         "tags": [
           "Evals"
         ],
-        "summary": "Deletes an eval case.",
+        "summary": "/evals/cases/{id}",
+        "description": "Deletes an eval case.",
         "operationId": "DeleteEvalCase",
         "parameters": [
           {
@@ -1464,7 +1734,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/evals/cases/{id}/note": {
@@ -1472,7 +1747,8 @@
         "tags": [
           "Evals"
         ],
-        "summary": "Sets the expected behavior note of a case (at most 1,000 characters).",
+        "summary": "/evals/cases/{id}/note",
+        "description": "Sets the expected behavior note of a case (at most 1,000 characters).",
         "operationId": "SetEvalCaseNote",
         "parameters": [
           {
@@ -1499,7 +1775,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/evals/estimate": {
@@ -1507,7 +1788,8 @@
         "tags": [
           "Evals"
         ],
-        "summary": "Estimated model cost of replaying the cases with the candidate configuration.",
+        "summary": "/evals/estimate",
+        "description": "Estimated model cost of replaying the cases with the candidate configuration.",
         "operationId": "EstimateEvalRun",
         "requestBody": {
           "content": {
@@ -1530,7 +1812,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/evals/runs": {
@@ -1538,7 +1825,8 @@
         "tags": [
           "Evals"
         ],
-        "summary": "Eval runs with their totals, newest first.",
+        "summary": "/evals/runs",
+        "description": "Eval runs with their totals, newest first.",
         "operationId": "ListEvalRuns",
         "responses": {
           "200": {
@@ -1554,13 +1842,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "post": {
         "tags": [
           "Evals"
         ],
-        "summary": "Starts an eval run: replays the cases one at a time in the background without executing any tool.",
+        "summary": "/evals/runs",
+        "description": "Starts an eval run: replays the cases one at a time in the background without executing any tool.",
         "operationId": "StartEvalRun",
         "requestBody": {
           "content": {
@@ -1583,7 +1877,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/evals/runs/{id}": {
@@ -1591,7 +1890,8 @@
         "tags": [
           "Evals"
         ],
-        "summary": "An eval run with its totals and per case the replayed calls, reply, outcome and judge score.",
+        "summary": "/evals/runs/{id}",
+        "description": "An eval run with its totals and per case the replayed calls, reply, outcome and judge score.",
         "operationId": "GetEvalRun",
         "parameters": [
           {
@@ -1615,13 +1915,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "delete": {
         "tags": [
           "Evals"
         ],
-        "summary": "Deletes an eval run and its results.",
+        "summary": "/evals/runs/{id}",
+        "description": "Deletes an eval run and its results.",
         "operationId": "DeleteEvalRun",
         "parameters": [
           {
@@ -1638,7 +1944,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/evals/runs/{id}/cancel": {
@@ -1646,7 +1957,8 @@
         "tags": [
           "Evals"
         ],
-        "summary": "Cancels a queued or running eval run.",
+        "summary": "/evals/runs/{id}/cancel",
+        "description": "Cancels a queued or running eval run.",
         "operationId": "CancelEvalRun",
         "parameters": [
           {
@@ -1663,7 +1975,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/config/mcp-tools/pending": {
@@ -1671,7 +1988,8 @@
         "tags": [
           "Config"
         ],
-        "summary": "MCP tools that are new or changed since the last approval, with the previous and current definitions.",
+        "summary": "/config/mcp-tools/pending",
+        "description": "MCP tools that are new or changed since the last approval, with the previous and current definitions.",
         "operationId": "ListPendingMcpTools",
         "responses": {
           "200": {
@@ -1687,7 +2005,17 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "apiToken": [
+              "admin"
+            ]
+          },
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/config/mcp-tools/decisions": {
@@ -1695,7 +2023,8 @@
         "tags": [
           "Config"
         ],
-        "summary": "Approves (the current definition becomes trusted) or rejects (hidden until it changes again) a waiting MCP tool.",
+        "summary": "/config/mcp-tools/decisions",
+        "description": "Approves (the current definition becomes trusted) or rejects (hidden until it changes again) a waiting MCP tool.",
         "operationId": "DecideMcpTool",
         "requestBody": {
           "content": {
@@ -1718,7 +2047,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/chunks": {
@@ -1726,7 +2060,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Chunks newest first, or ranked by relevance with query; filter by type, scope, projectId, pinned and closed.",
+        "summary": "/memory/chunks",
+        "description": "Chunks newest first, or ranked by relevance with query; filter by type, scope, projectId, pinned and closed.",
         "operationId": "ListMemoryChunks",
         "parameters": [
           {
@@ -1809,13 +2144,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "post": {
         "tags": [
           "Memory"
         ],
-        "summary": "Writes a chunk through its deterministic id (an existing chunk with the same identity is updated).",
+        "summary": "/memory/chunks",
+        "description": "Writes a chunk through its deterministic id (an existing chunk with the same identity is updated).",
         "operationId": "CreateMemoryChunk",
         "requestBody": {
           "content": {
@@ -1838,7 +2179,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/chunks/{id}": {
@@ -1846,7 +2192,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "A chunk (also when deleted) with its earlier versions and its edges.",
+        "summary": "/memory/chunks/{id}",
+        "description": "A chunk (also when deleted) with its earlier versions and its edges.",
         "operationId": "GetMemoryChunk",
         "parameters": [
           {
@@ -1870,13 +2217,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "put": {
         "tags": [
           "Memory"
         ],
-        "summary": "Changes content, importance, source and valid time; the previous content becomes a version.",
+        "summary": "/memory/chunks/{id}",
+        "description": "Changes content, importance, source and valid time; the previous content becomes a version.",
         "operationId": "EditMemoryChunk",
         "parameters": [
           {
@@ -1910,13 +2263,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "delete": {
         "tags": [
           "Memory"
         ],
-        "summary": "Soft-deletes a chunk; it is no longer retrieved.",
+        "summary": "/memory/chunks/{id}",
+        "description": "Soft-deletes a chunk; it is no longer retrieved.",
         "operationId": "DeleteMemoryChunk",
         "parameters": [
           {
@@ -1933,7 +2292,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/chunks/{id}/pin": {
@@ -1941,7 +2305,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Pins a chunk: it is injected in full in every turn.",
+        "summary": "/memory/chunks/{id}/pin",
+        "description": "Pins a chunk: it is injected in full in every turn.",
         "operationId": "PinMemoryChunk",
         "parameters": [
           {
@@ -1958,13 +2323,19 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "delete": {
         "tags": [
           "Memory"
         ],
-        "summary": "Unpins a chunk.",
+        "summary": "/memory/chunks/{id}/pin",
+        "description": "Unpins a chunk.",
         "operationId": "UnpinMemoryChunk",
         "parameters": [
           {
@@ -1981,7 +2352,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/chunks/{id}/supersede": {
@@ -1989,7 +2365,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Writes a replacement with a new identity and a supersedes edge to the chunk.",
+        "summary": "/memory/chunks/{id}/supersede",
+        "description": "Writes a replacement with a new identity and a supersedes edge to the chunk.",
         "operationId": "SupersedeMemoryChunk",
         "parameters": [
           {
@@ -2023,7 +2400,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/chunks/{id}/history": {
@@ -2031,7 +2413,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Predecessors, earlier versions and the current content, oldest first.",
+        "summary": "/memory/chunks/{id}/history",
+        "description": "Predecessors, earlier versions and the current content, oldest first.",
         "operationId": "GetMemoryChunkHistory",
         "parameters": [
           {
@@ -2058,7 +2441,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/audit": {
@@ -2066,7 +2454,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Stale chunks, open contradictions, orphans, dangling edges and open proposals.",
+        "summary": "/memory/audit",
+        "description": "Stale chunks, open contradictions, orphans, dangling edges and open proposals.",
         "operationId": "GetMemoryAudit",
         "responses": {
           "200": {
@@ -2079,7 +2468,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/proposals": {
@@ -2087,7 +2481,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Open proposals of the idle-time jobs (contradictions and duplicates), oldest first.",
+        "summary": "/memory/proposals",
+        "description": "Open proposals of the idle-time jobs (contradictions and duplicates), oldest first.",
         "operationId": "ListMemoryProposals",
         "responses": {
           "200": {
@@ -2103,7 +2498,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/proposals/{id}/accept": {
@@ -2111,7 +2511,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Applies a proposal: closes the outdated chunk, or merges the duplicates.",
+        "summary": "/memory/proposals/{id}/accept",
+        "description": "Applies a proposal: closes the outdated chunk, or merges the duplicates.",
         "operationId": "AcceptMemoryProposal",
         "parameters": [
           {
@@ -2129,7 +2530,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/proposals/{id}/dismiss": {
@@ -2137,7 +2543,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Dismisses a proposal; memory stays unchanged and the pair is not proposed again.",
+        "summary": "/memory/proposals/{id}/dismiss",
+        "description": "Dismisses a proposal; memory stays unchanged and the pair is not proposed again.",
         "operationId": "DismissMemoryProposal",
         "parameters": [
           {
@@ -2155,7 +2562,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/graph": {
@@ -2163,7 +2575,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Live chunks and the edges between them, for the force-directed graph.",
+        "summary": "/memory/graph",
+        "description": "Live chunks and the edges between them, for the force-directed graph.",
         "operationId": "GetMemoryGraph",
         "responses": {
           "200": {
@@ -2176,7 +2589,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/scatter": {
@@ -2184,7 +2602,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Live chunks\u0027 embeddings projected onto their first two principal components.",
+        "summary": "/memory/scatter",
+        "description": "Live chunks\u0027 embeddings projected onto their first two principal components.",
         "operationId": "GetMemoryScatter",
         "responses": {
           "200": {
@@ -2200,7 +2619,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/export": {
@@ -2208,13 +2632,19 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Chunks, versions, edges and projects as NDJSON (without embeddings).",
+        "summary": "/memory/export",
+        "description": "Chunks, versions, edges and projects as NDJSON (without embeddings).",
         "operationId": "ExportMemory",
         "responses": {
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/projects": {
@@ -2222,7 +2652,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Live projects with aliases, alias candidates and chunk counts.",
+        "summary": "/memory/projects",
+        "description": "Live projects with aliases, alias candidates and chunk counts.",
         "operationId": "ListProjects",
         "responses": {
           "200": {
@@ -2238,13 +2669,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "post": {
         "tags": [
           "Memory"
         ],
-        "summary": "Creates a project; names are unique.",
+        "summary": "/memory/projects",
+        "description": "Creates a project; names are unique.",
         "operationId": "CreateProject",
         "requestBody": {
           "content": {
@@ -2267,7 +2704,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/projects/{id}": {
@@ -2275,7 +2717,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Renames or re-describes a project.",
+        "summary": "/memory/projects/{id}",
+        "description": "Renames or re-describes a project.",
         "operationId": "UpdateProject",
         "parameters": [
           {
@@ -2309,13 +2752,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "delete": {
         "tags": [
           "Memory"
         ],
-        "summary": "Deletes a project; its chunks stay and show up as orphans in the audit.",
+        "summary": "/memory/projects/{id}",
+        "description": "Deletes a project; its chunks stay and show up as orphans in the audit.",
         "operationId": "DeleteProject",
         "parameters": [
           {
@@ -2332,7 +2781,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/projects/{id}/aliases": {
@@ -2340,7 +2794,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Adds an active alias (or activates an existing candidate).",
+        "summary": "/memory/projects/{id}/aliases",
+        "description": "Adds an active alias (or activates an existing candidate).",
         "operationId": "AddProjectAlias",
         "parameters": [
           {
@@ -2374,7 +2829,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/projects/{id}/aliases/{aliasId}": {
@@ -2382,7 +2842,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "Promotes or rejects an alias or alias candidate.",
+        "summary": "/memory/projects/{id}/aliases/{aliasId}",
+        "description": "Promotes or rejects an alias or alias candidate.",
         "operationId": "SetProjectAliasStatus",
         "parameters": [
           {
@@ -2426,13 +2887,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "delete": {
         "tags": [
           "Memory"
         ],
-        "summary": "Removes an alias or alias candidate.",
+        "summary": "/memory/projects/{id}/aliases/{aliasId}",
+        "description": "Removes an alias or alias candidate.",
         "operationId": "RemoveProjectAlias",
         "parameters": [
           {
@@ -2459,7 +2926,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/memory/projects/{id}/feedback": {
@@ -2467,7 +2939,8 @@
         "tags": [
           "Memory"
         ],
-        "summary": "The project\u0027s correction log, newest first.",
+        "summary": "/memory/projects/{id}/feedback",
+        "description": "The project\u0027s correction log, newest first.",
         "operationId": "GetProjectFeedback",
         "parameters": [
           {
@@ -2494,7 +2967,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/printers": {
@@ -2502,7 +2980,8 @@
         "tags": [
           "Printers"
         ],
-        "summary": "Configured printers with their live state (null while offline), allowlisted macros and babysitter state (null when not enabled).",
+        "summary": "/printers",
+        "description": "Configured printers with their live state (null while offline), allowlisted macros and babysitter state (null when not enabled).",
         "operationId": "ListPrinters",
         "responses": {
           "200": {
@@ -2518,7 +2997,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/printers/{printer}": {
@@ -2526,7 +3010,8 @@
         "tags": [
           "Printers"
         ],
-        "summary": "Live state from the websocket cache.",
+        "summary": "/printers/{printer}",
+        "description": "Live state from the websocket cache.",
         "operationId": "GetPrinterStatus",
         "parameters": [
           {
@@ -2550,7 +3035,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/printers/{printer}/files": {
@@ -2558,7 +3048,8 @@
         "tags": [
           "Printers"
         ],
-        "summary": "Printable files, newest first.",
+        "summary": "/printers/{printer}/files",
+        "description": "Printable files, newest first.",
         "operationId": "ListPrinterFiles",
         "parameters": [
           {
@@ -2585,7 +3076,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/printers/{printer}/queue": {
@@ -2593,7 +3089,8 @@
         "tags": [
           "Printers"
         ],
-        "summary": "The job queue.",
+        "summary": "/printers/{printer}/queue",
+        "description": "The job queue.",
         "operationId": "GetPrinterQueue",
         "parameters": [
           {
@@ -2617,7 +3114,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/printers/{printer}/history": {
@@ -2625,7 +3127,8 @@
         "tags": [
           "Printers"
         ],
-        "summary": "Recent jobs, newest first.",
+        "summary": "/printers/{printer}/history",
+        "description": "Recent jobs, newest first.",
         "operationId": "GetPrinterHistory",
         "parameters": [
           {
@@ -2661,7 +3164,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/printers/{printer}/controls": {
@@ -2669,7 +3177,8 @@
         "tags": [
           "Printers"
         ],
-        "summary": "Runs a safe control, or freezes a confirm-tier control and returns its confirmation token.",
+        "summary": "/printers/{printer}/controls",
+        "description": "Runs a safe control, or freezes a confirm-tier control and returns its confirmation token.",
         "operationId": "ControlPrinter",
         "parameters": [
           {
@@ -2703,7 +3212,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/printers/{printer}/controls/confirm": {
@@ -2711,7 +3225,8 @@
         "tags": [
           "Printers"
         ],
-        "summary": "Runs a frozen control with the token from the confirmation dialog (single use, expires).",
+        "summary": "/printers/{printer}/controls/confirm",
+        "description": "Runs a frozen control with the token from the confirmation dialog (single use, expires).",
         "operationId": "ConfirmPrinterControl",
         "parameters": [
           {
@@ -2745,7 +3260,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/printers/{printer}/snapshots": {
@@ -2753,7 +3273,8 @@
         "tags": [
           "Printers"
         ],
-        "summary": "Takes, resizes and stores a webcam snapshot.",
+        "summary": "/printers/{printer}/snapshots",
+        "description": "Takes, resizes and stores a webcam snapshot.",
         "operationId": "CapturePrinterSnapshot",
         "parameters": [
           {
@@ -2777,7 +3298,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/printers/{printer}/snapshots/{id}": {
@@ -2785,7 +3311,8 @@
         "tags": [
           "Printers"
         ],
-        "summary": "A stored snapshot as JPEG.",
+        "summary": "/printers/{printer}/snapshots/{id}",
+        "description": "A stored snapshot as JPEG.",
         "operationId": "GetPrinterSnapshot",
         "parameters": [
           {
@@ -2811,7 +3338,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/printers/{printer}/snapshots/{id}/shared": {
@@ -2819,7 +3351,8 @@
         "tags": [
           "Printers"
         ],
-        "summary": "A stored snapshot as JPEG without signing in, with the signature of a shared link (push notification images; expires after a day).",
+        "summary": "/printers/{printer}/snapshots/{id}/shared",
+        "description": "A stored snapshot as JPEG without signing in, with the signature of a shared link (push notification images; expires after a day).",
         "operationId": "GetSharedPrinterSnapshot",
         "parameters": [
           {
@@ -2861,7 +3394,8 @@
         "tags": [
           "Printers"
         ],
-        "summary": "The webcam\u0027s live stream, proxied so the browser never contacts the printer.",
+        "summary": "/printers/{printer}/webcam/stream",
+        "description": "The webcam\u0027s live stream, proxied so the browser never contacts the printer.",
         "operationId": "StreamPrinterWebcam",
         "parameters": [
           {
@@ -2878,7 +3412,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/music/{speaker}": {
@@ -2886,7 +3425,8 @@
         "tags": [
           "Music"
         ],
-        "summary": "The speaker\u0027s queue as the music widget shows it: state, current and next item, item count, shuffle and repeat.",
+        "summary": "/music/{speaker}",
+        "description": "The speaker\u0027s queue as the music widget shows it: state, current and next item, item count, shuffle and repeat.",
         "operationId": "GetMusicQueue",
         "parameters": [
           {
@@ -2910,7 +3450,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/music/{speaker}/control": {
@@ -2918,7 +3463,8 @@
         "tags": [
           "Music"
         ],
-        "summary": "Runs a playback control (pause, resume, next, previous, stop, volume) through the guard, recorded as a run with trigger widget:music.",
+        "summary": "/music/{speaker}/control",
+        "description": "Runs a playback control (pause, resume, next, previous, stop, volume) through the guard, recorded as a run with trigger widget:music.",
         "operationId": "ControlMusic",
         "parameters": [
           {
@@ -2952,7 +3498,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/apps/{appId}": {
@@ -2960,7 +3511,8 @@
         "tags": [
           "Apps"
         ],
-        "summary": "An MCP app a turn showed: server, tool, the call\u0027s arguments and result, and whether it can still be shown.",
+        "summary": "/apps/{appId}",
+        "description": "An MCP app a turn showed: server, tool, the call\u0027s arguments and result, and whether it can still be shown.",
         "operationId": "GetApp",
         "parameters": [
           {
@@ -2985,7 +3537,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/apps/{appId}/tool-calls": {
@@ -2993,7 +3550,8 @@
         "tags": [
           "Apps"
         ],
-        "summary": "Calls a tool of the app\u0027s own server for the app, through the guard as a run with trigger app:\u003Cserver\u003E/\u003Ctool\u003E; confirm tier is denied.",
+        "summary": "/apps/{appId}/tool-calls",
+        "description": "Calls a tool of the app\u0027s own server for the app, through the guard as a run with trigger app:\u003Cserver\u003E/\u003Ctool\u003E; confirm tier is denied.",
         "operationId": "CallAppTool",
         "parameters": [
           {
@@ -3028,7 +3586,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/mail/accounts": {
@@ -3036,7 +3599,8 @@
         "tags": [
           "Mail"
         ],
-        "summary": "The user\u0027s mail accounts without credentials.",
+        "summary": "/mail/accounts",
+        "description": "The user\u0027s mail accounts without credentials.",
         "operationId": "ListMailAccounts",
         "responses": {
           "200": {
@@ -3052,13 +3616,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "post": {
         "tags": [
           "Mail"
         ],
-        "summary": "Adds an IMAP account; the password becomes a write-only owner secret.",
+        "summary": "/mail/accounts",
+        "description": "Adds an IMAP account; the password becomes a write-only owner secret.",
         "operationId": "CreateMailAccount",
         "requestBody": {
           "content": {
@@ -3081,7 +3651,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/mail/accounts/{id}": {
@@ -3089,7 +3664,8 @@
         "tags": [
           "Mail"
         ],
-        "summary": "Removes an account and its stored credential.",
+        "summary": "/mail/accounts/{id}",
+        "description": "Removes an account and its stored credential.",
         "operationId": "DeleteMailAccount",
         "parameters": [
           {
@@ -3106,7 +3682,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/mail/oauth/providers": {
@@ -3114,7 +3695,8 @@
         "tags": [
           "Mail"
         ],
-        "summary": "OAuth providers and whether this instance has a client for them.",
+        "summary": "/mail/oauth/providers",
+        "description": "OAuth providers and whether this instance has a client for them.",
         "operationId": "ListMailOAuthProviders",
         "responses": {
           "200": {
@@ -3130,7 +3712,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/mail/oauth/{provider}/start": {
@@ -3138,7 +3725,8 @@
         "tags": [
           "Mail"
         ],
-        "summary": "Starts connecting an account: returns the provider\u0027s sign-in URL for the browser.",
+        "summary": "/mail/oauth/{provider}/start",
+        "description": "Starts connecting an account: returns the provider\u0027s sign-in URL for the browser.",
         "operationId": "StartMailOAuth",
         "parameters": [
           {
@@ -3172,7 +3760,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/approvals": {
@@ -3180,7 +3773,8 @@
         "tags": [
           "Approvals"
         ],
-        "summary": "Undecided approvals of the user\u0027s background tasks, oldest first, with reasons and taint sources.",
+        "summary": "/approvals",
+        "description": "Undecided approvals of the user\u0027s background tasks, oldest first, with reasons and taint sources.",
         "operationId": "ListApprovals",
         "responses": {
           "200": {
@@ -3196,7 +3790,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/approvals/{id}/approve": {
@@ -3204,7 +3803,8 @@
         "tags": [
           "Approvals"
         ],
-        "summary": "Executes the frozen action and resumes the task with its result.",
+        "summary": "/approvals/{id}/approve",
+        "description": "Executes the frozen action and resumes the task with its result.",
         "operationId": "ApproveApproval",
         "parameters": [
           {
@@ -3228,7 +3828,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/approvals/{id}/reject": {
@@ -3236,7 +3841,8 @@
         "tags": [
           "Approvals"
         ],
-        "summary": "Resumes the task with the rejection; nothing is executed.",
+        "summary": "/approvals/{id}/reject",
+        "description": "Resumes the task with the rejection; nothing is executed.",
         "operationId": "RejectApproval",
         "parameters": [
           {
@@ -3260,7 +3866,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/approvals/inputs": {
@@ -3268,7 +3879,8 @@
         "tags": [
           "Approvals"
         ],
-        "summary": "Pending input requests of MCP servers, oldest first.",
+        "summary": "/approvals/inputs",
+        "description": "Pending input requests of MCP servers, oldest first.",
         "operationId": "ListInputRequests",
         "responses": {
           "200": {
@@ -3284,7 +3896,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/approvals/inputs/{id}": {
@@ -3292,7 +3909,8 @@
         "tags": [
           "Approvals"
         ],
-        "summary": "One input request in any status.",
+        "summary": "/approvals/inputs/{id}",
+        "description": "One input request in any status.",
         "operationId": "GetInputRequest",
         "parameters": [
           {
@@ -3316,13 +3934,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "post": {
         "tags": [
           "Approvals"
         ],
-        "summary": "Answers an input request (form fields, or null when a URL request is done), repeats the frozen call once and resumes the waiting task with its outcome.",
+        "summary": "/approvals/inputs/{id}",
+        "description": "Answers an input request (form fields, or null when a URL request is done), repeats the frozen call once and resumes the waiting task with its outcome.",
         "operationId": "AnswerInputRequest",
         "parameters": [
           {
@@ -3356,7 +3980,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/approvals/inputs/{id}/decline": {
@@ -3364,7 +3993,8 @@
         "tags": [
           "Approvals"
         ],
-        "summary": "Declines an input request; nothing is sent to the server and the waiting task resumes with the refusal.",
+        "summary": "/approvals/inputs/{id}/decline",
+        "description": "Declines an input request; nothing is sent to the server and the waiting task resumes with the refusal.",
         "operationId": "DeclineInputRequest",
         "parameters": [
           {
@@ -3388,7 +4018,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/tasks": {
@@ -3396,7 +4031,8 @@
         "tags": [
           "Tasks"
         ],
-        "summary": "The user\u0027s tasks and watches, oldest first; status filters by one status or active (pending, running, waiting).",
+        "summary": "/tasks",
+        "description": "The user\u0027s tasks and watches, oldest first; status filters by one status or active (pending, running, waiting).",
         "operationId": "ListTasks",
         "parameters": [
           {
@@ -3422,7 +4058,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/tasks/kill-switch": {
@@ -3430,7 +4071,8 @@
         "tags": [
           "Tasks"
         ],
-        "summary": "Whether background work is stopped.",
+        "summary": "/tasks/kill-switch",
+        "description": "Whether background work is stopped.",
         "operationId": "GetKillSwitch",
         "responses": {
           "200": {
@@ -3443,7 +4085,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/tasks/kill-switch/activate": {
@@ -3451,7 +4098,8 @@
         "tags": [
           "Tasks"
         ],
-        "summary": "Stops every unfinished agent task and pauses new ones until released.",
+        "summary": "/tasks/kill-switch/activate",
+        "description": "Stops every unfinished agent task and pauses new ones until released.",
         "operationId": "ActivateKillSwitch",
         "responses": {
           "200": {
@@ -3464,7 +4112,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/tasks/kill-switch/release": {
@@ -3472,7 +4125,8 @@
         "tags": [
           "Tasks"
         ],
-        "summary": "Lets background tasks run again; tasks paused while it was active become due.",
+        "summary": "/tasks/kill-switch/release",
+        "description": "Lets background tasks run again; tasks paused while it was active become due.",
         "operationId": "ReleaseKillSwitch",
         "responses": {
           "200": {
@@ -3485,7 +4139,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/tasks/{id}": {
@@ -3493,7 +4152,8 @@
         "tags": [
           "Tasks"
         ],
-        "summary": "One task with notes, the latest result, deliveries, recent runs, notifications and executor sessions.",
+        "summary": "/tasks/{id}",
+        "description": "One task with notes, the latest result, deliveries, recent runs, notifications and executor sessions.",
         "operationId": "GetTask",
         "parameters": [
           {
@@ -3517,7 +4177,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/tasks/{id}/goal": {
@@ -3525,7 +4190,8 @@
         "tags": [
           "Tasks"
         ],
-        "summary": "Replaces the task\u0027s goal; the next run uses it.",
+        "summary": "/tasks/{id}/goal",
+        "description": "Replaces the task\u0027s goal; the next run uses it.",
         "operationId": "SetTaskGoal",
         "parameters": [
           {
@@ -3559,7 +4225,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/tasks/{id}/tool-policy": {
@@ -3567,7 +4238,8 @@
         "tags": [
           "Tasks"
         ],
-        "summary": "Replaces the task\u0027s tool policy (tool ids or globs inside its template\u0027s allowlist); the next run sees only those tools.",
+        "summary": "/tasks/{id}/tool-policy",
+        "description": "Replaces the task\u0027s tool policy (tool ids or globs inside its template\u0027s allowlist); the next run sees only those tools.",
         "operationId": "SetTaskToolPolicy",
         "parameters": [
           {
@@ -3601,7 +4273,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/tasks/{id}/cancel": {
@@ -3609,7 +4286,8 @@
         "tags": [
           "Tasks"
         ],
-        "summary": "Cancels the task and its unfinished child tasks.",
+        "summary": "/tasks/{id}/cancel",
+        "description": "Cancels the task and its unfinished child tasks.",
         "operationId": "CancelTask",
         "parameters": [
           {
@@ -3633,7 +4311,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/proposals": {
@@ -3641,7 +4324,8 @@
         "tags": [
           "Proposals"
         ],
-        "summary": "The user\u0027s proposals, newest first, without diffs (default: open ones; status=all for every one).",
+        "summary": "/proposals",
+        "description": "The user\u0027s proposals, newest first, without diffs (default: open ones; status=all for every one).",
         "operationId": "ListProposals",
         "parameters": [
           {
@@ -3667,7 +4351,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/proposals/{id}": {
@@ -3675,7 +4364,8 @@
         "tags": [
           "Proposals"
         ],
-        "summary": "One proposal with its diff.",
+        "summary": "/proposals/{id}",
+        "description": "One proposal with its diff.",
         "operationId": "GetProposal",
         "parameters": [
           {
@@ -3700,7 +4390,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/proposals/{id}/merge": {
@@ -3708,7 +4403,8 @@
         "tags": [
           "Proposals"
         ],
-        "summary": "Merges the change into the branch it started from on the executor host; a conflict leaves it open.",
+        "summary": "/proposals/{id}/merge",
+        "description": "Merges the change into the branch it started from on the executor host; a conflict leaves it open.",
         "operationId": "MergeProposal",
         "parameters": [
           {
@@ -3733,7 +4429,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/proposals/{id}/reject": {
@@ -3741,7 +4442,8 @@
         "tags": [
           "Proposals"
         ],
-        "summary": "Rejects the change and drops its branch on the executor host.",
+        "summary": "/proposals/{id}/reject",
+        "description": "Rejects the change and drops its branch on the executor host.",
         "operationId": "RejectProposal",
         "parameters": [
           {
@@ -3766,7 +4468,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/suggestions": {
@@ -3774,7 +4481,8 @@
         "tags": [
           "Suggestions"
         ],
-        "summary": "The user\u0027s open suggestions, newest first.",
+        "summary": "/suggestions",
+        "description": "The user\u0027s open suggestions, newest first.",
         "operationId": "ListSuggestions",
         "responses": {
           "200": {
@@ -3790,7 +4498,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/suggestions/{id}/accept": {
@@ -3798,7 +4511,8 @@
         "tags": [
           "Suggestions"
         ],
-        "summary": "Accepts a suggestion; its proposed action, if any, runs once through the guard.",
+        "summary": "/suggestions/{id}/accept",
+        "description": "Accepts a suggestion; its proposed action, if any, runs once through the guard.",
         "operationId": "AcceptSuggestion",
         "parameters": [
           {
@@ -3823,7 +4537,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/suggestions/{id}/dismiss": {
@@ -3831,7 +4550,8 @@
         "tags": [
           "Suggestions"
         ],
-        "summary": "Dismisses a suggestion; nothing runs.",
+        "summary": "/suggestions/{id}/dismiss",
+        "description": "Dismisses a suggestion; nothing runs.",
         "operationId": "DismissSuggestion",
         "parameters": [
           {
@@ -3856,7 +4576,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/suggestions/detectors": {
@@ -3864,7 +4589,8 @@
         "tags": [
           "Suggestions"
         ],
-        "summary": "Every detector with the user\u0027s counts, acceptance estimate and mute.",
+        "summary": "/suggestions/detectors",
+        "description": "Every detector with the user\u0027s counts, acceptance estimate and mute.",
         "operationId": "ListSuggestionDetectors",
         "responses": {
           "200": {
@@ -3880,7 +4606,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/suggestions/detectors/{detector}/mute": {
@@ -3888,7 +4619,8 @@
         "tags": [
           "Suggestions"
         ],
-        "summary": "Mutes a detector until a time, or indefinitely without one.",
+        "summary": "/suggestions/detectors/{detector}/mute",
+        "description": "Mutes a detector until a time, or indefinitely without one.",
         "operationId": "MuteSuggestionDetector",
         "parameters": [
           {
@@ -3922,13 +4654,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "delete": {
         "tags": [
           "Suggestions"
         ],
-        "summary": "Unmutes a detector.",
+        "summary": "/suggestions/detectors/{detector}/mute",
+        "description": "Unmutes a detector.",
         "operationId": "UnmuteSuggestionDetector",
         "parameters": [
           {
@@ -3952,7 +4690,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/suggestions/detectors/{detector}/reset": {
@@ -3960,7 +4703,8 @@
         "tags": [
           "Suggestions"
         ],
-        "summary": "Sets a detector\u0027s counts back to zero; a mute stays.",
+        "summary": "/suggestions/detectors/{detector}/reset",
+        "description": "Sets a detector\u0027s counts back to zero; a mute stays.",
         "operationId": "ResetSuggestionDetector",
         "parameters": [
           {
@@ -3984,7 +4728,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/skill-proposals": {
@@ -3992,7 +4741,8 @@
         "tags": [
           "Suggestions"
         ],
-        "summary": "Open and downloaded skill proposals, newest first.",
+        "summary": "/skill-proposals",
+        "description": "Open and downloaded skill proposals, newest first.",
         "operationId": "ListSkillProposals",
         "responses": {
           "200": {
@@ -4008,7 +4758,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/skill-proposals/{id}": {
@@ -4016,7 +4771,8 @@
         "tags": [
           "Suggestions"
         ],
-        "summary": "One skill proposal with its SKILL.md and diff.",
+        "summary": "/skill-proposals/{id}",
+        "description": "One skill proposal with its SKILL.md and diff.",
         "operationId": "GetSkillProposal",
         "parameters": [
           {
@@ -4041,7 +4797,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/skill-proposals/{id}/download": {
@@ -4049,7 +4810,8 @@
         "tags": [
           "Suggestions"
         ],
-        "summary": "The drafted SKILL.md as a file; marks the proposal downloaded.",
+        "summary": "/skill-proposals/{id}/download",
+        "description": "The drafted SKILL.md as a file; marks the proposal downloaded.",
         "operationId": "DownloadSkillProposal",
         "parameters": [
           {
@@ -4067,7 +4829,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/skill-proposals/{id}/dismiss": {
@@ -4075,7 +4842,8 @@
         "tags": [
           "Suggestions"
         ],
-        "summary": "Dismisses a skill proposal; the same workflow is not proposed again.",
+        "summary": "/skill-proposals/{id}/dismiss",
+        "description": "Dismisses a skill proposal; the same workflow is not proposed again.",
         "operationId": "DismissSkillProposal",
         "parameters": [
           {
@@ -4100,7 +4868,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/maintenance": {
@@ -4108,7 +4881,8 @@
         "tags": [
           "Maintenance"
         ],
-        "summary": "Maintenance items read now: due first, then soon, then by name; empty without configured items.",
+        "summary": "/maintenance",
+        "description": "Maintenance items read now: due first, then soon, then by name; empty without configured items.",
         "operationId": "ListMaintenanceItems",
         "responses": {
           "200": {
@@ -4124,7 +4898,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/maintenance/{id}/done": {
@@ -4132,7 +4911,8 @@
         "tags": [
           "Maintenance"
         ],
-        "summary": "Marks a maintenance item done: its usage starts again from the counter\u0027s current value.",
+        "summary": "/maintenance/{id}/done",
+        "description": "Marks a maintenance item done: its usage starts again from the counter\u0027s current value.",
         "operationId": "MarkMaintenanceDone",
         "parameters": [
           {
@@ -4156,7 +4936,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/artifacts": {
@@ -4164,7 +4949,8 @@
         "tags": [
           "Artifacts"
         ],
-        "summary": "The owner\u0027s artifacts, newest first, filtered by kind, source and name, with the quota usage.",
+        "summary": "/artifacts",
+        "description": "The owner\u0027s artifacts, newest first, filtered by kind, source and name, with the quota usage.",
         "operationId": "ListArtifacts",
         "parameters": [
           {
@@ -4203,13 +4989,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "post": {
         "tags": [
           "Artifacts"
         ],
-        "summary": "Uploads one file (multipart field \u0027file\u0027), at most artifacts.maxUploadMb.",
+        "summary": "/artifacts",
+        "description": "Uploads one file (multipart field \u0027file\u0027), at most artifacts.maxUploadMb.",
         "operationId": "UploadArtifact",
         "requestBody": {
           "content": {
@@ -4232,7 +5024,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     },
     "/api/v1/artifacts/{id}": {
@@ -4240,7 +5037,8 @@
         "tags": [
           "Artifacts"
         ],
-        "summary": "",
+        "summary": "/artifacts/{id}",
+        "description": "One of the user\u0027s artifacts: metadata, source, taint and content URL.",
         "operationId": "GetArtifact",
         "parameters": [
           {
@@ -4265,13 +5063,19 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       },
       "delete": {
         "tags": [
           "Artifacts"
         ],
-        "summary": "",
+        "summary": "/artifacts/{id}",
+        "description": "Deletes one of the user\u0027s artifacts.",
         "operationId": "DeleteArtifact",
         "parameters": [
           {
@@ -4289,7 +5093,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
       }
     }
   },
@@ -10177,6 +10986,19 @@
             "$ref": "#/components/schemas/JsonElement"
           }
         }
+      }
+    },
+    "securitySchemes": {
+      "apiToken": {
+        "type": "http",
+        "description": "A scoped machine token (\u0060marshal tokens create\u0060, or Security in the web interface). The scopes an operation needs are listed with it.",
+        "scheme": "bearer"
+      },
+      "session": {
+        "type": "apiKey",
+        "description": "The browser session of the web interface. State-changing requests also need the \u0060X-XSRF-TOKEN\u0060 header from \u0060GET /api/v1/auth/antiforgery\u0060.",
+        "name": "marshal_session",
+        "in": "cookie"
       }
     }
   },

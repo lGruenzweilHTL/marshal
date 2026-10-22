@@ -21,30 +21,30 @@ internal static class SuggestionEndpoints
     public static RouteGroupBuilder MapSuggestionEndpoints(this RouteGroupBuilder group)
     {
         RouteGroupBuilder suggestions = group.MapGroup("/suggestions").WithTags("Suggestions").RequireAuthorization(Policies.Human);
-        suggestions.MapGet("/", ListAsync).WithName("ListSuggestions").WithSummary("The user's open suggestions, newest first.");
+        suggestions.MapGet("/", ListAsync).WithName("ListSuggestions").WithDescription("The user's open suggestions, newest first.");
         suggestions.MapPost("/{id:guid}/accept", (Guid id, ClaimsPrincipal user, SuggestionResponder responder, IAuditLog audit, CancellationToken ct) =>
                 AnswerAsync(id, accept: true, user, responder, audit, ct))
             .WithName("AcceptSuggestion")
-            .WithSummary("Accepts a suggestion; its proposed action, if any, runs once through the guard.");
+            .WithDescription("Accepts a suggestion; its proposed action, if any, runs once through the guard.");
         suggestions.MapPost("/{id:guid}/dismiss", (Guid id, ClaimsPrincipal user, SuggestionResponder responder, IAuditLog audit, CancellationToken ct) =>
                 AnswerAsync(id, accept: false, user, responder, audit, ct))
             .WithName("DismissSuggestion")
-            .WithSummary("Dismisses a suggestion; nothing runs.");
+            .WithDescription("Dismisses a suggestion; nothing runs.");
         suggestions.MapGet("/detectors", ListDetectorsAsync).WithName("ListSuggestionDetectors")
-            .WithSummary("Every detector with the user's counts, acceptance estimate and mute.");
+            .WithDescription("Every detector with the user's counts, acceptance estimate and mute.");
         suggestions.MapPut("/detectors/{detector}/mute", MuteAsync).WithName("MuteSuggestionDetector")
-            .WithSummary("Mutes a detector until a time, or indefinitely without one.");
-        suggestions.MapDelete("/detectors/{detector}/mute", UnmuteAsync).WithName("UnmuteSuggestionDetector").WithSummary("Unmutes a detector.");
+            .WithDescription("Mutes a detector until a time, or indefinitely without one.");
+        suggestions.MapDelete("/detectors/{detector}/mute", UnmuteAsync).WithName("UnmuteSuggestionDetector").WithDescription("Unmutes a detector.");
         suggestions.MapPost("/detectors/{detector}/reset", ResetAsync).WithName("ResetSuggestionDetector")
-            .WithSummary("Sets a detector's counts back to zero; a mute stays.");
+            .WithDescription("Sets a detector's counts back to zero; a mute stays.");
 
         RouteGroupBuilder skills = group.MapGroup("/skill-proposals").WithTags("Suggestions").RequireAuthorization(Policies.Human);
-        skills.MapGet("/", ListSkillProposalsAsync).WithName("ListSkillProposals").WithSummary("Open and downloaded skill proposals, newest first.");
-        skills.MapGet("/{id:guid}", GetSkillProposalAsync).WithName("GetSkillProposal").WithSummary("One skill proposal with its SKILL.md and diff.");
+        skills.MapGet("/", ListSkillProposalsAsync).WithName("ListSkillProposals").WithDescription("Open and downloaded skill proposals, newest first.");
+        skills.MapGet("/{id:guid}", GetSkillProposalAsync).WithName("GetSkillProposal").WithDescription("One skill proposal with its SKILL.md and diff.");
         skills.MapGet("/{id:guid}/download", DownloadAsync).WithName("DownloadSkillProposal")
-            .WithSummary("The drafted SKILL.md as a file; marks the proposal downloaded.");
+            .WithDescription("The drafted SKILL.md as a file; marks the proposal downloaded.");
         skills.MapPost("/{id:guid}/dismiss", DismissSkillProposalAsync).WithName("DismissSkillProposal")
-            .WithSummary("Dismisses a skill proposal; the same workflow is not proposed again.");
+            .WithDescription("Dismisses a skill proposal; the same workflow is not proposed again.");
         return group;
     }
 

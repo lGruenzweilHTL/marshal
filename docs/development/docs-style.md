@@ -147,7 +147,7 @@ Preview the site with live reload at `http://localhost:3000`:
 npx clay-doc@5 dev
 ```
 
-The [API v1 reference](../api/v1/index.md) is generated: `scripts/docs-openapi.mjs` runs before every Clay command, copies `web/openapi/v1.json` to `artifacts/openapi/`, and adds servers and the authentication schemes. Do not edit the generated pages; change the API and run `npm run gen:api` in `web/`.
+The [API v1 reference](../api/v1/index.md) is generated: `scripts/docs-openapi.mjs` runs before every Clay command, copies `web/openapi/v1.json` to `artifacts/openapi/`, and adds the servers. Do not edit the generated pages; change the API and run `npm run gen:api` in `web/`.
 
 ## Keeping docs current
 

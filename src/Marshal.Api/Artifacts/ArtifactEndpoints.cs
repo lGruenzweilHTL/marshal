@@ -39,26 +39,26 @@ internal static class ArtifactEndpoints
     {
         RouteGroupBuilder artifacts = group.MapGroup("/artifacts").WithTags("Artifacts").RequireAuthorization(Policies.Human);
         artifacts.MapGet("/", ListAsync).WithName("ListArtifacts")
-            .WithSummary("The owner's artifacts, newest first, filtered by kind, source and name, with the quota usage.");
+            .WithDescription("The owner's artifacts, newest first, filtered by kind, source and name, with the quota usage.");
         artifacts.MapPost("/", UploadAsync).WithName("UploadArtifact")
-            .WithSummary("Uploads one file (multipart field 'file'), at most artifacts.maxUploadMb.")
+            .WithDescription("Uploads one file (multipart field 'file'), at most artifacts.maxUploadMb.")
             .DisableAntiforgery()
             .Accepts<IFormFile>("multipart/form-data");
-        artifacts.MapGet("/{id:guid}", GetAsync).WithName("GetArtifact");
-        artifacts.MapDelete("/{id:guid}", DeleteAsync).WithName("DeleteArtifact");
+        artifacts.MapGet("/{id:guid}", GetAsync).WithName("GetArtifact").WithDescription("One of the user's artifacts: metadata, source, taint and content URL.");
+        artifacts.MapDelete("/{id:guid}", DeleteAsync).WithName("DeleteArtifact").WithDescription("Deletes one of the user's artifacts.");
         group.MapGet("/artifacts/{id:guid}/content", ContentAsync).WithName("GetArtifactContent").WithTags("Artifacts")
-            .WithSummary("The artifact's content (session or token).")
+            .WithDescription("The artifact's content (session or token).")
             .RequireAuthorization();
         group.MapGet("/artifacts/{id:guid}/preview", PreviewAsync).WithName("GetArtifactPreview").WithTags("Artifacts")
-            .WithSummary("A PNG preview within 480 × 270 pixels for 3D models and images; 404 for other kinds.")
+            .WithDescription("A PNG preview within 480 × 270 pixels for 3D models and images; 404 for other kinds.")
             .Produces(StatusCodes.Status200OK, contentType: "image/png")
             .Produces(StatusCodes.Status304NotModified)
             .RequireAuthorization();
         group.MapGet("/artifacts/{id:guid}/content/signed", SignedContentAsync).WithName("GetSignedArtifactContent").WithTags("Artifacts")
-            .WithSummary("The artifact's content through a signed, expiring link; no sign-in.")
+            .WithDescription("The artifact's content through a signed, expiring link; no sign-in.")
             .AllowAnonymous();
         group.MapPost("/printers/{printer}/snapshots/{snapshot}/keep", KeepSnapshotAsync).WithName("KeepPrinterSnapshot").WithTags("Printers")
-            .WithSummary("Copies a printer snapshot into the artifact store, outside the snapshot retention.")
+            .WithDescription("Copies a printer snapshot into the artifact store, outside the snapshot retention.")
             .RequireAuthorization(Policies.Human);
         group.MapPost("/executor/callbacks/{sessionId:guid}/artifacts", ExecutorUploadAsync)
             .RequireAuthorization(_callbackToken)

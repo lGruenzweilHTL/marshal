@@ -22,54 +22,54 @@ internal static class MemoryEndpoints
     {
         RouteGroupBuilder memory = group.MapGroup("/memory").WithTags("Memory").RequireAuthorization(Policies.Human);
         memory.MapGet("/chunks", ListAsync).WithName("ListMemoryChunks")
-            .WithSummary("Chunks newest first, or ranked by relevance with query; filter by type, scope, projectId, pinned and closed.");
+            .WithDescription("Chunks newest first, or ranked by relevance with query; filter by type, scope, projectId, pinned and closed.");
         memory.MapPost("/chunks", CreateAsync).WithName("CreateMemoryChunk")
-            .WithSummary("Writes a chunk through its deterministic id (an existing chunk with the same identity is updated).");
+            .WithDescription("Writes a chunk through its deterministic id (an existing chunk with the same identity is updated).");
         memory.MapGet("/chunks/{id}", GetAsync).WithName("GetMemoryChunk")
-            .WithSummary("A chunk (also when deleted) with its earlier versions and its edges.");
+            .WithDescription("A chunk (also when deleted) with its earlier versions and its edges.");
         memory.MapPut("/chunks/{id}", EditAsync).WithName("EditMemoryChunk")
-            .WithSummary("Changes content, importance, source and valid time; the previous content becomes a version.");
+            .WithDescription("Changes content, importance, source and valid time; the previous content becomes a version.");
         memory.MapDelete("/chunks/{id}", DeleteAsync).WithName("DeleteMemoryChunk")
-            .WithSummary("Soft-deletes a chunk; it is no longer retrieved.");
+            .WithDescription("Soft-deletes a chunk; it is no longer retrieved.");
         memory.MapPut("/chunks/{id}/pin", PinAsync).WithName("PinMemoryChunk")
-            .WithSummary("Pins a chunk: it is injected in full in every turn.");
+            .WithDescription("Pins a chunk: it is injected in full in every turn.");
         memory.MapDelete("/chunks/{id}/pin", UnpinAsync).WithName("UnpinMemoryChunk")
-            .WithSummary("Unpins a chunk.");
+            .WithDescription("Unpins a chunk.");
         memory.MapPost("/chunks/{id}/supersede", SupersedeAsync).WithName("SupersedeMemoryChunk")
-            .WithSummary("Writes a replacement with a new identity and a supersedes edge to the chunk.");
+            .WithDescription("Writes a replacement with a new identity and a supersedes edge to the chunk.");
         memory.MapGet("/chunks/{id}/history", HistoryAsync).WithName("GetMemoryChunkHistory")
-            .WithSummary("Predecessors, earlier versions and the current content, oldest first.");
+            .WithDescription("Predecessors, earlier versions and the current content, oldest first.");
         memory.MapGet("/audit", GetAuditAsync).WithName("GetMemoryAudit")
-            .WithSummary("Stale chunks, open contradictions, orphans, dangling edges and open proposals.");
+            .WithDescription("Stale chunks, open contradictions, orphans, dangling edges and open proposals.");
         memory.MapGet("/proposals", ListProposalsAsync).WithName("ListMemoryProposals")
-            .WithSummary("Open proposals of the idle-time jobs (contradictions and duplicates), oldest first.");
+            .WithDescription("Open proposals of the idle-time jobs (contradictions and duplicates), oldest first.");
         memory.MapPost("/proposals/{id}/accept", AcceptProposalAsync).WithName("AcceptMemoryProposal")
-            .WithSummary("Applies a proposal: closes the outdated chunk, or merges the duplicates.");
+            .WithDescription("Applies a proposal: closes the outdated chunk, or merges the duplicates.");
         memory.MapPost("/proposals/{id}/dismiss", DismissProposalAsync).WithName("DismissMemoryProposal")
-            .WithSummary("Dismisses a proposal; memory stays unchanged and the pair is not proposed again.");
+            .WithDescription("Dismisses a proposal; memory stays unchanged and the pair is not proposed again.");
         memory.MapGet("/graph", GraphAsync).WithName("GetMemoryGraph")
-            .WithSummary("Live chunks and the edges between them, for the force-directed graph.");
+            .WithDescription("Live chunks and the edges between them, for the force-directed graph.");
         memory.MapGet("/scatter", ScatterAsync).WithName("GetMemoryScatter")
-            .WithSummary("Live chunks' embeddings projected onto their first two principal components.");
+            .WithDescription("Live chunks' embeddings projected onto their first two principal components.");
         memory.MapGet("/export", Export).WithName("ExportMemory")
-            .WithSummary("Chunks, versions, edges and projects as NDJSON (without embeddings).");
+            .WithDescription("Chunks, versions, edges and projects as NDJSON (without embeddings).");
 
         memory.MapGet("/projects", ListProjectsAsync).WithName("ListProjects")
-            .WithSummary("Live projects with aliases, alias candidates and chunk counts.");
+            .WithDescription("Live projects with aliases, alias candidates and chunk counts.");
         memory.MapPost("/projects", CreateProjectAsync).WithName("CreateProject")
-            .WithSummary("Creates a project; names are unique.");
+            .WithDescription("Creates a project; names are unique.");
         memory.MapPut("/projects/{id}", UpdateProjectAsync).WithName("UpdateProject")
-            .WithSummary("Renames or re-describes a project.");
+            .WithDescription("Renames or re-describes a project.");
         memory.MapDelete("/projects/{id}", DeleteProjectAsync).WithName("DeleteProject")
-            .WithSummary("Deletes a project; its chunks stay and show up as orphans in the audit.");
+            .WithDescription("Deletes a project; its chunks stay and show up as orphans in the audit.");
         memory.MapPost("/projects/{id}/aliases", AddAliasAsync).WithName("AddProjectAlias")
-            .WithSummary("Adds an active alias (or activates an existing candidate).");
+            .WithDescription("Adds an active alias (or activates an existing candidate).");
         memory.MapPut("/projects/{id}/aliases/{aliasId}", SetAliasStatusAsync).WithName("SetProjectAliasStatus")
-            .WithSummary("Promotes or rejects an alias or alias candidate.");
+            .WithDescription("Promotes or rejects an alias or alias candidate.");
         memory.MapDelete("/projects/{id}/aliases/{aliasId}", RemoveAliasAsync).WithName("RemoveProjectAlias")
-            .WithSummary("Removes an alias or alias candidate.");
+            .WithDescription("Removes an alias or alias candidate.");
         memory.MapGet("/projects/{id}/feedback", FeedbackAsync).WithName("GetProjectFeedback")
-            .WithSummary("The project's correction log, newest first.");
+            .WithDescription("The project's correction log, newest first.");
         return group;
     }
 

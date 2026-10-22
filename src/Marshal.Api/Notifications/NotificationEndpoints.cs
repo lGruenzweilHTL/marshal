@@ -14,7 +14,7 @@ internal static class NotificationEndpoints
     public static RouteGroupBuilder MapNotificationEndpoints(this RouteGroupBuilder group)
     {
         group.MapGet("/notifications", ListAsync).RequireAuthorization(Policies.Human).WithTags("Notifications").WithName("ListNotifications")
-            .WithSummary("The user's notifications, newest first, with channel, outcome and reason; filter by outcome, page with before.");
+            .WithDescription("The user's notifications, newest first, with channel, outcome and reason; filter by outcome, page with before.");
         return group;
     }
 

@@ -34,7 +34,7 @@ A token is authorized by its own scopes only. A token with `tasks:read` that cal
 | `hooks:proxmox` | Posting Proxmox VE webhooks |
 | `hooks:seerr` | Posting Seerr webhooks |
 
-Any valid token can call `GET /api/v1/me` and `GET /api/v1/events`. Most other endpoints are for the web interface and need a cookie session; a token never reaches them regardless of its scopes. See [API overview](index.md#spa-internal-endpoints).
+Any valid token can call `GET /api/v1/me` and `GET /api/v1/events`. Most other endpoints are for the web interface and need a cookie session; a token never reaches them regardless of its scopes. See [API overview](index.md#spa-internal-endpoints). Every operation in the [API v1 reference](v1/index.md) lists the credentials it accepts.
 
 Grant a token only the scopes its client needs. The Home Assistant component needs `conversation:write` for Assist and `aitasks:write` for its AI Task entity, and nothing else.
 

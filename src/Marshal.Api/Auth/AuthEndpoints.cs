@@ -17,15 +17,15 @@ internal static class AuthEndpoints
         auth.MapGet("/providers", ListProviders)
             .AllowAnonymous()
             .WithName("ListLoginProviders")
-            .WithSummary("Lists the active login providers.");
+            .WithDescription("Lists the active login providers.");
         auth.MapGet("/login/{provider}", StartLogin)
             .AllowAnonymous()
             .WithName("StartLogin")
-            .WithSummary("Starts a login with the provider and redirects back to returnUrl (an app-relative path) afterwards.");
+            .WithDescription("Starts a login with the provider and redirects back to returnUrl (an app-relative path) afterwards.");
         auth.MapPost("/logout", Logout)
             .RequireAuthorization()
             .WithName("Logout")
-            .WithSummary("Ends the session (and the IdP session for OIDC logins) and redirects to the login page.");
+            .WithDescription("Ends the session (and the IdP session for OIDC logins) and redirects to the login page.");
         return group;
     }
 

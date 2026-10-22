@@ -82,6 +82,9 @@ public static class ApiServiceCollectionExtensions
                     document.Info.Title = $"Marshal API | {context.DocumentName}";
                     return Task.CompletedTask;
                 })
+                .AddOperationTransformer<OpenApiRouteSummaries>()
+                .AddDocumentTransformer<OpenApiSecurity>()
+                .AddOperationTransformer<OpenApiSecurity>()
                 .AddSchemaTransformer((schema, context, _) =>
                 {
                     // Typed ids serialize as their Guid (GuidIdJsonConverter); the generator cannot see through the converter.

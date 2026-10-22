@@ -29,15 +29,15 @@ internal static partial class MailAccountEndpoints
     {
         RouteGroupBuilder mail = group.MapGroup("/mail").WithTags("Mail").RequireAuthorization(Policies.Human);
         mail.MapGet("/accounts", ListAsync).WithName("ListMailAccounts")
-            .WithSummary("The user's mail accounts without credentials.");
+            .WithDescription("The user's mail accounts without credentials.");
         mail.MapPost("/accounts", CreateAsync).WithName("CreateMailAccount")
-            .WithSummary("Adds an IMAP account; the password becomes a write-only owner secret.");
+            .WithDescription("Adds an IMAP account; the password becomes a write-only owner secret.");
         mail.MapDelete("/accounts/{id}", DeleteAsync).WithName("DeleteMailAccount")
-            .WithSummary("Removes an account and its stored credential.");
+            .WithDescription("Removes an account and its stored credential.");
         mail.MapGet("/oauth/providers", Providers).WithName("ListMailOAuthProviders")
-            .WithSummary("OAuth providers and whether this instance has a client for them.");
+            .WithDescription("OAuth providers and whether this instance has a client for them.");
         mail.MapPost("/oauth/{provider}/start", StartAsync).WithName("StartMailOAuth")
-            .WithSummary("Starts connecting an account: returns the provider's sign-in URL for the browser.");
+            .WithDescription("Starts connecting an account: returns the provider's sign-in URL for the browser.");
         return group;
     }
 

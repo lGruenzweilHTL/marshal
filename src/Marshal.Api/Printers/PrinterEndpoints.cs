@@ -25,28 +25,28 @@ internal static class PrinterEndpoints
     {
         RouteGroupBuilder printers = group.MapGroup("/printers").WithTags("Printers").RequireAuthorization(Policies.Human);
         printers.MapGet("/", List).WithName("ListPrinters")
-            .WithSummary("Configured printers with their live state (null while offline), allowlisted macros and babysitter state (null when not enabled).");
+            .WithDescription("Configured printers with their live state (null while offline), allowlisted macros and babysitter state (null when not enabled).");
         printers.MapGet("/{printer}", GetStatus).WithName("GetPrinterStatus")
-            .WithSummary("Live state from the websocket cache.");
+            .WithDescription("Live state from the websocket cache.");
         printers.MapGet("/{printer}/files", ListFilesAsync).WithName("ListPrinterFiles")
-            .WithSummary("Printable files, newest first.");
+            .WithDescription("Printable files, newest first.");
         printers.MapGet("/{printer}/queue", GetQueueAsync).WithName("GetPrinterQueue")
-            .WithSummary("The job queue.");
+            .WithDescription("The job queue.");
         printers.MapGet("/{printer}/history", GetHistoryAsync).WithName("GetPrinterHistory")
-            .WithSummary("Recent jobs, newest first.");
+            .WithDescription("Recent jobs, newest first.");
         printers.MapPost("/{printer}/controls", ControlAsync).WithName("ControlPrinter")
-            .WithSummary("Runs a safe control, or freezes a confirm-tier control and returns its confirmation token.");
+            .WithDescription("Runs a safe control, or freezes a confirm-tier control and returns its confirmation token.");
         printers.MapPost("/{printer}/controls/confirm", ConfirmAsync).WithName("ConfirmPrinterControl")
-            .WithSummary("Runs a frozen control with the token from the confirmation dialog (single use, expires).");
+            .WithDescription("Runs a frozen control with the token from the confirmation dialog (single use, expires).");
         printers.MapPost("/{printer}/snapshots", CaptureAsync).WithName("CapturePrinterSnapshot")
-            .WithSummary("Takes, resizes and stores a webcam snapshot.");
+            .WithDescription("Takes, resizes and stores a webcam snapshot.");
         printers.MapGet("/{printer}/snapshots/{id}", GetSnapshotAsync).WithName("GetPrinterSnapshot")
-            .WithSummary("A stored snapshot as JPEG.");
+            .WithDescription("A stored snapshot as JPEG.");
         printers.MapGet("/{printer}/snapshots/{id}/shared", GetSharedSnapshotAsync).WithName("GetSharedPrinterSnapshot")
-            .WithSummary("A stored snapshot as JPEG without signing in, with the signature of a shared link (push notification images; expires after a day).")
+            .WithDescription("A stored snapshot as JPEG without signing in, with the signature of a shared link (push notification images; expires after a day).")
             .AllowAnonymous();
         printers.MapGet("/{printer}/webcam/stream", StreamAsync).WithName("StreamPrinterWebcam")
-            .WithSummary("The webcam's live stream, proxied so the browser never contacts the printer.");
+            .WithDescription("The webcam's live stream, proxied so the browser never contacts the printer.");
         return group;
     }
 

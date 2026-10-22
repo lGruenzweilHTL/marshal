@@ -15,9 +15,9 @@ internal static class ConversationHistoryEndpoints
     public static RouteGroupBuilder MapConversationHistoryEndpoints(this RouteGroupBuilder group)
     {
         group.MapGet("/conversations", ListAsync).RequireAuthorization(Policies.Human).WithTags("Conversations").WithName("ListConversations")
-            .WithSummary("The user's conversations (web, voice, api), newest last turn first; page with before (a lastTurnAt) and limit.");
+            .WithDescription("The user's conversations (web, voice, api), newest last turn first; page with before (a lastTurnAt) and limit.");
         group.MapGet("/conversations/{id}", GetAsync).RequireAuthorization(Policies.Human).WithTags("Conversations").WithName("GetConversation")
-            .WithSummary("One conversation: its turns and background results in time order.");
+            .WithDescription("One conversation: its turns and background results in time order.");
         return group;
     }
 

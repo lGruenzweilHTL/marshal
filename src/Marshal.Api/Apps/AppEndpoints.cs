@@ -39,9 +39,9 @@ internal static class AppEndpoints
     {
         RouteGroupBuilder apps = group.MapGroup("/apps").WithTags("Apps").RequireAuthorization(Policies.Human);
         apps.MapGet("/{appId:guid}", GetAsync).WithName("GetApp")
-            .WithSummary("An MCP app a turn showed: server, tool, the call's arguments and result, and whether it can still be shown.");
+            .WithDescription("An MCP app a turn showed: server, tool, the call's arguments and result, and whether it can still be shown.");
         apps.MapPost("/{appId:guid}/tool-calls", CallToolAsync).WithName("CallAppTool")
-            .WithSummary("Calls a tool of the app's own server for the app, through the guard as a run with trigger app:<server>/<tool>; confirm tier is denied.");
+            .WithDescription("Calls a tool of the app's own server for the app, through the guard as a run with trigger app:<server>/<tool>; confirm tier is denied.");
         return group;
     }
 

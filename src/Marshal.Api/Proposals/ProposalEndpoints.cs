@@ -18,16 +18,16 @@ internal static class ProposalEndpoints
     {
         RouteGroupBuilder proposals = group.MapGroup("/proposals").WithTags("Proposals").RequireAuthorization(Policies.Human);
         proposals.MapGet("/", ListAsync).WithName("ListProposals")
-            .WithSummary("The user's proposals, newest first, without diffs (default: open ones; status=all for every one).");
-        proposals.MapGet("/{id:guid}", GetAsync).WithName("GetProposal").WithSummary("One proposal with its diff.");
+            .WithDescription("The user's proposals, newest first, without diffs (default: open ones; status=all for every one).");
+        proposals.MapGet("/{id:guid}", GetAsync).WithName("GetProposal").WithDescription("One proposal with its diff.");
         proposals.MapPost("/{id:guid}/merge", (Guid id, ClaimsPrincipal user, IProposalReview review, IAuditLog audit, CancellationToken ct) =>
                 DecideAsync(id, merge: true, user, review, audit, ct))
             .WithName("MergeProposal")
-            .WithSummary("Merges the change into the branch it started from on the executor host; a conflict leaves it open.");
+            .WithDescription("Merges the change into the branch it started from on the executor host; a conflict leaves it open.");
         proposals.MapPost("/{id:guid}/reject", (Guid id, ClaimsPrincipal user, IProposalReview review, IAuditLog audit, CancellationToken ct) =>
                 DecideAsync(id, merge: false, user, review, audit, ct))
             .WithName("RejectProposal")
-            .WithSummary("Rejects the change and drops its branch on the executor host.");
+            .WithDescription("Rejects the change and drops its branch on the executor host.");
         return group;
     }
 

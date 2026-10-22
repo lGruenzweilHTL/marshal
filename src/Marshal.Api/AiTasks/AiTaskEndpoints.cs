@@ -26,7 +26,7 @@ internal static class AiTaskEndpoints
     public static RouteGroupBuilder MapAiTaskEndpoints(this RouteGroupBuilder group)
     {
         group.MapPost("/ai-tasks", RunAsync).WithName("RunAiTask").WithTags("AI tasks")
-            .WithSummary("Runs one AI task (multipart: a 'task' JSON part with taskName, instructions, optional structure and language; " +
+            .WithDescription("Runs one AI task (multipart: a 'task' JSON part with taskName, instructions, optional structure and language; " +
                 "optional 'attachment' image parts) and answers with its data: a string, or an object matching structure.")
             .RequireAuthorization(ApiScopes.AiTasksWrite)
             .DisableAntiforgery()

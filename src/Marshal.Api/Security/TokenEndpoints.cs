@@ -17,11 +17,11 @@ internal static class TokenEndpoints
     {
         RouteGroupBuilder tokens = group.MapGroup("/me/tokens").WithTags("Tokens").RequireAuthorization(Policies.Human);
         tokens.MapGet("/", ListAsync).WithName("ListApiTokens")
-            .WithSummary("The user's API tokens without secrets; executor callback tokens are read-only.");
+            .WithDescription("The user's API tokens without secrets; executor callback tokens are read-only.");
         tokens.MapPost("/", CreateAsync).WithName("CreateApiToken")
-            .WithSummary("Creates a token with scopes the user holds; the plaintext is returned only in this response.");
+            .WithDescription("Creates a token with scopes the user holds; the plaintext is returned only in this response.");
         tokens.MapDelete("/{id}", RevokeAsync).WithName("RevokeApiToken")
-            .WithSummary("Revokes one of the user's tokens.");
+            .WithDescription("Revokes one of the user's tokens.");
         return group;
     }
 

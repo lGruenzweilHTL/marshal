@@ -20,25 +20,25 @@ internal static class ApprovalEndpoints
     {
         RouteGroupBuilder approvals = group.MapGroup("/approvals").WithTags("Approvals").RequireAuthorization(Policies.Human);
         approvals.MapGet("/", ListAsync).WithName("ListApprovals")
-            .WithSummary("Undecided approvals of the user's background tasks, oldest first, with reasons and taint sources.");
+            .WithDescription("Undecided approvals of the user's background tasks, oldest first, with reasons and taint sources.");
         approvals.MapPost("/{id}/approve", (PendingActionId id, ClaimsPrincipal user, IApprovalQueue queue, IAuditLog audit, CancellationToken ct) =>
                 DecideAsync(id, approve: true, user, queue, audit, ct))
             .WithName("ApproveApproval")
-            .WithSummary("Executes the frozen action and resumes the task with its result.");
+            .WithDescription("Executes the frozen action and resumes the task with its result.");
         approvals.MapPost("/{id}/reject", (PendingActionId id, ClaimsPrincipal user, IApprovalQueue queue, IAuditLog audit, CancellationToken ct) =>
                 DecideAsync(id, approve: false, user, queue, audit, ct))
             .WithName("RejectApproval")
-            .WithSummary("Resumes the task with the rejection; nothing is executed.");
+            .WithDescription("Resumes the task with the rejection; nothing is executed.");
 
         // Answered only by a signed-in user in the web UI: never by a token, a push action or the model.
         approvals.MapGet("/inputs", ListInputsAsync).WithName("ListInputRequests")
-            .WithSummary("Pending input requests of MCP servers, oldest first.");
+            .WithDescription("Pending input requests of MCP servers, oldest first.");
         approvals.MapGet("/inputs/{id}", GetInputAsync).WithName("GetInputRequest")
-            .WithSummary("One input request in any status.");
+            .WithDescription("One input request in any status.");
         approvals.MapPost("/inputs/{id}", AnswerInputAsync).WithName("AnswerInputRequest")
-            .WithSummary("Answers an input request (form fields, or null when a URL request is done), repeats the frozen call once and resumes the waiting task with its outcome.");
+            .WithDescription("Answers an input request (form fields, or null when a URL request is done), repeats the frozen call once and resumes the waiting task with its outcome.");
         approvals.MapPost("/inputs/{id}/decline", DeclineInputAsync).WithName("DeclineInputRequest")
-            .WithSummary("Declines an input request; nothing is sent to the server and the waiting task resumes with the refusal.");
+            .WithDescription("Declines an input request; nothing is sent to the server and the waiting task resumes with the refusal.");
         return group;
     }
 

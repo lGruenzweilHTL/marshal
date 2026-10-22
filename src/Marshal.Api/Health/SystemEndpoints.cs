@@ -21,9 +21,9 @@ internal static class SystemEndpoints
     public static RouteGroupBuilder MapSystemEndpoints(this RouteGroupBuilder group)
     {
         group.MapGet("/system", GetSystem).RequireAuthorization().WithTags("System").WithName("GetSystem")
-            .WithSummary("The app version, the supported and deprecated API versions and the event sources.");
+            .WithDescription("The app version, the supported and deprecated API versions and the event sources.");
         group.MapGet("/system/health", GetHealthAsync).RequireAuthorization(Policies.HumanOrAdmin).WithTags("System").WithName("GetSystemHealth")
-            .WithSummary("The current health warnings (codes, components, messages in German and English). Changes are published on the health live topic.");
+            .WithDescription("The current health warnings (codes, components, messages in German and English). Changes are published on the health live topic.");
         return group;
     }
 

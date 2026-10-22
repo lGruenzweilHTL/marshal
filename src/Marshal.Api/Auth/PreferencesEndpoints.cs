@@ -16,9 +16,9 @@ internal static class PreferencesEndpoints
     {
         RouteGroupBuilder preferences = group.MapGroup("/me/preferences").WithTags("Preferences").RequireAuthorization(Policies.Human);
         preferences.MapGet("/", GetAsync).WithName("GetPreferences")
-            .WithSummary("Language, time zone, quiet hours, notification targets and do-not-disturb of the user.");
+            .WithDescription("Language, time zone, quiet hours, notification targets and do-not-disturb of the user.");
         preferences.MapPut("/", PutAsync).WithName("UpdatePreferences")
-            .WithSummary("Replaces the user's preferences.");
+            .WithDescription("Replaces the user's preferences.");
         return group;
     }
 

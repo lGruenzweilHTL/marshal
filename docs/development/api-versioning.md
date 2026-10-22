@@ -24,7 +24,9 @@ public static class TaskEndpoints
     public static RouteGroupBuilder MapTaskEndpoints(this RouteGroupBuilder group)
     {
         var tasks = group.MapGroup("/tasks").RequireAuthorization(Policies.TasksRead);
-        tasks.MapGet("/", ListTasksAsync);
+        tasks.MapGet("/", ListTasksAsync)
+            .WithName("ListTasks")
+            .WithDescription("The user's tasks, newest first.");
         return group;
     }
 }
@@ -36,6 +38,8 @@ Register it on the versioned group in `src/Marshal.Api/Hosting/MarshalApp.cs`:
 RouteGroupBuilder v1 = api.MapGroup("/api/v{version:apiVersion}").HasApiVersion(ApiVersions.V1);
 v1.MapTaskEndpoints();
 ```
+
+Give each endpoint an operation id (`WithName`) and say what it does with `WithDescription`. Do not set a summary: the OpenAPI document names every operation by its route below the version base (`/tasks`), and takes its security requirements from the endpoint's authorization. A policy that `Policies.Credentials` does not map makes OpenAPI generation fail; add the new policy there.
 
 Return typed results (`Results<Ok<T>, NotFound, ...>`). Failed `Result`s become `ProblemDetails`. Do not put `TimeSpan` in a request or response: OpenAPI generation fails with HTTP 500. Use numbers with the unit in the name, such as `wallTimeSeconds`.
 

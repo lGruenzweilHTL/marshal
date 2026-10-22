@@ -26,7 +26,7 @@ internal static class ConfigEndpoints
     public static RouteGroupBuilder MapConfigEndpoints(this RouteGroupBuilder group)
     {
         group.MapGet("/config", GetSummary).RequireAuthorization(Policies.Admin).WithTags("Config").WithName("GetConfigSummary")
-            .WithSummary("Loaded skills, templates, MCP servers, risk rules, models and satellites, plus the last load error per file.");
+            .WithDescription("Loaded skills, templates, MCP servers, risk rules, models and satellites, plus the last load error per file.");
         group.MapMcpToolApprovalEndpoints();
         return group;
     }

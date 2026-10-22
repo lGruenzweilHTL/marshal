@@ -24,7 +24,7 @@ internal static partial class ConversationEndpoints
         group.MapPost("/conversation/turns", CreateTurnAsync)
             .RequireAuthorization(Policies.ConversationWrite)
             .WithName("CreateConversationTurn")
-            .WithSummary("Runs one conversation turn and streams the reply as server-sent events (delta, status, artifact, final; web sessions also reasoning and tool).");
+            .WithDescription("Runs one conversation turn and streams the reply as server-sent events (delta, status, artifact, final; web sessions also reasoning and tool).");
         return group;
     }
 

@@ -23,10 +23,7 @@ The document covers the web interface endpoints too. The [live events](live-even
 
 ## The API reference on this site
 
-The [API v1 reference](v1/index.md) has a page per operation, tag and schema, built from the document in the repository (`web/openapi/v1.json`) on every docs build. Its paths, operations and schemas are exactly the ones Marshal serves. For the site, the build adds two things the served document leaves out:
-
-- **Servers:** `http://localhost:8080` and a placeholder for your own host. The served document has none, because the web interface calls the API on its own origin.
-- **Authentication:** a machine token (`Authorization: Bearer`) or the browser session cookie, on every operation. The served document does not say which endpoint takes which credential, or none; [API authentication](authentication.md) and the [endpoint list](index.md#base-path) do.
+The [API v1 reference](v1/index.md) has a page per operation, tag and schema, built from the document in the repository (`web/openapi/v1.json`) on every docs build. Each operation is named by its route below `/api/v1` and lists the credentials it accepts: a machine token (`apiToken`, with the scopes it needs), the browser session (`session`), or none. The build adds only an overview text and the servers, which the served document leaves out because the web interface calls the API on its own origin: `http://localhost:8080` and a placeholder for your own host.
 
 ### Try the API from the docs
 

@@ -20,11 +20,11 @@ internal static class RunEndpoints
     public static RouteGroupBuilder MapRunEndpoints(this RouteGroupBuilder group)
     {
         group.MapGet("/runs", ListAsync).RequireAuthorization(Policies.Human).WithTags("Runs").WithName("ListRuns")
-            .WithSummary("The user's runs (voice, web, task, api), newest first or slowest time to first delta first (sort=timeToFirstDelta); filter by source, outcome, rating and minimum cost, page with before.");
+            .WithDescription("The user's runs (voice, web, task, api), newest first or slowest time to first delta first (sort=timeToFirstDelta); filter by source, outcome, rating and minimum cost, page with before.");
         group.MapGet("/runs/{id}", GetAsync).RequireAuthorization(Policies.Human).WithTags("Runs").WithName("GetRun")
-            .WithSummary("One run: context build, model calls, tool calls with guard decisions, taint sources and the reply.");
+            .WithDescription("One run: context build, model calls, tool calls with guard decisions, taint sources and the reply.");
         group.MapGet("/cost", CostAsync).RequireAuthorization(Policies.Human).WithTags("Runs").WithName("GetCost")
-            .WithSummary("Cost per day and tier in the user's time zone, advisor separately (default: the last 30 days).");
+            .WithDescription("Cost per day and tier in the user's time zone, advisor separately (default: the last 30 days).");
         return group;
     }
 
