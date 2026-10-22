@@ -31,7 +31,7 @@ Do not mix kinds on one page. A guide links to the reference for the full key li
 
 ## Voice
 
-- Write in English, in plain, direct prose. Address the reader as "you".
+- Write the original in English, in plain, direct prose. Address the reader as "you". German translations follow [translations](#translations).
 - Active voice, present tense: "Marshal hides the tool", not "the tool will be hidden".
 - One idea per sentence. Keep most sentences under 25 words.
 - Use one term for one thing, as defined in the [glossary](../reference/glossary.md). Do not alternate "confirm tier" and "confirmation level".
@@ -67,7 +67,7 @@ One sentence on the outcome.
 
 **Configuration reference** pages describe one file or one top-level section:
 
-```markdown
+````markdown
 # `agent`
 
 One sentence on what the section controls.
@@ -87,7 +87,7 @@ One sentence on what the section controls.
 - what startup rejects, with the exact error text where useful
 
 ## Related
-```
+````
 
 Durations use the .NET `TimeSpan` format as in the example config (`"00:00:08"`, `"30.00:00:00"`); say so in the type column (`duration`).
 
@@ -136,6 +136,41 @@ Every page starts with front matter:
 - `icon` (a Font Awesome 6 free class such as `fa-solid fa-key`) on every page and folder,
 - `description` on every page: one plain-text sentence (no Markdown), shown on cards that link to the page and in search results,
 - the folder's `index.md`: `title`, `icon`, `order` and `description`. Below its summary, link every page and subfolder of the folder with cards, grouped under `##` headings when the folder is large. Do not use `list: true`.
+
+## Translations
+
+The site is in English and German (`languages` in `clay.yaml`). English is the original. A German page sits next to its original with `.de` before `.md`: `docs/guides/memory.de.md` translates `docs/guides/memory.md`, and `index.de.md` translates a folder's page. A page without a translation shows the English text in the German navigation, with a note.
+
+- A change to an English page updates its German translation in the same commit. If you cannot translate it, delete the German file instead of leaving it outdated: the English fallback is better than a wrong translation.
+- Start a new translation with `npx clay-doc@5 edit translate <page> --lang de`. It copies the original; then translate the text.
+- Translate the front matter `title` and `description`, the headings and the text. Keep `icon` and `order`; the position in the navigation always comes from the original.
+- Keep code blocks, configuration keys, tool ids, file names, environment variables, error messages and log lines in English, exactly as Marshal writes them. Translate comments in examples only when they explain the example to the reader.
+- Write links exactly as in the original. Anchors (`#...`) are built from the German headings, so a link to a section of a translated page uses the German anchor.
+- Address the reader as "du", like the German web interface. Same voice rules as in English: active, present tense, short sentences, no filler.
+- Use the terms of the German web interface (`web/src/*/messages.ts`):
+
+| English | German |
+|---|---|
+| tool | Werkzeug |
+| run | Durchlauf |
+| task | Aufgabe |
+| memory, memory chunk | Gedächtnis, Gedächtniseintrag |
+| risk tier, confirm tier | Risikostufe, Bestätigungsstufe (values `safe`, `confirm`, `forbidden` stay as written) |
+| guard | Guard |
+| tainted, taint | belastet, Belastung |
+| untrusted content | nicht vertrauenswürdige Inhalte |
+| approval, approval queue | Freigabe, Freigabe-Warteschlange |
+| notification, inbox | Benachrichtigung, Posteingang |
+| delivery | Zustellung |
+| trigger | Auslöser |
+| owner | Eigentümer |
+| satellite | Satellit |
+| skill, agent template | Skill, Agent-Template |
+| secret | Secret |
+| artifact | Artefakt |
+| kill switch | Not-Aus |
+| quiet hours | Ruhezeiten |
+| turn | Turn (a voice or chat turn) |
 
 ## The site
 

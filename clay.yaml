@@ -4,6 +4,9 @@ siteURL: "https://lgruenzweilhtl.github.io"
 editURL: "https://github.com/lGruenzweilHTL/marshal/edit/master/docs/"
 favicon: "web/src/ui/logo/icon.svg"
 
+# English is the original; German pages sit next to it as <name>.de.md (see docs/development/docs-style.md)
+languages: ["en", "de"]
+
 # Marshal's own design tokens (web/src/ui/tokens.css): warm grey canvas, ember accent, Instrument Sans and JetBrains Mono
 theme:
   primary: "#B94608"
@@ -24,7 +27,9 @@ navbar:
     icon: "fa-brands fa-github"
     link: "https://github.com/lGruenzweilHTL/marshal"
   links:
-    - name: "Changelog"
+    - name:
+        en: "Changelog"
+        de: "Änderungen"
       icon: "fa-solid fa-list"
       link: "https://github.com/lGruenzweilHTL/marshal/blob/master/CHANGELOG.md"
 
@@ -34,7 +39,9 @@ generate:
 
 openapi:
   - spec: artifacts/openapi/marshal-v1.json
-    title: API v1 reference
+    title:
+      en: "API v1 reference"
+      de: "API-v1-Referenz"
     route: api/v1
     icon: fa-solid fa-plug
 

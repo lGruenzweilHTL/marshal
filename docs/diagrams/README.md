@@ -6,7 +6,17 @@ description: "Where the Mermaid diagrams live, when to update them and how to pr
 
 # Maintaining the diagrams
 
-The diagrams are [Mermaid](https://mermaid.js.org) code blocks in the Markdown pages. Clay draws them on the site; GitHub draws them when it shows the file.
+The diagrams are [Mermaid](https://mermaid.js.org) code blocks in snippet files in `docs/_diagrams/`. The pages include them with `<!--@include: ../_diagrams/<name>.md-->`, so every diagram has one file to edit, whichever pages and languages show it. Clay draws them on the site. GitHub draws them when it shows the snippet file; the page itself shows nothing there, because the include is an HTML comment.
+
+| Diagram | Snippet | Language |
+|---|---|---|
+| Packages | `packages.md` | One file for all languages: it holds project and package names |
+| Data model | `erd-<area>.md` | One file for all languages: it holds entity and column names |
+| Voice turn | `voice-turn.md`, `voice-turn.de.md` | One file per language |
+| Confirm-tier action | `confirm-tier-action.md`, `confirm-tier-action.de.md` | One file per language |
+| Task lifecycle | `task-lifecycle.md`, `task-lifecycle.de.md` | One file per language |
+
+Diagrams of code (names of projects, packages, entities, columns) are never translated: the names are the code. Flow diagrams have labels in prose, so the German pages include a German copy. Change both files of a flow in the same commit; they keep the same participants, states and arrows in the same order, so a side-by-side diff shows what differs.
 
 | Diagram | Page |
 |---|---|
@@ -18,11 +28,11 @@ The diagrams are [Mermaid](https://mermaid.js.org) code blocks in the Markdown p
 
 ## Keep them up to date
 
-The diagrams must always match the code. Each block starts with a `%% KEEP UP TO DATE` comment that says what it describes.
+The diagrams must always match the code. Each snippet starts with a `%% KEEP UP TO DATE` comment that says what it describes.
 
-- **Data model:** update [`erd.md`](erd.md) in the same change that adds, removes or renames an EF Core entity, column or relationship. Put the entity in the diagram of its area, and add table names, indexes and constraints to the table at the end of the page.
-- **Packages:** update the diagram in [architecture](../concepts/architecture.md) in the same change that adds, removes or renames a project in `src/`, `web/` or `ha/`, or changes a project reference or key external dependency.
-- **Flows:** update the voice turn, confirm-tier and task lifecycle diagrams in the same change that alters the behavior they show.
+- **Data model:** update the `erd-<area>.md` snippets of [the data model](erd.md) in the same change that adds, removes or renames an EF Core entity, column or relationship. Put the entity in the diagram of its area, and add table names, indexes and constraints to the table at the end of `erd.md` and its translation.
+- **Packages:** update `packages.md` (shown in [architecture](../concepts/architecture.md)) in the same change that adds, removes or renames a project in `src/`, `web/` or `ha/`, or changes a project reference or key external dependency.
+- **Flows:** update the voice turn, confirm-tier and task lifecycle snippets, English and German, in the same change that alters the behavior they show.
 
 ## Preview
 
