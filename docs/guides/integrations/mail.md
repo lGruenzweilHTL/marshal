@@ -12,23 +12,21 @@ Give Marshal read access to your mail over IMAP and let it prepare drafts, with 
 
 ## Steps
 
-### Option A: password or app password
-
+::: tabs
+== Password or app password
 1. In the web UI open **Mail accounts**.
 2. Under **Add an IMAP account** enter an alias (1 to 32 lowercase letters, digits or `-`, such as `private` or `work`), host, port, security, user name and the password.
 3. Optional: set a **Drafts folder**. You only need it when the server marks no folder `\Drafts`.
 4. Select **Add account**.
 
 The password becomes a write-only secret of your user. It is stored encrypted and never shown again. Accounts live in the database, not in `marshal.yaml`.
-
-### Option B: Google or Microsoft sign-in
-
+== Google or Microsoft sign-in
 1. Register an OAuth client with the provider. Redirect URI: `<public URL>/oauth/callback/google` or `<public URL>/oauth/callback/microsoft`.
    - Google needs the `https://mail.google.com/` scope.
    - Microsoft needs `IMAP.AccessAsUser.All` and `offline_access`.
 2. Store each client secret as a secret and name it in `marshal.yaml`:
 
-```yaml
+```yaml [/config/marshal.yaml]
 oauth:
   google: { clientId: "<id>.apps.googleusercontent.com", clientCredentialSecret: google_oauth_client }
   microsoft: { clientId: "<application id>", clientCredentialSecret: microsoft_oauth_client }
@@ -38,6 +36,7 @@ oauth:
 4. In **Mail accounts** under **Connect with sign-in** enter an alias and your address, then select **Connect Google** or **Connect Microsoft** and sign in.
 
 Marshal keeps only the refresh token, as a write-only secret of your user. The IMAP hosts are `imap.gmail.com` and `outlook.office365.com`, both on port 993 with TLS. Keys are in the [`oauth` reference](../../configuration/marshal-yaml/integrations.md#oauth-mail-account-connections).
+:::
 
 ### Remove an account
 

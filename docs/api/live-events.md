@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-tower-broadcast
+order: 40
+---
+
 # Live events
 
 `GET /api/v1/events` is a server-sent event stream with live updates for the web interface. It multiplexes several topics over one connection and delivers only events of the caller's owner.

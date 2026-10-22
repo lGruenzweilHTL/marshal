@@ -12,30 +12,32 @@ Connect a Klipper printer through Moonraker so you can ask for its status, look 
 
 ## Steps
 
-### 1. Store the API key
+::: steps
+1. **Store the API key**
 
-Provide it as `/run/secrets/moonraker_voron` or `MARSHAL_SECRET_MOONRAKER_VORON`. Skip this step if Moonraker needs no key.
+   Provide it as `/run/secrets/moonraker_voron` or `MARSHAL_SECRET_MOONRAKER_VORON`. Skip this step if Moonraker needs no key.
 
-### 2. Configure the printer
+2. **Configure the printer**
 
-In `/config/marshal.yaml`:
+   In `/config/marshal.yaml`:
 
-```yaml
-printers:
-  - name: voron
-    url: http://voron.local:7125
-    webUrl: http://voron.local
-    apiKeySecret: moonraker_voron
-    macros: [PARK, LOAD_FILAMENT, UNLOAD_FILAMENT]
-    babysitter: { enabled: true, interval: "00:01:00" }
-printerSnapshots: { maxSize: 1024, quality: 85, retention: 20 }
-```
+   ```yaml [/config/marshal.yaml]
+   printers:
+     - name: voron
+       url: http://voron.local:7125
+       webUrl: http://voron.local
+       apiKeySecret: moonraker_voron
+       macros: [PARK, LOAD_FILAMENT, UNLOAD_FILAMENT]
+       babysitter: { enabled: true, interval: "00:01:00" }
+   printerSnapshots: { maxSize: 1024, quality: 85, retention: 20 }
+   ```
 
-The name allows letters, digits, `-` and `_` and must be unique. Every key is in the [integration sections reference](../../configuration/marshal-yaml/integrations.md#printers-and-printersnapshots-moonraker). Changes need a restart.
+   The name allows letters, digits, `-` and `_` and must be unique. Every key is in the [integration sections reference](../../configuration/marshal-yaml/integrations.md#printers-and-printersnapshots-moonraker). Changes need a restart.
 
-### 3. Restart and open the printer page
+3. **Restart and open the printer page**
 
-The web UI shows the printer page with live status, a temperature chart, progress, ETA, layer, webcam, job queue and history.
+   The web UI shows the printer page with live status, a temperature chart, progress, ETA, layer, webcam, job queue and history.
+:::
 
 ## Tools
 

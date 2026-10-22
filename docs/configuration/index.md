@@ -1,3 +1,9 @@
+---
+title: Configuration
+icon: fa-solid fa-sliders
+order: 50
+---
+
 # Configuration
 
 Marshal reads human-edited files from `/config` and environment variables. This page lists every file, the load order, what startup checks and which changes need a restart.

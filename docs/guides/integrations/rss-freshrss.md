@@ -10,22 +10,24 @@ Let Marshal read your news from FreshRSS, mark articles read, and fetch full art
 
 ## Steps
 
-### 1. Configure FreshRSS
+::: steps
+1. **Configure FreshRSS**
 
-In `/config/marshal.yaml`:
+   In `/config/marshal.yaml`:
 
-```yaml
-freshrss:
-  url: http://freshrss.local
-  userName: lukas
-  apiPasswordSecret: freshrss_api
-  searchWindow: 500
-  fullText: { maxBytes: 2097152, timeout: "00:00:15", maxCharacters: 20000 }
-```
+   ```yaml [/config/marshal.yaml]
+   freshrss:
+     url: http://freshrss.local
+     userName: lukas
+     apiPasswordSecret: freshrss_api
+     searchWindow: 500
+     fullText: { maxBytes: 2097152, timeout: "00:00:15", maxCharacters: 20000 }
+   ```
 
-`url`, `userName` and the resolvable secret are required together. The RSS tools stay hidden until FreshRSS is configured. The remaining keys and their ranges are in the [`freshrss` reference](../../configuration/marshal-yaml/integrations.md#freshrss).
+   `url`, `userName` and the resolvable secret are required together. The RSS tools stay hidden until FreshRSS is configured. The remaining keys and their ranges are in the [`freshrss` reference](../../configuration/marshal-yaml/integrations.md#freshrss).
 
-### 2. Restart Marshal
+2. **Restart Marshal**
+:::
 
 ## Tools
 

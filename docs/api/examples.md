@@ -1,6 +1,13 @@
+---
+icon: fa-solid fa-terminal
+order: 60
+---
+
 # API examples
 
 Working `curl` and Python examples for the public endpoints. Replace `<token>` and the host with your values.
+
+The request cells on this page call an instance from your browser: pick the server, select **Authorize** and paste a token. They reach only an instance that allows requests from this site; see [try the API from the docs](openapi.md#try-the-api-from-the-docs).
 
 ## Check the version and the token
 
@@ -9,11 +16,15 @@ curl https://marshal.example.com/api/versions
 curl -H "Authorization: Bearer <token>" https://marshal.example.com/api/v1/me
 ```
 
+::: request v1 GetMe
+:::
+
 ## Run a conversation turn
 
 `-N` turns off curl's output buffering so you see events as they arrive.
 
-```sh
+::: code-group
+```sh [curl]
 curl -N -X POST https://marshal.example.com/api/v1/conversation/turns \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
@@ -21,13 +32,12 @@ curl -N -X POST https://marshal.example.com/api/v1/conversation/turns \
   -d '{"conversationId":"my-script-1","text":"What is on my calendar today?","language":"en"}'
 ```
 
-```python
+```python [Python]
 import json
 import requests
 
 BASE = "https://marshal.example.com"
 HEADERS = {"Authorization": "Bearer <token>", "Accept": "text/event-stream"}
-
 
 def turn(text: str, conversation_id: str):
     body = {"conversationId": conversation_id, "text": text, "language": "en"}
@@ -45,19 +55,27 @@ def turn(text: str, conversation_id: str):
                     print()
                     return data
 
-
 final = turn("Turn off the kitchen light.", "my-script-1")
 if final["continueConversation"]:
     final = turn(input("> "), "my-script-1")  # Marshal asked something
 ```
+:::
+
+::: request v1 CreateConversationTurn
+body:
+  conversationId: my-script-1
+  text: What is on my calendar today?
+  language: en
+:::
 
 ## Follow a live stream
 
-```sh
+::: code-group
+```sh [curl]
 curl -N -H "Authorization: Bearer <token>" "https://marshal.example.com/api/v1/events?topics=runs,tasks"
 ```
 
-```python
+```python [Python]
 import json
 import requests
 
@@ -70,6 +88,7 @@ with requests.get(url, params={"topics": "runs"}, headers={"Authorization": "Bea
         elif line.startswith("data:") and event != "ping":
             print(event, json.loads(line.removeprefix("data:").strip())["payload"])
 ```
+:::
 
 ## Post a webhook
 
@@ -92,6 +111,7 @@ elif not r.ok:
 
 ## Related
 
+- [API v1 reference](v1/index.md)
 - [Conversation endpoint](conversation.md)
 - [Live events](live-events.md)
 - [Webhooks](webhooks.md)

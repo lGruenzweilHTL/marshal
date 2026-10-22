@@ -32,17 +32,19 @@ An MCP server can ask you for input during a tool call, for example a form field
 
 ## Steps
 
-### 1. Decide in the web UI
+::: steps
+1. **Decide in the web UI**
 
-Open **Inbox**; each approval is a ticket with the action, the task, the reasons and a link to the tool step that tainted the run. Choose **Approve** or **Reject**.
+   Open **Inbox**; each approval is a ticket with the action, the task, the reasons and a link to the tool step that tainted the run. Choose **Approve** or **Reject**.
 
-### 2. Decide from the push
+2. **Decide from the push**
 
-Tap **Approve** or **Reject** on the notification. The action carries a nonce, Marshal accepts only a matching nonce of a pending background approval, and everything else is ignored. Input requests have no push actions; tap the notification to open the request in the web UI.
+   Tap **Approve** or **Reject** on the notification. The action carries a nonce, Marshal accepts only a matching nonce of a pending background approval, and everything else is ignored. Input requests have no push actions; tap the notification to open the request in the web UI.
 
-### 3. Decide by voice
+3. **Decide by voice**
 
-A confirmation can also arrive as a voice follow-up in the conversation (keyword or judge, see [risk rules](../risk-rules.md)). Only a user action confirms: tool output, model output or any content never does.
+   A confirmation can also arrive as a voice follow-up in the conversation (keyword or judge, see [risk rules](../risk-rules.md)). Only a user action confirms: tool output, model output or any content never does.
+:::
 
 ## Errors you may see
 

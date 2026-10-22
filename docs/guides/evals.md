@@ -10,53 +10,55 @@ Rate Marshal's replies, turn rated runs into eval cases, and replay those cases 
 
 ## Steps
 
-### 1. Turn on "help Marshal learn" (optional)
+::: steps
+1. **Turn on "help Marshal learn" (optional)**
 
-Open **Preferences** and switch on **Help Marshal learn**. It is off by default. While it is on, every run you rate becomes an eval case. The same switch also allows the other features that learn from your behavior; the preferences view lists them.
+   Open **Preferences** and switch on **Help Marshal learn**. It is off by default. While it is on, every run you rate becomes an eval case. The same switch also allows the other features that learn from your behavior; the preferences view lists them.
 
-Ratings are stored on the run whether the switch is on or off.
+   Ratings are stored on the run whether the switch is on or off.
 
-### 2. Rate replies
+2. **Rate replies**
 
-- **In the chat:** each finished reply shows a thumbs up and a thumbs down. Thumbs down opens a note field: write what should have happened, for example "should have turned off the ceiling light, not the lamp". The note is optional.
-- **In the run detail:** open **Runs**, then a run. The rating sits below the run facts. Use this to rate voice runs after the fact.
+   - **In the chat:** each finished reply shows a thumbs up and a thumbs down. Thumbs down opens a note field: write what should have happened, for example "should have turned off the ceiling light, not the lamp". The note is optional.
+   - **In the run detail:** open **Runs**, then a run. The rating sits below the run facts. Use this to rate voice runs after the fact.
 
-Click the current rating again to remove it. An eval case made from a rating stays when you remove the rating.
+   Click the current rating again to remove it. An eval case made from a rating stays when you remove the rating.
 
-To find rated runs, filter the runs list by **Rated up** or **Rated down**.
+   To find rated runs, filter the runs list by **Rated up** or **Rated down**.
 
-### 3. Save runs as cases
+3. **Save runs as cases**
 
-As an admin, open a run and click **Save as eval case**. This works with the learning switch off, and for runs without a rating; such cases have the expectation `unrated` and are compared like good cases. Once a case exists, the run detail links to it.
+   As an admin, open a run and click **Save as eval case**. This works with the learning switch off, and for runs without a rating; such cases have the expectation `unrated` and are compared like good cases. Once a case exists, the run detail links to it.
 
-A case stores one turn:
+   A case stores one turn:
 
-| Part | Content |
-|---|---|
-| Input | What you said or typed, with input mode, language, satellite and area |
-| History | The conversation before the turn, user and assistant text only |
-| Turn context | Retrieved memory, area context, time and task section as the model saw them |
-| Tool calls | Tool id, arguments and the recorded result of every call |
-| Reply | Marshal's reply |
-| Expectation | `good` (thumbs up), `bad` (thumbs down) or `unrated` |
-| Note | What should have happened |
+   | Part | Content |
+   |---|---|
+   | Input | What you said or typed, with input mode, language, satellite and area |
+   | History | The conversation before the turn, user and assistant text only |
+   | Turn context | Retrieved memory, area context, time and task section as the model saw them |
+   | Tool calls | Tool id, arguments and the recorded result of every call |
+   | Reply | Marshal's reply |
+   | Expectation | `good` (thumbs up), `bad` (thumbs down) or `unrated` |
+   | Note | What should have happened |
 
-A case is marked **incomplete** when recorded data is missing: a sensitive tool's result that was only kept as a reference, or a run recorded before Marshal stored the turn context.
+   A case is marked **incomplete** when recorded data is missing: a sensitive tool's result that was only kept as a reference, or a run recorded before Marshal stored the turn context.
 
-### 4. Edit or delete cases
+4. **Edit or delete cases**
 
-Open **System → Evals** (or **Evals** in the navigation) and click a case's date. Edit the **Expected behavior** note or delete the case.
+   Open **System → Evals** (or **Evals** in the navigation) and click a case's date. Edit the **Expected behavior** note or delete the case.
 
-### 5. Start an eval run
+5. **Start an eval run**
 
-In **Evals**, select the cases and fill in **New eval run**:
+   In **Evals**, select the cases and fill in **New eval run**:
 
-- **Fast, standard and advisor tier:** the model to test per tier. **Current routing** keeps the model Marshal uses today.
-- **Template:** run the cases with another [agent template](agent-templates.md).
-- **Base prompt override:** replaces Marshal's base instructions for the replay.
-- **Judge model:** optional. A model that scores each reply from 0 to 1 against the recorded reply and the case's note.
+   - **Fast, standard and advisor tier:** the model to test per tier. **Current routing** keeps the model Marshal uses today.
+   - **Template:** run the cases with another [agent template](agent-templates.md).
+   - **Base prompt override:** replaces Marshal's base instructions for the replay.
+   - **Judge model:** optional. A model that scores each reply from 0 to 1 against the recorded reply and the case's note.
 
-Click **Estimate cost** to see what the run costs before you start it, then **Start eval run**.
+   Click **Estimate cost** to see what the run costs before you start it, then **Start eval run**.
+:::
 
 ## How a replay works
 

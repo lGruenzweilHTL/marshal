@@ -7,7 +7,7 @@ Claim the instance owner on first start, then sign in with a passkey or a passwo
 - Marshal is reachable over HTTPS. Browser sessions and the antiforgery token require HTTPS; over plain HTTP the setup fails with the `auth.https_required` problem.
 - `auth.providers` in `marshal.yaml` has a `local` provider:
 
-```yaml
+```yaml [/config/marshal.yaml]
 auth:
   providers:
     - name: local
@@ -18,22 +18,24 @@ Only one `local` provider is allowed. Provider names use lowercase letters, digi
 
 ## Steps
 
-### 1. Run the first-run setup
+::: steps
+1. **Run the first-run setup**
 
-Open Marshal in the browser. While the instance owner is unclaimed, the setup page appears.
+   Open Marshal in the browser. While the instance owner is unclaimed, the setup page appears.
 
-1. Enter a user name, an optional display name and a password of at least 12 characters.
-2. Submit.
+   1. Enter a user name, an optional display name and a password of at least 12 characters.
+   2. Submit.
 
-The setup sets the owner's credentials, gives the owner the role `admin`, keeps the owner's id and signs you in. After that the setup is unavailable and its endpoint answers 404.
+   The setup sets the owner's credentials, gives the owner the role `admin`, keeps the owner's id and signs you in. After that the setup is unavailable and its endpoint answers 404.
 
-### 2. Add a passkey
+2. **Add a passkey**
 
-1. Open **Settings > Security**.
-2. Under **Passkeys**, optionally name the passkey (for example "Phone") and choose **Add a passkey**.
-3. Confirm with your fingerprint, face or device PIN.
+   1. Open **Settings > Security**.
+   2. Under **Passkeys**, optionally name the passkey (for example "Phone") and choose **Add a passkey**.
+   3. Confirm with your fingerprint, face or device PIN.
 
-From then on you can sign in with the passkey instead of the password. The password stays as fallback.
+   From then on you can sign in with the passkey instead of the password. The password stays as fallback.
+:::
 
 ## Check that it works
 

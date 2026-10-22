@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-comments
+order: 20
+---
+
 # Conversation endpoint
 
 `POST /api/v1/conversation/turns` runs one conversation turn and streams the reply as server-sent events. The Home Assistant component uses it for every Assist turn; you can use it from any client.
@@ -26,6 +31,14 @@ Requires the scope `conversation:write` (see [authentication](authentication.md)
   "inputMode": "text"
 }
 ```
+
+::: request v1 CreateConversationTurn
+body:
+  conversationId: "01JABC"
+  text: How far along is the print?
+  language: en
+  inputMode: text
+:::
 
 A token client without `conversationId` gets `400` `conversation.id_required`. A browser session that sends a session id it does not own, or one that has ended, gets `404` `session.not_found` and no run starts.
 

@@ -9,16 +9,18 @@ Add Marshal to your phone's home screen so it opens like an app, without browser
 
 ## Steps
 
-### 1. Open Marshal in the browser
+::: steps
+1. **Open Marshal in the browser**
 
-Open your Marshal address in Chrome (Android) or Safari (iOS) and sign in.
+   Open your Marshal address in Chrome (Android) or Safari (iOS) and sign in.
 
-### 2. Add it to the home screen
+2. **Add it to the home screen**
 
-- **Android (Chrome):** menu, **Install app** or **Add to Home screen**.
-- **iOS (Safari):** Share, **Add to Home Screen**.
+   - **Android (Chrome):** menu, **Install app** or **Add to Home screen**.
+   - **iOS (Safari):** Share, **Add to Home Screen**.
 
-The app is named Marshal and opens standalone.
+   The app is named Marshal and opens standalone.
+:::
 
 ## Check that it works
 

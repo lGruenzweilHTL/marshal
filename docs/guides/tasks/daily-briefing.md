@@ -23,48 +23,50 @@ The template allows only reading tools plus `rss.mark_read`: `calendar.list_even
 
 ## Steps
 
-### 1. Create the task
+::: steps
+1. **Create the task**
 
-Ask: "Create the morning briefing task with these settings", then paste the example.
+   Ask: "Create the morning briefing task with these settings", then paste the example.
 
-```yaml
-name: briefing
-template: briefing
-goal: >-
-  Prepare today's morning briefing: appointments, mail that needs attention and waiting drafts, the RSS digest,
-  the weather and the house. Follow the briefing-format skill.
-trigger:
-  kind: cron
-  expression: "0 6 * * *"
-deliver:
-  - channel: voice
-    followUp: true
-    when:
-      - state($person = home)
-      - state(binary_sensor.kitchen_occupancy = on)
-    expires: "11:00"
-    fallback: push
-  - channel: inbox
-```
+   ```yaml
+   name: briefing
+   template: briefing
+   goal: >-
+     Prepare today's morning briefing: appointments, mail that needs attention and waiting drafts, the RSS digest,
+     the weather and the house. Follow the briefing-format skill.
+   trigger:
+     kind: cron
+     expression: "0 6 * * *"
+   deliver:
+     - channel: voice
+       followUp: true
+       when:
+         - state($person = home)
+         - state(binary_sensor.kitchen_occupancy = on)
+       expires: "11:00"
+       fallback: push
+     - channel: inbox
+   ```
 
-Change `binary_sensor.kitchen_occupancy` to an occupancy sensor of your room. `$person` resolves to your person entity (notification settings).
+   Change `binary_sensor.kitchen_occupancy` to an occupancy sensor of your room. `$person` resolves to your person entity (notification settings).
 
-### 2. Understand the deliveries
+2. **Understand the deliveries**
 
-At 03:00 a preparation run collects the appointments and the RSS digest (`prepare.before: 3h`). The briefing is prepared at 06:00 with these notes and checks mail, the weather and the house fresh. The spoken version plays when both conditions hold, for example when you walk into the kitchen at 07:30, and the satellite then listens for "tell me more". If neither happens by 11:00, the spoken text is pushed to your phone instead. The `inbox` delivery keeps the written version with links in the web UI.
+   At 03:00 a preparation run collects the appointments and the RSS digest (`prepare.before: 3h`). The briefing is prepared at 06:00 with these notes and checks mail, the weather and the house fresh. The spoken version plays when both conditions hold, for example when you walk into the kitchen at 07:30, and the satellite then listens for "tell me more". If neither happens by 11:00, the spoken text is pushed to your phone instead. The `inbox` delivery keeps the written version with links in the web UI.
 
-### 3. Know the answer format
+3. **Know the answer format**
 
-The `briefing-format` skill makes the agent answer in two parts separated by one blank line:
+   The `briefing-format` skill makes the agent answer in two parts separated by one blank line:
 
-- First paragraph: the spoken version (the task result's `speech`). One paragraph of plain sentences, 60 to 90 seconds (about 150 to 220 words), most important first, ending with an offer for more detail.
-- Everything after: the written version (the `body`) in Markdown with sections Today, Mail, Feeds, House and weather, and Marshal, under 600 words.
+   - First paragraph: the spoken version (the task result's `speech`). One paragraph of plain sentences, 60 to 90 seconds (about 150 to 220 words), most important first, ending with an offer for more detail.
+   - Everything after: the written version (the `body`) in Markdown with sections Today, Mail, Feeds, House and weather, and Marshal, under 600 words.
 
-The Marshal part lists Marshal's own [health warnings](../../reference/health-endpoints.md#health-warnings), such as an MCP tool that waits for your approval or an integration that is down. `system.health` is visible only while warnings exist, so a briefing on a healthy day has no Marshal part.
+   The Marshal part lists Marshal's own [health warnings](../../reference/health-endpoints.md#health-warnings), such as an MCP tool that waits for your approval or an integration that is down. `system.health` is visible only while warnings exist, so a briefing on a healthy day has no Marshal part.
 
-### 4. Ask for it on request
+4. **Ask for it on request**
 
-Say "good morning". The skill tells the agent not to build a new briefing in the conversation: it calls `tasks_status` with `briefing`. If the result is from today and under two hours old, it reads the prepared spoken version. Otherwise it calls `tasks_run_now`, the task prepares the briefing in the background and delivers it through its deliveries.
+   Say "good morning". The skill tells the agent not to build a new briefing in the conversation: it calls `tasks_status` with `briefing`. If the result is from today and under two hours old, it reads the prepared spoken version. Otherwise it calls `tasks_run_now`, the task prepares the briefing in the background and delivers it through its deliveries.
+:::
 
 ## Tune it
 

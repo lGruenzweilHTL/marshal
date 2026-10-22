@@ -10,78 +10,80 @@ Create tasks that run now, at a time, on a cron schedule or after another task, 
 
 ## Steps
 
-### 1. Ask for the task
+::: steps
+1. **Ask for the task**
 
-Describe the goal and the time. Marshal calls `tasks.create`.
+   Describe the goal and the time. Marshal calls `tasks.create`.
 
-```text
-Every weekday at 7:30, check the printer queue and tell me what is waiting. Call the task "queue-check".
-```
+   ```text
+   Every weekday at 7:30, check the printer queue and tell me what is waiting. Call the task "queue-check".
+   ```
 
-Or hand it the arguments directly, as in the example files:
+   Or hand it the arguments directly, as in the example files:
 
-```yaml
-name: queue-check
-goal: Check the printer queue and report what is waiting.
-trigger:
-  kind: cron
-  expression: "30 7 * * 1-5"
-deliver:
-  - channel: inbox
-```
+   ```yaml
+   name: queue-check
+   goal: Check the printer queue and report what is waiting.
+   trigger:
+     kind: cron
+     expression: "30 7 * * 1-5"
+   deliver:
+     - channel: inbox
+   ```
 
-### 2. Pick a trigger
+2. **Pick a trigger**
 
-| `trigger.kind` | Extra key | Behavior |
-|---|---|---|
-| `now` (default) | none | Runs as soon as a worker is free. |
-| `at` | `time` | Runs once at a local time such as `2026-09-30T07:00`. Add an offset (`+02:00`, `Z`) to pin an absolute time. |
-| `cron` | `expression` | Five-field cron expression in local time. The task waits for the next occurrence after each run. |
-| `after` | `task` | Runs as soon as the named task (id or name) finishes `done`. |
+   | `trigger.kind` | Extra key | Behavior |
+   |---|---|---|
+   | `now` (default) | none | Runs as soon as a worker is free. |
+   | `at` | `time` | Runs once at a local time such as `2026-09-30T07:00`. Add an offset (`+02:00`, `Z`) to pin an absolute time. |
+   | `cron` | `expression` | Five-field cron expression in local time. The task waits for the next occurrence after each run. |
+   | `after` | `task` | Runs as soon as the named task (id or name) finishes `done`. |
 
-A cron schedule may run at most every `tasks.minWakeupInterval` (default 5 minutes). Event triggers are described in [event triggers](event-triggers.md).
+   A cron schedule may run at most every `tasks.minWakeupInterval` (default 5 minutes). Event triggers are described in [event triggers](event-triggers.md).
 
-### 3. Choose deliveries
+3. **Choose deliveries**
 
-`deliver` is a list; each entry is delivered independently. Without `deliver`, the result stays in the web UI.
+   `deliver` is a list; each entry is delivered independently. Without `deliver`, the result stays in the web UI.
 
-| Key | Description |
-|---|---|
-| `channel` | `voice`, `push`, `inbox` or `silent`. |
-| `target` | Voice only: satellite entity id. Omit it to speak where you are. |
-| `priority` | `normal` (default) or `low`. |
-| `followUp` | Voice only: the satellite listens for a reply. |
-| `when` | List of `state(<entity_id> <op> <value>)` conditions, all must hold. Operators `=`, `!=`, `>`, `<` (numeric). `$person` is your person entity. |
-| `expires` | Local deadline, `11:00` or `2026-09-30T11:00`. Needs `fallback`. |
-| `fallback` | Channel used when `expires` passes first. Needs `expires`. |
+   | Key | Description |
+   |---|---|
+   | `channel` | `voice`, `push`, `inbox` or `silent`. |
+   | `target` | Voice only: satellite entity id. Omit it to speak where you are. |
+   | `priority` | `normal` (default) or `low`. |
+   | `followUp` | Voice only: the satellite listens for a reply. |
+   | `when` | List of `state(<entity_id> <op> <value>)` conditions, all must hold. Operators `=`, `!=`, `>`, `<` (numeric). `$person` is your person entity. |
+   | `expires` | Local deadline, `11:00` or `2026-09-30T11:00`. Needs `fallback`. |
+   | `fallback` | Channel used when `expires` passes first. Needs `expires`. |
 
-Voice uses the result's `speech`, push uses `speech` plus a deep link, the web UI shows `body`. A conditional delivery goes out when the conditions first hold; if `expires` passes first, the fallback channel delivers instead. Marshal rejects these combinations:
+   Voice uses the result's `speech`, push uses `speech` plus a deep link, the web UI shows `body`. A conditional delivery goes out when the conditions first hold; if `expires` passes first, the fallback channel delivers instead. Marshal rejects these combinations:
 
-| Error text | Cause |
-|---|---|
-| `Low-priority deliveries never use voice; use inbox or push.` | `priority: low` with `channel: voice` (or voice fallback). |
-| `followUp needs the voice channel.` | `followUp: true` on another channel. |
-| `Only voice deliveries have a target.` | `target` on a non-voice channel. |
-| `A delivery with expires needs a fallback channel.` / `A fallback channel needs expires.` | One of the pair is missing. |
-| `A delivery cannot be critical; only system sources send critical notifications.` | Priority `critical` is never available to tasks. |
+   | Error text | Cause |
+   |---|---|
+   | `Low-priority deliveries never use voice; use inbox or push.` | `priority: low` with `channel: voice` (or voice fallback). |
+   | `followUp needs the voice channel.` | `followUp: true` on another channel. |
+   | `Only voice deliveries have a target.` | `target` on a non-voice channel. |
+   | `A delivery with expires needs a fallback channel.` / `A fallback channel needs expires.` | One of the pair is missing. |
+   | `A delivery cannot be critical; only system sources send critical notifications.` | Priority `critical` is never available to tasks. |
 
-A condition that names an area (`area.kitchen`) is rejected: conditions take entity ids only. Quiet hours hold normal notifications; see [notifications](../notifications.md).
+   A condition that names an area (`area.kitchen`) is rejected: conditions take entity ids only. Quiet hours hold normal notifications; see [notifications](../notifications.md).
 
-### 4. Wake a task later
+4. **Wake a task later**
 
-Inside a run, the agent can call `tasks.schedule_wakeup` (`at` or `inMinutes`, plus `notes`). The run ends with status `waiting`; the next run gets the goal, the notes and the trigger payload, not the previous transcript. The delay must be at least the template's `minWakeupInterval` (default `tasks.minWakeupInterval`): `A wakeup must be at least 5 minutes ahead.`
+   Inside a run, the agent can call `tasks.schedule_wakeup` (`at` or `inMinutes`, plus `notes`). The run ends with status `waiting`; the next run gets the goal, the notes and the trigger payload, not the previous transcript. The delay must be at least the template's `minWakeupInterval` (default `tasks.minWakeupInterval`): `A wakeup must be at least 5 minutes ahead.`
 
-### 5. Manage tasks
+5. **Manage tasks**
 
-| Tool | What it does |
-|---|---|
-| `tasks.list`, `tasks.status` | List tasks; show one by id or name with its latest result and age. |
-| `tasks.update` | Change goal, trigger, deliveries, template or name. Owner, budget and origin satellite cannot change. |
-| `tasks.run_now` | Run an existing task now with its normal budget and deliveries. |
-| `tasks.cancel` | Cancel a task and its unfinished child tasks. |
-| `tasks.stop_all` | Kill switch: cancel everything and pause new starts. |
+   | Tool | What it does |
+   |---|---|
+   | `tasks.list`, `tasks.status` | List tasks; show one by id or name with its latest result and age. |
+   | `tasks.update` | Change goal, trigger, deliveries, template or name. Owner, budget and origin satellite cannot change. |
+   | `tasks.run_now` | Run an existing task now with its normal budget and deliveries. |
+   | `tasks.cancel` | Cancel a task and its unfinished child tasks. |
+   | `tasks.stop_all` | Kill switch: cancel everything and pause new starts. |
 
-Task names are lowercase letters, digits, `-` and `_`, at most 64 characters, unique per owner (`A task named 'briefing' already exists.`).
+   Task names are lowercase letters, digits, `-` and `_`, at most 64 characters, unique per owner (`A task named 'briefing' already exists.`).
+:::
 
 ## Prepare ahead
 

@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-brain
+---
+
 # Memory
 
 Teach Marshal facts and preferences, say when they were true, check what it remembers, and manage projects, pinning, the audit and its proposals.
@@ -11,9 +15,9 @@ Teach Marshal facts and preferences, say when they were true, check what it reme
 
 Memory is a set of chunks. Each has a type (`fact`, `preference`, `event`, `procedure`, `person`, `device`), a title, content, an importance from 1 to 5, a scope (`general` or `project`), a valid time and a history of versions. Titles and content are written in English. The chunk id is a hash of owner, scope, project, type and normalized title, so writing the same title again updates the same chunk and keeps the previous content as a version. Chunks are never merged by similarity.
 
-## Steps
+## Use your memory
 
-### 1. Tell Marshal to remember something
+### Tell Marshal to remember something
 
 ```text
 Remember that the Voron uses a 0.6 mm nozzle.
@@ -23,7 +27,7 @@ The agent calls `memory.remember` (type, title, content, optional importance, sc
 
 Marshal also learns by itself: when a session closes or a web chat session rests after `sessions.idleTtl`, a fast-tier summarizer proposes chunks from your turns and Marshal's replies only, never from raw tool results. A candidate that contradicts a stored chunk creates a `contradicts` edge and leaves the stored chunk unchanged. A nightly consolidation catches sessions the close path missed.
 
-### 2. Say since when or until when
+### Say since when or until when
 
 Each chunk and each version has a valid time: `validFrom` and an optional `validTo`, the time span in which the fact was true in the world. This is separate from when Marshal stored it.
 
@@ -40,7 +44,7 @@ Marshal closes valid time itself in two cases:
 
 A chunk whose `validTo` has passed is closed. Closed chunks stay in memory and in the history, but automatic retrieval leaves them out.
 
-### 3. See what is used in a turn
+### See what is used in a turn
 
 Retrieval is automatic: for each turn Marshal embeds the text, searches by vector and keyword (FTS), expands along edges, replaces superseded chunks with their successors and scores each candidate as similarity x importance x freshness. Per-type quotas and a token budget apply. Pinned chunks are always injected in full, before the retrieved ones. Open **Runs**, choose a run and read its context step to see which chunks and projects were used.
 
@@ -50,9 +54,9 @@ For a deliberate deep search the agent calls `memory.recall` (query, optional ty
 Which nozzle did the Voron have in August?
 ```
 
-For active projects, the turn also gets the project's summary (see [step 7](#7-use-projects)).
+For active projects, the turn also gets the project's summary (see [step 7](#use-projects)).
 
-### 4. Browse and edit in the web UI
+### Browse and edit in the web UI
 
 **Memory** has these tabs:
 
@@ -67,11 +71,11 @@ Pinning is possible only here (or through the API); the agent cannot pin. Soft-d
 
 In the editor, **True since** and **True until** set the valid time. Leave **True until** empty while the fact still holds; clearing it reopens a closed chunk. The fields use your browser's time zone.
 
-### 5. Resolve the audit
+### Resolve the audit
 
 The audit lists chunks not updated or retrieved for `memory.audit.staleAfterDays` (default 180), contradiction pairs (until one supersedes the other, is closed or is deleted) and orphans (chunks of deleted projects, dangling edges). Open each item and edit, supersede or delete.
 
-### 6. Accept or dismiss proposals
+### Accept or dismiss proposals
 
 After the nightly consolidation, idle-time jobs look at memory while nobody talks to Marshal. They use the `fast` tier, read only chunks and project descriptions (never sessions or tool results), and count against the daily cost cap of background tasks. One job failing does not stop the others.
 
@@ -89,7 +93,7 @@ Proposals appear at the top of **Memory → Audit**. Nothing changes until you d
 
 Accepting is recorded as your action in the chunk versions and in the audit log. The API offers the same through `GET /api/v1/memory/proposals` and `POST /api/v1/memory/proposals/{id}/accept` or `/dismiss`.
 
-### 7. Use projects
+### Use projects
 
 A project groups chunks (scope `project`). Marshal activates a project:
 

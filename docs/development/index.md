@@ -1,11 +1,17 @@
+---
+title: Development
+icon: fa-solid fa-screwdriver-wrench
+order: 90
+---
+
 # Development
 
 How to change Marshal: set up a machine, build and test, follow the OpenSpec workflow, and add integrations, tools, endpoints and migrations.
 
 ## Where to start
 
-1. Read [`CLAUDE.md`](../../CLAUDE.md) for the non-negotiable rules and the repository map. It is written for AI agents and is equally useful for people.
-2. Read [`STYLE_GUIDE.md`](../../STYLE_GUIDE.md) for the design philosophy and the C# rules.
+1. Read [`CLAUDE.md`](https://github.com/lGruenzweilHTL/marshal/blob/master/CLAUDE.md) for the non-negotiable rules and the repository map. It is written for AI agents and is equally useful for people.
+2. Read [`STYLE_GUIDE.md`](https://github.com/lGruenzweilHTL/marshal/blob/master/STYLE_GUIDE.md) for the design philosophy and the C# rules.
 3. Read [documentation style](docs-style.md) before you touch a page in `docs/`.
 4. Set up your machine: [setup](setup.md).
 5. Pick up a change through the [OpenSpec workflow](openspec-workflow.md). Marshal does not accept implementation work without an approved change.

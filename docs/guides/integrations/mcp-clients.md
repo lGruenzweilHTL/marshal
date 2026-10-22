@@ -22,45 +22,47 @@ A tool of an integration that is not configured is not listed. For example, the 
 
 ## Steps
 
-### 1. Create a token
+::: steps
+1. **Create a token**
 
-In the web UI, open **Security** and create a token named after the client, for example `claude-code`. Select `mcp:read`, and also `mcp:write` if the client may create tasks and ask Marshal to act. Copy the token; it is shown only once.
+   In the web UI, open **Security** and create a token named after the client, for example `claude-code`. Select `mcp:read`, and also `mcp:write` if the client may create tasks and ask Marshal to act. Copy the token; it is shown only once.
 
-Or, on the Marshal host:
+   Or, on the Marshal host:
 
-```sh
-docker compose exec marshal marshal tokens create --name claude-code --scope mcp:read --scope mcp:write
-```
+   ```sh
+   docker compose exec marshal marshal tokens create --name claude-code --scope mcp:read --scope mcp:write
+   ```
 
-### 2. Add Marshal to the client
+2. **Add Marshal to the client**
 
-**Claude Code.** Add the server for your user:
+   **Claude Code.** Add the server for your user:
 
-```sh
-claude mcp add --transport http --scope user marshal https://marshal.example.org/mcp \
-  --header "Authorization: Bearer mrs_..."
-```
+   ```sh
+   claude mcp add --transport http --scope user marshal https://marshal.example.org/mcp \
+     --header "Authorization: Bearer mrs_..."
+   ```
 
-**VS Code.** Add the server to `.vscode/mcp.json` in your workspace, or to your user MCP configuration. VS Code asks for the token once and stores it securely:
+   **VS Code.** Add the server to `.vscode/mcp.json` in your workspace, or to your user MCP configuration. VS Code asks for the token once and stores it securely:
 
-```json
-{
-  "inputs": [
-    { "type": "promptString", "id": "marshal-token", "description": "Marshal API token", "password": true }
-  ],
-  "servers": {
-    "marshal": {
-      "type": "http",
-      "url": "https://marshal.example.org/mcp",
-      "headers": { "Authorization": "Bearer ${input:marshal-token}" }
-    }
-  }
-}
-```
+   ```json
+   {
+     "inputs": [
+       { "type": "promptString", "id": "marshal-token", "description": "Marshal API token", "password": true }
+     ],
+     "servers": {
+       "marshal": {
+         "type": "http",
+         "url": "https://marshal.example.org/mcp",
+         "headers": { "Authorization": "Bearer ${input:marshal-token}" }
+       }
+     }
+   }
+   ```
 
-### 3. Ask Marshal something
+3. **Ask Marshal something**
 
-Ask the client, for example: "Ask Marshal whether the printer is busy." The client calls `ask_marshal` with your text. Marshal runs one turn with its default template and returns the reply and a `conversationId`. When the client passes the `conversationId` again, Marshal continues the same conversation.
+   Ask the client, for example: "Ask Marshal whether the printer is busy." The client calls `ask_marshal` with your text. Marshal runs one turn with its default template and returns the reply and a `conversationId`. When the client passes the `conversationId` again, Marshal continues the same conversation.
+:::
 
 ## How Marshal treats MCP calls
 

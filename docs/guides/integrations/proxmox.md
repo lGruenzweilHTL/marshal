@@ -10,46 +10,48 @@ Give Marshal read-only access to your Proxmox VE cluster so it can report on nod
 
 ## Steps
 
-### 1. Create a read-only API token in Proxmox
+::: steps
+1. **Create a read-only API token in Proxmox**
 
-1. Create a user for Marshal, for example `marshal@pve`, under **Datacenter > Permissions > Users**.
-2. Under **Datacenter > Permissions > API Tokens**, add a token named `marshal` for that user. Keep **Privilege Separation** on. Copy the token value (a UUID) when Proxmox shows it; it appears only once.
-3. Under **Datacenter > Permissions**, add an API token permission: path `/`, token `marshal@pve!marshal`, role `PVEAuditor`, propagate on.
+   1. Create a user for Marshal, for example `marshal@pve`, under **Datacenter > Permissions > Users**.
+   2. Under **Datacenter > Permissions > API Tokens**, add a token named `marshal` for that user. Keep **Privilege Separation** on. Copy the token value (a UUID) when Proxmox shows it; it appears only once.
+   3. Under **Datacenter > Permissions**, add an API token permission: path `/`, token `marshal@pve!marshal`, role `PVEAuditor`, propagate on.
 
-`PVEAuditor` allows reading only. Marshal also sends `GET` requests only, so a mistake on one side does not open a write path.
+   `PVEAuditor` allows reading only. Marshal also sends `GET` requests only, so a mistake on one side does not open a write path.
 
-### 2. Store the token value as a secret
+2. **Store the token value as a secret**
 
-Create a secret, for example `proxmox_token`, holding the UUID. See [secrets](../secrets.md). Never put the value into `marshal.yaml`.
+   Create a secret, for example `proxmox_token`, holding the UUID. See [secrets](../secrets.md). Never put the value into `marshal.yaml`.
 
-### 3. Pin the certificate (self-signed nodes)
+3. **Pin the certificate (self-signed nodes)**
 
-Proxmox nodes use a self-signed certificate by default. Copy its SHA-256 fingerprint from **Node > System > Certificates**, or read it with:
+   Proxmox nodes use a self-signed certificate by default. Copy its SHA-256 fingerprint from **Node > System > Certificates**, or read it with:
 
-```sh
-openssl s_client -connect pve.lan:8006 </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256
-```
+   ```sh
+   openssl s_client -connect pve.lan:8006 </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256
+   ```
 
-With a fingerprint set, Marshal accepts the server certificate only if its fingerprint matches, whatever its chain. Without one, Marshal applies standard certificate validation, which fails for a self-signed certificate.
+   With a fingerprint set, Marshal accepts the server certificate only if its fingerprint matches, whatever its chain. Without one, Marshal applies standard certificate validation, which fails for a self-signed certificate.
 
-### 4. Add the `proxmox` section
+4. **Add the `proxmox` section**
 
-```yaml
-proxmox:
-  url: https://pve.lan:8006/
-  tokenId: marshal@pve!marshal
-  tokenSecret: proxmox_token
-  certificateFingerprint: "AB:CD:..."   # 64 hex digits, colons optional; omit for a CA-signed certificate
-```
+   ```yaml
+   proxmox:
+     url: https://pve.lan:8006/
+     tokenId: marshal@pve!marshal
+     tokenSecret: proxmox_token
+     certificateFingerprint: "AB:CD:..."   # 64 hex digits, colons optional; omit for a CA-signed certificate
+   ```
 
-`url` is the API URL of one cluster node. Startup fails with these messages when a rule is broken:
+   `url` is the API URL of one cluster node. Startup fails with these messages when a rule is broken:
 
-- `proxmox.url must be an absolute https URL.`
-- `proxmox.tokenId must look like user@realm!name.`
-- `proxmox.tokenSecret must name a secret.`
-- `proxmox.certificateFingerprint must be a SHA-256 fingerprint (64 hex digits, colons allowed).`
+   - `proxmox.url must be an absolute https URL.`
+   - `proxmox.tokenId must look like user@realm!name.`
+   - `proxmox.tokenSecret must name a secret.`
+   - `proxmox.certificateFingerprint must be a SHA-256 fingerprint (64 hex digits, colons allowed).`
 
-Without a `proxmox` section, Marshal registers no `infra_*` tool. Restart Marshal after editing the file.
+   Without a `proxmox` section, Marshal registers no `infra_*` tool. Restart Marshal after editing the file.
+:::
 
 ## Tools
 

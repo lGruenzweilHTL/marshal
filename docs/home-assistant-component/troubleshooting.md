@@ -1,3 +1,7 @@
+---
+order: 50
+---
+
 # Troubleshoot the Home Assistant component
 
 Fixes for the common problems when setting up or using the Marshal integration. For general problems see [troubleshooting](../guides/troubleshooting.md).
@@ -33,7 +37,7 @@ Fixes for the common problems when setting up or using the Marshal integration. 
 
 Enable debug logging for the integration in Home Assistant's `configuration.yaml`:
 
-```yaml
+```yaml [configuration.yaml]
 logger:
   logs:
     custom_components.marshal: debug

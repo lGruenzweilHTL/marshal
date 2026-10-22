@@ -21,49 +21,51 @@ A tool implements `ITool` (`src/Marshal.Abstractions/Tools/ITool.cs`). A group o
 
 ## Steps
 
-### 1. Write the failing tests
+::: steps
+1. **Write the failing tests**
 
-Cover the happy path, invalid arguments, the tier, visibility, and the owner. Use `FakeTool` and `FakeToolSource` from `tests/Marshal.Testing` when the test is about the registry or guard, and the fake of your integration's client when it is about the tool. Never call a real model.
+   Cover the happy path, invalid arguments, the tier, visibility, and the owner. Use `FakeTool` and `FakeToolSource` from `tests/Marshal.Testing` when the test is about the registry or guard, and the fake of your integration's client when it is about the tool. Never call a real model.
 
-### 2. Define the descriptor
+2. **Define the descriptor**
 
-```csharp
-private static ToolDescriptor Descriptor(string name, string description, string schema) => new()
-{
-    Id = new ToolId("infra", name),
-    Description = description,
-    ParametersSchema = JsonDocument.Parse(schema).RootElement.Clone(),
-    DefaultTier = RiskTier.Safe,
-};
-```
+   ```csharp
+   private static ToolDescriptor Descriptor(string name, string description, string schema) => new()
+   {
+       Id = new ToolId("infra", name),
+       Description = description,
+       ParametersSchema = JsonDocument.Parse(schema).RootElement.Clone(),
+       DefaultTier = RiskTier.Safe,
+   };
+   ```
 
-Rules:
+   Rules:
 
-- The internal id is `<namespace>.<snake_case_name>`. The model sees `<namespace>_<name>`.
-- Risk rules, satellite policies and template allowlists refer to the internal id.
-- Write the description for the model. Say what the tool returns and when to use it.
-- Keep the schema strict. Take ids of known items, never free-form commands or URLs.
+   - The internal id is `<namespace>.<snake_case_name>`. The model sees `<namespace>_<name>`.
+   - Risk rules, satellite policies and template allowlists refer to the internal id.
+   - Write the description for the model. Say what the tool returns and when to use it.
+   - Keep the schema strict. Take ids of known items, never free-form commands or URLs.
 
-### 3. Choose the tier
+3. **Choose the tier**
 
-`safe` runs immediately. `confirm` is frozen server-side and needs a user action. `forbidden` is removed from the tool list. Pick the default tier in the descriptor and add arg-aware rules to `risk.yaml` when the tier depends on the target (for example `ha.*` against locks). When a call resolves to several targets, the highest tier wins. An unresolvable target falls to confirm.
+   `safe` runs immediately. `confirm` is frozen server-side and needs a user action. `forbidden` is removed from the tool list. Pick the default tier in the descriptor and add arg-aware rules to `risk.yaml` when the tier depends on the target (for example `ha.*` against locks). When a call resolves to several targets, the highest tier wins. An unresolvable target falls to confirm.
 
-### 4. Implement visibility and validation
+4. **Implement visibility and validation**
 
-Override `IsAvailableAsync` when the tool depends on context, such as voice turns, the satellite or the template. Use `Validate` for allowlists. The guard re-runs both; never rely on visibility alone.
+   Override `IsAvailableAsync` when the tool depends on context, such as voice turns, the satellite or the template. Use `Validate` for allowlists. The guard re-runs both; never rely on visibility alone.
 
-### 5. Implement the call
+5. **Implement the call**
 
-Return a failed `Result` with a stable error code (`infra.invalid_arguments`) for expected failures. The executor turns it into a structured message for the model. Throw only for bugs.
+   Return a failed `Result` with a stable error code (`infra.invalid_arguments`) for expected failures. The executor turns it into a structured message for the model. Throw only for bugs.
 
-Treat text from outside as untrusted. Output that carries mail, feed, note or web content must be marked untrusted so the run is tainted. In a tainted run, memory and task writes escalate to confirm tier.
+   Treat text from outside as untrusted. Output that carries mail, feed, note or web content must be marked untrusted so the run is tainted. In a tainted run, memory and task writes escalate to confirm tier.
 
-### 6. Register and document
+6. **Register and document**
 
-Add the tool to the source's tool list. Then:
+   Add the tool to the source's tool list. Then:
 
-- Add rows to the [tool reference](../reference/tools.md).
-- Update the guide for the integration and `deploy/config.example/risk.yaml` if you added rules.
+   - Add rows to the [tool reference](../reference/tools.md).
+   - Update the guide for the integration and `deploy/config.example/risk.yaml` if you added rules.
+:::
 
 ## Check that it works
 

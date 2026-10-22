@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-map
+order: 110
+---
+
 # Roadmap
 
 What Marshal can do today and which ideas are deferred. This page is a summary, not a commitment; the specifications in `openspec/specs/` define the exact behavior.
@@ -18,7 +23,7 @@ All planned features through the third roadmap wave are implemented and archived
 | Memory and tasks | Hybrid memory retrieval, projects, consolidation, scheduled and event-driven tasks, approval queue |
 | Platform | Local and OIDC login, machine tokens, secret store, skills, agent templates, MCP servers (tool pinning, input requests, server tasks), tool retrieval, health warnings, run recording with voice timelines, demo mode |
 
-See the [changelog](../CHANGELOG.md) for the full list.
+See the [changelog](https://github.com/lGruenzweilHTL/marshal/blob/master/CHANGELOG.md) for the full list.
 
 ## In progress
 
@@ -43,4 +48,4 @@ These ideas are not planned for a specific release. Each needs its own OpenSpec 
 
 ## Influence the roadmap
 
-Open a [feature request](../.github/ISSUE_TEMPLATE/feature_request.yml). See [CONTRIBUTING.md](../CONTRIBUTING.md) for how changes are proposed.
+Open a [feature request](https://github.com/lGruenzweilHTL/marshal/blob/master/.github/ISSUE_TEMPLATE/feature_request.yml). See [CONTRIBUTING.md](https://github.com/lGruenzweilHTL/marshal/blob/master/CONTRIBUTING.md) for how changes are proposed.

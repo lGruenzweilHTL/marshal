@@ -1,3 +1,7 @@
+---
+order: 30
+---
+
 # Models setup
 
 Configure chat models for the fast and standard tiers, an optional advisor, and the embedding model.

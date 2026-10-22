@@ -117,3 +117,7 @@ HANDOFF.md
 
 # Screenshot sweep output (npm run screenshots)
 web/.screenshots/
+
+# Documentation site (npx clay-doc@5 build): output, and the API reference input from scripts/docs-openapi.mjs
+# (written to /artifacts/openapi/, ignored above)
+/publish/

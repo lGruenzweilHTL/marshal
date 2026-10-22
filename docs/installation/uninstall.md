@@ -1,3 +1,7 @@
+---
+order: 80
+---
+
 # Uninstall
 
 Remove Marshal and decide what to keep.
@@ -8,35 +12,37 @@ Remove Marshal and decide what to keep.
 
 ## Steps
 
-### 1. Remove the Home Assistant integration
+::: steps
+1. **Remove the Home Assistant integration**
 
-In Home Assistant delete the **Marshal** integration entry, remove `custom_components/marshal`, and restart. Set another conversation agent in your Assist pipelines.
+   In Home Assistant delete the **Marshal** integration entry, remove `custom_components/marshal`, and restart. Set another conversation agent in your Assist pipelines.
 
-### 2. Stop Marshal
+2. **Stop Marshal**
 
-```sh
-cd deploy
-docker compose down
-```
+   ```sh
+   cd deploy
+   docker compose down
+   ```
 
-This keeps the volumes.
+   This keeps the volumes.
 
-### 3. Delete data (optional)
+3. **Delete data (optional)**
 
-> [!WARNING]
-> This deletes the database, encryption keys, backups, artifacts and notes clone permanently.
+   > [!WARNING]
+   > This deletes the database, encryption keys, backups, artifacts and notes clone permanently.
 
-```sh
-docker compose down --volumes
-```
+   ```sh
+   docker compose down --volumes
+   ```
 
-Remove `deploy/config` and any `secrets` files you created. Revoke the Home Assistant long-lived token, API keys and OAuth clients you gave Marshal at their services, and the webhook tokens (`marshal tokens revoke <id>`) before deleting.
+   Remove `deploy/config` and any `secrets` files you created. Revoke the Home Assistant long-lived token, API keys and OAuth clients you gave Marshal at their services, and the webhook tokens (`marshal tokens revoke <id>`) before deleting.
 
-### 4. Remove images
+4. **Remove images**
 
-```sh
-docker image rm marshal:latest
-```
+   ```sh
+   docker image rm marshal:latest
+   ```
+:::
 
 ## Related
 - [Backups and restore](../guides/backups-and-restore.md)

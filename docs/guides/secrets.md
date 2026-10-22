@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-user-secret
+---
+
 # Manage secrets
 
 Give Marshal API keys, tokens and passwords without ever writing them into `/config`.
@@ -19,10 +23,9 @@ Give Marshal API keys, tokens and passwords without ever writing them into `/con
 
 ## Steps
 
-### Option A: file secret
-
-```yaml
-# docker-compose.yml (excerpt)
+::: tabs
+== File secret
+```yaml [docker-compose.yml]
 services:
   marshal:
     secrets: [moonraker_voron]
@@ -30,9 +33,7 @@ secrets:
   moonraker_voron:
     file: ./secrets/moonraker_voron
 ```
-
-### Option B: environment variable
-
+== Environment variable
 ```yaml
 services:
   marshal:
@@ -41,9 +42,7 @@ services:
 ```
 
 Pass the value from an `.env` file that is not in git.
-
-### Option C: the web UI
-
+== The web UI
 1. Open **Settings > Security**, tab **Secrets**.
 2. Choose **Set value**. Enter the name, the value and the scope.
 3. Choose **Store**.
@@ -52,6 +51,7 @@ Scopes: **Only me** (a user secret) or **Instance** (all users and configuration
 
 > [!IMPORTANT]
 > Back up `/data/keys` together with the database. Without the Data Protection keys, encrypted database secrets cannot be read. See [backups and restore](backups-and-restore.md).
+:::
 
 ## Lookup order
 

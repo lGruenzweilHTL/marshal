@@ -58,7 +58,7 @@ Tests that use Testcontainers need a reachable Docker daemon. On a machine where
 
 ### Coverage gate
 
-Code that decides risk tiers, visibility, confirmation or ownership must have 100 % branch coverage and fail closed ([style guide](../../STYLE_GUIDE.md), "Security-relevant code"). This applies to the guard and the risk engine in `Marshal.Core`. Measure it with the code coverage extension (`Microsoft.Testing.Extensions.CodeCoverage`):
+Code that decides risk tiers, visibility, confirmation or ownership must have 100 % branch coverage and fail closed ([style guide](https://github.com/lGruenzweilHTL/marshal/blob/master/STYLE_GUIDE.md), "Security-relevant code"). This applies to the guard and the risk engine in `Marshal.Core`. Measure it with the code coverage extension (`Microsoft.Testing.Extensions.CodeCoverage`):
 
 ```sh
 dotnet test --project tests/Marshal.Core.Tests --coverage

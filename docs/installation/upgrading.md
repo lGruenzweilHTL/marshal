@@ -1,3 +1,7 @@
+---
+order: 70
+---
+
 # Upgrading
 
 Update Marshal to a newer version of the repository.
@@ -5,7 +9,7 @@ Update Marshal to a newer version of the repository.
 ## Before you start
 
 - A current backup of `/data` (`backups/` and `keys/` included). See [backups and restore](../guides/backups-and-restore.md).
-- The changelog for the version you move to ([CHANGELOG](../../CHANGELOG.md)).
+- The changelog for the version you move to ([CHANGELOG](https://github.com/lGruenzweilHTL/marshal/blob/master/CHANGELOG.md)).
 
 ## Steps
 

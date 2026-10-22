@@ -13,65 +13,67 @@ Connect any Model Context Protocol (MCP) server to Marshal so its tools appear n
 
 ## Steps
 
-### 1. Create a server file
+::: steps
+1. **Create a server file**
 
-Add one YAML file per server in `/config/mcp/`. The file name is free.
+   Add one YAML file per server in `/config/mcp/`. The file name is free.
 
-```yaml
-id: search                      # lowercase letters and digits, starts with a letter
-transport: http                 # http (streamable HTTP) or stdio
-url: http://search.lan:3000/mcp
-authTokenSecret: search_token   # secret NAME, sent as "Authorization: Bearer <value>"
-toolPrefix: web                 # optional; replaces the id as tool namespace
-untrusted: true                 # tool output is third-party data
-```
+   ```yaml
+   id: search                      # lowercase letters and digits, starts with a letter
+   transport: http                 # http (streamable HTTP) or stdio
+   url: http://search.lan:3000/mcp
+   authTokenSecret: search_token   # secret NAME, sent as "Authorization: Bearer <value>"
+   toolPrefix: web                 # optional; replaces the id as tool namespace
+   untrusted: true                 # tool output is third-party data
+   ```
 
-For a local process, use `stdio`:
+   For a local process, use `stdio`:
 
-```yaml
-id: files
-transport: stdio
-command: /usr/local/bin/files-mcp
-args: ["--root", "/data/shared"]
-envSecrets:
-  - variable: FILES_API_KEY
-    secret: files_api_key
-```
+   ```yaml
+   id: files
+   transport: stdio
+   command: /usr/local/bin/files-mcp
+   args: ["--root", "/data/shared"]
+   envSecrets:
+     - variable: FILES_API_KEY
+       secret: files_api_key
+   ```
 
-Home Assistant's own MCP server uses the same format, see [Home Assistant MCP](home-assistant-mcp.md) and `deploy/config.example/mcp/ha.yaml`.
+   Home Assistant's own MCP server uses the same format, see [Home Assistant MCP](home-assistant-mcp.md) and `deploy/config.example/mcp/ha.yaml`.
 
-### 2. Keys
+2. **Keys**
 
-| Key | Type | Description |
-|---|---|---|
-| `id` | string | Required. Matches `[a-z][a-z0-9]*`. Unique across files. |
-| `transport` | `http` or `stdio` | Required. |
-| `url` | URL | Required for `http`. Absolute `http` or `https`. |
-| `command`, `args` | string, list | `command` is required for `stdio`. |
-| `toolPrefix` | string | Optional namespace instead of `id`. Same pattern. |
-| `authTokenSecret` | secret name | Optional. Sent as a bearer header. |
-| `envSecrets` | list of `variable` and `secret` | Environment variables of a `stdio` server filled from secrets. |
-| `untrusted` | boolean | Default `false`. Marks every tool's output as third-party data. |
-| `untrustedTools` | list of globs | Marks only matching tools (by the name the server reports). Not allowed together with `untrusted: true`. |
-| `pinTools` | boolean | Default `true`. A tool that is new or changed after the first discovery waits for your approval. |
+   | Key | Type | Description |
+   |---|---|---|
+   | `id` | string | Required. Matches `[a-z][a-z0-9]*`. Unique across files. |
+   | `transport` | `http` or `stdio` | Required. |
+   | `url` | URL | Required for `http`. Absolute `http` or `https`. |
+   | `command`, `args` | string, list | `command` is required for `stdio`. |
+   | `toolPrefix` | string | Optional namespace instead of `id`. Same pattern. |
+   | `authTokenSecret` | secret name | Optional. Sent as a bearer header. |
+   | `envSecrets` | list of `variable` and `secret` | Environment variables of a `stdio` server filled from secrets. |
+   | `untrusted` | boolean | Default `false`. Marks every tool's output as third-party data. |
+   | `untrustedTools` | list of globs | Marks only matching tools (by the name the server reports). Not allowed together with `untrusted: true`. |
+   | `pinTools` | boolean | Default `true`. A tool that is new or changed after the first discovery waits for your approval. |
 
-Unknown keys are errors. Config never holds secret values, and a literal secret in the file fails loading. See the full reference in [`mcp-servers`](../../configuration/mcp-servers.md).
+   Unknown keys are errors. Config never holds secret values, and a literal secret in the file fails loading. See the full reference in [`mcp-servers`](../../configuration/mcp-servers.md).
 
-### 3. Set risk rules
+3. **Set risk rules**
 
-A tool from an MCP server that no rule in `risk.yaml` matches is in the confirm tier, so every call needs your approval. Add rules to allow read-only tools:
+   A tool from an MCP server that no rule in `risk.yaml` matches is in the confirm tier, so every call needs your approval. Add rules to allow read-only tools:
 
-```yaml
-risk:
-  - match: { tool: "search.*" }
-    tier: safe
-```
+   ```yaml [/config/risk.yaml]
+   risk:
+     - match: { tool: "search.*" }
+       tier: safe
+   ```
 
-The match is a glob on the internal tool id `<namespace>.<name>`. See [risk rules](../risk-rules.md).
+   The match is a glob on the internal tool id `<namespace>.<name>`. See [risk rules](../risk-rules.md).
 
-### 4. Wait for the reload
+4. **Wait for the reload**
 
-Adding, changing or removing a file takes effect without a restart. Running turns keep their tool list. The next turn sees the change.
+   Adding, changing or removing a file takes effect without a restart. Running turns keep their tool list. The next turn sees the change.
+:::
 
 ## How tools appear
 

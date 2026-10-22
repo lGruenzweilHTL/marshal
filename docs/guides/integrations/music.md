@@ -15,37 +15,39 @@ Marshal does this through Home Assistant and the Music Assistant integration. It
 
 ## Steps
 
-### 1. Name your speakers
+::: steps
+1. **Name your speakers**
 
-Add a `music` section to `/config/marshal.yaml`. Each key is a speaker name, each value a Music Assistant `media_player` entity.
+   Add a `music` section to `/config/marshal.yaml`. Each key is a speaker name, each value a Music Assistant `media_player` entity.
 
-```yaml
-music:
-  speakers:
-    kitchen:     media_player.kitchen_satellite_ma
-    living_room: media_player.living_room_sonos
-```
+   ```yaml
+   music:
+     speakers:
+       kitchen:     media_player.kitchen_satellite_ma
+       living_room: media_player.living_room_sonos
+   ```
 
-Speaker names match `[a-z][a-z0-9_]*`. Startup fails with an error naming `music.speakers.<name>` if a name does not match, or if the entity is not in the `media_player` domain. The model uses these names only and never an entity id.
+   Speaker names match `[a-z][a-z0-9_]*`. Startup fails with an error naming `music.speakers.<name>` if a name does not match, or if the entity is not in the `media_player` domain. The model uses these names only and never an entity id.
 
-Without a `music` section, or without a Home Assistant connection, Marshal registers no `music_*` tool.
+   Without a `music` section, or without a Home Assistant connection, Marshal registers no `music_*` tool.
 
-### 2. Set the default speaker per satellite
+2. **Set the default speaker per satellite**
 
-In `/config/satellites.yaml`, give each satellite profile the speaker it plays on:
+   In `/config/satellites.yaml`, give each satellite profile the speaker it plays on:
 
-```yaml
-# inside a satellite profile
-speaker: kitchen
-```
+   ```yaml [/config/satellites.yaml]
+   # inside a satellite profile
+   speaker: kitchen
+   ```
 
-A music tool called without a speaker then uses the speaker of the satellite that asked. See [satellites](../voice/satellites.md) and [`satellites.yaml`](../../configuration/satellites-yaml.md).
+   A music tool called without a speaker then uses the speaker of the satellite that asked. See [satellites](../voice/satellites.md) and [`satellites.yaml`](../../configuration/satellites-yaml.md).
 
-### 3. Restart Marshal
+3. **Restart Marshal**
 
-```sh
-docker compose restart marshal
-```
+   ```sh
+   docker compose restart marshal
+   ```
+:::
 
 ## Tools
 

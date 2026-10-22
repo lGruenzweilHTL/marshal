@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-chart-line
+---
+
 # Observability
 
 See what Marshal did and what it cost: runs, cost, health, the audit trail, and OpenTelemetry export.
@@ -43,7 +47,7 @@ Actions outside a run are written to the audit log with actor kind (`user`, `api
 
 ## Export to OpenTelemetry
 
-### 1. Set the endpoint
+### Set the endpoint
 
 ```yaml
 telemetry:
@@ -52,7 +56,7 @@ telemetry:
 
 Marshal exports over OTLP gRPC. Leave the key unset to export nothing. The same value can be set as `MARSHAL__Telemetry__OtlpEndpoint`. A restart applies the change.
 
-### 2. What you get
+### What you get
 
 Traces follow the OpenTelemetry GenAI semantic conventions, version 1.41 (the version `Microsoft.Extensions.AI` implements). The resource attribute `marshal.genai_semconv_version` names it. Spans exist while the run executes:
 
@@ -72,7 +76,7 @@ Backends with GenAI views (Langfuse, Arize Phoenix, Grafana) show the runs witho
 
 All names and attributes: [metrics and traces](../reference/metrics-and-traces.md).
 
-### 3. Send traces to Langfuse or Phoenix
+### Send traces to Langfuse or Phoenix
 
 Marshal exports OTLP gRPC only. Langfuse accepts only OTLP over HTTP, so put an OpenTelemetry Collector in between. This collector config sends traces to Langfuse Cloud (EU) and to a self-hosted Phoenix:
 
@@ -103,7 +107,7 @@ service:
 
 Then set `telemetry.otlpEndpoint: "http://otel-collector:4317"`. Use one exporter if you run only one backend. Phoenix serves OTLP gRPC on port 4317 and its UI on port 6006.
 
-### 4. Content capture (off by default)
+### Content capture (off by default)
 
 Without content capture, spans carry ids and metadata only. To see inputs and outputs in the backend, turn it on:
 
@@ -116,7 +120,7 @@ telemetry:
 
 Spans then carry exactly what run recording stores: the user input and the reply on `invoke_agent`, and the arguments and result on `execute_tool`. Contents are truncated, results of sensitive tools appear only as their reference, and withheld reasoning stays withheld. System prompts and the full messages sent to the model never appear on any span.
 
-### 5. Alert on something useful
+### Alert on something useful
 
 Examples: a rise in `marshal.runs{outcome="error"}`, many `marshal.tool.calls{decision="denied"}` after a config change, or `marshal.run.cost` above your daily cap.
 

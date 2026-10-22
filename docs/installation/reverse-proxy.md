@@ -1,3 +1,7 @@
+---
+order: 40
+---
+
 # Reverse proxy
 
 Put a TLS reverse proxy in front of Marshal, with or without a path prefix, for Traefik, Caddy or nginx.

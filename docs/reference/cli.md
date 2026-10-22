@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-terminal
+---
+
 # Command line
 
 Every command and flag of the `marshal` executable. The container ships `/app/marshal` and links it to `marshal` on the `PATH`, so you can run it inside the running container.

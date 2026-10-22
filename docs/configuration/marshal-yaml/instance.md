@@ -22,7 +22,7 @@ telemetry:
 | `paths.secrets` | string | `/run/secrets` | Directory of Docker secret files. |
 | `logging.logLevel.default` | string | .NET default | Standard .NET log level (`Trace`, `Debug`, `Information`, ...). `Debug` and `Trace` also print stack traces for configuration errors. The `logging` section is the standard .NET `Logging` configuration. |
 | `telemetry.otlpEndpoint` | URL | unset | OTLP gRPC endpoint for traces and metrics. Unset: no export. |
-| `telemetry.captureContent` | bool | `false` | Adds the user input, tool arguments, tool results and the reply to spans, redacted like run recording. Never system prompts or full model messages. Marshal logs a warning at startup while it is `true`. See [content capture](../../guides/observability.md#4-content-capture-off-by-default). |
+| `telemetry.captureContent` | bool | `false` | Adds the user input, tool arguments, tool results and the reply to spans, redacted like run recording. Never system prompts or full model messages. Marshal logs a warning at startup while it is `true`. See [content capture](../../guides/observability.md#content-capture-off-by-default). |
 
 `paths.*` are meant to be set through `MARSHAL__Paths__*` variables, not in `marshal.yaml`.
 

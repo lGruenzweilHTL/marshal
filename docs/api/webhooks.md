@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-satellite-dish
+order: 50
+---
+
 # Webhooks
 
 `POST /api/v1/hooks/{source}` receives webhooks from infrastructure tools and turns them into events that [event triggers](../guides/tasks/event-triggers.md) can react to.

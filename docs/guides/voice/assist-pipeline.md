@@ -11,21 +11,23 @@ Make Marshal the conversation agent of a Home Assistant Assist pipeline, so voic
 
 ## Steps
 
-### 1. Check the Marshal conversation entity
+::: steps
+1. **Check the Marshal conversation entity**
 
-After setup, Home Assistant has a conversation entity named **Marshal**. It supports German and English.
+   After setup, Home Assistant has a conversation entity named **Marshal**. It supports German and English.
 
-### 2. Choose Marshal in a pipeline
+2. **Choose Marshal in a pipeline**
 
-1. In Home Assistant open **Settings > Voice assistants**.
-2. Open an existing pipeline or add one.
-3. Set **Conversation agent** to **Marshal**.
-4. Choose your speech-to-text and text-to-speech engines and the pipeline language (`de` or `en`).
-5. Save.
+   1. In Home Assistant open **Settings > Voice assistants**.
+   2. Open an existing pipeline or add one.
+   3. Set **Conversation agent** to **Marshal**.
+   4. Choose your speech-to-text and text-to-speech engines and the pipeline language (`de` or `en`).
+   5. Save.
 
-### 3. Assign the pipeline to a satellite
+3. **Assign the pipeline to a satellite**
 
-Open the satellite's device settings in Home Assistant and select the pipeline. Assign the satellite's device to an area: Marshal uses the area to resolve "turn on the light" to the room you speak from.
+   Open the satellite's device settings in Home Assistant and select the pipeline. Assign the satellite's device to an area: Marshal uses the area to resolve "turn on the light" to the room you speak from.
+:::
 
 ## Check that it works
 

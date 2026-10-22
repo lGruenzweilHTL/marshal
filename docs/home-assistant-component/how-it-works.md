@@ -1,3 +1,7 @@
+---
+order: 30
+---
+
 # How the Home Assistant component works
 
 This page describes what the component sends to Marshal for each Assist turn, how it handles the reply, and how timeouts, errors and follow-ups behave.

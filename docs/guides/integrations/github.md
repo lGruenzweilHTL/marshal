@@ -9,38 +9,40 @@ Give Marshal read-only access to a short list of GitHub repositories so it can s
 
 ## Steps
 
-### 1. Create a fine-grained personal access token
+::: steps
+1. **Create a fine-grained personal access token**
 
-In GitHub, open **Settings > Developer settings > Personal access tokens > Fine-grained tokens** and create a token:
+   In GitHub, open **Settings > Developer settings > Personal access tokens > Fine-grained tokens** and create a token:
 
-- **Repository access:** select only the repositories you plan to allow.
-- **Permissions**, all set to read-only: Metadata, Contents, Pull requests, Issues, Actions.
-- **Expiration:** GitHub allows at most one year.
+   - **Repository access:** select only the repositories you plan to allow.
+   - **Permissions**, all set to read-only: Metadata, Contents, Pull requests, Issues, Actions.
+   - **Expiration:** GitHub allows at most one year.
 
-> [!WARNING]
-> Use a separate token for Marshal's coding executor. This token must never have write access.
+   > [!WARNING]
+   > Use a separate token for Marshal's coding executor. This token must never have write access.
 
-### 2. Store the token as a secret
+2. **Store the token as a secret**
 
-Create a secret such as `github_pat` holding the token. When the token expires, replace the secret value; Marshal reads it on every request and needs no restart.
+   Create a secret such as `github_pat` holding the token. When the token expires, replace the secret value; Marshal reads it on every request and needs no restart.
 
-### 3. Add the `github` section
+3. **Add the `github` section**
 
-```yaml
-github:
-  tokenSecret: github_pat
-  repos:
-    marshal: lukas/marshal
-    homelab: lukas/homelab
-```
+   ```yaml
+   github:
+     tokenSecret: github_pat
+     repos:
+       marshal: lukas/marshal
+       homelab: lukas/homelab
+   ```
 
-Each key under `repos` is the id the model sees. It matches `[a-z][a-z0-9-]*`. Each value is `owner/name`. Startup fails with one of these messages if a rule is broken:
+   Each key under `repos` is the id the model sees. It matches `[a-z][a-z0-9-]*`. Each value is `owner/name`. Startup fails with one of these messages if a rule is broken:
 
-- `github.repos ids must be lowercase letters, digits and dashes, starting with a letter.`
-- `github.repos values must be owner/name.`
-- `github.tokenSecret must name a secret when repos are configured.`
+   - `github.repos ids must be lowercase letters, digits and dashes, starting with a letter.`
+   - `github.repos values must be owner/name.`
+   - `github.tokenSecret must name a secret when repos are configured.`
 
-Without a `github` section, or with an empty `repos`, Marshal registers no `repos_*` tool. Restart Marshal after editing the file.
+   Without a `github` section, or with an empty `repos`, Marshal registers no `repos_*` tool. Restart Marshal after editing the file.
+:::
 
 ## Tools
 

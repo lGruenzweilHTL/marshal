@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-floppy-disk
+---
+
 # Backups and restore
 
 Check the nightly backup, copy it off the machine, and restore Marshal from it.
@@ -23,58 +27,60 @@ The backup does not contain `/config` (keep it in git), the artifact store, prin
 
 ## Steps
 
-### 1. Check that backups run
+::: steps
+1. **Check that backups run**
 
-Open **Tasks**: `system-backup` shows its latest result, for example `Backup 20261011-010000: database, keys and 1 memory exports; 0 older backups deleted.` Or list the folder.
-
-```sh
-docker compose exec marshal ls /data/backups
-```
-
-If the keys folder is missing, the result says `no keys (none yet)` and the log has `No Data Protection keys at /data/keys to back up`.
-
-### 2. Copy backups off the host
-
-Mount `/data/backups` or copy it regularly with your usual tool. A backup on the same disk does not protect against disk failure.
-
-```sh
-rsync -a <docker-volume-path>/backups/ <backup-host>:/backups/marshal/
-```
-
-### 3. Run a backup now
-
-Ask Marshal to run the `system-backup` task (`tasks_run_now`), or wait for the schedule.
-
-### 4. Restore into a new or broken instance
-
-1. Stop Marshal.
+   Open **Tasks**: `system-backup` shows its latest result, for example `Backup 20261011-010000: database, keys and 1 memory exports; 0 older backups deleted.` Or list the folder.
 
    ```sh
-   docker compose stop marshal
+   docker compose exec marshal ls /data/backups
    ```
 
-2. Choose the backup folder `<stamp>` you want.
-3. Replace the database and keys in the data volume. Remove old SQLite side files so no stale journal is applied.
+   If the keys folder is missing, the result says `no keys (none yet)` and the log has `No Data Protection keys at /data/keys to back up`.
+
+2. **Copy backups off the host**
+
+   Mount `/data/backups` or copy it regularly with your usual tool. A backup on the same disk does not protect against disk failure.
 
    ```sh
-   rm -f <data>/marshal.db <data>/marshal.db-wal <data>/marshal.db-shm
-   cp <backup>/<stamp>/marshal.db <data>/marshal.db
-   rm -rf <data>/keys
-   cp -r <backup>/<stamp>/keys <data>/keys
+   rsync -a <docker-volume-path>/backups/ <backup-host>:/backups/marshal/
    ```
 
-4. Restore your `/config` files and any secrets in `/run/secrets` or environment variables.
-5. Start Marshal. Pending database migrations run at startup.
+3. **Run a backup now**
 
-   ```sh
-   docker compose up -d marshal
-   ```
+   Ask Marshal to run the `system-backup` task (`tasks_run_now`), or wait for the schedule.
 
-> [!IMPORTANT]
-> Restore `marshal.db` and `keys/` together. A database restored without its keys loses every secret stored in the web UI.
+4. **Restore into a new or broken instance**
 
-> [!NOTE]
-> The memory NDJSON export is a portable copy of memory. Marshal has no command or screen that imports it. Restoring `marshal.db` restores memory, including embeddings. If you change the embedding model, Marshal re-embeds all memory at the next start.
+   1. Stop Marshal.
+
+      ```sh
+      docker compose stop marshal
+      ```
+
+   2. Choose the backup folder `<stamp>` you want.
+   3. Replace the database and keys in the data volume. Remove old SQLite side files so no stale journal is applied.
+
+      ```sh
+      rm -f <data>/marshal.db <data>/marshal.db-wal <data>/marshal.db-shm
+      cp <backup>/<stamp>/marshal.db <data>/marshal.db
+      rm -rf <data>/keys
+      cp -r <backup>/<stamp>/keys <data>/keys
+      ```
+
+   4. Restore your `/config` files and any secrets in `/run/secrets` or environment variables.
+   5. Start Marshal. Pending database migrations run at startup.
+
+      ```sh
+      docker compose up -d marshal
+      ```
+
+   > [!IMPORTANT]
+   > Restore `marshal.db` and `keys/` together. A database restored without its keys loses every secret stored in the web UI.
+
+   > [!NOTE]
+   > The memory NDJSON export is a portable copy of memory. Marshal has no command or screen that imports it. Restoring `marshal.db` restores memory, including embeddings. If you change the embedding model, Marshal re-embeds all memory at the next start.
+:::
 
 ## Check that it works
 

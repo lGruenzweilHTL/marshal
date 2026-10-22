@@ -1,3 +1,9 @@
+---
+title: API
+icon: fa-solid fa-code
+order: 70
+---
+
 # API overview
 
 Marshal exposes a versioned REST API under `/api/v{n}`. This page covers the base path, versioning, authentication, error format and rate limits that apply to every endpoint.

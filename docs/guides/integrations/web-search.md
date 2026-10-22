@@ -10,41 +10,43 @@ Let Marshal look things up on the web through your own SearXNG instance, without
 
 ## Steps
 
-### 1. Enable JSON output in SearXNG
+::: steps
+1. **Enable JSON output in SearXNG**
 
-Marshal uses SearXNG's JSON API. SearXNG serves only HTML by default. In SearXNG's `settings.yml`, allow JSON:
+   Marshal uses SearXNG's JSON API. SearXNG serves only HTML by default. In SearXNG's `settings.yml`, allow JSON:
 
-```yaml
-search:
-  formats:
-    - html
-    - json
-```
+   ```yaml [settings.yml]
+   search:
+     formats:
+       - html
+       - json
+   ```
 
-Restart SearXNG. A request to `<url>/search?q=test&format=json` now returns JSON instead of `403 Forbidden`.
+   Restart SearXNG. A request to `<url>/search?q=test&format=json` now returns JSON instead of `403 Forbidden`.
 
-### 2. Configure Marshal
+2. **Configure Marshal**
 
-In `/config/marshal.yaml`:
+   In `/config/marshal.yaml`:
 
-```yaml
-web:
-  searxng:
-    url: http://searxng.local:8080
-    authHeaderSecret: searxng_auth      # optional
-    engines: [google, bing, duckduckgo, wikipedia]
-    maxResults: 8
-```
+   ```yaml [/config/marshal.yaml]
+   web:
+     searxng:
+       url: http://searxng.local:8080
+       authHeaderSecret: searxng_auth      # optional
+       engines: [google, bing, duckduckgo, wikipedia]
+       maxResults: 8
+   ```
 
-Only `url` is required. Without the `web` section, the web tools stay hidden. The keys and their ranges are in the [`web` reference](../../configuration/marshal-yaml/integrations.md#web).
+   Only `url` is required. Without the `web` section, the web tools stay hidden. The keys and their ranges are in the [`web` reference](../../configuration/marshal-yaml/integrations.md#web-searxng-web-search).
 
-### 3. Choose the engines
+3. **Choose the engines**
 
-Marshal sends the `engines` list with every request, so SearXNG asks only those engines. Keep the list to large public engines, such as the default `google`, `bing`, `duckduckgo` and `wikipedia`.
+   Marshal sends the `engines` list with every request, so SearXNG asks only those engines. Keep the list to large public engines, such as the default `google`, `bing`, `duckduckgo` and `wikipedia`.
 
-Do not add small or self-hosted third-party engines. The query text reaches every engine on the list (see [Privacy](#privacy)). An engine run by a stranger would see your queries, including queries in a run that read untrusted content.
+   Do not add small or self-hosted third-party engines. The query text reaches every engine on the list (see [Privacy](#privacy)). An engine run by a stranger would see your queries, including queries in a run that read untrusted content.
 
-### 4. Restart Marshal
+4. **Restart Marshal**
+:::
 
 ## Tools
 
@@ -95,4 +97,4 @@ If a question must not leave your network, do not ask Marshal to search for it. 
 - [Untrusted content](../../concepts/untrusted-content.md)
 - [Privacy](../../concepts/privacy.md)
 - [Secrets](../secrets.md)
-- [Integration sections reference](../../configuration/marshal-yaml/integrations.md#web)
+- [Integration sections reference](../../configuration/marshal-yaml/integrations.md#web-searxng-web-search)

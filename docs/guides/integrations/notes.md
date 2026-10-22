@@ -11,12 +11,10 @@ Let Marshal search and read your Markdown notes from a git repository, kept sepa
 
 ## Steps
 
-### Option A: local repository
-
+::: tabs
+== Local repository
 Put the repository into `/data/notes` (the `/data` volume). Notes are on when that directory exists. No configuration is needed.
-
-### Option B: remote repository
-
+== Remote repository
 ```yaml
 notes:
   remote: https://git.example.com/lukas/notes.git
@@ -28,6 +26,7 @@ notes:
 Marshal clones the repository into `/data/notes` on first start and pulls it every `pullInterval`. It is a **read-only mirror**: Marshal never commits or pushes. Keep `credentialSecret` as a secret name. The value is an https token or an SSH deploy key. Omit it for a public repository. Keys and limits are in the [`notes` reference](../../configuration/marshal-yaml/integrations.md#notes).
 
 Restart Marshal after changing `marshal.yaml`.
+:::
 
 ## Tools
 

@@ -16,72 +16,74 @@ Marshal can only read from Sonarr and Radarr. In Seerr it can only read and crea
 
 ## Steps
 
-### 1. Store the API keys as secrets
+::: steps
+1. **Store the API keys as secrets**
 
-Create one secret per service, for example with Docker secrets or `MARSHAL_SECRET_<NAME>` environment variables. Names are lowercase letters, digits and underscores, starting with a letter.
+   Create one secret per service, for example with Docker secrets or `MARSHAL_SECRET_<NAME>` environment variables. Names are lowercase letters, digits and underscores, starting with a letter.
 
-```text
-seerr_api_key
-sonarr_api_key
-radarr_api_key
-```
+   ```text
+   seerr_api_key
+   sonarr_api_key
+   radarr_api_key
+   ```
 
-Marshal reads each secret on every request, so you can replace a key without a restart.
+   Marshal reads each secret on every request, so you can replace a key without a restart.
 
-### 2. Add the `media` section
+2. **Add the `media` section**
 
-Add this to `/config/marshal.yaml`. Only `seerr` is required. Leave out `sonarr`, `radarr` or `jellyfinUrl` if you do not use them.
+   Add this to `/config/marshal.yaml`. Only `seerr` is required. Leave out `sonarr`, `radarr` or `jellyfinUrl` if you do not use them.
 
-```yaml
-media:
-  seerr:  { url: https://seerr.lan/,  apiKeySecret: seerr_api_key }
-  sonarr: { url: https://sonarr.lan/, apiKeySecret: sonarr_api_key }
-  radarr: { url: https://radarr.lan/, apiKeySecret: radarr_api_key }
-  jellyfinUrl: https://jellyfin.lan/
-```
+   ```yaml
+   media:
+     seerr:  { url: https://seerr.lan/,  apiKeySecret: seerr_api_key }
+     sonarr: { url: https://sonarr.lan/, apiKeySecret: sonarr_api_key }
+     radarr: { url: https://radarr.lan/, apiKeySecret: radarr_api_key }
+     jellyfinUrl: https://jellyfin.lan/
+   ```
 
-Every `url` and `jellyfinUrl` must be an absolute `http` or `https` URL. Every `apiKeySecret` must be a secret name. Startup fails with one of these messages if a rule is broken:
+   Every `url` and `jellyfinUrl` must be an absolute `http` or `https` URL. Every `apiKeySecret` must be a secret name. Startup fails with one of these messages if a rule is broken:
 
-- `media.seerr.url is required when a media section is configured.`
-- `media.seerr needs an absolute http(s) url and an apiKeySecret naming a secret.` (the same text applies to `sonarr` and `radarr`)
-- `media.jellyfinUrl must be an absolute http(s) URL.`
+   - `media.seerr.url is required when a media section is configured.`
+   - `media.seerr needs an absolute http(s) url and an apiKeySecret naming a secret.` (the same text applies to `sonarr` and `radarr`)
+   - `media.jellyfinUrl must be an absolute http(s) URL.`
 
-Without a `media` section, Marshal registers no `media_*` tool.
+   Without a `media` section, Marshal registers no `media_*` tool.
 
-### 3. Restart Marshal
-
-```sh
-docker compose restart marshal
-```
-
-### 4. Optional: get a push when a request is ready
-
-Seerr can notify Marshal when a requested title becomes available. Marshal turns these notifications into events that a watch task can react on.
-
-1. Create a token that may post Seerr webhooks:
+3. **Restart Marshal**
 
    ```sh
-   docker exec marshal marshal tokens create --name seerr --scope hooks:seerr
+   docker compose restart marshal
    ```
 
-   Marshal prints the token once. Copy it now.
+4. **Optional: get a push when a request is ready**
 
-2. In Seerr, open **Settings > Notifications > Webhook**, enable the agent and set:
+   Seerr can notify Marshal when a requested title becomes available. Marshal turns these notifications into events that a watch task can react on.
 
-   | Field | Value |
-   |---|---|
-   | Webhook URL | `https://<marshal>/api/v1/hooks/seerr` |
-   | Authorization Header | `Bearer <token from step 1>` |
-   | Notification Types | Request Approved, Request Automatically Approved, Request Available, Request Declined, Request Failed |
-   | JSON Payload | see below |
+   1. Create a token that may post Seerr webhooks:
 
-   ```json
-   {"notification_type":"{{notification_type}}","{{media}}":{"media_type":"{{media_type}}","tmdbId":"{{media_tmdbid}}","status":"{{media_status}}","jellyfinMediaId":"{{media_jellyfinMediaId}}"},"{{request}}":{"request_id":"{{request_id}}"}}
-   ```
+      ```sh
+      docker exec marshal marshal tokens create --name seerr --scope hooks:seerr
+      ```
 
-3. Create a watch for `source: seerr`, `type: media.available`. The file `deploy/config.example/tasks/media-available.yaml` is a ready example; ask Marshal to create a watch with those settings. See [event triggers](../tasks/event-triggers.md).
+      Marshal prints the token once. Copy it now.
 
-For the events and how Marshal limits and authenticates webhooks, see [Uptime Kuma and Proxmox webhooks](uptime-kuma.md#how-webhook-ingest-works).
+   2. In Seerr, open **Settings > Notifications > Webhook**, enable the agent and set:
+
+      | Field | Value |
+      |---|---|
+      | Webhook URL | `https://<marshal>/api/v1/hooks/seerr` |
+      | Authorization Header | `Bearer <token from step 1>` |
+      | Notification Types | Request Approved, Request Automatically Approved, Request Available, Request Declined, Request Failed |
+      | JSON Payload | see below |
+
+      ```json
+      {"notification_type":"{{notification_type}}","{{media}}":{"media_type":"{{media_type}}","tmdbId":"{{media_tmdbid}}","status":"{{media_status}}","jellyfinMediaId":"{{media_jellyfinMediaId}}"},"{{request}}":{"request_id":"{{request_id}}"}}
+      ```
+
+   3. Create a watch for `source: seerr`, `type: media.available`. The file `deploy/config.example/tasks/media-available.yaml` is a ready example; ask Marshal to create a watch with those settings. See [event triggers](../tasks/event-triggers.md).
+
+   For the events and how Marshal limits and authenticates webhooks, see [Uptime Kuma and Proxmox webhooks](uptime-kuma.md#how-webhook-ingest-works).
+:::
 
 ## Tools
 

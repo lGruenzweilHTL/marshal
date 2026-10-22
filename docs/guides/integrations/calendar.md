@@ -21,40 +21,42 @@ For CalDAV you need:
 
 ## Steps
 
-### 1. Create an app password
+::: steps
+1. **Create an app password**
 
-| Server | URL | Username | Password |
-|---|---|---|---|
-| Nextcloud | `https://cloud.example.org/remote.php/dav/` | your login name | Settings → Security → Devices & sessions → Create new app password |
-| Radicale | `http://radicale.lan:5232/` | your Radicale user | the user's password (`htpasswd`) |
-| Fastmail | `https://caldav.fastmail.com/` | your full Fastmail address | Settings → Privacy & Security → Integrations → New app password, with Calendars (CalDAV) access |
-| iCloud | `https://caldav.icloud.com/` | your Apple Account email | an app-specific password from account.apple.com → Sign-In and Security |
+   | Server | URL | Username | Password |
+   |---|---|---|---|
+   | Nextcloud | `https://cloud.example.org/remote.php/dav/` | your login name | Settings → Security → Devices & sessions → Create new app password |
+   | Radicale | `http://radicale.lan:5232/` | your Radicale user | the user's password (`htpasswd`) |
+   | Fastmail | `https://caldav.fastmail.com/` | your full Fastmail address | Settings → Privacy & Security → Integrations → New app password, with Calendars (CalDAV) access |
+   | iCloud | `https://caldav.icloud.com/` | your Apple Account email | an app-specific password from account.apple.com → Sign-In and Security |
 
-Your regular Fastmail or iCloud password does not work over CalDAV.
+   Your regular Fastmail or iCloud password does not work over CalDAV.
 
-### 2. Store the password as a secret
+2. **Store the password as a secret**
 
-Store it under a secret name, for example `nextcloud_caldav`, as a file in `/run/secrets` or in the web UI under **System → Secrets**.
+   Store it under a secret name, for example `nextcloud_caldav`, as a file in `/run/secrets` or in the web UI under **System → Secrets**.
 
-### 3. Add the account to `marshal.yaml`
+3. **Add the account to `marshal.yaml`**
 
-```yaml
-calendar:
-  caldav:
-    accounts:
-      nextcloud:
-        url: https://cloud.example.org/remote.php/dav/
-        username: lukas
-        passwordSecret: nextcloud_caldav
-        calendars: [personal, family]   # optional; default: every calendar found
-        pollMinutes: 5                  # optional, 1-60
-```
+   ```yaml
+   calendar:
+     caldav:
+       accounts:
+         nextcloud:
+           url: https://cloud.example.org/remote.php/dav/
+           username: lukas
+           passwordSecret: nextcloud_caldav
+           calendars: [personal, family]   # optional; default: every calendar found
+           pollMinutes: 5                  # optional, 1-60
+   ```
 
-The account id (`nextcloud`) becomes part of the calendar ids: `caldav:nextcloud/personal`. Marshal discovers the calendars from the URL. `calendars` limits them by name, the last path segment of the calendar's URL. All keys: [integration sections](../../configuration/marshal-yaml/integrations.md#calendarcaldav-caldav-calendars).
+   The account id (`nextcloud`) becomes part of the calendar ids: `caldav:nextcloud/personal`. Marshal discovers the calendars from the URL. `calendars` limits them by name, the last path segment of the calendar's URL. All keys: [integration sections](../../configuration/marshal-yaml/integrations.md#calendarcaldav-caldav-calendars).
 
-### 4. Restart Marshal
+4. **Restart Marshal**
 
-Changes to `marshal.yaml` need a restart. An invalid account fails startup and names the key.
+   Changes to `marshal.yaml` need a restart. An invalid account fails startup and names the key.
+:::
 
 ## Tools
 

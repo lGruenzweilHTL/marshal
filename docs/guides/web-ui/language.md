@@ -8,18 +8,20 @@ Set the interface language and time zone for your account, and the color scheme 
 
 ## Steps
 
-### 1. Open Preferences
+::: steps
+1. **Open Preferences**
 
-Open **Settings > Preferences**.
+   Open **Settings > Preferences**.
 
-### 2. Language and region
+2. **Language and region**
 
-- **Language:** German (`de`) or English (`en`). The interface switches without a page reload.
-- **Time zone:** an IANA id such as `Europe/Vienna`. Dates, times and schedules use it. An invalid id such as `Mars/Base` is rejected.
+   - **Language:** German (`de`) or English (`en`). The interface switches without a page reload.
+   - **Time zone:** an IANA id such as `Europe/Vienna`. Dates, times and schedules use it. An invalid id such as `Mars/Base` is rejected.
 
-### 3. Appearance
+3. **Appearance**
 
-Choose **System**, **Light** or **Dark**. System follows your operating system. This setting is stored in the browser on this device only, applies immediately and is never sent to Marshal. Another browser keeps its own choice.
+   Choose **System**, **Light** or **Dark**. System follows your operating system. This setting is stored in the browser on this device only, applies immediately and is never sent to Marshal. Another browser keeps its own choice.
+:::
 
 ## What changes
 

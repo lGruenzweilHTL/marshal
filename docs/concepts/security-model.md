@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-shield-halved
+---
+
 # Security model
 
 This page explains what Marshal protects against, which design rules carry that protection, and what remains your responsibility.
@@ -101,7 +105,7 @@ Unhandled exceptions return a generic 500 with a trace id, never the exception m
 - Limit the executor sandbox's network egress.
 - Use narrow scopes and revoke tokens you no longer need.
 
-To report a vulnerability, follow [SECURITY.md](../../SECURITY.md).
+To report a vulnerability, follow [SECURITY.md](https://github.com/lGruenzweilHTL/marshal/blob/master/SECURITY.md).
 
 ## Related
 

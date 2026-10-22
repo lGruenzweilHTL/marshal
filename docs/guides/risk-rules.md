@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-shield-halved
+---
+
 # Risk rules
 
 Tune which actions need your confirmation by editing `/config/risk.yaml`, starting from the example file.
@@ -33,40 +37,42 @@ Target conditions (`domain`, `deviceClass`, `area`) are checked against each con
 
 ## Steps
 
-### 1. Add a rule above the catch-all
+::: steps
+1. **Add a rule above the catch-all**
 
-Rules match a tool glob, optionally argument values and target attributes. They cannot match the time of day. Examples:
+   Rules match a tool glob, optionally argument values and target attributes. They cannot match the time of day. Examples:
 
-```yaml
-risk:
-  # never let the model open the garage, even after a confirmation
-  - match: { tool: "ha.*", domain: cover, deviceClass: garage }
-    tier: forbidden
-  # confirm everything in the workshop
-  - match: { tool: "ha.*", area: workshop }
-    tier: confirm
-  - match: { tool: "ha.*", domain: [lock, alarm_control_panel] }
-    tier: confirm
-  - match: { tool: "ha.*" }
-    tier: safe
-```
+   ```yaml
+   risk:
+     # never let the model open the garage, even after a confirmation
+     - match: { tool: "ha.*", domain: cover, deviceClass: garage }
+       tier: forbidden
+     # confirm everything in the workshop
+     - match: { tool: "ha.*", area: workshop }
+       tier: confirm
+     - match: { tool: "ha.*", domain: [lock, alarm_control_panel] }
+       tier: confirm
+     - match: { tool: "ha.*" }
+       tier: safe
+   ```
 
-Put specific rules above general ones. Check the tool ids in the [tools reference](../reference/tools.md); `tool` is a glob such as `ha.*` or `mail.*`.
+   Put specific rules above general ones. Check the tool ids in the [tools reference](../reference/tools.md); `tool` is a glob such as `ha.*` or `mail.*`.
 
-### 2. Save and check the log
+2. **Save and check the log**
 
-If the file is invalid the log shows, for example, `risk.yaml: risk[2].tier must be safe, confirm or forbidden.` See the [risk.yaml validation list](../configuration/risk-yaml.md#validation).
+   If the file is invalid the log shows, for example, `risk.yaml: risk[2].tier must be safe, confirm or forbidden.` See the [risk.yaml validation list](../configuration/risk-yaml.md#validation).
 
-### 3. Tune confirmation behavior
+3. **Tune confirmation behavior**
 
-Confirmation itself is set in [`confirmation`](../configuration/marshal-yaml/confirmation.md):
+   Confirmation itself is set in [`confirmation`](../configuration/marshal-yaml/confirmation.md):
 
-- A pending action in a conversation lasts `confirmation.ttl` (default 60 s); there is at most one per session and a new one supersedes the old one.
-- Your next utterance is normalized (trimmed, lowercased, punctuation removed) and compared with the keywords of your language (English defaults: confirm, confirmed, approved, yes do it). Only an exact whole-utterance match executes without a model call. "Confirmed, but not today" is not a match.
-- Otherwise a fast-tier judge reads only the action summary and your reply and answers `positive` (execute), `neutral` (drop and handle your message normally) or `negative` (drop and say it was cancelled). A judge timeout (`confirmation.judgeTimeout`) or unparsable answer drops the action.
-- Background tasks use the approval queue instead, see [approvals](tasks/approvals.md).
+   - A pending action in a conversation lasts `confirmation.ttl` (default 60 s); there is at most one per session and a new one supersedes the old one.
+   - Your next utterance is normalized (trimmed, lowercased, punctuation removed) and compared with the keywords of your language (English defaults: confirm, confirmed, approved, yes do it). Only an exact whole-utterance match executes without a model call. "Confirmed, but not today" is not a match.
+   - Otherwise a fast-tier judge reads only the action summary and your reply and answers `positive` (execute), `neutral` (drop and handle your message normally) or `negative` (drop and say it was cancelled). A judge timeout (`confirmation.judgeTimeout`) or unparsable answer drops the action.
+   - Background tasks use the approval queue instead, see [approvals](tasks/approvals.md).
 
-Satellites can also deny confirm-tier actions from a device (`denyConfirm` in [satellites](../configuration/satellites-yaml.md)): `This action is not allowed from this device.`
+   Satellites can also deny confirm-tier actions from a device (`denyConfirm` in [satellites](../configuration/satellites-yaml.md)): `This action is not allowed from this device.`
+:::
 
 ## Check that it works
 

@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-binoculars
+order: 10
+---
+
 # Overview
 
 Marshal is a self-hosted AI agent that Home Assistant talks to. This page explains what you run, what it connects to and what the tutorial in this section builds.

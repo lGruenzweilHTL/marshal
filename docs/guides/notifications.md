@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-bell
+---
+
 # Control how Marshal notifies you
 
 Choose where proactive messages reach you, when Marshal stays quiet and how to see why a message went where it did.
@@ -9,36 +13,38 @@ Choose where proactive messages reach you, when Marshal stays quiet and how to s
 
 ## Steps
 
-### 1. Set your notification targets
+::: steps
+1. **Set your notification targets**
 
-In **Settings > Preferences**, section **Notifications**:
+   In **Settings > Preferences**, section **Notifications**:
 
-- **Home Assistant person:** your `person.*` entity. Marshal uses it to know whether you are home.
-- **Push targets:** one per line. Critical alerts go to all of them.
+   - **Home Assistant person:** your `person.*` entity. Marshal uses it to know whether you are home.
+   - **Push targets:** one per line. Critical alerts go to all of them.
 
-### 2. Set quiet hours
+2. **Set quiet hours**
 
-In **Preferences > Quiet hours**, add weekly windows with a day, from and to time in your time zone. A window may run past midnight.
+   In **Preferences > Quiet hours**, add weekly windows with a day, from and to time in your time zone. A window may run past midnight.
 
-### 3. Tune noise control
+3. **Tune noise control**
 
-Edit `notifications` in `marshal.yaml`:
+   Edit `notifications` in `marshal.yaml`:
 
-```yaml
-notifications:
-  quietHoursMode: hold            # hold or silentPush
-  coalesceWindow: "00:02:00"
-  sourceVoiceInterval: "00:30:00"
-  voicePerHour: 6
-  followUpReplyWindow: "00:00:20"
-  publicUrl: https://marshal.example.com/
-```
+   ```yaml [/config/marshal.yaml]
+   notifications:
+     quietHoursMode: hold            # hold or silentPush
+     coalesceWindow: "00:02:00"
+     sourceVoiceInterval: "00:30:00"
+     voicePerHour: 6
+     followUpReplyWindow: "00:00:20"
+     publicUrl: https://marshal.example.com/
+   ```
 
-Key list: [`notifications` reference](../configuration/marshal-yaml/notifications.md).
+   Key list: [`notifications` reference](../configuration/marshal-yaml/notifications.md).
 
-### 4. Pause voice for a while
+4. **Pause voice for a while**
 
-Set **Do not disturb until** in Preferences. Voice notifications go to push until then. `critical` ignores it.
+   Set **Do not disturb until** in Preferences. Voice notifications go to push until then. `critical` ignores it.
+:::
 
 ## Priorities
 

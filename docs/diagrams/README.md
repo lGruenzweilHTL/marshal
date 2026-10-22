@@ -1,3 +1,8 @@
+---
+title: Maintaining the diagrams
+icon: fa-solid fa-pen-ruler
+---
+
 # Diagrams
 
 | Diagram | Source | Rendered |

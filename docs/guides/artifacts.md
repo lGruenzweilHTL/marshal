@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-paperclip
+---
+
 # Work with artifacts
 
 Upload, view, share and let Marshal show files such as 3D models, code, diffs, images and documents.

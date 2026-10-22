@@ -12,63 +12,65 @@ Marshal uses HA's REST and websocket APIs for its own system calls and HA's MCP 
 
 ## Steps
 
-### 1. Add the server file
+::: steps
+1. **Add the server file**
 
-Create `/config/mcp/ha.yaml`, or copy `deploy/config.example/mcp/ha.yaml`:
+   Create `/config/mcp/ha.yaml`, or copy `deploy/config.example/mcp/ha.yaml`:
 
-```yaml
-id: ha
-transport: http
-url: http://homeassistant.local:8123/api/mcp
-authTokenSecret: ha_token
-untrusted: false
-untrustedTools: ["todo__get_items"]
-```
+   ```yaml [/config/mcp/ha.yaml]
+   id: ha
+   transport: http
+   url: http://homeassistant.local:8123/api/mcp
+   authTokenSecret: ha_token
+   untrusted: false
+   untrustedTools: ["todo__get_items"]
+   ```
 
-`authTokenSecret` is a secret name. It may be the same secret as `ha.tokenSecret`. Marshal sends it as a bearer token. See [MCP servers](../../configuration/mcp-servers.md) for every key.
+   `authTokenSecret` is a secret name. It may be the same secret as `ha.tokenSecret`. Marshal sends it as a bearer token. See [MCP servers](../../configuration/mcp-servers.md) for every key.
 
-MCP files are hot-reloaded. No restart is needed. The new tools appear in the next turn.
+   MCP files are hot-reloaded. No restart is needed. The new tools appear in the next turn.
 
-### 2. Keep the shipped risk rules
+2. **Keep the shipped risk rules**
 
-`deploy/config.example/risk.yaml` contains:
+   `deploy/config.example/risk.yaml` contains:
 
-```yaml
-risk:
-  - match: { tool: "ha.*", domain: [lock, alarm_control_panel] }
-    tier: confirm
-  - match: { tool: "ha.*", domain: cover, deviceClass: [garage, door, gate] }
-    tier: confirm
-  - match: { tool: "ha.*" }
-    tier: safe
-```
+   ```yaml [deploy/config.example/risk.yaml]
+   risk:
+     - match: { tool: "ha.*", domain: [lock, alarm_control_panel] }
+       tier: confirm
+     - match: { tool: "ha.*", domain: cover, deviceClass: [garage, door, gate] }
+       tier: confirm
+     - match: { tool: "ha.*" }
+       tier: safe
+   ```
 
-Rules are evaluated in order and the first match wins. Marshal resolves the call's targets first, so `ha.intent__HassTurnOff` with `area = hall` is checked against every light and lock in the hall. A lock in the hall makes the whole call `confirm`.
+   Rules are evaluated in order and the first match wins. Marshal resolves the call's targets first, so `ha.intent__HassTurnOff` with `area = hall` is checked against every light and lock in the hall. A lock in the hall makes the whole call `confirm`.
 
-> [!IMPORTANT]
-> External tools that no rule matches default to `confirm`. Without the catch-all `ha.*` rule every HA call would ask for confirmation. Keep a safe rule for the calls you trust.
+   > [!IMPORTANT]
+   > External tools that no rule matches default to `confirm`. Without the catch-all `ha.*` rule every HA call would ask for confirmation. Keep a safe rule for the calls you trust.
 
-See [risk rules](../risk-rules.md).
+   See [risk rules](../risk-rules.md).
 
-### 3. Mark third-party text as untrusted
+3. **Mark third-party text as untrusted**
 
-To-do lists synced from other apps hold text other people typed. Mark only the list read tool:
+   To-do lists synced from other apps hold text other people typed. Mark only the list read tool:
 
-```yaml
-untrustedTools: ["todo__get_items"]
-```
+   ```yaml
+   untrustedTools: ["todo__get_items"]
+   ```
 
-Reading a list then taints the run (source `mcp:ha`), while home control stays trusted. `untrustedTools` takes globs on the tool name HA reports. A glob that matches no tool shows a warning on `/health` and the config view. You cannot combine `untrusted: true` with `untrustedTools`: Marshal rejects the file. See [untrusted content](../../concepts/untrusted-content.md).
+   Reading a list then taints the run (source `mcp:ha`), while home control stays trusted. `untrustedTools` takes globs on the tool name HA reports. A glob that matches no tool shows a warning on `/health` and the config view. You cannot combine `untrusted: true` with `untrustedTools`: Marshal rejects the file. See [untrusted content](../../concepts/untrusted-content.md).
 
-### 4. Decide on tool pinning
+4. **Decide on tool pinning**
 
-Marshal pins each HA tool's definition at first discovery. HA's tool list changes when you expose entities or add intents, and every new or changed tool then waits for your approval under System > Configuration before the model sees it. If that is too much noise, turn pinning off for this server:
+   Marshal pins each HA tool's definition at first discovery. HA's tool list changes when you expose entities or add intents, and every new or changed tool then waits for your approval under System > Configuration before the model sees it. If that is too much noise, turn pinning off for this server:
 
-```yaml
-pinTools: false
-```
+   ```yaml
+   pinTools: false
+   ```
 
-Pinning catches a tool definition that changes after you set Marshal up; it does not judge the first definitions. See [tool pinning](../../configuration/mcp-servers.md#tool-pinning).
+   Pinning catches a tool definition that changes after you set Marshal up; it does not judge the first definitions. See [tool pinning](../../configuration/mcp-servers.md#tool-pinning).
+:::
 
 ## Tool names
 

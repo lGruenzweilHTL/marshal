@@ -12,35 +12,37 @@ Profiles are optional. A satellite without a profile uses defaults: normal verbo
 
 ## Steps
 
-### 1. Add a profile
+::: steps
+1. **Add a profile**
 
-Edit `/config/satellites.yaml`. Keys are satellite entity ids.
+   Edit `/config/satellites.yaml`. Keys are satellite entity ids.
 
-```yaml
-satellites:
-  assist_satellite.kitchen:
-    verbosity: short
-    notes: "Cooking area. Timer and recipe questions are common."
-    display: kitchen_tv          # a name from displays.surfaces in marshal.yaml
-    speaker: kitchen             # a name from music.speakers in marshal.yaml
-  assist_satellite.kids_room:
-    verbosity: short
-    denyConfirm: [printer.*, calendar.*]
-    denyTools: [mail.*]
-```
+   ```yaml
+   satellites:
+     assist_satellite.kitchen:
+       verbosity: short
+       notes: "Cooking area. Timer and recipe questions are common."
+       display: kitchen_tv          # a name from displays.surfaces in marshal.yaml
+       speaker: kitchen             # a name from music.speakers in marshal.yaml
+     assist_satellite.kids_room:
+       verbosity: short
+       denyConfirm: [printer.*, calendar.*]
+       denyTools: [mail.*]
+   ```
 
-| Key | Effect |
-|---|---|
-| `verbosity` | `short`, `normal` (default) or `detailed`. Marshal passes it to the model as the preferred reply length. |
-| `notes` | Free text added to the satellite context in the system prompt. |
-| `denyTools` | Tool id globs. Matching tools are hidden from the model and denied. |
-| `denyConfirm` | Tool id globs. Confirm-tier tools that match are hidden. |
-| `display` | Display in the satellite's room. `artifacts_show` plays there. |
-| `speaker` | Music speaker in the satellite's room. The music tools default to it. |
+   | Key | Effect |
+   |---|---|
+   | `verbosity` | `short`, `normal` (default) or `detailed`. Marshal passes it to the model as the preferred reply length. |
+   | `notes` | Free text added to the satellite context in the system prompt. |
+   | `denyTools` | Tool id globs. Matching tools are hidden from the model and denied. |
+   | `denyConfirm` | Tool id globs. Confirm-tier tools that match are hidden. |
+   | `display` | Display in the satellite's room. `artifacts_show` plays there. |
+   | `speaker` | Music speaker in the satellite's room. The music tools default to it. |
 
-### 2. Save the file
+2. **Save the file**
 
-Marshal hot-reloads the file. No restart is needed.
+   Marshal hot-reloads the file. No restart is needed.
+:::
 
 ## What the policy does
 

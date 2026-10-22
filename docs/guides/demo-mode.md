@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-flask
+---
+
 # Try Marshal in demo mode
 
 Run Marshal with only a model configured and still see every view and the main tool flows, with simulated integrations and sample history.
@@ -9,51 +13,53 @@ Run Marshal with only a model configured and still see every view and the main t
 
 ## Steps
 
-### 1. Turn demo mode on
+::: steps
+1. **Turn demo mode on**
 
-Add the `demo` section to `/config/marshal.yaml`:
+   Add the `demo` section to `/config/marshal.yaml`:
 
-```yaml
-demo:
-  enabled: true
-```
+   ```yaml [/config/marshal.yaml]
+   demo:
+     enabled: true
+   ```
 
-### 2. Restart Marshal
+2. **Restart Marshal**
 
-```sh
-docker compose restart marshal
-```
+   ```sh
+   docker compose restart marshal
+   ```
 
-The log warns that demo mode is on. On the first start with demo mode on, Marshal seeds the sample data for the instance owner. If the owner does not exist yet, the data is seeded right after the first-run setup creates it.
+   The log warns that demo mode is on. On the first start with demo mode on, Marshal seeds the sample data for the instance owner. If the owner does not exist yet, the data is seeded right after the first-run setup creates it.
 
-### 3. Explore
+3. **Explore**
 
-Each of these integrations is simulated when it is not configured. A configured integration stays real.
+   Each of these integrations is simulated when it is not configured. A configured integration stays real.
 
-| Integration | What the simulation has |
-|---|---|
-| Home Assistant | Areas, lights, climate, sensors (including an open workshop window), a weather forecast with rain in the next hours, zones, energy, timers, music players and a calendar. Service calls change the simulated states. Without an MCP server `ha`, the home control tools `ha.intent__HassTurnOn`, `ha.intent__HassTurnOff`, `ha.intent__HassLightSet`, `ha.intent__HassClimateSetTemperature` and `ha.homeassistant__GetLiveContext` work on the same states. |
-| CalDAV calendars | A work calendar `caldav:demo/work` with a weekly team standup (organizer and attendees), a review you declined, and an invitation to a project kickoff that arrives two minutes after start as `calendar.event_created` and `calendar.invitation`. Single standups can be moved. |
-| Printers | One printer, `voron`, in the middle of a print that advances over time, with snapshots, a webcam image and job totals (print hours and filament) that grow over time. Without configured `maintenance.items`, its nozzle is the maintenance item `voron_nozzle`, every 300 print hours. |
-| Mail | A mail account `demo` with sample messages. Drafts are kept until the next restart. There is no send path. |
-| FreshRSS | Feeds in two categories, with articles and their full text. |
-| Notes | A small collection of Markdown notes, indexed like a real notes repository. |
-| Web search | Fixed search results for every query. Result pages are never opened, and no search engine is contacted. |
+   | Integration | What the simulation has |
+   |---|---|
+   | Home Assistant | Areas, lights, climate, sensors (including an open workshop window), a weather forecast with rain in the next hours, zones, energy, timers, music players and a calendar. Service calls change the simulated states. Without an MCP server `ha`, the home control tools `ha.intent__HassTurnOn`, `ha.intent__HassTurnOff`, `ha.intent__HassLightSet`, `ha.intent__HassClimateSetTemperature` and `ha.homeassistant__GetLiveContext` work on the same states. |
+   | CalDAV calendars | A work calendar `caldav:demo/work` with a weekly team standup (organizer and attendees), a review you declined, and an invitation to a project kickoff that arrives two minutes after start as `calendar.event_created` and `calendar.invitation`. Single standups can be moved. |
+   | Printers | One printer, `voron`, in the middle of a print that advances over time, with snapshots, a webcam image and job totals (print hours and filament) that grow over time. Without configured `maintenance.items`, its nozzle is the maintenance item `voron_nozzle`, every 300 print hours. |
+   | Mail | A mail account `demo` with sample messages. Drafts are kept until the next restart. There is no send path. |
+   | FreshRSS | Feeds in two categories, with articles and their full text. |
+   | Notes | A small collection of Markdown notes, indexed like a real notes repository. |
+   | Web search | Fixed search results for every query. Result pages are never opened, and no search engine is contacted. |
 
-The simulated tools have the same ids, risk tiers and guard rules as the real ones. For example, cancelling the print still needs your confirmation.
+   The simulated tools have the same ids, risk tiers and guard rules as the real ones. For example, cancelling the print still needs your confirmation.
 
-The sample history belongs to the instance owner and is dated relative to the seed time:
+   The sample history belongs to the instance owner and is dated relative to the seed time:
 
-- conversations on the web and by voice from the `kitchen` and `office` satellites, including a turn that moved to the background and its result
-- runs with their steps
-- a `morning` task with past results, and a task that waits for your approval to cancel the print
-- notifications in the Inbox
-- memory chunks with edges, one closed chunk, a chunk with an earlier version and its valid time, and one open duplicate proposal in the audit
-- with the simulated printer, the `voron_nozzle` maintenance item at 286 of 300 print hours, so Home shows it as due soon
+   - conversations on the web and by voice from the `kitchen` and `office` satellites, including a turn that moved to the background and its result
+   - runs with their steps
+   - a `morning` task with past results, and a task that waits for your approval to cancel the print
+   - notifications in the Inbox
+   - memory chunks with edges, one closed chunk, a chunk with an earlier version and its valid time, and one open duplicate proposal in the audit
+   - with the simulated printer, the `voron_nozzle` maintenance item at 286 of 300 print hours, so Home shows it as due soon
 
-Simulated state, such as a light you turned on or a draft, starts over on each restart.
+   Simulated state, such as a light you turned on or a draft, starts over on each restart.
 
-To see [suggestions](suggestions.md), switch on **Help Marshal learn** in **Preferences**. The open workshop window and the rain forecast then produce a `window_rain` suggestion.
+   To see [suggestions](suggestions.md), switch on **Help Marshal learn** in **Preferences**. The open workshop window and the rain forecast then produce a `window_rain` suggestion.
+:::
 
 ## Hide the badge for screenshots
 

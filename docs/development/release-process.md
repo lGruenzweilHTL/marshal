@@ -27,32 +27,34 @@ The coding executor is a separate service with its own image. It is never part o
 
 ## Steps
 
-### 1. Prepare
+::: steps
+1. **Prepare**
 
-- Make sure every change is archived in OpenSpec ([workflow](openspec-workflow.md)).
-- Run the suites from [building and testing](building-and-testing.md): every .NET test project, `npm test`, `npm run build`, `uv run pytest`.
-- Confirm the diagrams match the code ([diagrams README](../diagrams/README.md)) and the documentation matches the specs.
+   - Make sure every change is archived in OpenSpec ([workflow](openspec-workflow.md)).
+   - Run the suites from [building and testing](building-and-testing.md): every .NET test project, `npm test`, `npm run build`, `uv run pytest`.
+   - Confirm the diagrams match the code ([diagrams README](../diagrams/README.md)) and the documentation matches the specs.
 
-### 2. Version
+2. **Version**
 
-Set `<Version>` in `Directory.Build.props`, or pass `-p:Version=<x.y.z>` when you build. Add the Home Assistant component version in `ha/custom_components/marshal/manifest.json` if the component changed.
+   Set `<Version>` in `Directory.Build.props`, or pass `-p:Version=<x.y.z>` when you build. Add the Home Assistant component version in `ha/custom_components/marshal/manifest.json` if the component changed.
 
-### 3. Changelog
+3. **Changelog**
 
-Summarize the Conventional Commit history since the last tag, grouped by `feat`, `fix` and breaking changes. Move the `[Unreleased]` entries in `CHANGELOG.md` under the new version heading and reuse them as release notes. Call out new migrations, new API versions and config changes, which the [upgrading guide](../installation/upgrading.md) must mention.
+   Summarize the Conventional Commit history since the last tag, grouped by `feat`, `fix` and breaking changes. Move the `[Unreleased]` entries in `CHANGELOG.md` under the new version heading and reuse them as release notes. Call out new migrations, new API versions and config changes, which the [upgrading guide](../installation/upgrading.md) must mention.
 
-### 4. Build and tag
+4. **Build and tag**
 
-```sh
-docker build -t marshal:<version> .
-git tag v<version>
-```
+   ```sh
+   docker build -t marshal:<version> .
+   git tag v<version>
+   ```
 
-Push the image to the registry you use and push the tag. The repository does not define a registry.
+   Push the image to the registry you use and push the tag. The repository does not define a registry.
 
-### 5. Publish the Home Assistant component
+5. **Publish the Home Assistant component**
 
-The component in `ha/` is distributed through HACS (`ha/hacs.json`). Tag the repository so HACS can pick up the release.
+   The component in `ha/` is distributed through HACS (`ha/hacs.json`). Tag the repository so HACS can pick up the release.
+:::
 
 ## Check that it works
 

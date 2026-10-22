@@ -16,35 +16,37 @@ Change the EF Core model and create the migration that goes with it.
 
 ## Steps
 
-### 1. Write the failing test
+::: steps
+1. **Write the failing test**
 
-Use `TestDatabase` from `tests/Marshal.Testing` in `tests/Marshal.Data.Tests` or the owning project's tests.
+   Use `TestDatabase` from `tests/Marshal.Testing` in `tests/Marshal.Data.Tests` or the owning project's tests.
 
-### 2. Change the model
+2. **Change the model**
 
-Add or edit the entity and its configuration in `src/Marshal.Data`. Add `OwnerId` to user-owned entities and make sure the query filter applies.
+   Add or edit the entity and its configuration in `src/Marshal.Data`. Add `OwnerId` to user-owned entities and make sure the query filter applies.
 
-### 3. Create the migration
+3. **Create the migration**
 
-```sh
-dotnet ef migrations add <Name> --project src/Marshal.Data --output-dir Migrations
-```
+   ```sh
+   dotnet ef migrations add <Name> --project src/Marshal.Data --output-dir Migrations
+   ```
 
-Review the generated `*.cs`, `*.Designer.cs` and `MarshalDbContextModelSnapshot.cs`. Check the SQL for `owner_id` columns and indexes.
+   Review the generated `*.cs`, `*.Designer.cs` and `MarshalDbContextModelSnapshot.cs`. Check the SQL for `owner_id` columns and indexes.
 
-### 4. Update the ERD
+4. **Update the ERD**
 
-Update `docs/diagrams/erd.puml` in the same change that adds, removes or renames an entity, column or relationship. Re-render the SVG and commit both:
+   Update `docs/diagrams/erd.puml` in the same change that adds, removes or renames an entity, column or relationship. Re-render the SVG and commit both:
 
-```sh
-java -jar plantuml.jar -tsvg docs/diagrams/*.puml
-```
+   ```sh
+   java -jar plantuml.jar -tsvg docs/diagrams/*.puml
+   ```
 
-See the [diagrams README](../diagrams/README.md) for the Docker alternative.
+   See the [diagrams README](../diagrams/README.md) for the Docker alternative.
 
-### 5. Update the reference
+5. **Update the reference**
 
-If the change alters what lives in `/data`, update the [data directory reference](../reference/data-directory.md).
+   If the change alters what lives in `/data`, update the [data directory reference](../reference/data-directory.md).
+:::
 
 ## Check that it works
 

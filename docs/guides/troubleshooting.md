@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-stethoscope
+---
+
 # Troubleshooting
 
 Find the cause of a problem from what you see, using the messages Marshal prints.
@@ -55,7 +59,7 @@ marshal: startup failed (2 errors)
 | `The task's budget (or its parent's) is used up.` | The task is `failed` with `budget_exceeded`. | Create the task again with a narrower goal, or raise `tasks.defaultBudget`. |
 | `A schedule may run at most every 5 minutes.` | Cron faster than `tasks.minWakeupInterval`. | Use a slower schedule. |
 | `'<x>' is not a five-field cron expression.` | Invalid cron. | Use `minute hour day month weekday`, for example `0 6 * * *`. |
-| `Low-priority deliveries never use voice; use inbox or push.` and other delivery errors | Invalid `deliver` entry. | See [scheduled tasks](tasks/scheduled-tasks.md#3-choose-deliveries). |
+| `Low-priority deliveries never use voice; use inbox or push.` and other delivery errors | Invalid `deliver` entry. | See [scheduled tasks](tasks/scheduled-tasks.md#steps), step "Choose deliveries". |
 | `A task named '<x>' already exists.` | Names are unique per owner. | Use `tasks.update` or another name. |
 | A watch never fires | The filter does not match: wrong `source`, `type`, `entity` glob or payload field; or it is a `once` watch that already ran. | Check the event in [events](../reference/events.md); `tasks_list` shows `once`. Untrusted `ha` events still match, they only taint the run. |
 | The briefing is not spoken | The `when` conditions never hold before `expires`; it was pushed instead. | Check the sensors, see [daily briefing](tasks/daily-briefing.md). |

@@ -18,28 +18,30 @@ Propose, implement, sync and archive a change. Marshal is spec-driven: behavior 
 
 ## Steps
 
-### 1. Propose
+::: steps
+1. **Propose**
 
-Use the `opsx:propose` skill (or the `openspec-propose` skill) to create the change and generate its artifacts in one step. `openspec/config.yaml` adds these rules:
+   Use the `opsx:propose` skill (or the `openspec-propose` skill) to create the change and generate its artifacts in one step. `openspec/config.yaml` adds these rules:
 
-- The proposal has a "Non-goals" section.
-- The design names every new interface and its v1 implementations.
-- For every new model-facing tool, the design states its risk tier (safe, confirm or forbidden, including arg-aware rules) and when the tool is hidden from the model.
-- Tasks are test-first: each implementation task is preceded by, or paired with, the task that writes its failing test.
+   - The proposal has a "Non-goals" section.
+   - The design names every new interface and its v1 implementations.
+   - For every new model-facing tool, the design states its risk tier (safe, confirm or forbidden, including arg-aware rules) and when the tool is hidden from the model.
+   - Tasks are test-first: each implementation task is preceded by, or paired with, the task that writes its failing test.
 
-Use `opsx:explore` to think a problem through before you propose.
+   Use `opsx:explore` to think a problem through before you propose.
 
-### 2. Apply
+2. **Apply**
 
-Use `opsx:apply` to work through the tasks. Write the failing test, make it pass, then tick the task. Update `CLAUDE.md` (repository map, package index), the diagrams and the documentation in the same change when the change calls for it.
+   Use `opsx:apply` to work through the tasks. Write the failing test, make it pass, then tick the task. Update `CLAUDE.md` (repository map, package index), the diagrams and the documentation in the same change when the change calls for it.
 
-### 3. Sync
+3. **Sync**
 
-Use `opsx:sync` to merge the change's delta specs into `openspec/specs/` without archiving the change.
+   Use `opsx:sync` to merge the change's delta specs into `openspec/specs/` without archiving the change.
 
-### 4. Archive
+4. **Archive**
 
-Use `opsx:archive` when the implementation is complete. It moves the change to `openspec/changes/archive/` and syncs the specs if you have not.
+   Use `opsx:archive` when the implementation is complete. It moves the change to `openspec/changes/archive/` and syncs the specs if you have not.
+:::
 
 ## Check that it works
 

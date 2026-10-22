@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-spell-check
+---
+
 # Glossary
 
 The terms Marshal's documentation and specifications use, each with one meaning. Other pages use these terms and no synonyms.

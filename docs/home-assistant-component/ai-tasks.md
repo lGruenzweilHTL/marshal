@@ -1,3 +1,7 @@
+---
+order: 40
+---
+
 # Run AI tasks from automations
 
 Use Marshal as the AI Task provider in Home Assistant (HA), so an automation can ask Marshal a question, optionally with camera snapshots, and use the answer as text or structured data.
@@ -10,57 +14,59 @@ Use Marshal as the AI Task provider in Home Assistant (HA), so an automation can
 
 ## Steps
 
-### 1. Create a token with both scopes
+::: steps
+1. **Create a token with both scopes**
 
-```sh
-docker compose exec marshal marshal tokens create --name home-assistant --scope conversation:write --scope aitasks:write
-```
+   ```sh
+   docker compose exec marshal marshal tokens create --name home-assistant --scope conversation:write --scope aitasks:write
+   ```
 
-Copy the token. It is shown once.
+   Copy the token. It is shown once.
 
-### 2. Enter the token in HA
+2. **Enter the token in HA**
 
-If the component already runs with an older token, the first AI task fails with "The Marshal API token lacks the scope aitasks:write" and HA starts a reauthentication: open **Settings > Devices & services**, choose **Reconfigure** on the Marshal card that asks for authentication, and enter the new token. The flow checks that the token carries `aitasks:write`; the entry keeps its URL and conversations keep working throughout.
+   If the component already runs with an older token, the first AI task fails with "The Marshal API token lacks the scope aitasks:write" and HA starts a reauthentication: open **Settings > Devices & services**, choose **Reconfigure** on the Marshal card that asks for authentication, and enter the new token. The flow checks that the token carries `aitasks:write`; the entry keeps its URL and conversations keep working throughout.
 
-After the new token works, revoke the old one with `marshal tokens revoke <token-id>`.
+   After the new token works, revoke the old one with `marshal tokens revoke <token-id>`.
 
-### 3. Use the entity in an automation
+3. **Use the entity in an automation**
 
-The component adds the entity `ai_task.marshal`. Call the action **AI Task: Generate data**:
+   The component adds the entity `ai_task.marshal`. Call the action **AI Task: Generate data**:
 
-```yaml
-alias: Describe the doorbell visitor
-triggers:
-  - trigger: state
-    entity_id: binary_sensor.doorbell
-    to: "on"
-actions:
-  - action: ai_task.generate_data
-    data:
-      entity_id: ai_task.marshal
-      task_name: doorbell
-      instructions: Who is at the door? Is there a parcel?
-      structure:
-        visitor:
-          description: Who is at the door, in a few words
-          required: true
-          selector:
-            text:
-        parcel:
-          description: Whether a parcel is visible
-          required: true
-          selector:
-            boolean:
-      attachments:
-        - media_content_id: media-source://camera/camera.front_door
-          media_content_type: image/jpeg
-    response_variable: result
-  - action: notify.mobile_app_phone
-    data:
-      message: "{{ result.data.visitor }}{{ ' with a parcel' if result.data.parcel else '' }}"
-```
+   ```yaml
+   alias: Describe the doorbell visitor
+   triggers:
+     - trigger: state
+       entity_id: binary_sensor.doorbell
+       to: "on"
+   actions:
+     - action: ai_task.generate_data
+       data:
+         entity_id: ai_task.marshal
+         task_name: doorbell
+         instructions: Who is at the door? Is there a parcel?
+         structure:
+           visitor:
+             description: Who is at the door, in a few words
+             required: true
+             selector:
+               text:
+           parcel:
+             description: Whether a parcel is visible
+             required: true
+             selector:
+               boolean:
+         attachments:
+           - media_content_id: media-source://camera/camera.front_door
+             media_content_type: image/jpeg
+       response_variable: result
+     - action: notify.mobile_app_phone
+       data:
+         message: "{{ result.data.visitor }}{{ ' with a parcel' if result.data.parcel else '' }}"
+   ```
 
-Without `structure`, `result.data` is the answer as text.
+   Without `structure`, `result.data` is the answer as text.
+:::
 
 ## What Marshal does with a task
 

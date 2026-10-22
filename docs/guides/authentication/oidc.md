@@ -13,53 +13,55 @@ Marshal acts as a confidential client and keeps the provider's tokens on the ser
 
 ## Steps
 
-### 1. Register Marshal at the provider
+::: steps
+1. **Register Marshal at the provider**
 
-Create an OIDC client with:
+   Create an OIDC client with:
 
-- Redirect URI: `https://<marshal-host>/signin-oidc/<provider-name>`. The name is the `name` you choose below. If Marshal runs under a base path (`http.pathBase`), include it.
-- Flow: authorization code with PKCE; client type confidential.
-- Scopes: `openid`, `profile`, `email`, plus whatever the provider needs to put groups in the token.
+   - Redirect URI: `https://<marshal-host>/signin-oidc/<provider-name>`. The name is the `name` you choose below. If Marshal runs under a base path (`http.pathBase`), include it.
+   - Flow: authorization code with PKCE; client type confidential.
+   - Scopes: `openid`, `profile`, `email`, plus whatever the provider needs to put groups in the token.
 
-Note the client id and client secret.
+   Note the client id and client secret.
 
-### 2. Store the client secret
+2. **Store the client secret**
 
-Store the client secret under a name, for example `authentik_client`, as a file `/run/secrets/authentik_client`, as `MARSHAL_SECRET_AUTHENTIK_CLIENT`, or in the web UI under **Settings > Security > Secrets**. Never put the value into `marshal.yaml`. See [secrets](../secrets.md).
+   Store the client secret under a name, for example `authentik_client`, as a file `/run/secrets/authentik_client`, as `MARSHAL_SECRET_AUTHENTIK_CLIENT`, or in the web UI under **Settings > Security > Secrets**. Never put the value into `marshal.yaml`. See [secrets](../secrets.md).
 
-### 3. Add the provider
+3. **Add the provider**
 
-```yaml
-auth:
-  providers:
-    - name: authentik
-      type: oidc
-      displayName: Authentik
-      authority: "https://auth.example.com/application/o/marshal/"
-      clientId: marshal
-      clientCredentialSecret: authentik_client
-      scopes: [openid, profile, email]
-      claims: { subject: sub, name: name, groups: groups }
-      roleMappings:
-        marshal-admins: admin
-        marshal-users: user
-```
+   ```yaml
+   auth:
+     providers:
+       - name: authentik
+         type: oidc
+         displayName: Authentik
+         authority: "https://auth.example.com/application/o/marshal/"
+         clientId: marshal
+         clientCredentialSecret: authentik_client
+         scopes: [openid, profile, email]
+         claims: { subject: sub, name: name, groups: groups }
+         roleMappings:
+           marshal-admins: admin
+           marshal-users: user
+   ```
 
-Restart Marshal. Startup fails if the secret does not resolve.
+   Restart Marshal. Startup fails if the secret does not resolve.
 
-| Key | Default | Meaning |
-|---|---|---|
-| `name` | required | Lowercase letters, digits, `-`. Used in URLs. |
-| `displayName` | the name | Button label on the login page. |
-| `authority` | required | Issuer URL. Marshal reads `.well-known/openid-configuration` from it. |
-| `clientId` | required | Client id. |
-| `clientCredentialSecret` | required | Secret name of the client secret. |
-| `scopes` | `[openid, profile, email]` | Requested scopes. |
-| `useUserInfo` | `false` | Also read claims from the userinfo endpoint, for providers that keep groups out of the ID token. |
-| `claims.subject` / `name` / `groups` | `sub` / `name` / `groups` | Claim names. |
-| `roleMappings` | required, at least one | Provider group to `admin` or `user`. |
+   | Key | Default | Meaning |
+   |---|---|---|
+   | `name` | required | Lowercase letters, digits, `-`. Used in URLs. |
+   | `displayName` | the name | Button label on the login page. |
+   | `authority` | required | Issuer URL. Marshal reads `.well-known/openid-configuration` from it. |
+   | `clientId` | required | Client id. |
+   | `clientCredentialSecret` | required | Secret name of the client secret. |
+   | `scopes` | `[openid, profile, email]` | Requested scopes. |
+   | `useUserInfo` | `false` | Also read claims from the userinfo endpoint, for providers that keep groups out of the ID token. |
+   | `claims.subject` / `name` / `groups` | `sub` / `name` / `groups` | Claim names. |
+   | `roleMappings` | required, at least one | Provider group to `admin` or `user`. |
 
-Full list: [`auth` reference](../../configuration/marshal-yaml/auth.md).
+   Full list: [`auth` reference](../../configuration/marshal-yaml/auth.md).
+:::
 
 ## Provider examples
 

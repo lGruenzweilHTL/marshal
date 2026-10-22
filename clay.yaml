@@ -1,0 +1,24 @@
+title: "Marshal"
+baseURL: "/marshal/"
+siteURL: "https://lgruenzweilhtl.github.io"
+editURL: "https://github.com/lGruenzweilHTL/marshal/edit/master/docs/"
+
+navbar:
+  source:
+    name: "GitHub"
+    icon: "fa-brands fa-github"
+    link: "https://github.com/lGruenzweilHTL/marshal"
+  links:
+    - name: "Changelog"
+      icon: "fa-solid fa-list"
+      link: "https://github.com/lGruenzweilHTL/marshal/blob/master/CHANGELOG.md"
+
+# Adds servers and authentication to the committed OpenAPI document; see the script.
+generate:
+  - node scripts/docs-openapi.mjs
+
+openapi:
+  - spec: artifacts/openapi/marshal-v1.json
+    title: API v1 reference
+    route: api/v1
+    icon: fa-solid fa-plug

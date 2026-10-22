@@ -1,3 +1,7 @@
+---
+order: 20
+---
+
 # Configure the Home Assistant component
 
 The integration is set up through a config flow with two fields and has a reauthentication step for a new token. It has no options.

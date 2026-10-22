@@ -89,8 +89,10 @@ ha/                          custom_components/marshal (Python HA integration, H
 deploy/                      docker-compose.yml, config.example/ (example /config files: marshal.yaml, risk.yaml,
                              satellites.yaml, mcp/, skills/, templates/, tasks/ with the example briefing task);
                              Dockerfile at repo root
-docs/                        user and contributor documentation (Markdown, Diátaxis layout; style rules in
-                             docs/development/docs-style.md), diagrams/, images/
+docs/                        user and contributor documentation (Clay Flavored Markdown, Diátaxis layout; style rules in
+                             docs/development/docs-style.md), diagrams/, images/; built into a GitHub Pages site by Clay
+                             (clay.yaml at repo root, .github/workflows/docs.yaml, check with `npx clay-doc@5 check`)
+scripts/                     docs-openapi.mjs: copies web/openapi/v1.json for the docs' API v1 reference (Clay `generate`)
 openspec/                    specifications and changes
 ```
 
@@ -165,6 +167,11 @@ No mocking or assertion libraries — use hand-written fakes from `Marshal.Testi
 | `three` (+ `@types/three`, dev) | 3D artifact viewer (STL and 3MF loaders, orbit controls); lazy chunk, never in the entry chunk |
 | `vitest`, `@vue/test-utils`, `jsdom` | Component tests (`npm test`) against a hand-written fake API server (`src/testing/fakeServer.ts`) |
 | `playwright` (dev, pinned to the `mcr.microsoft.com/playwright` image version) | Screenshot sweep and layout checks over preview mode (`npm run screenshots`); never downloads browsers |
+
+**Docs site (no package.json; run with `npx`)**
+| Package | Purpose |
+|---|---|
+| `clay-doc` (Clay 5, always `npx clay-doc@5`) | Builds `docs/` into the documentation site: CFM components, link checks, API v1 reference and request cells from the OpenAPI document |
 
 **Python (`ha/`)**
 | Package | Purpose |

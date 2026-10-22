@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-biohazard
+---
+
 # Untrusted content
 
 This page explains how Marshal handles content written by third parties, such as mail, articles and notes, and why reading it changes what a run may do.

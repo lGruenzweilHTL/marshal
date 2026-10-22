@@ -1,6 +1,6 @@
 # Documentation style
 
-How to write and maintain the pages in `docs/`. Code style lives in [STYLE_GUIDE.md](../../STYLE_GUIDE.md).
+How to write and maintain the pages in `docs/`. Code style lives in [STYLE_GUIDE.md](https://github.com/lGruenzweilHTL/marshal/blob/master/STYLE_GUIDE.md).
 
 ## Source of truth
 
@@ -90,20 +90,64 @@ Durations use the .NET `TimeSpan` format as in the example config (`"00:00:08"`,
 
 ## Markdown conventions
 
-- GitHub-flavored Markdown only. Pages must render correctly on GitHub without a site generator.
+The pages are written in [Clay Flavored Markdown](https://clay-doc.github.io/clay-example-repo/writing/markdown.html) (CFM): GitHub-flavored Markdown plus alerts and components. [Clay](https://clay-doc.github.io/clay-example-repo/) builds them into the documentation site (see [the site](#the-site)). Components stay readable as plain text, so every page still reads well on GitHub.
+
 - Headings: one `#` per page, then `##` and `###`. Do not skip levels. Sentence case ("Before you start").
-- Links between pages are relative and include the `.md` extension: `[risk tiers](../reference/risk-tiers.md)`. Link to a heading with `#anchor`.
+- Links between pages are relative and include the `.md` extension: `[risk tiers](../reference/risk-tiers.md)`. Link to a heading with `#anchor`. Link to files outside `docs/` (`CONTRIBUTING.md`, `STYLE_GUIDE.md`) by their full GitHub URL; the site does not contain them.
 - Callouts use GitHub alerts, sparingly:
   - `> [!NOTE]` extra context
   - `> [!TIP]` a better way
   - `> [!IMPORTANT]` required to succeed
   - `> [!WARNING]` risk of data loss, security impact or a broken setup
-- Code blocks always name a language (`yaml`, `sh`, `json`, `http`, `csharp`, `python`, `text`).
+- Code blocks always name a language (`yaml`, `sh`, `json`, `http`, `csharp`, `python`, `text`). Name the file in brackets when the block is a file or part of one: ```` ```yaml [/config/marshal.yaml] ````.
 - Shell examples use `sh` and no prompt character. Replace values the reader must change with `<angle-brackets>`.
 - YAML examples must be valid and must match the real schema. Never put a secret value in a YAML example; reference a secret name, as `/config` requires.
 - Tables for keys, flags, events and tools. Prose for everything else.
-- Images go in `docs/images/` and need meaningful alt text. Diagrams are PlantUML in `docs/diagrams/` (see [the diagrams README](../diagrams/README.md)); embed the rendered SVG.
+- Images go in `docs/images/` and need meaningful alt text. Diagrams are PlantUML in `docs/diagrams/` (see [maintaining the diagrams](../diagrams/README.md)); embed the rendered SVG.
 - File names: lowercase, hyphen-separated, `.md`.
+
+### Components
+
+Use a component where it fits the content, not for decoration:
+
+| Content | Component |
+|---|---|
+| The numbered steps of a guide (`## Steps`) | `::: steps`, each step starting with what to do in bold |
+| Alternatives the reader picks one of (option A or B, container or source tree) | `::: tabs` with `== Label` lines |
+| The same example in several languages or tools (curl and Python) | `::: code-group` with the label in brackets after each language |
+| FAQ entries, long logs, edge cases | `::: details <question>` |
+| "Where to go next" on start and section pages | `::: cards` |
+| A call to an API v1 operation | `::: request v1 <operationId>`, with start values in YAML (`body:`) |
+
+Nest a container inside another by giving the outer one more colons (`:::: tabs` … `::::`).
+
+A step is not a heading, so it has no anchor. When other pages link to a part of a guide, make that part a `###` section instead of a step.
+
+### Front matter
+
+Front matter is optional. Use it for:
+
+- `order` where the sidebar order matters (tutorials, installation), in steps of ten,
+- `icon` (a Font Awesome class such as `fa-solid fa-key`) on folders and on pages readers look for,
+- the folder's `index.md`: `title`, `icon`, `order`, `description` and `list: true`.
+
+## The site
+
+`clay.yaml` at the repository root configures the site; the [Deploy Docs workflow](https://github.com/lGruenzweilHTL/marshal/blob/master/.github/workflows/docs.yaml) builds it with `npx clay-doc@5 build --strict` and publishes it on GitHub Pages when `docs/`, `clay.yaml` or the OpenAPI document change on `master`.
+
+Before you push, check the docs. It takes a few seconds and catches broken links, anchors and request cells:
+
+```sh
+npx clay-doc@5 check
+```
+
+Preview the site with live reload at `http://localhost:3000`:
+
+```sh
+npx clay-doc@5 dev
+```
+
+The [API v1 reference](../api/v1/index.md) is generated: `scripts/docs-openapi.mjs` runs before every Clay command, copies `web/openapi/v1.json` to `artifacts/openapi/`, and adds servers and the authentication schemes. Do not edit the generated pages; change the API and run `npm run gen:api` in `web/`.
 
 ## Keeping docs current
 

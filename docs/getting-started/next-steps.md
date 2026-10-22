@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-forward
+order: 50
+---
+
 # Next steps
 
 Where to go after the first working setup.

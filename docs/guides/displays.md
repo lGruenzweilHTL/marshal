@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-tv
+---
+
 # Show artifacts on a TV
 
 Let Marshal show images, video, code, diffs, Markdown and 3D models on a screen in your home, and tie each screen to the satellite in the same room.
@@ -10,33 +14,35 @@ Let Marshal show images, video, code, diffs, Markdown and 3D models on a screen 
 
 ## Steps
 
-### 1. Choose the media base URL
+::: steps
+1. **Choose the media base URL**
 
-The TV fetches media itself, so `displays.mediaBaseUrl` must be an address the TV reaches. DLNA renderers prefer plain HTTP and an IP address. Publish Marshal's HTTP port on the LAN, for example `ports: ["8080:8080"]` in `docker-compose.yml`. An https URL with a certificate the TV trusts also works. Without `mediaBaseUrl`, Marshal uses `notifications.publicUrl`.
+   The TV fetches media itself, so `displays.mediaBaseUrl` must be an address the TV reaches. DLNA renderers prefer plain HTTP and an IP address. Publish Marshal's HTTP port on the LAN, for example `ports: ["8080:8080"]` in `docker-compose.yml`. An https URL with a certificate the TV trusts also works. Without `mediaBaseUrl`, Marshal uses `notifications.publicUrl`.
 
-### 2. Configure the display
+2. **Configure the display**
 
-```yaml
-displays:
-  mediaBaseUrl: http://192.168.1.10:8080/
-  linkMinutes: 240
-  surfaces:
-    living_tv: { entity: media_player.living_room_tv }
-```
+   ```yaml
+   displays:
+     mediaBaseUrl: http://192.168.1.10:8080/
+     linkMinutes: 240
+     surfaces:
+       living_tv: { entity: media_player.living_room_tv }
+   ```
 
-Names use lowercase letters, digits and `_`, starting with a letter. `linkMinutes` is 5 to 1440. Restart Marshal. Startup fails, naming the key, when a display has no base URL to use, a bad name or an entity outside `media_player`. See [`displays`](../configuration/marshal-yaml/displays.md).
+   Names use lowercase letters, digits and `_`, starting with a letter. `linkMinutes` is 5 to 1440. Restart Marshal. Startup fails, naming the key, when a display has no base URL to use, a bad name or an entity outside `media_player`. See [`displays`](../configuration/marshal-yaml/displays.md).
 
-### 3. Tie the display to a satellite
+3. **Tie the display to a satellite**
 
-In `/config/satellites.yaml`:
+   In `/config/satellites.yaml`:
 
-```yaml
-satellites:
-  assist_satellite.living_room:
-    display: living_tv
-```
+   ```yaml [/config/satellites.yaml]
+   satellites:
+     assist_satellite.living_room:
+       display: living_tv
+   ```
 
-See [satellite profiles](voice/satellites.md). The model cannot pick another display; a satellite shows on its own display only.
+   See [satellite profiles](voice/satellites.md). The model cannot pick another display; a satellite shows on its own display only.
+:::
 
 ## Check that it works
 

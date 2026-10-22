@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-toolbox
+---
+
 # Tools
 
 Every tool the model can get, grouped by integration, with its risk tier, arguments, result and the conditions that hide it.

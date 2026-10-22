@@ -13,35 +13,37 @@ Home control by the model goes through HA's MCP server: see [Home Assistant MCP 
 
 ## Steps
 
-### 1. Create the token
+::: steps
+1. **Create the token**
 
-In HA, open your profile, Security, Long-lived access tokens, and create one named `marshal`. Copy it once.
+   In HA, open your profile, Security, Long-lived access tokens, and create one named `marshal`. Copy it once.
 
-### 2. Store the token as a secret
+2. **Store the token as a secret**
 
-```sh
-printf '%s' '<token>' > ./secrets/ha_token
-```
+   ```sh
+   printf '%s' '<token>' > ./secrets/ha_token
+   ```
 
-Mount it into the container at `/run/secrets/ha_token`, or pass it as `MARSHAL_SECRET_HA_TOKEN`. `/config` never holds the value.
+   Mount it into the container at `/run/secrets/ha_token`, or pass it as `MARSHAL_SECRET_HA_TOKEN`. `/config` never holds the value.
 
-### 3. Configure the connection
+3. **Configure the connection**
 
-In `/config/marshal.yaml`:
+   In `/config/marshal.yaml`:
 
-```yaml
-ha:
-  url: http://homeassistant.local:8123
-  tokenSecret: ha_token
-```
+   ```yaml [/config/marshal.yaml]
+   ha:
+     url: http://homeassistant.local:8123
+     tokenSecret: ha_token
+   ```
 
-`ha.tokenSecret` names the secret. If `ha.url` is set and `ha.tokenSecret` is missing or does not resolve, startup fails and names the reference. See [`ha` in the integration sections](../../configuration/marshal-yaml/integrations.md#ha-home-assistant) for the keys.
+   `ha.tokenSecret` names the secret. If `ha.url` is set and `ha.tokenSecret` is missing or does not resolve, startup fails and names the reference. See [`ha` in the integration sections](../../configuration/marshal-yaml/integrations.md#ha-home-assistant) for the keys.
 
-Restart Marshal after changing `marshal.yaml`.
+   Restart Marshal after changing `marshal.yaml`.
 
-### 4. Add the MCP server
+4. **Add the MCP server**
 
-Copy `deploy/config.example/mcp/ha.yaml` to `/config/mcp/ha.yaml`. It uses the same secret. See [Home Assistant MCP server](home-assistant-mcp.md).
+   Copy `deploy/config.example/mcp/ha.yaml` to `/config/mcp/ha.yaml`. It uses the same secret. See [Home Assistant MCP server](home-assistant-mcp.md).
+:::
 
 ## What the connection gives you
 

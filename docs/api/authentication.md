@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-key
+order: 10
+---
+
 # API authentication
 
 Marshal accepts two kinds of credentials: scoped API tokens for machine clients and a cookie session for people using the web interface. This page describes both and lists the token scopes.
@@ -62,6 +67,11 @@ The full walkthrough is in [machine tokens](../guides/authentication/machine-tok
 ```sh
 curl -H "Authorization: Bearer <token>" https://marshal.example.com/api/v1/me
 ```
+
+Or run it here, with **Authorize** and your token (see [try the API from the docs](openapi.md#try-the-api-from-the-docs)):
+
+::: request v1 GetMe
+:::
 
 ```json
 { "id": "…", "displayName": "Lukas", "roles": [], "scopes": ["conversation:write"], "demo": { "enabled": false, "showBadge": true } }

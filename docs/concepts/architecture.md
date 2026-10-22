@@ -1,3 +1,7 @@
+---
+icon: fa-solid fa-sitemap
+---
+
 # Architecture
 
 This page explains how Marshal is put together: which processes run, how the projects depend on each other, and why the boundaries sit where they do.

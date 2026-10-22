@@ -1,3 +1,8 @@
+---
+icon: fa-solid fa-robot
+order: 30
+---
+
 # AI tasks
 
 `POST /api/v1/ai-tasks` runs one task for an automation and answers with JSON. The Home Assistant component's AI Task entity uses it; any client with the scope `aitasks:write` can.
