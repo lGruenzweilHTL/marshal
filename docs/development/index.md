@@ -44,15 +44,15 @@ How to change Marshal: set up a machine, build and test, follow the OpenSpec wor
 
 ## Repository map
 
-```text
-Marshal.sln          solution
-src/                 .NET projects
-tests/               one test project per src project (Marshal.<Name>.Tests), plus Marshal.Testing for shared fakes
-web/                 Vue + Vite + TypeScript SPA
-ha/                  Home Assistant custom component (Python, uv project)
-deploy/              docker-compose.yml and config.example/
-docs/                documentation (this folder), diagrams, images
-openspec/            specifications (specs/) and changes (changes/)
+```tree
+Marshal.sln  # solution
+src/  # .NET projects
+tests/  # one test project per src project (Marshal.<Name>.Tests), plus Marshal.Testing for shared fakes
+web/  # Vue + Vite + TypeScript SPA
+ha/  # Home Assistant custom component (Python, uv project)
+deploy/  # docker-compose.yml and config.example/
+docs/  # documentation (this folder), diagrams, images
+openspec/  # specifications (specs/) and changes (changes/)
 ```
 
 The projects in `src/`:

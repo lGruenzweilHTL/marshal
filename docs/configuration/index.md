@@ -21,6 +21,32 @@ Marshal reads human-edited files from `/config` and environment variables. This 
 | `templates/*.md` | Agent templates. | [templates-format.md](templates-format.md) |
 | `tasks/*.yaml` | Example task definitions. Marshal does not read this folder; the files are the arguments of `tasks.create`. | [tasks-format.md](tasks-format.md) |
 
+The example configuration in [`deploy/config.example/`](https://github.com/lGruenzweilHTL/marshal/tree/master/deploy/config.example) has this layout:
+
+```tree
+/config
+  marshal.yaml
+  risk.yaml
+  satellites.yaml
+  mcp/
+    ha.yaml  # Home Assistant's MCP server
+  skills/
+    briefing-format/
+      SKILL.md
+    house-status/
+      SKILL.md
+    rss-digest/
+      SKILL.md
+  templates/
+    ai_task.md
+    briefing.md
+    house-inspector.md
+    rss-scorer.md
+  tasks/
+    briefing.yaml  # the daily briefing
+    media-available.yaml
+```
+
 Every file is optional. A missing `marshal.yaml` means built-in defaults, but Marshal then refuses to start because `embedding` is required. The config directory is `/config`; set `MARSHAL__Paths__Config` to change it. See [environment variables](environment-variables.md).
 
 Key names are camelCase and match the .NET options property names. Unknown keys in `risk.yaml` and `satellites.yaml` are errors. `marshal.yaml` ignores unknown keys, so a misspelled key silently keeps its default. Check the [config view](#config-view-in-the-web-ui).

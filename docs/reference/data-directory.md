@@ -11,25 +11,25 @@ The path comes from `paths.data` (environment `MARSHAL__Paths__Data`, default `/
 
 ## Layout
 
-```text
+```tree
 /data
-  marshal.db                      SQLite database
-  marshal.db-wal, marshal.db-shm  SQLite write-ahead log files (while running)
-  marshal.db.<yyyyMMddHHmmss>.bak Copy taken before a pending migration
-  keys/                           ASP.NET Data Protection keys
+  marshal.db  # SQLite database
+  marshal.db-wal, marshal.db-shm  # SQLite write-ahead log files (while running)
+  marshal.db.<yyyyMMddHHmmss>.bak  # Copy taken before a pending migration
+  keys/  # ASP.NET Data Protection keys
   backups/
-    <yyyyMMdd-HHmmss>/            One nightly backup
-      marshal.db                  Online copy of the database
-      keys/                       Copy of the Data Protection keys
-      memory-<owner id>.ndjson    Memory export, one file per owner
+    <yyyyMMdd-HHmmss>/  # One nightly backup
+      marshal.db  # Online copy of the database
+      keys/  # Copy of the Data Protection keys
+      memory-<owner id>.ndjson  # Memory export, one file per owner
   artifacts/
     <owner id>/
-      <artifact id>               One artifact file per artifact
+      <artifact id>  # One artifact file per artifact
   cache/
-    renditions/                   Rendered pages of 3D models
+    renditions/  # Rendered pages of 3D models
   snapshots/
-    <printer>/<id>.jpg            Printer webcam snapshots
-  notes/                          Notes git repository
+    <printer>/<id>.jpg  # Printer webcam snapshots
+  notes/  # Notes git repository
 ```
 
 ## Entries

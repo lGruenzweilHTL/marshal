@@ -50,11 +50,11 @@ Marshal has no tool that sends mail, no tool that sends raw G-code and no tool t
 
 | Tool id | Tier | Arguments | Returns | Hidden when |
 |---|---|---|---|---|
-| `agent.ask_advisor` | safe | `question`, `context` | The text answer of one tool-less call to the `advisor` model tier. The advisor sees only the question and your context summary. | The turn is a voice turn; no `advisor` model is configured; the per-run call limit is reached (`agent.advisor.maxCallsPerRun`, or the template's `maxAdvisorCalls`); the owner's daily advisor cost cap is reached. |
-| `agent.move_to_background` | safe | `statusMessage` | Ends the turn with the status message and continues the run as a background task. The user receives the final answer as a notification. | The turn is not interactive or is a subagent turn, or background work is not available. |
-| `agent.load_skill` | safe | `name`, `file?` | The skill body with the list of its files, or one file of the skill. Output is trusted. | The active template allows no skill, or no skill exists. |
-| `agent.find_tools` | safe | `query` | Loads the tool namespaces with visible tools that best match the query (a namespace named in the query first) and returns their names and descriptions. Their tools are offered from the next model call. | Tool retrieval is disabled or skipped for the run, or every namespace with visible tools is already loaded. |
-| `agent.delegate` | safe | `template`, `task` | The final text of a subagent that runs the named [agent template](../guides/agent-templates.md). A tainted caller gets the text wrapped as untrusted data. The subagent never runs confirm-tier actions. | The run is at the delegation depth limit (`agent.maxDelegationDepth`), or no template other than the default exists. |
+| `agent.ask_advisor` | :badge[safe]{tip} | `question`, `context` | The text answer of one tool-less call to the `advisor` model tier. The advisor sees only the question and your context summary. | The turn is a voice turn; no `advisor` model is configured; the per-run call limit is reached (`agent.advisor.maxCallsPerRun`, or the template's `maxAdvisorCalls`); the owner's daily advisor cost cap is reached. |
+| `agent.move_to_background` | :badge[safe]{tip} | `statusMessage` | Ends the turn with the status message and continues the run as a background task. The user receives the final answer as a notification. | The turn is not interactive or is a subagent turn, or background work is not available. |
+| `agent.load_skill` | :badge[safe]{tip} | `name`, `file?` | The skill body with the list of its files, or one file of the skill. Output is trusted. | The active template allows no skill, or no skill exists. |
+| `agent.find_tools` | :badge[safe]{tip} | `query` | Loads the tool namespaces with visible tools that best match the query (a namespace named in the query first) and returns their names and descriptions. Their tools are offered from the next model call. | Tool retrieval is disabled or skipped for the run, or every namespace with visible tools is already loaded. |
+| `agent.delegate` | :badge[safe]{tip} | `template`, `task` | The final text of a subagent that runs the named [agent template](../guides/agent-templates.md). A tainted caller gets the text wrapped as untrusted data. The subagent never runs confirm-tier actions. | The run is at the delegation depth limit (`agent.maxDelegationDepth`), or no template other than the default exists. |
 
 ## Memory (`memory`)
 
@@ -62,9 +62,9 @@ Memory output is trusted: only you or a confirmed write puts content into memory
 
 | Tool id | Tier | Arguments | Returns | Hidden when |
 |---|---|---|---|---|
-| `memory.remember` | safe, persists | `type`, `title`, `content`, `importance?`, `scope?`, `project?`, `sourceRef?`, `validFrom?`, `validTo?` | Stores a chunk. The same type and title update the existing chunk. `type` is `fact`, `preference`, `event`, `procedure`, `person` or `device`; `importance` is 1 to 5 (default 3); `scope` is `general` or `project`; `validFrom` and `validTo` are dates or ISO 8601 date-times in the owner's time zone (default: valid from now, open). The tool cannot pin a chunk. | Never. |
-| `memory.recall` | safe | `query`, `type?`, `project?`, `limit?`, `asOf?` | Chunks matching the query, including pinned chunks. `limit` is 1 to 30 (default 10). Without `asOf` only chunks valid now; with `asOf` (date or date-time) what was valid then, including closed chunks and earlier versions, each with its valid time. | Never. |
-| `memory.correct_project` | safe | `kind`, `project?` | Records your correction of the inferred project. `kind` is `rejected`, `switched` (needs `project`) or `confirmed`. | No project exists. |
+| `memory.remember` | :badge[safe]{tip}, persists | `type`, `title`, `content`, `importance?`, `scope?`, `project?`, `sourceRef?`, `validFrom?`, `validTo?` | Stores a chunk. The same type and title update the existing chunk. `type` is `fact`, `preference`, `event`, `procedure`, `person` or `device`; `importance` is 1 to 5 (default 3); `scope` is `general` or `project`; `validFrom` and `validTo` are dates or ISO 8601 date-times in the owner's time zone (default: valid from now, open). The tool cannot pin a chunk. | Never. |
+| `memory.recall` | :badge[safe]{tip} | `query`, `type?`, `project?`, `limit?`, `asOf?` | Chunks matching the query, including pinned chunks. `limit` is 1 to 30 (default 10). Without `asOf` only chunks valid now; with `asOf` (date or date-time) what was valid then, including closed chunks and earlier versions, each with its valid time. | Never. |
+| `memory.correct_project` | :badge[safe]{tip} | `kind`, `project?` | Records your correction of the inferred project. `kind` is `rejected`, `switched` (needs `project`) or `confirmed`. | No project exists. |
 
 ## Tasks (`tasks`)
 
@@ -74,24 +74,24 @@ All task tools are safe. Tools that store work for later are `persists`, and an 
 
 | Tool id | Tier | Arguments | Returns | Hidden when |
 |---|---|---|---|---|
-| `tasks.create` | safe, persists | `goal`, `trigger?`, `name?`, `template?`, `notes?`, `tools?`, `prepare?`, `deliver?`, `overrideQuietHoursUntil?` | The created task as a summary. | Kill switch active; inside a task run, the task depth limit (`tasks.maxDepth`) or the child limit (`tasks.maxActiveChildren`) is reached. |
-| `tasks.schedule_wakeup` | safe, persists | `at?` or `inMinutes?`, `notes?` | The wake time. Ends the current run and runs the task again later with its goal and the new notes. | The call is not inside a background task run, or the kill switch is active. |
-| `tasks.watch` | safe, persists | `filter`, `goal`, `name?`, `once?`, `deliver?`, `overrideQuietHoursUntil?` | The created event-triggered task. `filter` needs `source` and can carry `type`, an `entity` glob and payload conditions such as `to` and `from`. | Same as `tasks.create`. |
-| `tasks.update` | safe, persists | `task`, `goal?`, `trigger?`, `deliver?`, `template?`, `name?`, `prepare?`, `overrideQuietHoursUntil?` | The updated task. | No task exists. |
-| `tasks.run_now` | safe | `task` | `{ started, task }`. Fails with `tasks.running` while the task runs. | Kill switch active. |
-| `tasks.list` | safe | `status?` | Up to 50 tasks. `status` is `active`, `pending`, `running`, `waiting`, `done`, `failed` or `cancelled`. | Never. |
-| `tasks.status` | safe | `task` | The task's status and its latest result with its age. | Never. |
-| `tasks.cancel` | safe | `task` | The number of cancelled tasks. Cancels unfinished child tasks too. | Never. |
-| `tasks.stop_all` | safe | none | Kill switch: cancels all background tasks and pauses new ones until you resume them in the web UI. | Never. |
-| `tasks.run_executor` | confirm, persists | `executor`, `spec`, `onDoneGoal`, `deliver?` | Starts long external work in an [executor](../installation/executor-host.md) and runs `onDoneGoal` when it finishes. `executor` is one of the configured executor names (currently `claude_code`). | No executor is configured; kill switch active; inside a task run, the depth or child limit is reached. |
+| `tasks.create` | :badge[safe]{tip}, persists | `goal`, `trigger?`, `name?`, `template?`, `notes?`, `tools?`, `prepare?`, `deliver?`, `overrideQuietHoursUntil?` | The created task as a summary. | Kill switch active; inside a task run, the task depth limit (`tasks.maxDepth`) or the child limit (`tasks.maxActiveChildren`) is reached. |
+| `tasks.schedule_wakeup` | :badge[safe]{tip}, persists | `at?` or `inMinutes?`, `notes?` | The wake time. Ends the current run and runs the task again later with its goal and the new notes. | The call is not inside a background task run, or the kill switch is active. |
+| `tasks.watch` | :badge[safe]{tip}, persists | `filter`, `goal`, `name?`, `once?`, `deliver?`, `overrideQuietHoursUntil?` | The created event-triggered task. `filter` needs `source` and can carry `type`, an `entity` glob and payload conditions such as `to` and `from`. | Same as `tasks.create`. |
+| `tasks.update` | :badge[safe]{tip}, persists | `task`, `goal?`, `trigger?`, `deliver?`, `template?`, `name?`, `prepare?`, `overrideQuietHoursUntil?` | The updated task. | No task exists. |
+| `tasks.run_now` | :badge[safe]{tip} | `task` | `{ started, task }`. Fails with `tasks.running` while the task runs. | Kill switch active. |
+| `tasks.list` | :badge[safe]{tip} | `status?` | Up to 50 tasks. `status` is `active`, `pending`, `running`, `waiting`, `done`, `failed` or `cancelled`. | Never. |
+| `tasks.status` | :badge[safe]{tip} | `task` | The task's status and its latest result with its age. | Never. |
+| `tasks.cancel` | :badge[safe]{tip} | `task` | The number of cancelled tasks. Cancels unfinished child tasks too. | Never. |
+| `tasks.stop_all` | :badge[safe]{tip} | none | Kill switch: cancels all background tasks and pauses new ones until you resume them in the web UI. | Never. |
+| `tasks.run_executor` | :badge[confirm]{warning}, persists | `executor`, `spec`, `onDoneGoal`, `deliver?` | Starts long external work in an [executor](../installation/executor-host.md) and runs `onDoneGoal` when it finishes. `executor` is one of the configured executor names (currently `claude_code`). | No executor is configured; kill switch active; inside a task run, the depth or child limit is reached. |
 
 ## Notifications (`notifications`)
 
 | Tool id | Tier | Arguments | Returns | Hidden when |
 |---|---|---|---|---|
-| `notifications.notify` | safe | `message`, `priority?`, `deliver?` | `{ sent: true }`. `priority` is `normal` (default) or `low`; `critical` fails validation. `deliver` is `{ channel, target? }` with `channel` `voice`, `push` or `inbox`; only voice has a target. `low` never uses voice. | Never. |
-| `notifications.inbox_list` | safe, untrusted (`notifications`) | none | Up to 50 unread inbox items, newest first, with id, source, priority, text and time. | Never. |
-| `notifications.inbox_consume` | safe | `ids` | `{ consumed }`. Marks the items as handled. | Never. |
+| `notifications.notify` | :badge[safe]{tip} | `message`, `priority?`, `deliver?` | `{ sent: true }`. `priority` is `normal` (default) or `low`; `critical` fails validation. `deliver` is `{ channel, target? }` with `channel` `voice`, `push` or `inbox`; only voice has a target. `low` never uses voice. | Never. |
+| `notifications.inbox_list` | :badge[safe]{tip}, untrusted (`notifications`) | none | Up to 50 unread inbox items, newest first, with id, source, priority, text and time. | Never. |
+| `notifications.inbox_consume` | :badge[safe]{tip} | `ids` | `{ consumed }`. Marks the items as handled. | Never. |
 
 See [notification priorities](notifications-priorities.md).
 
@@ -101,12 +101,12 @@ Home Assistant entity control comes from HA's MCP server, see [MCP server tools]
 
 | Tool id | Tier | Arguments | Returns | Hidden when |
 |---|---|---|---|---|
-| `timers.start` | safe | `duration`, `name?` | HA's spoken answer. `duration` accepts `10m`, `1h30m`, `90s` or ISO 8601 (`PT1H30M`). Runs on the device the user is talking to. | The turn has no device, or HA's MCP server already offers `HassStartTimer`. |
-| `timers.cancel` | safe | `name?` | HA's spoken answer. Cancels by name, or the only timer. | Same as `timers.start`. |
-| `timers.status` | safe | none | The timers running on the device. | Same as `timers.start`. |
-| `places.find` | safe | `query?` | HA zones with radius, whether you are inside, and `personState`, the value your person entity takes there. | No `ha.url` configured. Fails with `ha.unavailable` while HA is not connected. |
-| `places.create_here` | confirm | `name`, `radius?` | Creates a zone at your person entity's current position. `radius` is 50 to 1000 m (default 150). | No `ha.url`, or no person entity is set for the owner. |
-| `energy.usage` | safe | `period`, `from?`, `to?`, `compareWith?` | Grid import and export, solar, battery, household consumption, cost and top devices. `period` is `today`, `yesterday`, `week`, `month`, `last_week`, `last_month` or `range` (with `from` and `to`). `compareWith: previous` adds the previous period. | No `ha.url`, or the HA energy dashboard has no sources. |
+| `timers.start` | :badge[safe]{tip} | `duration`, `name?` | HA's spoken answer. `duration` accepts `10m`, `1h30m`, `90s` or ISO 8601 (`PT1H30M`). Runs on the device the user is talking to. | The turn has no device, or HA's MCP server already offers `HassStartTimer`. |
+| `timers.cancel` | :badge[safe]{tip} | `name?` | HA's spoken answer. Cancels by name, or the only timer. | Same as `timers.start`. |
+| `timers.status` | :badge[safe]{tip} | none | The timers running on the device. | Same as `timers.start`. |
+| `places.find` | :badge[safe]{tip} | `query?` | HA zones with radius, whether you are inside, and `personState`, the value your person entity takes there. | No `ha.url` configured. Fails with `ha.unavailable` while HA is not connected. |
+| `places.create_here` | :badge[confirm]{warning} | `name`, `radius?` | Creates a zone at your person entity's current position. `radius` is 50 to 1000 m (default 150). | No `ha.url`, or no person entity is set for the owner. |
+| `energy.usage` | :badge[safe]{tip} | `period`, `from?`, `to?`, `compareWith?` | Grid import and export, solar, battery, household consumption, cost and top devices. `period` is `today`, `yesterday`, `week`, `month`, `last_week`, `last_month` or `range` (with `from` and `to`). `compareWith: previous` adds the previous period. | No `ha.url`, or the HA energy dashboard has no sources. |
 
 ## Calendar (`calendar`)
 
@@ -114,11 +114,11 @@ Calendars come from Home Assistant calendar entities (`calendar.*`) and CalDAV a
 
 | Tool id | Tier | Arguments | Returns | Hidden when |
 |---|---|---|---|---|
-| `calendar.list_calendars` | safe | none | Calendars with `id`, `name`, `canCreate`, `canUpdate`. | No calendar is configured. |
-| `calendar.list_events` | safe, untrusted (`calendar`) | `calendar?`, `start`, `end` | Events in the range, oldest first, from every calendar or one. Recurring events come as occurrences with `recurrenceId`, `recurring`, `seriesId` and `originalStart`. CalDAV events add `organizer` and `attendees` (`name`, `address`, `role`, `status`: `needs-action`, `accepted`, `declined`, `tentative`, `delegated`). | No calendar is configured. |
-| `calendar.find_free_time` | safe | `start`, `end`, `duration` (minutes), `calendars?`, `within?` (`08:00-18:00`) | Up to 20 free slots of at least `duration`, earliest first, and the calendars read. Events marked free and meetings the account declined are not busy. Only times and calendar ids, so not untrusted. | No calendar is configured. |
-| `calendar.create_event` | confirm | `calendar`, `summary`, `start`, `end`, `description?`, `location?` | Creates the event. | No calendar can create events. |
-| `calendar.update_event` | confirm | `calendar`, `eventId`, `summary`, `start`, `end`, `recurrenceId?`, `scope?`, `description?`, `location?` | Replaces the event. Pass every field. `scope: occurrence` (default with `recurrenceId`) changes one instance, `scope: series` every instance. `scope` fails with `calendar.invalid_arguments` on calendars that cannot change single instances (Home Assistant). | No calendar can update events. |
+| `calendar.list_calendars` | :badge[safe]{tip} | none | Calendars with `id`, `name`, `canCreate`, `canUpdate`. | No calendar is configured. |
+| `calendar.list_events` | :badge[safe]{tip}, untrusted (`calendar`) | `calendar?`, `start`, `end` | Events in the range, oldest first, from every calendar or one. Recurring events come as occurrences with `recurrenceId`, `recurring`, `seriesId` and `originalStart`. CalDAV events add `organizer` and `attendees` (`name`, `address`, `role`, `status`: `needs-action`, `accepted`, `declined`, `tentative`, `delegated`). | No calendar is configured. |
+| `calendar.find_free_time` | :badge[safe]{tip} | `start`, `end`, `duration` (minutes), `calendars?`, `within?` (`08:00-18:00`) | Up to 20 free slots of at least `duration`, earliest first, and the calendars read. Events marked free and meetings the account declined are not busy. Only times and calendar ids, so not untrusted. | No calendar is configured. |
+| `calendar.create_event` | :badge[confirm]{warning} | `calendar`, `summary`, `start`, `end`, `description?`, `location?` | Creates the event. | No calendar can create events. |
+| `calendar.update_event` | :badge[confirm]{warning} | `calendar`, `eventId`, `summary`, `start`, `end`, `recurrenceId?`, `scope?`, `description?`, `location?` | Replaces the event. Pass every field. `scope: occurrence` (default with `recurrenceId`) changes one instance, `scope: series` every instance. `scope` fails with `calendar.invalid_arguments` on calendars that cannot change single instances (Home Assistant). | No calendar can update events. |
 
 ## Music (`music`)
 
@@ -142,22 +142,22 @@ Every printer tool takes an optional `printer` argument. It defaults to the only
 
 | Tool id | Tier | Arguments | Returns | Hidden when |
 |---|---|---|---|---|
-| `printer.status` | safe | `printer?` | State, job, progress, layer, time left and temperatures, plus the print babysitter state. | No printer. |
-| `printer.list_files` | safe | `printer?` | Up to 50 printable files, newest first. | No printer. |
-| `printer.job_queue` | safe | `printer?` | The job queue. | No printer. |
-| `printer.history` | safe | `printer?`, `limit?` | Recent print jobs, newest first. `limit` is 1 to 50 (default 10). | No printer. |
-| `printer.snapshot` | safe | `printer?` | A webcam snapshot as a Markdown image with a same-origin URL. | No printer has a webcam. |
-| `printer.inspect` | safe | `printer?`, `question` | The answer of a vision model about the webcam picture. | No vision model in the run's tier, or no webcam. |
-| `printer.pause` | safe | `printer?` | Pauses the running print. | No printer. |
-| `printer.emergency_stop` | safe | `printer?` | Emergency stop. Klipper needs a restart afterwards. | No printer. |
-| `printer.start_print` | confirm | `printer?`, `file` | Starts printing a file from `printer.list_files`. | No printer. |
-| `printer.resume` | confirm | `printer?` | Resumes a paused print. | No printer. |
-| `printer.cancel` | confirm | `printer?` | Cancels the running print. | No printer. |
-| `printer.set_temperature` | confirm | `printer?`, `heater`, `target` | Sets a heater target in degrees C (0 turns it off). `heater` is `extruder` or `bed`. Validated against the printer's limits before any confirmation. | No printer. |
-| `printer.home` | confirm | `printer?`, `axes?` | Homes the given axes (`x`, `y`, `z`), or all. | No printer. |
-| `printer.move` | confirm | `printer?`, `axis`, `distance` | Moves one axis relative to its position, in mm. | No printer. |
-| `printer.edit_queue` | confirm | `printer?`, `action`, `files?`, `job_ids?`, `job_id?` | `action` is `add`, `remove`, `clear`, `pause`, `start` or `jump`. | No printer. |
-| `printer.run_macro` | confirm | `printer?`, `name` | Runs an allowlisted Klipper macro without arguments. `name` is limited to the configured macros. | No printer has an allowlisted macro. |
+| `printer.status` | :badge[safe]{tip} | `printer?` | State, job, progress, layer, time left and temperatures, plus the print babysitter state. | No printer. |
+| `printer.list_files` | :badge[safe]{tip} | `printer?` | Up to 50 printable files, newest first. | No printer. |
+| `printer.job_queue` | :badge[safe]{tip} | `printer?` | The job queue. | No printer. |
+| `printer.history` | :badge[safe]{tip} | `printer?`, `limit?` | Recent print jobs, newest first. `limit` is 1 to 50 (default 10). | No printer. |
+| `printer.snapshot` | :badge[safe]{tip} | `printer?` | A webcam snapshot as a Markdown image with a same-origin URL. | No printer has a webcam. |
+| `printer.inspect` | :badge[safe]{tip} | `printer?`, `question` | The answer of a vision model about the webcam picture. | No vision model in the run's tier, or no webcam. |
+| `printer.pause` | :badge[safe]{tip} | `printer?` | Pauses the running print. | No printer. |
+| `printer.emergency_stop` | :badge[safe]{tip} | `printer?` | Emergency stop. Klipper needs a restart afterwards. | No printer. |
+| `printer.start_print` | :badge[confirm]{warning} | `printer?`, `file` | Starts printing a file from `printer.list_files`. | No printer. |
+| `printer.resume` | :badge[confirm]{warning} | `printer?` | Resumes a paused print. | No printer. |
+| `printer.cancel` | :badge[confirm]{warning} | `printer?` | Cancels the running print. | No printer. |
+| `printer.set_temperature` | :badge[confirm]{warning} | `printer?`, `heater`, `target` | Sets a heater target in degrees C (0 turns it off). `heater` is `extruder` or `bed`. Validated against the printer's limits before any confirmation. | No printer. |
+| `printer.home` | :badge[confirm]{warning} | `printer?`, `axes?` | Homes the given axes (`x`, `y`, `z`), or all. | No printer. |
+| `printer.move` | :badge[confirm]{warning} | `printer?`, `axis`, `distance` | Moves one axis relative to its position, in mm. | No printer. |
+| `printer.edit_queue` | :badge[confirm]{warning} | `printer?`, `action`, `files?`, `job_ids?`, `job_id?` | `action` is `add`, `remove`, `clear`, `pause`, `start` or `jump`. | No printer. |
+| `printer.run_macro` | :badge[confirm]{warning} | `printer?`, `name` | Runs an allowlisted Klipper macro without arguments. `name` is limited to the configured macros. | No printer has an allowlisted macro. |
 
 `printer.pause` and `printer.emergency_stop` are safe on purpose: stopping a failing print must not wait for a confirmation. Raw G-code, firmware or host restart and file deletion do not exist as tools.
 
@@ -167,14 +167,14 @@ Mail tools never send, delete or move mail. All mail tools are hidden when no ma
 
 | Tool id | Tier | Arguments | Returns | Hidden when |
 |---|---|---|---|---|
-| `mail.search` | safe, untrusted (`mail`), sensitive | `account?`, `from?`, `to?`, `subject?`, `text?`, `since?`, `before?`, `unread?`, `folder?`, `limit?` | Message summaries with account alias and message id. `since` and `before` are `YYYY-MM-DD`. `folder` defaults to the inbox. `limit` is 1 to 50 (default 20). | No mail account. |
-| `mail.read_message` | safe, untrusted (`mail`), sensitive | `id` | One message as text, with attachments listed by name. | No mail account. |
-| `mail.read_thread` | safe, untrusted (`mail`), sensitive | `id` | The whole conversation, oldest first. | No mail account. |
-| `mail.list_folders` | safe | `account?` | The account's folders. | No mail account. |
-| `mail.list_labels` | safe | `account?` | The account's labels. | No account supports labels. |
-| `mail.create_draft` | safe | `account?`, `to`, `subject`, `body`, `replyTo?` | Saves a draft in the account's drafts folder. Nothing is sent. | No mail account. |
-| `mail.update_draft` | safe | `id`, `to`, `subject`, `body`, `replyTo?` | Replaces a draft Marshal created. Nothing is sent. | No mail account. |
-| `mail.save_attachment` | confirm, persists, sensitive | `message`, `attachment` | Stores one attachment as a tainted artifact (source `mail`) and returns its id. `attachment` is its name or position (1 is the first). | No mail account. |
+| `mail.search` | :badge[safe]{tip}, untrusted (`mail`), sensitive | `account?`, `from?`, `to?`, `subject?`, `text?`, `since?`, `before?`, `unread?`, `folder?`, `limit?` | Message summaries with account alias and message id. `since` and `before` are `YYYY-MM-DD`. `folder` defaults to the inbox. `limit` is 1 to 50 (default 20). | No mail account. |
+| `mail.read_message` | :badge[safe]{tip}, untrusted (`mail`), sensitive | `id` | One message as text, with attachments listed by name. | No mail account. |
+| `mail.read_thread` | :badge[safe]{tip}, untrusted (`mail`), sensitive | `id` | The whole conversation, oldest first. | No mail account. |
+| `mail.list_folders` | :badge[safe]{tip} | `account?` | The account's folders. | No mail account. |
+| `mail.list_labels` | :badge[safe]{tip} | `account?` | The account's labels. | No account supports labels. |
+| `mail.create_draft` | :badge[safe]{tip} | `account?`, `to`, `subject`, `body`, `replyTo?` | Saves a draft in the account's drafts folder. Nothing is sent. | No mail account. |
+| `mail.update_draft` | :badge[safe]{tip} | `id`, `to`, `subject`, `body`, `replyTo?` | Replaces a draft Marshal created. Nothing is sent. | No mail account. |
+| `mail.save_attachment` | :badge[confirm]{warning}, persists, sensitive | `message`, `attachment` | Stores one attachment as a tainted artifact (source `mail`) and returns its id. `attachment` is its name or position (1 is the first). | No mail account. |
 
 ## RSS (`rss`)
 
@@ -182,13 +182,13 @@ RSS tools read and mark articles. There is no tool to subscribe or delete. All a
 
 | Tool id | Tier | Arguments | Returns |
 |---|---|---|---|
-| `rss.list_feeds` | safe | none | Feeds with title, categories and site URL. |
-| `rss.list_categories` | safe | none | Category names. |
-| `rss.get_unread` | safe, untrusted (`rss`) | `category?`, `since?`, `limit?` | Unread articles, newest first, with a summary cut at 300 characters. `since` is `YYYY-MM-DD` or ISO 8601. `limit` is 1 to 50 (default 20). |
-| `rss.get_article` | safe, untrusted (`rss`) | `id` | One article's feed content. |
-| `rss.search` | safe, untrusted (`rss`) | `query`, `limit?` | Recent articles (read and unread) matching words in title or summary. |
-| `rss.mark_read` | safe | `ids` | Marks articles as read, without confirmation. |
-| `rss.fetch_full_text` | safe, untrusted (`rss`) | `articleId` | Readable full text extracted from the article's web page, cut at a length limit. |
+| `rss.list_feeds` | :badge[safe]{tip} | none | Feeds with title, categories and site URL. |
+| `rss.list_categories` | :badge[safe]{tip} | none | Category names. |
+| `rss.get_unread` | :badge[safe]{tip}, untrusted (`rss`) | `category?`, `since?`, `limit?` | Unread articles, newest first, with a summary cut at 300 characters. `since` is `YYYY-MM-DD` or ISO 8601. `limit` is 1 to 50 (default 20). |
+| `rss.get_article` | :badge[safe]{tip}, untrusted (`rss`) | `id` | One article's feed content. |
+| `rss.search` | :badge[safe]{tip}, untrusted (`rss`) | `query`, `limit?` | Recent articles (read and unread) matching words in title or summary. |
+| `rss.mark_read` | :badge[safe]{tip} | `ids` | Marks articles as read, without confirmation. |
+| `rss.fetch_full_text` | :badge[safe]{tip}, untrusted (`rss`) | `articleId` | Readable full text extracted from the article's web page, cut at a length limit. |
 
 ## Notes (`notes`)
 
@@ -206,8 +206,8 @@ Web tools are safe in every run, also in a tainted one. They are hidden when `we
 
 | Tool id | Tier | Arguments | Returns |
 |---|---|---|---|
-| `web.search` | safe, untrusted (`web`) | `query`, `limit?` | Up to `limit` results (default and maximum `web.searxng.maxResults`) with result id, title, snippet, URL and domain. `query` is at most 300 characters. Results stay addressable as `web:<result id>` for one hour. |
-| `web.answer` | safe | `question`, `answerType`, `values?` | `{ answer, domains }`. Only titles and snippets reach the quarantined extractor. Typed answers do not taint; a `text` answer taints with `web` and is wrapped as untrusted data. `values` is required for `enum`. |
+| `web.search` | :badge[safe]{tip}, untrusted (`web`) | `query`, `limit?` | Up to `limit` results (default and maximum `web.searxng.maxResults`) with result id, title, snippet, URL and domain. `query` is at most 300 characters. Results stay addressable as `web:<result id>` for one hour. |
+| `web.answer` | :badge[safe]{tip} | `question`, `answerType`, `values?` | `{ answer, domains }`. Only titles and snippets reach the quarantined extractor. Typed answers do not taint; a `text` answer taints with `web` and is wrapped as untrusted data. `values` is required for `enum`. |
 
 ## Media (`media`)
 
@@ -215,11 +215,11 @@ All media tools are untrusted (taint source `media`) and hidden when `media.seer
 
 | Tool id | Tier | Arguments | Returns |
 |---|---|---|---|
-| `media.search` | safe | `query`, `type?` | Up to 10 movies and shows with `tmdbId`, type, title, year, a short overview, season count, availability and a Jellyfin link. `type` is `movie` or `show`. |
-| `media.request` | confirm | `type`, `tmdbId`, `title`, `year`, `seasons?` | Creates a Seerr request. After confirmation, Marshal checks that the id still belongs to that title and year and fails with `media.title_mismatch` otherwise. Fails with `media.already_available` or `media.already_requested`. A show without `seasons` requests all seasons. |
-| `media.requests` | safe | `status?` | Up to 20 newest requests. `status` is `pending`, `approved`, `declined`, `failed` or `completed`. |
-| `media.upcoming` | safe | `days?` | Upcoming episodes (Sonarr) and movie releases (Radarr), at most 50. `days` is 1 to 30 (default 7). |
-| `media.downloads` | safe | none | The Sonarr and Radarr download queues. |
+| `media.search` | :badge[safe]{tip} | `query`, `type?` | Up to 10 movies and shows with `tmdbId`, type, title, year, a short overview, season count, availability and a Jellyfin link. `type` is `movie` or `show`. |
+| `media.request` | :badge[confirm]{warning} | `type`, `tmdbId`, `title`, `year`, `seasons?` | Creates a Seerr request. After confirmation, Marshal checks that the id still belongs to that title and year and fails with `media.title_mismatch` otherwise. Fails with `media.already_available` or `media.already_requested`. A show without `seasons` requests all seasons. |
+| `media.requests` | :badge[safe]{tip} | `status?` | Up to 20 newest requests. `status` is `pending`, `approved`, `declined`, `failed` or `completed`. |
+| `media.upcoming` | :badge[safe]{tip} | `days?` | Upcoming episodes (Sonarr) and movie releases (Radarr), at most 50. `days` is 1 to 30 (default 7). |
+| `media.downloads` | :badge[safe]{tip} | none | The Sonarr and Radarr download queues. |
 
 ## Infrastructure (`infra`)
 
@@ -249,22 +249,22 @@ All repos tools are safe and untrusted (taint source `github`). Every tool takes
 
 | Tool id | Tier | Arguments | Returns | Hidden when |
 |---|---|---|---|---|
-| `artifacts.list` | safe, untrusted (`artifact`) | `kind?`, `source?`, `query?` | Up to 50 newest artifacts with id, name, kind, source, size and creation time. `kind` is `image`, `svg`, `video`, `model3d`, `code`, `diff`, `pdf`, `markdown`, `html` or `other`; `source` is `upload`, `executor`, `printer`, `mail` or `github`. | Never. |
-| `artifacts.show` | safe | `id`, `page?` | In a web turn, shows the artifact in the chat. In a satellite turn, plays its rendition on the display in the room (`page` selects the page, default 1). The model cannot choose another display. | The turn is not a web turn and the satellite has no display. |
-| `artifacts.inspect` | safe, untrusted (`artifact`) | `id`, `question`, `page?` | The answer of a vision model about one rendition page, and the page count. Fails with `artifacts.no_rendition` when the rendition is not an image. | Neither the run's tier nor `standard` has a vision model. |
+| `artifacts.list` | :badge[safe]{tip}, untrusted (`artifact`) | `kind?`, `source?`, `query?` | Up to 50 newest artifacts with id, name, kind, source, size and creation time. `kind` is `image`, `svg`, `video`, `model3d`, `code`, `diff`, `pdf`, `markdown`, `html` or `other`; `source` is `upload`, `executor`, `printer`, `mail` or `github`. | Never. |
+| `artifacts.show` | :badge[safe]{tip} | `id`, `page?` | In a web turn, shows the artifact in the chat. In a satellite turn, plays its rendition on the display in the room (`page` selects the page, default 1). The model cannot choose another display. | The turn is not a web turn and the satellite has no display. |
+| `artifacts.inspect` | :badge[safe]{tip}, untrusted (`artifact`) | `id`, `question`, `page?` | The answer of a vision model about one rendition page, and the page count. Fails with `artifacts.no_rendition` when the rendition is not an image. | Neither the run's tier nor `standard` has a vision model. |
 
 ## System (`system`)
 
 | Tool id | Tier | Arguments | Returns | Hidden when |
 |---|---|---|---|---|
-| `system.health` | safe | none | The current [health warnings](health-endpoints.md#health-warnings): component, code, severity, the message in the run's language and since when. Trusted output: the messages are Marshal's own. | There are no warnings. |
+| `system.health` | :badge[safe]{tip} | none | The current [health warnings](health-endpoints.md#health-warnings): component, code, severity, the message in the run's language and since when. Trusted output: the messages are Marshal's own. | There are no warnings. |
 
 ## Maintenance (`maintenance`)
 
 | Tool id | Tier | Arguments | Returns | Hidden when |
 |---|---|---|---|---|
-| `maintenance.status` | safe | `item?` (item id; omit for all) | Per item: name, usage, interval, unit, state (`ok`, `soon`, `due`) and when it was last done. | No `maintenance.items` are configured. |
-| `maintenance.done` | safe, persists | `item` | The item after marking it done: usage `0`, state `ok`. | No `maintenance.items` are configured. |
+| `maintenance.status` | :badge[safe]{tip} | `item?` (item id; omit for all) | Per item: name, usage, interval, unit, state (`ok`, `soon`, `due`) and when it was last done. | No `maintenance.items` are configured. |
+| `maintenance.done` | :badge[safe]{tip}, persists | `item` | The item after marking it done: usage `0`, state `ok`. | No `maintenance.items` are configured. |
 
 See [track maintenance by usage](../guides/maintenance.md).
 

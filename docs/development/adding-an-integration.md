@@ -15,6 +15,19 @@ Add a new external system to Marshal behind a small interface, with tools, risk 
 
 The Proxmox integration (`src/Marshal.Integrations.Proxmox`) is a compact reference: an options class, a client interface with one REST implementation, a tool source and one registration method.
 
+A coding agent can build the integration from the approved change; name your change in place of `<change>`:
+
+::: prompt For a coding agent
+Read CLAUDE.md, STYLE_GUIDE.md and
+https://lgruenzweilhtl.github.io/marshal/development/adding-an-integration.md.
+Then implement the integration of the OpenSpec change
+openspec/changes/<change>/ test first, with the Proxmox integration as the
+reference. Verify the external API against its current documentation, keep
+every client behind a small interface, and work through the documentation
+checklist. Run the tests of the changed
+projects and `npx clay-doc@5 check` until both pass.
+:::
+
 ## Steps
 
 ::: steps

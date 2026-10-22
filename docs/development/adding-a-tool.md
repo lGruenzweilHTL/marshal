@@ -12,6 +12,18 @@ Add a model-facing tool to an existing tool source.
 - The change is approved and the design states the tool's risk tier and when it is hidden ([OpenSpec workflow](openspec-workflow.md)).
 - The capability is allowed. Marshal has no mail send path, no raw G-code and no tool that fetches a caller-chosen URL. Do not write a tool and then forbid it.
 
+A coding agent can do the work from the approved change; name your change in place of `<change>`:
+
+::: prompt For a coding agent
+Read CLAUDE.md, STYLE_GUIDE.md and
+https://lgruenzweilhtl.github.io/marshal/development/adding-a-tool.md.
+Then implement the tool of the OpenSpec change openspec/changes/<change>/
+test first: write the failing tests, add the descriptor with the tier the
+design names, visibility and validation, and the rows in
+docs/reference/tools.md. Never call a real model in tests. Run the tests of
+the changed projects and `npx clay-doc@5 check` until both pass.
+:::
+
 ## How tools are built
 
 A tool implements `ITool` (`src/Marshal.Abstractions/Tools/ITool.cs`). A group of tools lives in an `IToolSource`. The source returns its tools from `GetToolsAsync`; the tool registry merges all sources.

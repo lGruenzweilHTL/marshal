@@ -13,9 +13,9 @@ Every tool call has exactly one tier.
 
 | Tier | Behavior |
 |---|---|
-| `safe` | The tool runs immediately. |
-| `confirm` | The tool runs only after a user action confirms the frozen call. |
-| `forbidden` | The tool never runs. It is removed from the tool list, and the guard denies a call to it. |
+| :badge[safe]{tip} | The tool runs immediately. |
+| :badge[confirm]{warning} | The tool runs only after a user action confirms the frozen call. |
+| :badge[forbidden]{caution} | The tool never runs. It is removed from the tool list, and the guard denies a call to it. |
 
 Capabilities that must never exist (sending mail, raw G-code) are not tools at all, so no tier applies to them. See [tools](tools.md) for the default tier of every tool.
 
