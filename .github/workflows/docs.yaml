@@ -17,8 +17,6 @@ concurrency:
 
 jobs:
   deploy:
-    # The repository is mirrored from Gitea, whose Actions also read .github/workflows; Pages exists only on GitHub
-    if: github.server_url == 'https://github.com'
     runs-on: ubuntu-latest
     permissions:
       contents: read
