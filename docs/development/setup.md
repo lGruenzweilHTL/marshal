@@ -1,84 +1,45 @@
 ---
 icon: fa-solid fa-laptop-code
-description: "Install the tools you need to build Marshal, run its tests and work on the web UI and the Home Assistant component."
+description: "Tool versions Marshal pins and the commands that prepare a checkout."
 ---
 
 # Set up a development machine
 
-Install the tools you need to build Marshal, run its tests and work on the web UI and the Home Assistant component.
+Tool versions Marshal pins and the commands that prepare a checkout.
 
-## Before you start
-
-You need Git and a Linux, macOS or Windows machine that runs Docker.
-
-## Tools
-
-| Tool | Version | Used for |
+| Tool | Version | Pinned by |
 |---|---|---|
-| .NET SDK | `10.0.101` or a later 10.0 feature band | Everything under `src/` and `tests/`. |
-| Node.js | 22 | The SPA in `web/`. |
-| uv | current | The Python project in `ha/`. |
-| Docker | current | Testcontainers tests, building the image. |
+| .NET SDK | `10.0.101` or a later 10.0 feature band | `global.json` (`rollForward: latestFeature`); also selects Microsoft.Testing.Platform |
+| Node.js | 22 | The `node:22-alpine` stage of the `Dockerfile`; `web/` has no `engines` field |
+| uv, Python | Python 3.14.2 or later | `ha/pyproject.toml`, `ha/.python-version`; uv installs the interpreter |
+| Docker | current | Testcontainers (IMAP, FreshRSS) and the image build |
 
-### .NET SDK
+## Prepare a checkout
 
-`global.json` pins the SDK to `10.0.101` with `rollForward: latestFeature`, so any newer 10.0.x feature band works. It also selects Microsoft.Testing.Platform as the test runner. Check the active SDK from the repository root:
-
-```sh
-dotnet --version
+::: code-group
+```sh [.NET]
+dotnet tool restore   # dotnet-ef from .config/dotnet-tools.json
+dotnet build
 ```
 
-The repository restores local tools from `.config/dotnet-tools.json`, which provides `dotnet-ef`:
-
-```sh
-dotnet tool restore
-```
-
-### Node.js
-
-`web/package.json` declares no `engines` field and the repository has no `.nvmrc`. The `Dockerfile` builds the SPA with `node:22-alpine`, so use Node 22 locally to match the image. Install the dependencies:
-
-```sh
+```sh [web/]
 cd web
 npm ci
 ```
 
-### uv and Python
-
-The component in `ha/` requires Python 3.14.2 or later (`requires-python` in `ha/pyproject.toml`). uv installs a matching interpreter. The `uv.lock` file pins the Home Assistant test dependencies.
-
-```sh
+```sh [ha/]
 cd ha
 uv sync
 ```
+:::
 
-### Docker
+The build treats warnings as errors and enforces the `.editorconfig` style (`TreatWarningsAsErrors`, `EnforceCodeStyleInBuild` in `Directory.Build.props`). Run `dotnet format` before you commit.
 
-Several test projects start containers through Testcontainers (for example an IMAP server and FreshRSS). The user running `dotnet test` needs access to the Docker socket. Without it, those tests fail to start their containers.
-
-Docker also builds the release image. See [release process](release-process.md).
-
-## Build once
-
-From the repository root:
-
-```sh
-dotnet build
-```
-
-The build treats warnings as errors and enforces the `.editorconfig` style rules (`TreatWarningsAsErrors`, `EnforceCodeStyleInBuild` in `Directory.Build.props`). Run `dotnet format` before you commit.
-
-## Check that it works
-
-```sh
-dotnet test --project tests/Marshal.Core.Tests
-```
-
-The run ends with all tests passing. Continue with [building and testing](building-and-testing.md).
+The user that runs `dotnet test` needs access to the Docker socket, or the Testcontainers tests fail.
 
 ## Related
 
 ::: cards
-- [Development index](index.md)
+- [Building and testing](building-and-testing.md)
 - [Web frontend](web-frontend.md)
 :::

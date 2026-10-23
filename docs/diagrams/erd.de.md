@@ -2,12 +2,12 @@
 title: Datenmodell
 icon: fa-solid fa-database
 order: 10
-description: "Jede EF-Core-Entität von Marshal.Data mit ihren Spalten und Beziehungen, ein Diagramm pro Bereich."
+description: "Jede EF-Core-Entität von Marshal.Data mit ihren Spalten und Beziehungen, in kleinen Diagrammen pro Bereich."
 ---
 
 # Datenmodell
 
-Jede EF-Core-Entität von `Marshal.Data` mit ihren Spalten und Beziehungen, ein Diagramm pro Bereich. Entitäten aus anderen Bereichen erscheinen als einfache Kästen, wo eine Beziehung Bereiche überquert.
+Jede EF-Core-Entität von `Marshal.Data` mit ihren Spalten und Beziehungen, in kleinen Diagrammen pro Bereich. Entitäten aus anderen Diagrammen erscheinen als einfache Kästen, wo eine Beziehung sie verbindet. Die Kante von `owner_id` zu `User` ist nicht gezeichnet; die Spalte `owner_id` zeigt sie.
 
 In den Kommentaren der Attribute markiert `null` eine Spalte, die null sein darf; `PK`, `FK` und `UK` (unique) markieren Schlüssel.
 
@@ -18,31 +18,93 @@ In den Kommentaren der Attribute markiert `null` eine Spalte, die null sein darf
 
 Benutzer, Logins, Passkeys, Rollen, API-Tokens, Authentifizierungs-Tickets und Präferenzen.
 
-<!--@include: ../_diagrams/erd-identity.md-->
+### Benutzer und Logins
+
+<!--@include: ../_diagrams/erd-identity-accounts.md-->
+
+### Rollen
+
+<!--@include: ../_diagrams/erd-identity-roles.md-->
+
+### API-Tokens, Tickets und Präferenzen
+
+<!--@include: ../_diagrams/erd-identity-access.md-->
 
 ## Unterhaltungen und Durchläufe
 
 Sitzungen, Durchläufe und ihre Schritte, ausstehende Aktionen und Eingabeanfragen, Apps, Evals, Rückfragen und das Audit-Log.
 
-<!--@include: ../_diagrams/erd-conversations.md-->
+### Sitzungen und Durchläufe
+
+<!--@include: ../_diagrams/erd-conversations-sessions.md-->
+
+### Schritte der Durchläufe und Audit-Log
+
+<!--@include: ../_diagrams/erd-conversations-steps.md-->
+
+### Ausstehende Aktionen, Eingabeanfragen und Rückfragen
+
+<!--@include: ../_diagrams/erd-conversations-pending.md-->
+
+### Apps und Evals
+
+<!--@include: ../_diagrams/erd-conversations-apps-evals.md-->
 
 ## Gedächtnis
 
 Projekte, Einträge mit Versionen und Kanten, Gedächtnisvorschläge sowie die Volltext- und Vektorindizes. Das [Gedächtnismodell](../concepts/memory-model.md) erklärt, wie sie genutzt werden.
 
-<!--@include: ../_diagrams/erd-memory.md-->
+### Projekte
+
+<!--@include: ../_diagrams/erd-memory-projects.md-->
+
+### Einträge und Versionen
+
+<!--@include: ../_diagrams/erd-memory-chunks.md-->
+
+### Kanten und Gedächtnisvorschläge
+
+<!--@include: ../_diagrams/erd-memory-edges.md-->
+
+### Volltext- und Vektorindizes
+
+<!--@include: ../_diagrams/erd-memory-indexes.md-->
 
 ## Hintergrundarbeit
 
 Aufgaben, Executor-Sitzungen, Benachrichtigungen, Änderungsvorschläge, Vorschläge, Skill-Vorschläge und Wartungszustand.
 
-<!--@include: ../_diagrams/erd-background-work.md-->
+### Aufgaben
+
+<!--@include: ../_diagrams/erd-background-tasks.md-->
+
+### Executor-Sitzungen und Änderungsvorschläge
+
+<!--@include: ../_diagrams/erd-background-executor.md-->
+
+### Benachrichtigungen und Wartung
+
+<!--@include: ../_diagrams/erd-background-notifications.md-->
+
+### Vorschläge und Skill-Vorschläge
+
+<!--@include: ../_diagrams/erd-background-suggestions.md-->
 
 ## Integrationen und Secrets
 
 Secrets, Pins und Task-Handles von MCP-Werkzeugen, Mailkonten, Synchronisationszustand von CalDAV, Artefakte, der Notizindex und Zeilen der Demo-Daten.
 
-<!--@include: ../_diagrams/erd-integrations.md-->
+### Secrets und MCP
+
+<!--@include: ../_diagrams/erd-integrations-secrets-mcp.md-->
+
+### Mail- und Kalenderkonten
+
+<!--@include: ../_diagrams/erd-integrations-accounts.md-->
+
+### Artefakte, Notizindex und Demo-Daten
+
+<!--@include: ../_diagrams/erd-integrations-content.md-->
 
 ## Tabellen und Einschränkungen
 

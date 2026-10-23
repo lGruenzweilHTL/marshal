@@ -38,7 +38,10 @@ Ein Agent-Template kann eine Stufe wählen. Aufrufe mit Bildern (Druckerkameras,
 | `reasoning` | `off`, `low`, `medium`, `high` | `off` | Reasoning-Aufwand für Text-Turns und Hintergrundaufgaben; Sprach-Turns nutzen nie Reasoning |
 | `price` | object | keiner | `inputPerMTok`, `outputPerMTok`, `cachedPerMTok`; ohne ihn sind die Kosten 0 |
 
-## Ollama
+## Anbieter
+
+::: tabs
+== Ollama
 
 ```yaml
 models:
@@ -58,7 +61,7 @@ models:
 
 Lade jedes Modell: `docker compose exec ollama ollama pull qwen3:30b`. Setz `contextLength` auf den Wert, den der Modellserver tatsächlich nutzt.
 
-## OpenAI-kompatible Server
+== OpenAI-kompatible Server
 
 Für llama.cpp `llama-server`, vLLM oder LM Studio:
 
@@ -72,7 +75,7 @@ models:
     # apiKeySecret: llama_key
 ```
 
-## Anthropic
+== Anthropic
 
 ```yaml
 models:
@@ -86,6 +89,7 @@ models:
 ```
 
 Stell den Schlüssel als Docker-Secret-Datei `/run/secrets/anthropic_key` oder als Variable `MARSHAL_SECRET_ANTHROPIC_KEY` bereit. Der Start schlägt fehl, wenn sich das Secret nicht auflösen lässt. Begrenze die Nutzung des Advisors mit `agent.advisor.maxCallsPerRun` und `agent.advisor.dailyCostCap`.
+:::
 
 ## Reasoning
 

@@ -40,9 +40,15 @@ Marshal läuft als ein ASP.NET-Container plus einem optionalen, getrennten Execu
 
 Clients erreichen Marshal auf drei Wegen: Home Assistant Assist über die Custom-Komponente (die Hauptschnittstelle), die Weboberfläche und die öffentliche API. Alle drei nutzen denselben Turn-Endpunkt, `POST /api/v1/conversation/turns` (siehe [Konversations-API](../api/conversation.md)).
 
+<!--@include: ../_diagrams/packages-runtime.md-->
+
 ## Wie eine Anfrage hindurchläuft
 
-<!--@include: ../_diagrams/voice-turn.de.md-->
+<!--@include: ../_diagrams/voice-turn-request.de.md-->
+
+In `Marshal.Core` führt die Agentenschleife den Turn aus:
+
+<!--@include: ../_diagrams/voice-turn-agent-loop.de.md-->
 
 1. Assist übergibt den transkribierten Text an die Marshal-Komponente, die ihn mit Satellit, Bereich, Sprache und Eingabemodus weiterleitet. Sie schickt keine Entitätszustände.
 2. `Marshal.Api` authentifiziert das Maschinen-Token, prüft den Scope `conversation:write` und sucht die Sitzung oder legt sie an.

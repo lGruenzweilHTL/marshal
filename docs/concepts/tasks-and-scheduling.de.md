@@ -56,6 +56,10 @@ Nutzdaten von Ereignissen sind nicht vertrauenswürdig, außer die Quelle deklar
 
 <!--@include: ../_diagrams/task-lifecycle.de.md-->
 
+Innerhalb eines Durchlaufs:
+
+<!--@include: ../_diagrams/task-run.de.md-->
+
 1. **Fällig.** Ein Auslöser feuert, und die Aufgabe wird fällig.
 2. **Worker.** Höchstens `tasks.workers` Durchläufe laufen gleichzeitig (standardmäßig 2). Weitere fällige Aufgaben warten in der Reihenfolge von `next_run_at`.
 3. **Durchlauf ohne Anfrage.** Die [Agentenschleife](agent-loop.md) läuft als Eigentümer der Aufgabe, mit Template, Projekt und Richtlinie des Ursprungssatelliten der Aufgabe. `denyTools` und `denyConfirm` eines Satelliten folgen seinen Aufgaben und deren Kindaufgaben. Es gelten die Regeln für den Hintergrund: Der Advisor ist sichtbar, und Aufrufe der Bestätigungsstufe gehen in die Freigabe-Warteschlange.

@@ -40,14 +40,19 @@ A tool of an integration that is not configured is not listed. For example, the 
 
 2. **Add Marshal to the client**
 
-   **Claude Code.** Add the server for your user:
+   ::: tabs
+   == Claude Code
+
+   Add the server for your user:
 
    ```sh
    claude mcp add --transport http --scope user marshal https://marshal.example.org/mcp \
      --header "Authorization: Bearer mrs_..."
    ```
 
-   **VS Code.** Add the server to `.vscode/mcp.json` in your workspace, or to your user MCP configuration. VS Code asks for the token once and stores it securely:
+   == VS Code
+
+   Add the server to `.vscode/mcp.json` in your workspace, or to your user MCP configuration. VS Code asks for the token once and stores it securely:
 
    ```json
    {
@@ -63,6 +68,7 @@ A tool of an integration that is not configured is not listed. For example, the 
      }
    }
    ```
+   :::
 
 3. **Ask Marshal something**
 

@@ -1,21 +1,11 @@
 ---
 icon: fa-solid fa-puzzle-piece
-description: "Add a new external system to Marshal behind a small interface, with tools, risk tiers, secrets and tests."
+description: "Rules for adding an external system to Marshal: project layout, interface, options, secrets, tools, tests and the files to update."
 ---
 
 # Add an integration
 
-Add a new external system to Marshal behind a small interface, with tools, risk tiers, secrets and tests.
-
-## Before you start
-
-- Have an approved OpenSpec change that covers the integration ([OpenSpec workflow](openspec-workflow.md)).
-- Verify the external API against its current documentation. Do not rely on the design notes.
-- Decide up front whether any capability must never exist (for example mail sending). A forbidden capability gets no code path at all.
-
-The Proxmox integration (`src/Marshal.Integrations.Proxmox`) is a compact reference: an options class, a client interface with one REST implementation, a tool source and one registration method.
-
-A coding agent can build the integration from the approved change; name your change in place of `<change>`:
+Rules for adding an external system to Marshal. `src/Marshal.Integrations.Proxmox` is the compact reference: an options class, a client interface with one REST implementation, a tool source and one registration method.
 
 ::: prompt For a coding agent
 Read CLAUDE.md, STYLE_GUIDE.md and
@@ -28,82 +18,57 @@ checklist. Run the tests of the changed
 projects and `npx clay-doc@5 check` until both pass.
 :::
 
-## Steps
+## Project
 
-::: steps
-1. **Create the project**
+- `src/Marshal.Integrations.<Name>` and `tests/Marshal.Integrations.<Name>.Tests`, both in `Marshal.sln`.
+- Reference `Marshal.Abstractions` (and `Marshal.Data` only if the integration stores rows). Package versions go in `Directory.Packages.props`.
+- Verify the external API against its current documentation, not the design notes.
 
-   Create `src/Marshal.Integrations.<Name>` and `tests/Marshal.Integrations.<Name>.Tests`. Add both to `Marshal.sln`. Package versions go in `Directory.Packages.props`, never in the project file. Reference `Marshal.Abstractions`; reference only the packages you need.
+## Interface and options
 
-2. **Define a small interface**
+- One focused client interface (`IProxmoxClient`). Express differences between implementations with capability flags, not `is` checks. Expected failures (host unreachable, entity not found) return a `Result`.
+- A sealed options class bound to a `marshal.yaml` section, validated with `ValidateOnStart()`:
 
-   Put the capability behind one focused interface (`IProxmoxClient`). Express differences between implementations with capability flags, not `is` checks. Expected failures (host unreachable, entity not found) return a `Result`, not an exception.
+  ```csharp
+  services.AddOptions<ProxmoxOptions>().Bind(configuration.GetSection("proxmox"))
+      .Validate(options => options.Url is null || options.Url is { IsAbsoluteUri: true, Scheme: "https" }, "proxmox.url must be an absolute https URL.")
+      .ValidateOnStart();
+  ```
 
-3. **Add options with validation**
+- Options hold secret **names** (`tokenSecret: proxmox_token`); the client resolves values through `ISecretStore`. Mark those properties `[Secret]`, so startup fails on a literal secret in `/config`.
 
-   Bind a sealed options class to a section of `marshal.yaml` and validate it:
+## Registration
 
-   ```csharp
-   services.AddOptions<ProxmoxOptions>().Bind(configuration.GetSection("proxmox"))
-       .Validate(options => options.Url is null || options.Url is { IsAbsoluteUri: true, Scheme: "https" }, "proxmox.url must be an absolute https URL.")
-       .ValidateOnStart();
-   ```
+- One extension method, `services.AddMarshal<Name>(configuration)`, called from `src/Marshal.Api/Hosting/MarshalApp.cs`.
+- HTTP clients through `IHttpClientFactory` with `AddStandardResilienceHandler()`. Retry only calls that are safe to repeat.
+- An `IToolSource` that returns **no tools while the integration is unconfigured**. Tools follow [adding a tool](adding-a-tool.md).
 
-   Config never holds secrets. Options reference a secret by name (`tokenSecret: proxmox_token`) and the client resolves the value through `ISecretStore`. Mark option properties that hold secrets with `[Secret]`; startup then fails when a literal secret appears in `/config`. See [secrets reference](../configuration/secrets-reference.md).
+## Safety rules
 
-4. **Register the services**
+- Every tool has a default tier; arg-aware rules go in `deploy/config.example/risk.yaml`.
+- Tools that are forbidden, outside the template allowlist, denied for the satellite, or confirm-tier on a satellite that cannot confirm are removed from the list. The guard checks again.
+- Outside content (mail, feeds, notes, web pages) is untrusted: mark tool output untrusted so the run is tainted.
+- Owned rows carry `owner_id` and go through the owner-scoped filters ([database migrations](database-migrations.md)). Read the owner from the execution context.
 
-   Expose one extension method, `services.AddMarshal<Name>(configuration)`, and call it from `src/Marshal.Api/Hosting/MarshalApp.cs`. Register HTTP clients through `IHttpClientFactory` with `AddStandardResilienceHandler()`. Retry only when the calls are safe to repeat.
+## Tests
 
-5. **Expose tools**
+- Fake the external system: an in-process `TestHost` server, recorded traffic or a Testcontainers image.
+- Cover the unconfigured case (no tools), each tool's tier, and ownership with a second fake user.
 
-   Implement `IToolSource` and register it (`services.AddSingleton<IToolSource, ...>()`). Return no tools while the integration is unconfigured, so the model never sees tools that cannot work. [Adding a tool](adding-a-tool.md) covers descriptors, tiers and tests.
+## Update in the same change
 
-   Tool ids are `<namespace>.<snake_case_name>`. The namespace names the capability, not the provider: `printer`, not `moonraker`.
-
-6. **Assign risk tiers**
-
-   Every tool has a default tier: `safe`, `confirm` or `forbidden`. Choose the lowest tier that is still safe, and write arg-aware rules in `deploy/config.example/risk.yaml` when the tier depends on the target or arguments. Rules and visibility:
-
-   - Confirm-tier actions are frozen server-side (tool, arguments, nonce, TTL). Only a user action can confirm.
-   - A tool that is forbidden, outside the agent template allowlist, denied for the satellite, or confirm-tier on a satellite that cannot confirm is removed from the tool list. The guard checks the same rules again.
-   - Content from the integration that comes from outside (mail, feeds, notes, web pages) is untrusted data. Mark the tool output as untrusted so the run becomes tainted.
-   - Never add a tool that fetches a caller-chosen URL.
-
-7. **Scope data by owner**
-
-   Every user-owned row has `owner_id`, and every query goes through the owner-scoped query filters in `Marshal.Data`. Read the current owner from the execution context, never from a global. If the integration stores rows, follow [database migrations](database-migrations.md).
-
-8. **Write the tests first**
-
-   - Fake the external system: an in-process server with `Microsoft.AspNetCore.TestHost`, recorded traffic, or a Testcontainers image.
-   - Use the fakes from `tests/Marshal.Testing`. Add new shared fakes there.
-   - Test the unconfigured case (no tools), each tool's tier, and ownership with a second fake user.
-
-9. **Update the repository files**
-
-   - `CLAUDE.md`: repository map entry, package index rows for new packages.
-   - The package diagram in [architecture](../concepts/architecture.md#the-parts) and, if you added entities, the [data model](../diagrams/erd.md) ([maintaining the diagrams](../diagrams/README.md)).
-   - `deploy/config.example/`: example config for the new section.
-   - `src/Marshal.Demo`: if you change an interface that demo mode implements (Home Assistant, printers, mail, RSS, notes), update the simulated implementation in the same change. A new integration is not simulated unless an OpenSpec change adds it to the [demo mode](../guides/demo-mode.md) scope.
-:::
-
-## Documentation checklist
-
-A new integration is not finished until the docs match:
-
-- [ ] A guide in `docs/guides/integrations/<name>.md` ([docs style](docs-style.md)).
-- [ ] A configuration page or section under `docs/configuration/marshal-yaml/`, listed in [`integrations`](../configuration/marshal-yaml/integrations.md).
-- [ ] Rows for every tool in the [tool reference](../reference/tools.md), with tier and visibility.
-- [ ] Risk tier changes in the [risk tiers reference](../reference/risk-tiers.md) when you add rules.
-- [ ] New secrets in the [secrets reference](../configuration/secrets-reference.md).
-- [ ] New events or notification sources in the matching reference pages.
-- [ ] A line in the changelog ([release process](release-process.md)).
+- [ ] `CLAUDE.md`: repository map, package index rows.
+- [ ] The [package diagram](../concepts/architecture.md#the-parts) and, for new entities, the [data model](../diagrams/erd.md).
+- [ ] `deploy/config.example/`: the new section.
+- [ ] `src/Marshal.Demo`, if you changed an interface it simulates. A new integration is simulated only when a change adds it to the [demo mode](../guides/demo-mode.md) scope.
+- [ ] A guide in `docs/guides/integrations/<name>.md` and a section under `docs/configuration/marshal-yaml/`, listed in [`integrations`](../configuration/marshal-yaml/integrations.md).
+- [ ] Rows in the [tool reference](../reference/tools.md); rule changes in the [risk tiers reference](../reference/risk-tiers.md); new secrets in the [secrets reference](../configuration/secrets-reference.md); new events or notification sources in their reference pages.
+- [ ] A line in `CHANGELOG.md`.
 
 ## Check that it works
 
-- With no configuration, the model sees none of the integration's tools.
-- With valid configuration, the tools appear and return data from your fake.
+- Unconfigured: the model sees none of the integration's tools.
+- Configured: the tools appear and return data from your fake.
 - Startup fails with a clear message on invalid options and on a literal secret.
 
 ## Related

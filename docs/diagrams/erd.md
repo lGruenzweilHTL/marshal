@@ -2,12 +2,12 @@
 title: Data model
 icon: fa-solid fa-database
 order: 10
-description: "Every EF Core entity of Marshal.Data with its columns and relationships, one diagram per area."
+description: "Every EF Core entity of Marshal.Data with its columns and relationships, in small diagrams per area."
 ---
 
 # Data model
 
-Every EF Core entity of `Marshal.Data` with its columns and relationships, one diagram per area. Entities from other areas appear as plain boxes where a relationship crosses areas.
+Every EF Core entity of `Marshal.Data` with its columns and relationships, in small diagrams per area. Entities from other diagrams appear as plain boxes where a relationship connects them. The edge from `owner_id` to `User` is not drawn; the `owner_id` column shows it.
 
 In the attribute comments, `null` marks a nullable column; `PK`, `FK` and `UK` (unique) mark keys.
 
@@ -18,31 +18,93 @@ In the attribute comments, `null` marks a nullable column; `PK`, `FK` and `UK` (
 
 Users, logins, passkeys, roles, API tokens, authentication tickets and preferences.
 
-<!--@include: ../_diagrams/erd-identity.md-->
+### Users and logins
+
+<!--@include: ../_diagrams/erd-identity-accounts.md-->
+
+### Roles
+
+<!--@include: ../_diagrams/erd-identity-roles.md-->
+
+### API tokens, tickets and preferences
+
+<!--@include: ../_diagrams/erd-identity-access.md-->
 
 ## Conversations and runs
 
 Sessions, runs and their steps, pending actions and input requests, apps, evals, follow-ups and the audit log.
 
-<!--@include: ../_diagrams/erd-conversations.md-->
+### Sessions and runs
+
+<!--@include: ../_diagrams/erd-conversations-sessions.md-->
+
+### Run steps and audit log
+
+<!--@include: ../_diagrams/erd-conversations-steps.md-->
+
+### Pending actions, input requests and follow-ups
+
+<!--@include: ../_diagrams/erd-conversations-pending.md-->
+
+### Apps and evals
+
+<!--@include: ../_diagrams/erd-conversations-apps-evals.md-->
 
 ## Memory
 
 Projects, chunks with versions and edges, memory proposals, and the full-text and vector indexes. The [memory model](../concepts/memory-model.md) explains how they are used.
 
-<!--@include: ../_diagrams/erd-memory.md-->
+### Projects
+
+<!--@include: ../_diagrams/erd-memory-projects.md-->
+
+### Chunks and versions
+
+<!--@include: ../_diagrams/erd-memory-chunks.md-->
+
+### Edges and memory proposals
+
+<!--@include: ../_diagrams/erd-memory-edges.md-->
+
+### Full-text and vector indexes
+
+<!--@include: ../_diagrams/erd-memory-indexes.md-->
 
 ## Background work
 
 Tasks, executor sessions, notifications, proposals, suggestions, skill proposals and maintenance state.
 
-<!--@include: ../_diagrams/erd-background-work.md-->
+### Tasks
+
+<!--@include: ../_diagrams/erd-background-tasks.md-->
+
+### Executor sessions and proposals
+
+<!--@include: ../_diagrams/erd-background-executor.md-->
+
+### Notifications and maintenance
+
+<!--@include: ../_diagrams/erd-background-notifications.md-->
+
+### Suggestions and skill proposals
+
+<!--@include: ../_diagrams/erd-background-suggestions.md-->
 
 ## Integrations and secrets
 
 Secrets, MCP tool pins and task handles, mail accounts, CalDAV sync state, artifacts, the notes index and demo seed rows.
 
-<!--@include: ../_diagrams/erd-integrations.md-->
+### Secrets and MCP
+
+<!--@include: ../_diagrams/erd-integrations-secrets-mcp.md-->
+
+### Mail and calendar accounts
+
+<!--@include: ../_diagrams/erd-integrations-accounts.md-->
+
+### Artifacts, notes index and demo seed
+
+<!--@include: ../_diagrams/erd-integrations-content.md-->
 
 ## Tables and constraints
 

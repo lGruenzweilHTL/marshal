@@ -21,9 +21,10 @@ Connect any Model Context Protocol (MCP) server to Marshal so its tools appear n
 ::: steps
 1. **Create a server file**
 
-   Add one YAML file per server in `/config/mcp/`. The file name is free.
+   Add one YAML file per server in `/config/mcp/`. The file name is free. Use `http` for a server on the network, `stdio` for a local process.
 
-   ```yaml
+   ::: code-group
+   ```yaml [HTTP]
    id: search                      # lowercase letters and digits, starts with a letter
    transport: http                 # http (streamable HTTP) or stdio
    url: http://search.lan:3000/mcp
@@ -32,9 +33,7 @@ Connect any Model Context Protocol (MCP) server to Marshal so its tools appear n
    untrusted: true                 # tool output is third-party data
    ```
 
-   For a local process, use `stdio`:
-
-   ```yaml
+   ```yaml [stdio]
    id: files
    transport: stdio
    command: /usr/local/bin/files-mcp
@@ -43,6 +42,7 @@ Connect any Model Context Protocol (MCP) server to Marshal so its tools appear n
      - variable: FILES_API_KEY
        secret: files_api_key
    ```
+   :::
 
    Home Assistant's own MCP server uses the same format, see [Home Assistant MCP](home-assistant-mcp.md) and `deploy/config.example/mcp/ha.yaml`.
 

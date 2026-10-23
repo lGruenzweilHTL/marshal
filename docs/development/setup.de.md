@@ -1,84 +1,45 @@
 ---
 icon: fa-solid fa-laptop-code
-description: "Installiere die Werkzeuge, die du brauchst, um Marshal zu bauen, seine Tests auszuführen und an der Weboberfläche und der Home-Assistant-Komponente zu arbeiten."
+description: "Die Werkzeugversionen, die Marshal festlegt, und die Befehle, die einen Checkout vorbereiten."
 ---
 
 # Eine Entwicklungsmaschine einrichten
 
-Installiere die Werkzeuge, die du brauchst, um Marshal zu bauen, seine Tests auszuführen und an der Weboberfläche und der Home-Assistant-Komponente zu arbeiten.
+Die Werkzeugversionen, die Marshal festlegt, und die Befehle, die einen Checkout vorbereiten.
 
-## Bevor du anfängst
-
-Du brauchst Git und eine Maschine mit Linux, macOS oder Windows, auf der Docker läuft.
-
-## Werkzeuge
-
-| Werkzeug | Version | Wofür |
+| Werkzeug | Version | Festgelegt durch |
 |---|---|---|
-| .NET SDK | `10.0.101` oder ein späteres 10.0-Feature-Band | Alles unter `src/` und `tests/`. |
-| Node.js | 22 | Die SPA in `web/`. |
-| uv | aktuell | Das Python-Projekt in `ha/`. |
-| Docker | aktuell | Testcontainers-Tests, Bau des Images. |
+| .NET SDK | `10.0.101` oder ein späteres 10.0-Feature-Band | `global.json` (`rollForward: latestFeature`); wählt auch Microsoft.Testing.Platform |
+| Node.js | 22 | Die Stufe `node:22-alpine` im `Dockerfile`; `web/` hat kein Feld `engines` |
+| uv, Python | Python 3.14.2 oder neuer | `ha/pyproject.toml`, `ha/.python-version`; uv installiert den Interpreter |
+| Docker | aktuell | Testcontainers (IMAP, FreshRSS) und der Image-Build |
 
-### .NET SDK
+## Einen Checkout vorbereiten
 
-`global.json` pinnt das SDK auf `10.0.101` mit `rollForward: latestFeature`, jedes neuere 10.0.x-Feature-Band funktioniert also. Die Datei wählt außerdem Microsoft.Testing.Platform als Test-Runner. Prüfe das aktive SDK im Wurzelverzeichnis des Repositorys:
-
-```sh
-dotnet --version
+::: code-group
+```sh [.NET]
+dotnet tool restore   # dotnet-ef aus .config/dotnet-tools.json
+dotnet build
 ```
 
-Das Repository stellt lokale Werkzeuge aus `.config/dotnet-tools.json` wieder her, darunter `dotnet-ef`:
-
-```sh
-dotnet tool restore
-```
-
-### Node.js
-
-`web/package.json` deklariert kein Feld `engines`, und das Repository hat keine `.nvmrc`. Das `Dockerfile` baut die SPA mit `node:22-alpine`; nutze lokal also Node 22, passend zum Image. Installiere die Abhängigkeiten:
-
-```sh
+```sh [web/]
 cd web
 npm ci
 ```
 
-### uv und Python
-
-Die Komponente in `ha/` braucht Python 3.14.2 oder neuer (`requires-python` in `ha/pyproject.toml`). uv installiert einen passenden Interpreter. Die Datei `uv.lock` pinnt die Testabhängigkeiten für Home Assistant.
-
-```sh
+```sh [ha/]
 cd ha
 uv sync
 ```
+:::
 
-### Docker
+Der Build behandelt Warnungen als Fehler und setzt den Stil aus `.editorconfig` durch (`TreatWarningsAsErrors`, `EnforceCodeStyleInBuild` in `Directory.Build.props`). Führ vor dem Commit `dotnet format` aus.
 
-Mehrere Testprojekte starten Container über Testcontainers (zum Beispiel einen IMAP-Server und FreshRSS). Der Benutzer, der `dotnet test` ausführt, braucht Zugriff auf den Docker-Socket. Ohne ihn können diese Tests ihre Container nicht starten.
-
-Docker baut auch das Release-Image. Siehe [Release-Prozess](release-process.md).
-
-## Einmal bauen
-
-Im Wurzelverzeichnis des Repositorys:
-
-```sh
-dotnet build
-```
-
-Der Build behandelt Warnungen als Fehler und setzt die Stilregeln aus `.editorconfig` durch (`TreatWarningsAsErrors`, `EnforceCodeStyleInBuild` in `Directory.Build.props`). Führe `dotnet format` aus, bevor du committest.
-
-## Prüfen, ob es funktioniert
-
-```sh
-dotnet test --project tests/Marshal.Core.Tests
-```
-
-Am Ende des Laufs sind alle Tests bestanden. Mach weiter mit [Bauen und testen](building-and-testing.md).
+Der Benutzer, der `dotnet test` ausführt, braucht Zugriff auf den Docker-Socket, sonst scheitern die Testcontainers-Tests.
 
 ## Verwandte Seiten
 
 ::: cards
-- [Überblick zur Entwicklung](index.md)
+- [Bauen und testen](building-and-testing.md)
 - [Weboberfläche](web-frontend.md)
 :::

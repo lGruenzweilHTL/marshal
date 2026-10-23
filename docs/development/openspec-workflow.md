@@ -1,62 +1,36 @@
 ---
 icon: fa-solid fa-diagram-next
-description: "Propose, implement, sync and archive a change."
+description: "Marshal's rules for OpenSpec changes: what each artifact must contain and what a change updates besides code."
 ---
 
 # OpenSpec workflow
 
-Propose, implement, sync and archive a change. Marshal is spec-driven: behavior is defined in `openspec/specs/` before it is built.
+Marshal's rules for OpenSpec changes. Use the `opsx:*` skills (`propose`, `explore`, `apply`, `sync`, `archive`) as usual.
 
 ## Rules
 
-- `openspec/specs/` is authoritative. If code and a spec disagree, the spec wins. Fix the code or propose a spec change; never diverge silently.
-- Do not start implementation without an approved change in `openspec/changes/` that covers it.
+- `openspec/specs/` is authoritative. When code and spec disagree, fix the code or propose a spec change; never diverge silently.
+- No implementation without an approved change in `openspec/changes/` that covers it.
 
-## Layout
+## Artifact rules
 
-| Path | Holds |
+`openspec/config.yaml` adds these to every change:
+
+| Artifact | Must contain |
 |---|---|
-| `openspec/specs/<capability>/spec.md` | The current requirements and scenarios. |
-| `openspec/changes/<change>/` | A proposed or in-progress change: proposal, design, delta specs, tasks. |
-| `openspec/changes/archive/` | Finished changes. |
-| `openspec/config.yaml` | Project context and the rules each artifact must follow. |
+| Proposal | A "Non-goals" section. |
+| Design | Every new interface and its v1 implementations. For every new model-facing tool: its risk tier (`safe`, `confirm`, `forbidden`, including arg-aware rules) and when it is hidden from the model. |
+| Tasks | Test-first order: each implementation task follows, or is paired with, the task that writes its failing test. |
 
-## Steps
-
-::: steps
-1. **Propose**
-
-   Use the `opsx:propose` skill (or the `openspec-propose` skill) to create the change and generate its artifacts in one step. `openspec/config.yaml` adds these rules:
-
-   - The proposal has a "Non-goals" section.
-   - The design names every new interface and its v1 implementations.
-   - For every new model-facing tool, the design states its risk tier (safe, confirm or forbidden, including arg-aware rules) and when the tool is hidden from the model.
-   - Tasks are test-first: each implementation task is preceded by, or paired with, the task that writes its failing test.
-
-   Use `opsx:explore` to think a problem through before you propose.
-
-2. **Apply**
-
-   Use `opsx:apply` to work through the tasks. Write the failing test, make it pass, then tick the task. Update `CLAUDE.md` (repository map, package index), the diagrams and the documentation in the same change when the change calls for it.
-
-3. **Sync**
-
-   Use `opsx:sync` to merge the change's delta specs into `openspec/specs/` without archiving the change.
-
-4. **Archive**
-
-   Use `opsx:archive` when the implementation is complete. It moves the change to `openspec/changes/archive/` and syncs the specs if you have not.
-:::
-
-## Check that it works
+## Done means
 
 - Every requirement in the delta specs has a scenario and a test.
-- `openspec/specs/` reflects the behavior you shipped.
-- The documentation pages for the changed behavior match the spec ([docs style](docs-style.md)).
+- The same change updates `CLAUDE.md` (repository map, package index), the [diagrams](../diagrams/README.md), the docs pages for the changed behavior ([docs style](docs-style.md)) and `Marshal.Demo` when it implements a changed interface.
+- The change is synced and archived, so `openspec/specs/` reflects what shipped.
 
 ## Related
 
 ::: cards
-- [Development index](index.md)
 - [Adding an integration](adding-an-integration.md)
+- [Adding a tool](adding-a-tool.md)
 :::

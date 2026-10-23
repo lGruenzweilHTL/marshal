@@ -1,75 +1,48 @@
 ---
 icon: fa-solid fa-tag
-description: "Das Marshal-Image bauen und eine Version veröffentlichen."
+description: "Wie ein Release von Marshal gebaut und veröffentlicht wird; eine Automatisierung gibt es noch nicht."
 ---
 
-# Release-Prozess
+# Release-Ablauf
 
-Das Marshal-Image bauen und eine Version veröffentlichen. Marshal hat noch keine Automatisierung für Releases; diese Seite beschreibt den manuellen Ablauf ehrlich.
+Wie ein Release von Marshal gebaut und veröffentlicht wird. Eine Automatisierung gibt es noch nicht: Der einzige Workflow, `.github/workflows/docs.yaml`, veröffentlicht die Doku-Website. Kein CI führt Tests aus oder veröffentlicht Images, und noch keine Version hat ein Tag.
 
-## Was es gibt
+## Versionen
 
-- Ein mehrstufiges `Dockerfile` im Wurzelverzeichnis des Repositorys baut ein einziges Image: den API-Host plus die SPA.
-- `Directory.Build.props` setzt die Version der App (`<Version>0.1.0</Version>`), die die Systemansicht zeigt. Laut Kommentar darf CI sie mit `-p:Version=...` überschreiben.
-- `deploy/docker-compose.yml` startet das Image.
+- App-Version: `<Version>` in `Directory.Build.props` (in der Systemansicht sichtbar) oder `-p:Version=<x.y.z>` beim Build.
+- Home-Assistant-Komponente: `version` in `ha/custom_components/marshal/manifest.json`, verteilt über HACS (`ha/hacs.json`).
+- API-Versionen sind getrennt und stehen im Code ([API-Versionierung](api-versioning.md)). Doku-Versionen folgen der API-Version, nicht der App-Version (siehe `CLAUDE.md`).
 
-## Was es nicht gibt
+## Das Image
 
-- Es gibt kein Verzeichnis `.github/workflows`, also keine CI, keinen automatischen Testlauf und keine Veröffentlichung von Images.
-- Es gibt keinen Changelog-Generator und noch kein getaggtes Release. `CHANGELOG.md` folgt Keep a Changelog und wird von Hand bearbeitet; Commits folgen Conventional Commits, du kannst Einträge also aus `git log` ableiten.
+Das `Dockerfile` im Wurzelverzeichnis baut ein Image, den API-Host plus die SPA:
 
-## Bau des Images
+| Stufe | Macht |
+|---|---|
+| `build` | Veröffentlicht `src/Marshal.Api` in Release, exportiert das OpenAPI-Dokument (`marshal --export-openapi`), kopiert `web/src/artifacts/highlighting/languages.json` für den Code-Highlighter. |
+| `web` | `npm ci` und `npm run build` gegen das exportierte Dokument; eine API-Änderung, die die SPA nicht behandelt, lässt den Image-Build scheitern. |
+| `runtime` | `aspnet:10.0` mit `git` und `openssh-client`, läuft als unprivilegierter Benutzer `app` auf Port 8080, verlinkt `marshal` nach `/usr/local/bin`. |
 
-Das Dockerfile läuft in drei Stufen:
+`Marshal.ExecutorHost` hat sein eigenes Image und ist nie Teil dieses Images.
 
-1. `build` veröffentlicht `src/Marshal.Api` im Release-Modus und exportiert das OpenAPI-Dokument mit `marshal --export-openapi`. Es kopiert `web/src/artifacts/highlighting/languages.json`, weil die Code-Hervorhebung die Datei einbettet.
-2. `web` (`node:22-alpine`) führt `npm ci` und `npm run build` gegen dieses Dokument aus. Eine Änderung am Vertrag, die die SPA nicht behandelt, scheitert hier.
-3. `runtime` (`mcr.microsoft.com/dotnet/aspnet:10.0`) ergänzt `git` und `openssh-client`, kopiert den veröffentlichten Host und die SPA nach `wwwroot` und läuft als unprivilegierter Benutzer `app` auf Port 8080.
-
-Der Befehl `marshal` ist nach `/usr/local/bin` verlinkt, `docker exec <container> marshal tokens ...` funktioniert also.
-
-Der Coding-Executor ist ein eigener Dienst mit eigenem Image. Er ist nie Teil des Haupt-Images.
-
-## Schritte
+## Checkliste für ein Release
 
 ::: steps
-1. **Vorbereiten**
-
-   - Stell sicher, dass jede Änderung in OpenSpec archiviert ist ([Ablauf](openspec-workflow.md)).
-   - Führ die Suiten aus [Bauen und testen](building-and-testing.md) aus: jedes .NET-Testprojekt, `npm test`, `npm run build`, `uv run pytest`.
-   - Prüfe, dass die Diagramme zum Code passen ([README der Diagramme](../diagrams/README.md)) und die Dokumentation zu den Spezifikationen.
-
-2. **Version**
-
-   Setz `<Version>` in `Directory.Build.props` oder übergib beim Bauen `-p:Version=<x.y.z>`. Hat sich die Home-Assistant-Komponente geändert, setz ihre Version in `ha/custom_components/marshal/manifest.json`.
-
-3. **Changelog**
-
-   Fass die Conventional-Commit-Historie seit dem letzten Tag zusammen, gruppiert nach `feat`, `fix` und inkompatiblen Änderungen. Verschieb die Einträge unter `[Unreleased]` in `CHANGELOG.md` unter die Überschrift der neuen Version und nutze sie als Release Notes. Nenne neue Migrationen, neue API-Versionen und Änderungen an der Konfiguration ausdrücklich; die [Anleitung zum Aktualisieren](../installation/upgrading.md) muss sie erwähnen.
-
-4. **Bauen und taggen**
-
-   ```sh
-   docker build -t marshal:<version> .
-   git tag v<version>
-   ```
-
-   Push das Image in die Registry, die du nutzt, und push den Tag. Das Repository legt keine Registry fest.
-
-5. **Die Home-Assistant-Komponente veröffentlichen**
-
-   Die Komponente in `ha/` wird über HACS verteilt (`ha/hacs.json`). Tagge das Repository, damit HACS das Release findet.
+1. **Prüfen.** Jede Änderung ist archiviert. Alle .NET-Testprojekte, `npm test`, `npm run build` und `uv run pytest` laufen durch. Diagramme und Doku passen zum Code.
+2. **Version.** Setz die App-Version und, wenn sich `ha/` geändert hat, die Version der Komponente.
+3. **Changelog.** Verschieb die Einträge unter `[Unreleased]` in `CHANGELOG.md` (Keep a Changelog) unter die neue Version. Nenn Migrationen, neue API-Versionen und Konfigurationsänderungen; die [Anleitung zum Aktualisieren](../installation/upgrading.md) muss sie erwähnen.
+4. **Bauen und taggen.** `docker build -t marshal:<version> .`, `git tag v<version>`, beides pushen. HACS übernimmt die Komponente aus dem Tag.
 :::
 
 ## Prüfen, ob es funktioniert
 
-- `docker run` des neuen Images startet, und `GET /health` antwortet.
+- Das neue Image startet und `GET /health` antwortet.
 - Die Systemansicht zeigt die neue Version.
-- Ein bestehendes Volume `/data` wird beim ersten Start migriert ([Aktualisieren](../installation/upgrading.md)).
+- Ein bestehendes `/data`-Volume wird beim ersten Start migriert.
 
 ## Verwandte Seiten
 
 ::: cards
-- [Einrichtung](setup.md)
 - [Aktualisieren](../installation/upgrading.md)
+- [API-Versionierung](api-versioning.md)
 :::

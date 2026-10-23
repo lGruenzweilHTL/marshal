@@ -1,92 +1,74 @@
 ---
 icon: fa-solid fa-window-maximize
-description: "Work on the Vue single-page app in web/: its folders, the generated API client, texts, tests and PWA setup."
+description: "Conventions of the Vue SPA in web/: folders, the generated API client, texts, tests, the screenshot sweep and PWA assets."
 ---
 
 # Web frontend
 
-Work on the Vue single-page app in `web/`: its folders, the generated API client, texts, tests and PWA setup.
-
-## Before you start
-
-Install Node 22 and run `npm ci` in `web/` ([setup](setup.md)). The .NET host serves the built app from `wwwroot`; the Dockerfile builds it.
+Conventions of the Vue SPA in `web/`. The .NET host serves the built app from `wwwroot`; the `Dockerfile` builds it.
 
 ## Layout
 
-`web/src` is organized by feature, not by technical kind. Each folder holds its views, components, composables, tests and `messages.ts`.
+`web/src` is organized by feature. Each feature folder holds its views, components, composables, tests and `messages.ts`.
 
 | Folder | Holds |
 |---|---|
-| `api/` | The typed client (`client.ts`), generated `schema.d.ts`, load and submit composables, error mapping. |
-| `i18n/` | Locale handling, the merged catalog, shared texts (`common.ts`). |
-| `layout/`, `ui/` | App shell, shared components, design tokens, fonts, icons. |
-| `chat/`, `printers/`, `tasks/`, `memory/`, `artifacts/`, `mail/`, `runs/`, ... | One folder per feature. |
-| `testing/` | `fakeServer.ts`, `fixtures.ts`, `mountApp.ts`, `fakeLiveEvents.ts`. |
-| `architecture/` | Tests that guard the structure, such as the raw client rule and the production bundle. |
+| `api/` | Typed client (`client.ts`), generated `schema.d.ts`, load and submit composables, error mapping |
+| `i18n/` | Locale handling, merged catalog, shared texts (`common.ts`) |
+| `layout/`, `ui/` | App shell, shared components, design tokens, fonts, icons |
+| `chat/`, `printers/`, `tasks/`, `memory/`, ... | One folder per feature |
+| `preview/` | Preview mode with a fake API (scenarios `normal`, `demo`, `empty`, `failing`, `offline`) |
+| `testing/` | `fakeServer.ts`, `fixtures.ts`, `mountApp.ts`, `fakeLiveEvents.ts` |
+| `architecture/` | Tests that guard the structure (no raw `fetch`, production bundle) |
 
-Put new code in the feature folder it belongs to. Create a new folder for a new feature.
+## API client
 
-## The generated API client
+- `src/api/schema.d.ts` is generated; never edit it. `npm run gen:api` exports `openapi/v1.json` from the host (`--export-openapi`) and regenerates the types; `npm run gen:types` only regenerates.
+- Call the API only through `src/api/client.ts` (`openapi-fetch`). A test in `architecture/` rejects raw `fetch`.
+- Contracts never contain `TimeSpan`; durations are numbers with the unit in the name ([API versioning](api-versioning.md)).
 
-The API client is generated from Marshal's OpenAPI document. Never edit `src/api/schema.d.ts` by hand.
+## Texts
 
-```sh
-cd web
-npm run gen:api
-```
-
-`gen:api` runs the host with `--export-openapi` to write `openapi/v1.json`, then runs `openapi-typescript` to write `src/api/schema.d.ts`. `npm run gen:types` repeats only the second step. `npm run build` runs `gen:types` and `vue-tsc` before Vite, so a contract change the SPA does not handle fails the build. The Dockerfile does the same against a freshly exported document.
-
-Call the API through the client in `src/api/client.ts` (built on `openapi-fetch`). A test in `architecture/` rejects raw `fetch` use. The OpenAPI generator fails on `TimeSpan` in a contract: send durations as numbers with the unit in the name. See [API versioning](api-versioning.md).
-
-## Texts and languages
-
-The UI is available in German and English, with `vue-i18n` in Composition API mode.
-
-- Each feature has a `messages.ts` that exports `en` and `de`.
-- `en` is the source. Type `de` as `Catalog<typeof en>`; a missing or extra German key then fails `vue-tsc`.
-- Register the feature in `src/i18n/messages.ts` under its own key. Shared texts live in `src/i18n/common.ts`.
-- Do not hard-code user-visible strings in components.
+- Every feature's `messages.ts` exports `en` (the source) and `de` typed as `Catalog<typeof en>`, so a missing or extra German key fails `vue-tsc`.
+- Register the feature in `src/i18n/messages.ts`. Shared texts go in `src/i18n/common.ts`. No hard-coded user-visible strings.
 
 ## Tests
 
-`npm test` runs Vitest with `@vue/test-utils` and `jsdom`. Tests mount the app with `testing/mountApp.ts` against the hand-written fake API server in `testing/fakeServer.ts`; add fixtures to `testing/fixtures.ts`. Tests never need the real backend. Write the failing test first.
+Vitest with `@vue/test-utils` and `jsdom`. Tests mount the app with `testing/mountApp.ts` against `testing/fakeServer.ts`; fixtures go in `testing/fixtures.ts`. Tests never need the real backend.
 
 ## Screenshot sweep
 
-`npm run screenshots` (`scripts/screenshots.ts`) opens every route of preview mode at 375 px and 1280 px, in light and dark, and writes one PNG per route and variant to `web/.screenshots/<scenario>-<lang>/<width>-<theme>/` (git-ignored). Use it to review layout changes across all views. It also runs layout checks that jsdom cannot measure, for example that the one-line chat composer is centred on the send button; a failed check fails the command.
+`npm run screenshots` opens every preview route at 375 and 1280 px, light and dark, writes PNGs to `web/.screenshots/<scenario>-<lang>/<width>-<theme>/` and runs layout checks that jsdom cannot measure. A failed check fails the command. Run it in German too before you finish a layout change.
 
-Options:
+| Option | Default | Effect |
+|---|---|---|
+| `--scenario <list>` | `normal,empty,failing` | Preview scenarios; layout checks run only for `normal` |
+| `--lang de` | `en` | Interface language |
+| `--only <routes>` | all | Routes by their names in the script |
+| `--no-shots` | | Layout checks only |
 
-- `--scenario normal,empty,failing`: the preview scenarios to capture. The default is these three. Preview mode also has `demo` (the normal data in demo mode, with the badge and simulated integrations) and `offline`. Layout checks run only for `normal`.
-- `--lang de`: the interface language. The default is `en`. German labels are longer, so run it once in German before finishing a layout change.
-- `--only chat,home`: only these routes, by the names in the script's route list.
-- `--no-shots`: run the layout checks only.
-
-The script never downloads a browser. It uses `PLAYWRIGHT_CHROMIUM`, `/opt/pw-browsers/chromium` or the newest Chromium in the Playwright cache. When the host lacks Chromium's system libraries, run it in the Playwright image that matches the pinned `playwright` version:
+The script never downloads a browser: it uses `PLAYWRIGHT_CHROMIUM`, `/opt/pw-browsers/chromium` or the newest Chromium in the Playwright cache. Without Chromium's system libraries, run it in the image that matches the pinned `playwright` version, from `web/`:
 
 ```sh
-sg docker -c "docker run --rm -v $PWD/..:/work -w /work/web --user $(id -u):$(id -g) -e HOME=/tmp \
-  mcr.microsoft.com/playwright:v1.63.0-noble node scripts/screenshots.ts --scenario normal"
+docker run --rm -v $PWD/..:/work -w /work/web --user $(id -u):$(id -g) -e HOME=/tmp \
+  mcr.microsoft.com/playwright:v1.63.0-noble node scripts/screenshots.ts --scenario normal
 ```
 
-Run it from `web/`. Leave out `sg docker -c` when your user is in the `docker` group. A full sweep of all three scenarios takes about ten minutes.
+## PWA and assets
 
-## PWA
-
-`vite-plugin-pwa` produces the web app manifest and a Workbox service worker for the app shell only. Navigations are network-only and an offline page is static. PWA icon PNGs are rendered at build time from the logo SVGs by `scripts/appAssets.ts` (`@resvg/resvg-js`). Design tokens come from `npm run gen:tokens`.
+`vite-plugin-pwa` caches the app shell only; navigations are network-only, the offline page is static. `scripts/appAssets.ts` renders the icon PNGs from the logo SVGs at build time. `npm run gen:tokens` generates the design tokens.
 
 ## Commands
 
 | Command | Purpose |
 |---|---|
-| `npm run dev` | Vite dev server. |
-| `npm run dev:preview` | Dev server in `preview` mode. |
-| `npm run gen:api` | Export OpenAPI and regenerate types. |
-| `npm run typecheck` | `vue-tsc --noEmit`. |
-| `npm run build` | Generate types, type-check, build. |
-| `npm test` | Vitest. |
-| `npm run screenshots` | Screenshot sweep and layout checks over every route (see above). |
+| `npm run dev` | Vite dev server |
+| `npm run dev:preview` | Dev server in preview mode |
+| `npm run gen:api` | Export OpenAPI, regenerate types |
+| `npm run typecheck` | `vue-tsc --noEmit` |
+| `npm run build` | Generate types, type-check, build |
+| `npm test` | Vitest |
+| `npm run screenshots` | Screenshot sweep and layout checks |
 
 ## Related
 

@@ -108,7 +108,7 @@ Die Seiten sind in [Clay Flavored Markdown](https://clay-doc.github.io/clay-exam
 - Shell-Beispiele nutzen `sh` und kein Prompt-Zeichen. Ersetze Werte, die der Leser ändern muss, durch `<spitze-klammern>`.
 - YAML-Beispiele müssen gültig sein und zum echten Schema passen. Schreib nie einen Secret-Wert in ein YAML-Beispiel; verweise auf einen Secret-Namen, wie `/config` es verlangt.
 - Tabellen für Schlüssel, Flags, Ereignisse und Werkzeuge. Prosa für alles andere.
-- Bilder liegen in `docs/images/` und brauchen einen aussagekräftigen Alt-Text. Diagramme sind `mermaid`-Codeblöcke in der Seite, die sie erklärt, nie Bilder (siehe [Die Diagramme pflegen](../diagrams/README.md)).
+- Bilder liegen in `docs/images/` und brauchen einen aussagekräftigen Alt-Text. Diagramme sind `mermaid`-Snippets in `docs/_diagrams/`, eingebunden von der Seite, die sie erklärt, nie Bilder; halt jedes klein ([Die Diagramme pflegen](../diagrams/README.md)).
 - Dateinamen: Kleinbuchstaben, mit Bindestrichen getrennt, `.md`.
 
 ### Komponenten
@@ -119,10 +119,13 @@ Nutze eine Komponente, wo sie zum Inhalt passt, nicht als Dekoration:
 |---|---|
 | Die nummerierten Schritte einer Anleitung (`## Steps`) | `::: steps`, jeder Schritt beginnt fett mit dem, was zu tun ist |
 | Alternativen, von denen der Leser eine wählt (Option A oder B, Container oder Quellbaum) | `::: tabs` mit Zeilen `== Label` |
+| Dieselbe Datei oder Einrichtung für mehrere Produkte (Caddy, nginx, Traefik) oder Orte (`.NET`, `web/`, `ha/`) | `::: code-group`; besser als aufeinanderfolgende Überschriften mit je einem Codeblock |
 | Dasselbe Beispiel in mehreren Sprachen oder Werkzeugen (curl und Python) | `::: code-group` mit der Beschriftung in eckigen Klammern nach jeder Sprache |
 | FAQ-Einträge, lange Logs, Sonderfälle | `::: details <question>` |
 | `## Related`, „wohin als Nächstes“ und Listen von Seiten | `::: cards`, ein Link pro Zeile; füg nur dann eine Textzeile unter einem Link hinzu, wenn der Grund für den Link nicht die eigene Beschreibung der Seite ist |
 | Ein Aufruf einer Operation der API v1 | `::: request v1 <operationId>`, mit Startwerten in YAML (`body:`) |
+| Ein vorgeschlagener Prompt für einen Coding-Agenten | `::: prompt <title>` |
+| Ein Status neben einer Überschrift oder Tabellenzelle (Beta, nur Demo, nur Admin) | `:badge[Text]{variant}` (`info`, `note`, `tip`, `warning`, `danger`) |
 
 Verschachtle einen Container in einem anderen, indem du dem äußeren mehr Doppelpunkte gibst (`:::: tabs` … `::::`).
 

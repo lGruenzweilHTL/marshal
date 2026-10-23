@@ -1,61 +1,32 @@
 ---
 icon: fa-solid fa-database
-description: "Das EF-Core-Modell ändern und die passende Migration anlegen."
+description: "Marshals Regeln, um das EF-Core-Modell zu ändern und Migrationen anzulegen."
 ---
 
 # Datenbankmigrationen
 
-Das EF-Core-Modell ändern und die passende Migration anlegen.
+Marshals Regeln, um das EF-Core-Modell zu ändern. `dotnet-ef` ist ein lokales Tool (`dotnet tool restore`).
 
-## Bevor du anfängst
-
-- Führ einmal `dotnet tool restore` aus ([Einrichtung](setup.md)). Das Repository pinnt `dotnet-ef` als lokales Werkzeug.
-- Die Persistenz ist SQLite über EF Core. Namen sind snake_case über `EFCore.NamingConventions`.
-- Entitäten und Migrationen liegen in `src/Marshal.Data`, auch für Entitäten, die anderen Projekten gehören (zum Beispiel dem Gedächtnis).
+```sh
+dotnet ef migrations add <Name> --project src/Marshal.Data --output-dir Migrations
+```
 
 ## Regeln
 
-- Jede Zeile, die einem Benutzer gehört, hat eine `owner_id`. Jeder Lese- und Schreibzugriff läuft über die globalen, auf den Eigentümer beschränkten Abfragefilter. Lies „den Benutzer“ nie aus einer globalen Variable.
-- Schreib für neue Daten mit Eigentümer einen Test zum Eigentum mit einem zweiten Fake-Benutzer.
-- Migrationen sind additiv und werden committet. Bearbeite eine Migration nicht mehr, nachdem sie ausgeliefert wurde.
+- Alle Entitäten und Migrationen liegen in `src/Marshal.Data`, auch für Entitäten, die einem anderen Projekt gehören (Gedächtnis, Aufgaben). Namen sind snake_case über `EFCore.NamingConventions`.
+- Jede Zeile, die einem Benutzer gehört, hat `owner_id`, auch in Kindtabellen, und bekommt den Abfragefilter pro Eigentümer. Lies „den Benutzer“ nie aus einer globalen Variable.
+- Neue Daten mit Eigentümer bekommen einen Eigentumstest mit einem zweiten Fake-Benutzer (`TestDatabase` aus `Marshal.Testing`).
+- Migrationen sind additiv und eingecheckt. Ändere nie eine ausgelieferte Migration. Marshal wendet ausstehende Migrationen beim Start an, nach einer Sicherung der SQLite-Datei.
 
-## Schritte
+## In derselben Änderung aktualisieren
 
-::: steps
-1. **Den fehlschlagenden Test schreiben**
-
-   Nutze `TestDatabase` aus `tests/Marshal.Testing` in `tests/Marshal.Data.Tests` oder in den Tests des Projekts, dem die Entität gehört.
-
-2. **Das Modell ändern**
-
-   Füg die Entität und ihre Konfiguration in `src/Marshal.Data` hinzu oder bearbeite sie. Ergänze `OwnerId` bei Entitäten, die einem Benutzer gehören, und stell sicher, dass der Abfragefilter greift.
-
-3. **Die Migration anlegen**
-
-   ```sh
-   dotnet ef migrations add <Name> --project src/Marshal.Data --output-dir Migrations
-   ```
-
-   Prüfe die erzeugten Dateien `*.cs`, `*.Designer.cs` und `MarshalDbContextModelSnapshot.cs`. Prüfe das SQL auf Spalten `owner_id` und Indizes.
-
-4. **Das ERD aktualisieren**
-
-   Aktualisiere das [Datenmodell](../diagrams/erd.md) in derselben Änderung, die eine Entität, Spalte oder Beziehung hinzufügt, entfernt oder umbenennt: das `erDiagram` des Bereichs der Entität und die Tabelle der Einschränkungen am Ende der Seite. Prüfe die Zeichnung in `npx clay-doc@5 dev`; siehe [Die Diagramme pflegen](../diagrams/README.md).
-
-5. **Die Referenz aktualisieren**
-
-   Ändert die Änderung, was in `/data` liegt, aktualisiere die Referenz zum [Datenverzeichnis](../reference/data-directory.md).
-:::
-
-## Prüfen, ob es funktioniert
-
-- `dotnet test --project tests/Marshal.Data.Tests` besteht.
-- Eine frische Datenbank wendet jede Migration an.
-- Das ERD passt zum Modell.
+- Das [Datenmodell](../diagrams/erd.md): das Snippet `erd-<area>-<part>.md`, das die Entität enthält, und die Tabelle der Constraints ([Diagramme pflegen](../diagrams/README.md)).
+- Die [Referenz des Datenverzeichnisses](../reference/data-directory.md), wenn sich ändert, was in `/data` liegt.
+- Die [Anleitung zum Aktualisieren](../installation/upgrading.md), wenn eine Migration Aufmerksamkeit beim Upgrade braucht.
 
 ## Verwandte Seiten
 
 ::: cards
-- [Datenbesitz](../concepts/data-ownership.md)
+- [Dateneigentum](../concepts/data-ownership.md)
 - [Aktualisieren](../installation/upgrading.md)
 :::

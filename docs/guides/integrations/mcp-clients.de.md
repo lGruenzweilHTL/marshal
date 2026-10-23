@@ -40,14 +40,19 @@ Ein Werkzeug einer Integration, die nicht konfiguriert ist, wird nicht gelistet.
 
 2. **Füg Marshal dem Client hinzu**
 
-   **Claude Code.** Füg den Server für deinen Benutzer hinzu:
+   ::: tabs
+   == Claude Code
+
+   Füg den Server für deinen Benutzer hinzu:
 
    ```sh
    claude mcp add --transport http --scope user marshal https://marshal.example.org/mcp \
      --header "Authorization: Bearer mrs_..."
    ```
 
-   **VS Code.** Füg den Server in `.vscode/mcp.json` deines Workspaces hinzu oder in deine Benutzer-MCP-Konfiguration. VS Code fragt einmal nach dem Token und speichert es sicher:
+   == VS Code
+
+   Füg den Server in `.vscode/mcp.json` deines Workspaces hinzu oder in deine Benutzer-MCP-Konfiguration. VS Code fragt einmal nach dem Token und speichert es sicher:
 
    ```json
    {
@@ -63,6 +68,7 @@ Ein Werkzeug einer Integration, die nicht konfiguriert ist, wird nicht gelistet.
      }
    }
    ```
+   :::
 
 3. **Frag Marshal etwas**
 

@@ -1,38 +1,41 @@
 ---
 title: Maintaining the diagrams
 icon: fa-solid fa-pen-ruler
-description: "Where the Mermaid diagrams live, when to update them and how to preview them."
+description: "Where the Mermaid diagrams live, how small they stay, when to update them and how to preview them."
 ---
 
 # Maintaining the diagrams
 
-The diagrams are [Mermaid](https://mermaid.js.org) code blocks in snippet files in `docs/_diagrams/`. The pages include them with `<!--@include: ../_diagrams/<name>.md-->`, so every diagram has one file to edit, whichever pages and languages show it. Clay draws them on the site. GitHub draws them when it shows the snippet file; the page itself shows nothing there, because the include is an HTML comment.
+The diagrams are [Mermaid](https://mermaid.js.org) snippets in `docs/_diagrams/`, included with `<!--@include: ../_diagrams/<name>.md-->`, so each diagram has one file to edit. On GitHub the including page shows nothing, because the include is an HTML comment.
 
-| Diagram | Snippet | Language |
-|---|---|---|
-| Packages | `packages.md` | One file for all languages: it holds project and package names |
-| Data model | `erd-<area>.md` | One file for all languages: it holds entity and column names |
-| Voice turn | `voice-turn.md`, `voice-turn.de.md` | One file per language |
-| Confirm-tier action | `confirm-tier-action.md`, `confirm-tier-action.de.md` | One file per language |
-| Task lifecycle | `task-lifecycle.md`, `task-lifecycle.de.md` | One file per language |
+| Diagram | Snippets | Language | Page |
+|---|---|---|---|
+| Project references | `packages.md` | One file | [Architecture](../concepts/architecture.md#the-parts) |
+| Runtime connections | `packages-runtime.md` | One file | [Architecture](../concepts/architecture.md#the-parts) |
+| Voice turn | `voice-turn-request`, `voice-turn-agent-loop` | One file per language | [Architecture](../concepts/architecture.md#how-a-request-moves-through-it) |
+| Confirm-tier action | `confirm-tier-freeze`, `confirm-tier-confirm` | One file per language | [Risk and confirmation](../concepts/risk-and-confirmation.md#frozen-pending-actions) |
+| Task lifecycle | `task-lifecycle`, `task-run` | One file per language | [Tasks and scheduling](../concepts/tasks-and-scheduling.md#the-lifecycle-of-a-run) |
+| Data model | `erd-<area>-<part>.md` | One file | [Data model](erd.md) |
 
-Diagrams of code (names of projects, packages, entities, columns) are never translated: the names are the code. Flow diagrams have labels in prose, so the German pages include a German copy. Change both files of a flow in the same commit; they keep the same participants, states and arrows in the same order, so a side-by-side diff shows what differs.
+Code diagrams (project, entity and column names) are never translated. Flow diagrams have a German copy (`<name>.de.md`) with the same participants, states and arrows in the same order; change both in the same commit.
 
-| Diagram | Page |
-|---|---|
-| Packages | [Architecture](../concepts/architecture.md#the-parts) |
-| Voice turn | [Architecture](../concepts/architecture.md#how-a-request-moves-through-it) |
-| Confirm-tier action | [Risk and confirmation](../concepts/risk-and-confirmation.md#frozen-pending-actions) |
-| Task lifecycle | [Tasks and scheduling](../concepts/tasks-and-scheduling.md#the-lifecycle-of-a-run) |
-| Data model, one diagram per area | [Data model](erd.md) |
+## Size
+
+The content column of the site is about 640 px wide. Clay draws most diagrams at build time (`beautiful-mermaid`) and scales a wider one down until its text is hard to read. Keep each diagram at most about 800 px wide:
+
+- Start the block with the diagram type (`sequenceDiagram`, `erDiagram`, ...), then the `%%` comments. A block that does not start with its type falls back to drawing in the browser, without the site's theme.
+- Split a flow into parts of at most five participants or about eight states, each with its own snippet.
+- Sequence diagrams: one short line per message (about 30 characters), no `<br/>` in messages and no notes between messages; the build-time renderer does not reserve room for them, so they overlap. Put details in the page text.
+- ER diagrams are always drawn left to right, so their width is the number of columns. Keep two or three: owner edges (`owner_id` to `User`) are not drawn, and a relationship is drawn only in the diagram of the entity that holds the key. Entities from other diagrams appear as plain boxes.
+- External packages are not drawn. The package index in `CLAUDE.md` lists them.
 
 ## Keep them up to date
 
 The diagrams must always match the code. Each snippet starts with a `%% KEEP UP TO DATE` comment that says what it describes.
 
-- **Data model:** update the `erd-<area>.md` snippets of [the data model](erd.md) in the same change that adds, removes or renames an EF Core entity, column or relationship. Put the entity in the diagram of its area, and add table names, indexes and constraints to the table at the end of `erd.md` and its translation.
-- **Packages:** update `packages.md` (shown in [architecture](../concepts/architecture.md)) in the same change that adds, removes or renames a project in `src/`, `web/` or `ha/`, or changes a project reference or key external dependency.
-- **Flows:** update the voice turn, confirm-tier and task lifecycle snippets, English and German, in the same change that alters the behavior they show.
+- **Data model:** update the `erd-<area>-<part>.md` snippets of [the data model](erd.md) in the same change that adds, removes or renames an EF Core entity, column or relationship. Put the entity in the diagram of its area, and add table names, indexes and constraints to the table at the end of `erd.md` and its translation.
+- **Packages:** update `packages.md` in the same change that adds, removes or renames a project in `src/` or changes a project reference, and `packages-runtime.md` when a client or separate service changes how it connects.
+- **Flows:** update the voice turn, confirm-tier and task snippets, English and German, in the same change that alters the behavior they show.
 
 ## Preview
 

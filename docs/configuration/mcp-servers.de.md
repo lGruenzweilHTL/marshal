@@ -9,7 +9,8 @@ Jede Datei in `/config/mcp/` definiert einen Model-Context-Protocol-Server, dess
 
 ## Beispiel
 
-```yaml
+::: code-group
+```yaml [HTTP]
 id: ha
 transport: http
 url: http://homeassistant.local:8123/api/mcp
@@ -20,9 +21,7 @@ untrustedTools: ["todo__get_items"]
 pinTools: true
 ```
 
-Ein lokaler Server über stdio:
-
-```yaml
+```yaml [stdio]
 id: search
 transport: stdio
 command: /usr/local/bin/search-mcp
@@ -32,6 +31,7 @@ envSecrets:
     secret: search_key
 untrusted: true
 ```
+:::
 
 ## Schlüssel
 

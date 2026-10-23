@@ -44,7 +44,13 @@ Hat ein Durchlauf nicht vertrauenswürdige Inhalte gelesen (Mail, RSS, Notizen, 
 
 ## Eingefrorene ausstehende Aktionen
 
-<!--@include: ../_diagrams/confirm-tier-action.de.md-->
+Einfrieren eines Aufrufs der Bestätigungsstufe:
+
+<!--@include: ../_diagrams/confirm-tier-freeze.de.md-->
+
+Bestätigen:
+
+<!--@include: ../_diagrams/confirm-tier-confirm.de.md-->
 
 Wird ein Aufruf in einem interaktiven Turn zu `confirm`, bittet Marshal das Modell nicht, sich daran zu erinnern. Es speichert eine **ausstehende Aktion** auf dem Server, bevor irgendjemand gefragt wird:
 

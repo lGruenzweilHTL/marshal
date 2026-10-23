@@ -1,8 +1,8 @@
 ```mermaid
-%% Marshal: task lifecycle
-%% KEEP UP TO DATE: must match the task system, event bus, approval queue and task delivery (task-system, event-bus,
-%% approval-queue, task-delivery specs). Update it in the same change that alters them (see docs/diagrams/README.md).
 stateDiagram-v2
+%% Marshal: task lifecycle
+%% KEEP UP TO DATE: must match the task system, event bus and approval queue (task-system, event-bus, approval-queue
+%% specs). Update it together with task-lifecycle.de.md in the same change (see docs/diagrams/README.md).
     state "pending" as Pending
     state "waiting" as Waiting
     Waiting: at / cron / event / after / wakeup /<br/>approval decision
@@ -10,17 +10,8 @@ stateDiagram-v2
     Due: trigger fired (event filters matched<br/>deterministically, no model call)
     state "queued for a worker" as Queued
     Queued: at most tasks.workers runs,<br/>order of next_run_at
-    state "running" as Running {
-        state "headless agent loop" as Loop
-        Loop: owner, template, project,<br/>origin satellite policy,<br/>background tool rules,<br/>budget + daily cost cap
-        state "approval queued" as Approval
-        Approval: frozen action, nonce, 10 min TTL,<br/>actionable push + review queue
-        Loop --> Approval: confirm-tier call
-    }
-    state "result" as Result
-    Result: speech + body
-    state "deliveries" as Deliveries
-    Deliveries: voice / push / inbox / silent<br/>when-conditions, expires + fallback,<br/>quiet hours, coalescing, voice caps
+    state "running" as Running
+    Running: headless run, see below
     state "done" as Done
     state "failed" as Failed
     Failed: budget_exceeded, errors
@@ -33,13 +24,9 @@ stateDiagram-v2
     Waiting --> Due: time reached, matching event,<br/>parent done, decision made
     Due --> Queued
     Queued --> Running: worker free
-    Approval --> Waiting: run ends, worker freed<br/>(trigger = decision)
-    Loop --> Waiting: new trigger (wakeup)<br/>next run gets goal, notes,<br/>payload, no transcript
-    Loop --> Result: final reply
-    Loop --> Failed: budget / limits
-    Result --> Deliveries
-    Deliveries --> Waiting: cron, or watch without once
-    Deliveries --> Done: once-watch and other triggers
+    Running --> Waiting: approval queued, wakeup,<br/>cron or watch without once
+    Running --> Done: delivered, no further trigger
+    Running --> Failed
     Running --> Cancelled
     Waiting --> Cancelled
     Done --> [*]

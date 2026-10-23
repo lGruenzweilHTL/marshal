@@ -44,7 +44,13 @@ When a run has read untrusted content (mail, RSS, notes, calendar, untrusted MCP
 
 ## Frozen pending actions
 
-<!--@include: ../_diagrams/confirm-tier-action.md-->
+Freezing a confirm-tier call:
+
+<!--@include: ../_diagrams/confirm-tier-freeze.md-->
+
+Confirming it:
+
+<!--@include: ../_diagrams/confirm-tier-confirm.md-->
 
 When a call resolves to `confirm` in an interactive turn, Marshal does not ask the model to remember it. It stores a **pending action** on the server, before anyone is asked:
 

@@ -56,6 +56,7 @@ Ein optionales Feld oder ein neuer Endpunkt in V1 ist kompatibel. Ein Feld zu en
 2. Leg in `MarshalApp.cs` eine zweite Gruppe mit `.HasApiVersion(ApiVersions.V2)` an und bilde die geänderten Endpunkte darauf ab.
 3. Lass V1 abgebildet. Wenn du V1 ausmusterst, verschieb sie zuerst nach `Deprecated`.
 4. Erzeuge die OpenAPI-Typen neu und aktualisiere die SPA ([Weboberfläche](web-frontend.md)). Dokumentiere die neue Version in der [API-Referenz](../api/index.md).
+5. Bevor du die Doku änderst, friere die alte Version ein (`npx clay-doc@5 version <old version>`) und aktualisiere dann `docs/latest/`, wie `CLAUDE.md` („Docs site and versions“) beschreibt.
 
 `MapOpenApi().WithDocumentPerVersion()` liefert ein Dokument pro Version aus.
 

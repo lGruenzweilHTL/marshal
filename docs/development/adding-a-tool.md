@@ -1,18 +1,11 @@
 ---
 icon: fa-solid fa-hammer
-description: "Add a model-facing tool to an existing tool source."
+description: "Rules for adding a model-facing tool to an existing tool source."
 ---
 
 # Add a tool
 
-Add a model-facing tool to an existing tool source.
-
-## Before you start
-
-- The change is approved and the design states the tool's risk tier and when it is hidden ([OpenSpec workflow](openspec-workflow.md)).
-- The capability is allowed. Marshal has no mail send path, no raw G-code and no tool that fetches a caller-chosen URL. Do not write a tool and then forbid it.
-
-A coding agent can do the work from the approved change; name your change in place of `<change>`:
+Rules for adding a model-facing tool to an existing tool source. The change's design names the tool's risk tier and when it is hidden ([OpenSpec workflow](openspec-workflow.md)).
 
 ::: prompt For a coding agent
 Read CLAUDE.md, STYLE_GUIDE.md and
@@ -24,69 +17,47 @@ docs/reference/tools.md. Never call a real model in tests. Run the tests of
 the changed projects and `npx clay-doc@5 check` until both pass.
 :::
 
-## How tools are built
+## The contract
 
-A tool implements `ITool` (`src/Marshal.Abstractions/Tools/ITool.cs`). A group of tools lives in an `IToolSource`. The source returns its tools from `GetToolsAsync`; the tool registry merges all sources.
+A tool implements `ITool` (`src/Marshal.Abstractions/Tools/ITool.cs`) and lives in an `IToolSource`; the registry merges all sources.
 
 | Member | Purpose |
 |---|---|
 | `Descriptor` | Id, description, JSON schema of the parameters, default tier, flags. |
-| `IsAvailableAsync(context, ct)` | Tool-specific visibility. Checked before every model call and again by the guard. Defaults to `true`. |
-| `Validate(arguments)` | Argument checks that must hold before any tier applies, such as an allowlist. A failure denies the call without a confirmation. |
+| `IsAvailableAsync(context, ct)` | Context-dependent visibility (voice turns, satellite, template). Checked before every model call and again by the guard. |
+| `Validate(arguments)` | Checks that hold before any tier applies, such as an allowlist. A failure denies the call without a confirmation. |
 | `Summarize(arguments, language)` | Short text for confirmation prompts. |
-| `InvokeAsync(invocation, ct)` | Runs the call and returns `Result<ToolOutput>`. |
+| `InvokeAsync(invocation, ct)` | Runs the call, returns `Result<ToolOutput>`. |
 
-## Steps
+```csharp
+private static ToolDescriptor Descriptor(string name, string description, string schema) => new()
+{
+    Id = new ToolId("infra", name),
+    Description = description,
+    ParametersSchema = JsonDocument.Parse(schema).RootElement.Clone(),
+    DefaultTier = RiskTier.Safe,
+};
+```
 
-::: steps
-1. **Write the failing tests**
+## Rules
 
-   Cover the happy path, invalid arguments, the tier, visibility, and the owner. Use `FakeTool` and `FakeToolSource` from `tests/Marshal.Testing` when the test is about the registry or guard, and the fake of your integration's client when it is about the tool. Never call a real model.
+- **Forbidden capabilities get no code.** No mail send, no raw G-code or free-form device commands, no tool that fetches a caller-chosen URL. Never write a tool and then forbid it.
+- **Ids.** Internal id `<namespace>.<snake_case_name>`; the model sees `<namespace>_<name>`. Risk rules, satellite policies and template allowlists use the internal id. The namespace names the capability, not the provider.
+- **Schema.** Strict. Take ids of known items, never free-form commands or URLs. Write the description for the model: what the tool returns and when to use it.
+- **Tier.** Set the default in the descriptor. When the tier depends on the target, add arg-aware rules to `deploy/config.example/risk.yaml`. Several targets: the highest tier wins. An unresolvable target falls to `confirm`.
+- **Visibility is not enforcement.** The guard re-runs `IsAvailableAsync` and `Validate`.
+- **Failures.** Expected failures return a failed `Result` with a stable code (`infra.invalid_arguments`). Throw only for bugs.
+- **Untrusted output.** Output that carries mail, feed, note or web content is marked untrusted, so the run is tainted and its memory and task writes escalate to `confirm`.
+- **Tests** cover the happy path, invalid arguments, the tier, visibility and the owner. Use `FakeTool` / `FakeToolSource` for registry and guard tests, the integration's client fake for the tool itself.
 
-2. **Define the descriptor**
+## Update in the same change
 
-   ```csharp
-   private static ToolDescriptor Descriptor(string name, string description, string schema) => new()
-   {
-       Id = new ToolId("infra", name),
-       Description = description,
-       ParametersSchema = JsonDocument.Parse(schema).RootElement.Clone(),
-       DefaultTier = RiskTier.Safe,
-   };
-   ```
-
-   Rules:
-
-   - The internal id is `<namespace>.<snake_case_name>`. The model sees `<namespace>_<name>`.
-   - Risk rules, satellite policies and template allowlists refer to the internal id.
-   - Write the description for the model. Say what the tool returns and when to use it.
-   - Keep the schema strict. Take ids of known items, never free-form commands or URLs.
-
-3. **Choose the tier**
-
-   `safe` runs immediately. `confirm` is frozen server-side and needs a user action. `forbidden` is removed from the tool list. Pick the default tier in the descriptor and add arg-aware rules to `risk.yaml` when the tier depends on the target (for example `ha.*` against locks). When a call resolves to several targets, the highest tier wins. An unresolvable target falls to confirm.
-
-4. **Implement visibility and validation**
-
-   Override `IsAvailableAsync` when the tool depends on context, such as voice turns, the satellite or the template. Use `Validate` for allowlists. The guard re-runs both; never rely on visibility alone.
-
-5. **Implement the call**
-
-   Return a failed `Result` with a stable error code (`infra.invalid_arguments`) for expected failures. The executor turns it into a structured message for the model. Throw only for bugs.
-
-   Treat text from outside as untrusted. Output that carries mail, feed, note or web content must be marked untrusted so the run is tainted. In a tainted run, memory and task writes escalate to confirm tier.
-
-6. **Register and document**
-
-   Add the tool to the source's tool list. Then:
-
-   - Add rows to the [tool reference](../reference/tools.md).
-   - Update the guide for the integration and `deploy/config.example/risk.yaml` if you added rules.
-:::
+- Rows in the [tool reference](../reference/tools.md), with tier and visibility.
+- The integration's guide, and `deploy/config.example/risk.yaml` plus the [risk tiers reference](../reference/risk-tiers.md) if you added rules.
 
 ## Check that it works
 
-- The tool appears in the list for a context that may use it and not for one that may not.
+- The tool is listed for a context that may use it and not for one that may not.
 - A direct call that bypasses the list is still refused by the guard.
 - A confirm-tier call is stored frozen and executes exactly the stored arguments.
 

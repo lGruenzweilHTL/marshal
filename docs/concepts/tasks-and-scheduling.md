@@ -56,6 +56,10 @@ Event payloads are untrusted unless the source declares itself trusted in code, 
 
 <!--@include: ../_diagrams/task-lifecycle.md-->
 
+Inside a run:
+
+<!--@include: ../_diagrams/task-run.md-->
+
 1. **Due.** A trigger fires and the task becomes due.
 2. **Worker.** At most `tasks.workers` runs execute at once (default 2). Further due tasks wait in order of `next_run_at`.
 3. **Headless run.** The [agent loop](agent-loop.md) runs as the task's owner, with the task's template, project and origin satellite policy. A satellite's `denyTools` and `denyConfirm` follow its tasks and their child tasks. Background rules apply: the advisor is visible, and confirm-tier calls go to the approval queue.

@@ -38,7 +38,10 @@ An agent template can pick a tier. Vision calls (printer cameras, artifact inspe
 | `reasoning` | `off`, `low`, `medium`, `high` | `off` | Reasoning effort for text turns and background tasks; voice turns never reason |
 | `price` | object | none | `inputPerMTok`, `outputPerMTok`, `cachedPerMTok`; without it the cost is 0 |
 
-## Ollama
+## Providers
+
+::: tabs
+== Ollama
 
 ```yaml
 models:
@@ -58,7 +61,7 @@ models:
 
 Pull each model: `docker compose exec ollama ollama pull qwen3:30b`. Set `contextLength` to what the model server actually uses.
 
-## OpenAI-compatible servers
+== OpenAI-compatible servers
 
 For llama.cpp `llama-server`, vLLM or LM Studio:
 
@@ -72,7 +75,7 @@ models:
     # apiKeySecret: llama_key
 ```
 
-## Anthropic
+== Anthropic
 
 ```yaml
 models:
@@ -86,6 +89,7 @@ models:
 ```
 
 Provide the key as the Docker secret file `/run/secrets/anthropic_key` or the variable `MARSHAL_SECRET_ANTHROPIC_KEY`. Startup fails when the secret does not resolve. Limit advisor use with `agent.advisor.maxCallsPerRun` and `agent.advisor.dailyCostCap`.
+:::
 
 ## Reasoning
 

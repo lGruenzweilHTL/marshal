@@ -56,6 +56,7 @@ Adding an optional field or a new endpoint to V1 is compatible. Removing or rena
 2. Create a second group in `MarshalApp.cs` with `.HasApiVersion(ApiVersions.V2)` and map the changed endpoints on it.
 3. Keep V1 mapped. When you retire V1, move it to `Deprecated` first.
 4. Regenerate the OpenAPI types and update the SPA ([web frontend](web-frontend.md)). Document the new version in the [API reference](../api/index.md).
+5. Before you change the docs, freeze the old version (`npx clay-doc@5 version <old version>`), then update `docs/latest/`, as `CLAUDE.md` ("Docs site and versions") describes.
 
 `MapOpenApi().WithDocumentPerVersion()` serves one document per version.
 

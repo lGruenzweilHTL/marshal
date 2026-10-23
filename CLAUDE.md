@@ -103,9 +103,10 @@ Runtime volumes (not in git): `/config` (skills, templates, MCP servers, risk ru
 
 Diagrams are Mermaid snippets in `docs/_diagrams/` that the docs pages include (Clay draws them); they must always match the code (details: [docs/diagrams/README.md](docs/diagrams/README.md)). Code diagrams (data model, packages) are one file for all languages; flow diagrams have an English and a German file (`<name>.de.md`), changed together:
 
-- **Data model** (`docs/_diagrams/erd-<area>.md`, one `erDiagram` per area, shown in `docs/diagrams/erd.md`) — update in the same change that adds, removes or renames an EF Core entity, column or relationship.
-- **Packages** (`docs/_diagrams/packages.md`, shown in `docs/concepts/architecture.md`) — update in the same change that adds, removes or renames a project, changes a project reference or adds / removes a key external dependency.
-- Flow diagrams (voice turn, confirm-tier action, task lifecycle) change with the behavior they show.
+- **Data model** (`docs/_diagrams/erd-<area>-<part>.md`, small `erDiagram`s per area, shown in `docs/diagrams/erd.md`) — update in the same change that adds, removes or renames an EF Core entity, column or relationship.
+- **Packages** (`docs/_diagrams/packages.md` project references, `packages-runtime.md` client and service connections, shown in `docs/concepts/architecture.md`) — update in the same change that adds, removes or renames a project or changes a project reference or connection. External packages are not drawn; the package index below lists them.
+- Flow diagrams (voice turn, confirm-tier action, task lifecycle and run, each split in parts) change with the behavior they show.
+- Keep every diagram small (about 800 px wide at most): the type line first, then `%%` comments; one short line per sequence message, no `<br/>` or notes between messages; two or three columns per ER diagram. Rules in `docs/diagrams/README.md`.
 - `clay check` does not parse Mermaid: look at changed diagrams in `npx clay-doc@5 dev` (Node 22+).
 
 ## Docs site and versions

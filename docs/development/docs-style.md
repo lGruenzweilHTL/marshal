@@ -108,7 +108,7 @@ The pages are written in [Clay Flavored Markdown](https://clay-doc.github.io/cla
 - Shell examples use `sh` and no prompt character. Replace values the reader must change with `<angle-brackets>`.
 - YAML examples must be valid and must match the real schema. Never put a secret value in a YAML example; reference a secret name, as `/config` requires.
 - Tables for keys, flags, events and tools. Prose for everything else.
-- Images go in `docs/images/` and need meaningful alt text. Diagrams are `mermaid` code blocks in the page that explains them, never images (see [maintaining the diagrams](../diagrams/README.md)).
+- Images go in `docs/images/` and need meaningful alt text. Diagrams are `mermaid` snippets in `docs/_diagrams/`, included by the page that explains them, never images; keep each one small ([maintaining the diagrams](../diagrams/README.md)).
 - File names: lowercase, hyphen-separated, `.md`.
 
 ### Components
@@ -119,10 +119,13 @@ Use a component where it fits the content, not for decoration:
 |---|---|
 | The numbered steps of a guide (`## Steps`) | `::: steps`, each step starting with what to do in bold |
 | Alternatives the reader picks one of (option A or B, container or source tree) | `::: tabs` with `== Label` lines |
+| The same file or setup for several products (Caddy, nginx, Traefik) or places (`.NET`, `web/`, `ha/`) | `::: code-group`; prefer it over consecutive headings with one code block each |
 | The same example in several languages or tools (curl and Python) | `::: code-group` with the label in brackets after each language |
 | FAQ entries, long logs, edge cases | `::: details <question>` |
 | `## Related`, "where to go next" and lists of pages | `::: cards`, one link per line; add a line of text below a link only when the reason for the link is not the page's own description |
 | A call to an API v1 operation | `::: request v1 <operationId>`, with start values in YAML (`body:`) |
+| A suggested prompt for a coding agent | `::: prompt <title>` |
+| A status next to a heading or table cell (beta, demo only, admin only) | `:badge[Text]{variant}` (`info`, `note`, `tip`, `warning`, `danger`) |
 
 Nest a container inside another by giving the outer one more colons (`:::: tabs` … `::::`).
 

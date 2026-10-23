@@ -7,11 +7,11 @@ description: "Mermaid-Diagramme der Pakete, des Datenmodells und der wichtigsten
 
 # Diagramme
 
-Mermaid-Diagramme der Pakete, des Datenmodells und der wichtigsten Abläufe. Jedes Diagramm steht im Markdown der Seite, die es erklärt, und Clay zeichnet es beim Bau der Website. Wie du sie aktuell hältst, steht unter [Die Diagramme pflegen](README.md).
+Mermaid-Diagramme der Pakete, des Datenmodells und der wichtigsten Abläufe, jedes auf der Seite, die es erklärt. Wie du sie aktuell hältst, steht unter [Die Diagramme pflegen](README.md).
 
 ::: cards
 - [Pakete](../concepts/architecture.md#die-teile) {fa-solid fa-sitemap}
-  Projekte in src/, web/ und ha/, ihre Verweise und die wichtigsten Pakete.
+  Projektverweise in src/ und wie Clients und der Executor-Host sich verbinden.
 - [Sprach-Turn](../concepts/architecture.md#wie-eine-anfrage-hindurchläuft) {fa-solid fa-microphone-lines}
   Von Home Assistant Assist durch Marshal und zurück.
 - [Aktion der Bestätigungsstufe](../concepts/risk-and-confirmation.md#eingefrorene-ausstehende-aktionen) {fa-solid fa-hand}

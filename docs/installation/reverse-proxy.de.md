@@ -31,7 +31,10 @@ http:
 
 Marshal setzt das Präfix vor jede Route, der Konversationsendpunkt wird also zu `/marshal/api/v1/conversation/turns`. Entferne das Präfix nicht im Proxy: Marshal braucht es, um das richtige `<base href>` für die Web-App zu schreiben. Der Health-Check wandert nach `/marshal/health`. Nimm das Präfix in die Marshal-URL in Home Assistant auf. Ohne Präfix lässt du `pathBase` leer.
 
-## Caddy
+## Proxy-Konfiguration
+
+::: tabs
+== Caddy
 
 ```text
 marshal.example.com {
@@ -43,7 +46,7 @@ marshal.example.com {
 
 Mit Präfix nimmst du `handle /marshal/* { reverse_proxy marshal:8080 { flush_interval -1 } }` und nicht `handle_path`, das das Präfix entfernt.
 
-## nginx
+== nginx
 
 ```text
 server {
@@ -67,7 +70,7 @@ server {
 
 Für ein Präfix änderst du `location /` in `location /marshal/` und lässt `proxy_pass http://marshal:8080;` ohne Pfad am Ende, damit nginx das Präfix weiterreicht. Uploads von Artefakten bis `artifacts.maxUploadMb` (Standard 200) brauchen ein passendes `client_max_body_size 200m;`.
 
-## Traefik
+== Traefik
 
 Labels am Marshal-Dienst (Docker-Provider):
 
@@ -84,6 +87,7 @@ services:
 ```
 
 Traefik setzt die Forwarded-Header selbst. Füg keine Strip-Prefix-Middleware hinzu, wenn du `pathBase` nutzt.
+:::
 
 ## Prüfen, ob es funktioniert
 
