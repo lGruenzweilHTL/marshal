@@ -1,8 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Security vulnerability
-    url: https://gitea.gruenzweil.cc/lukas/marshal/src/branch/master/SECURITY.md
-    about: Do not open a public issue. Follow the security policy to report privately.
   - name: Documentation
-    url: https://gitea.gruenzweil.cc/lukas/marshal/src/branch/master/docs/index.md
+    url: https://lgruenzweilhtl.github.io/marshal/
     about: Check the FAQ and the troubleshooting guide before you open an issue.

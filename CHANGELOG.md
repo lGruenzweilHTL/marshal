@@ -58,4 +58,4 @@ Development started on 2026-09-28. The latest work in the history is dated 2026-
 - Reply steps are recorded in full, so the chat history shows the whole reply.
 - The system prompt orders context contributors by stability (`static`, `session`, `turn`) before their order value, so provider prompt caches keep a longer prefix.
 
-[Unreleased]: https://gitea.gruenzweil.cc/lukas/marshal
+[Unreleased]: https://github.com/lGruenzweilHTL/marshal/commits/master
