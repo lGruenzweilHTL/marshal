@@ -10,7 +10,7 @@ Install the Marshal custom integration so Home Assistant sends Assist conversati
 
 ## Before you start
 
-- Home Assistant 2026.9.0 or newer (the version in `hacs.json` of the `marshal-ha` repository).
+- Home Assistant 2026.9.0 or newer (the version in `hacs.json` of the [`marshal-ha`](https://github.com/lGruenzweilHTL/marshal-ha) repository).
 - A running Marshal instance that Home Assistant can reach over HTTP(S) and that serves API version 1. See [connect Home Assistant](../getting-started/connect-home-assistant.md).
 - Access to the Marshal host or web interface to create an API token.
 
@@ -33,7 +33,7 @@ Install the Marshal custom integration so Home Assistant sends Assist conversati
 
    **Manual.** Copy `custom_components/marshal` from that repository into the `custom_components` folder of your Home Assistant configuration, so that `custom_components/marshal/manifest.json` exists, then restart Home Assistant.
 
-   **HACS custom repository.** Open HACS, choose **Custom repositories** from the menu, add the `marshal-ha` repository URL with the category **Integration**, install **Marshal** and restart Home Assistant.
+   **HACS custom repository.** Open HACS, choose **Custom repositories** from the menu, add `https://github.com/lGruenzweilHTL/marshal-ha` with the category **Integration**, install **Marshal** and restart Home Assistant.
 
 3. **Add the integration**
 

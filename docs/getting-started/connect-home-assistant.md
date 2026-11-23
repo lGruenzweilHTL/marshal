@@ -18,7 +18,7 @@ Install the Marshal integration, give it an API token and select Marshal as the 
 ::: steps
 1. **Install the integration**
 
-   Copy `custom_components/marshal` from the `marshal-ha` repository into the `custom_components` folder of your Home Assistant configuration, so that `custom_components/marshal/manifest.json` exists. Restart Home Assistant. For HACS and details see [installing the component](../home-assistant-component/installation.md).
+   Copy `custom_components/marshal` from the [`marshal-ha`](https://github.com/lGruenzweilHTL/marshal-ha) repository into the `custom_components` folder of your Home Assistant configuration, so that `custom_components/marshal/manifest.json` exists. Restart Home Assistant. For HACS and details see [installing the component](../home-assistant-component/installation.md).
 
 2. **Create an API token**
 

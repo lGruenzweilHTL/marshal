@@ -95,7 +95,7 @@ openspec/                    specifications and changes
 ```
 
 The Home Assistant custom component (Assist conversation entity, AI Task entity) lives in its own repository,
-`marshal-ha`. It talks to Marshal only over the public API; changes to that contract must keep it working.
+[`marshal-ha`](https://github.com/lGruenzweilHTL/marshal-ha). It talks to Marshal only over the public API; changes to that contract must keep it working.
 
 Runtime volumes (not in git): `/config` (skills, templates, MCP servers, risk rules, satellites — git-friendly, no secrets) and `/data` (SQLite, Data Protection keys, backups, notes repo).
 

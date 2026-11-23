@@ -10,7 +10,7 @@ Installiere die Custom-Integration von Marshal, damit Home Assistant Assist-Unte
 
 ## Bevor du anfängst
 
-- Home Assistant 2026.9.0 oder neuer (die Version in `hacs.json` des Repositorys `marshal-ha`).
+- Home Assistant 2026.9.0 oder neuer (die Version in `hacs.json` des Repositorys [`marshal-ha`](https://github.com/lGruenzweilHTL/marshal-ha)).
 - Eine laufende Marshal-Instanz, die Home Assistant über HTTP(S) erreicht und die API-Version 1 anbietet. Siehe [Home Assistant verbinden](../getting-started/connect-home-assistant.md).
 - Zugriff auf den Marshal-Host oder die Weboberfläche, um ein API-Token zu erstellen.
 
@@ -33,7 +33,7 @@ Installiere die Custom-Integration von Marshal, damit Home Assistant Assist-Unte
 
    **Von Hand.** Kopiere `custom_components/marshal` aus diesem Repository in den Ordner `custom_components` deiner Home-Assistant-Konfiguration, sodass `custom_components/marshal/manifest.json` existiert, und starte Home Assistant dann neu.
 
-   **Benutzerdefiniertes Repository in HACS.** Öffne HACS, wähle im Menü **Benutzerdefinierte Repositories**, füge die URL des Repositorys `marshal-ha` mit der Kategorie **Integration** hinzu, installiere **Marshal** und starte Home Assistant neu.
+   **Benutzerdefiniertes Repository in HACS.** Öffne HACS, wähle im Menü **Benutzerdefinierte Repositories**, füge `https://github.com/lGruenzweilHTL/marshal-ha` mit der Kategorie **Integration** hinzu, installiere **Marshal** und starte Home Assistant neu.
 
 3. **Füg die Integration hinzu**
 

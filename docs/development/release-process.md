@@ -10,7 +10,7 @@ How a Marshal release is built and published. There is no release automation yet
 ## Versions
 
 - App version: `<Version>` in `Directory.Build.props` (shown in the system view), or `-p:Version=<x.y.z>` at build time.
-- Home Assistant component: released from its own repository, `marshal-ha`, with its own version.
+- Home Assistant component: released from its own repository, [`marshal-ha`](https://github.com/lGruenzweilHTL/marshal-ha), with its own version.
 - API versions are separate and live in code ([API versioning](api-versioning.md)). Docs versions follow the API version, not the app version (see `CLAUDE.md`).
 
 ## The image
