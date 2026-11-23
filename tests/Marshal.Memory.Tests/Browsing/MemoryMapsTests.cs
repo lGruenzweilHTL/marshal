@@ -44,6 +44,93 @@ public sealed class MemoryMapsTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Neighbourhood_NeighboursInBothDirections()
+    {
+        ChunkId a = await WriteAsync("A", Vec(0, 1));
+        ChunkId b = await WriteAsync("B", Vec(1, 1));
+        ChunkId c = await WriteAsync("C", Vec(2, 1));
+        ChunkId unrelated = await WriteAsync("Unrelated", Vec(3, 1));
+        await _store.LinkAsync(a, b, ChunkEdgeKind.DependsOn, Ct);
+        await _store.LinkAsync(c, a, ChunkEdgeKind.Supersedes, Ct);
+
+        MemoryGraph? graph = await Maps().GetNeighbourhoodAsync(a, Ct);
+
+        Assert.NotNull(graph);
+        Assert.Equal(new HashSet<ChunkId> { a, b, c }, graph.Nodes.Select(node => node.Id).ToHashSet());
+        Assert.DoesNotContain(graph.Nodes, node => node.Id == unrelated);
+        Assert.Equal(
+            new HashSet<(ChunkId, ChunkId, ChunkEdgeKind)> { (a, b, ChunkEdgeKind.DependsOn), (c, a, ChunkEdgeKind.Supersedes) },
+            graph.Edges.Select(edge => (edge.From, edge.To, edge.Kind)).ToHashSet());
+    }
+
+    [Fact]
+    public async Task Neighbourhood_IncludesEdgesBetweenNeighbours()
+    {
+        ChunkId a = await WriteAsync("A", Vec(0, 1));
+        ChunkId b = await WriteAsync("B", Vec(1, 1));
+        ChunkId c = await WriteAsync("C", Vec(2, 1));
+        ChunkId outside = await WriteAsync("Outside", Vec(3, 1));
+        await _store.LinkAsync(a, b, ChunkEdgeKind.RelatesTo, Ct);
+        await _store.LinkAsync(a, c, ChunkEdgeKind.RelatesTo, Ct);
+        await _store.LinkAsync(b, c, ChunkEdgeKind.RelatesTo, Ct);
+        await _store.LinkAsync(b, outside, ChunkEdgeKind.RelatesTo, Ct);
+
+        MemoryGraph? graph = await Maps().GetNeighbourhoodAsync(a, Ct);
+
+        Assert.NotNull(graph);
+        Assert.Equal(new HashSet<ChunkId> { a, b, c }, graph.Nodes.Select(node => node.Id).ToHashSet());
+        Assert.Contains(graph.Edges, edge => edge.From == b && edge.To == c);
+        Assert.DoesNotContain(graph.Edges, edge => edge.To == outside);
+        Assert.Equal(3, graph.Edges.Count);
+    }
+
+    [Fact]
+    public async Task Neighbourhood_LeavesOutDeletedNeighbour()
+    {
+        ChunkId a = await WriteAsync("A", Vec(0, 1));
+        ChunkId b = await WriteAsync("B", Vec(1, 1));
+        ChunkId gone = await WriteAsync("Gone", Vec(2, 1));
+        await _store.LinkAsync(a, b, ChunkEdgeKind.RelatesTo, Ct);
+        await _store.LinkAsync(a, gone, ChunkEdgeKind.RelatesTo, Ct);
+        await _store.LinkAsync(gone, b, ChunkEdgeKind.RelatesTo, Ct);
+        await _store.DeleteAsync(gone, Ct);
+
+        MemoryGraph? graph = await Maps().GetNeighbourhoodAsync(a, Ct);
+
+        Assert.NotNull(graph);
+        Assert.Equal(new HashSet<ChunkId> { a, b }, graph.Nodes.Select(node => node.Id).ToHashSet());
+        MemoryEdge edge = Assert.Single(graph.Edges);
+        Assert.Equal((a, b), (edge.From, edge.To));
+    }
+
+    [Fact]
+    public async Task Neighbourhood_OfChunkWithoutLinks_IsTheChunkAlone()
+    {
+        ChunkId a = await WriteAsync("A", Vec(0, 1));
+
+        MemoryGraph? graph = await Maps().GetNeighbourhoodAsync(a, Ct);
+
+        Assert.NotNull(graph);
+        Assert.Equal(a, Assert.Single(graph.Nodes).Id);
+        Assert.Empty(graph.Edges);
+    }
+
+    [Fact]
+    public async Task Neighbourhood_MissingDeletedOrOtherOwnersChunk_IsNull()
+    {
+        ChunkId deleted = await WriteAsync("Deleted", Vec(0, 1));
+        await _store.DeleteAsync(deleted, Ct);
+        ChunkId foreign;
+        using (_database.Accessor.Use(TestExecutionContext.Text(TestExecutionContext.OwnerB)))
+            foreign = await WriteAsync("Someone else", Vec(1, 1));
+        var missing = ChunkId.From(new string('a', ChunkId.Length));
+
+        Assert.Null(await Maps().GetNeighbourhoodAsync(missing, Ct));
+        Assert.Null(await Maps().GetNeighbourhoodAsync(deleted, Ct));
+        Assert.Null(await Maps().GetNeighbourhoodAsync(foreign, Ct));
+    }
+
+    [Fact]
     public async Task Scatter_OwnLiveChunksProjectedApartByTopic()
     {
         ChunkId coffee = await WriteAsync("Coffee", Vec(0, 1));

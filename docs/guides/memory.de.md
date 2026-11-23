@@ -65,10 +65,12 @@ Für aktive Projekte bekommt der Turn außerdem die Zusammenfassung des Projekts
 |---|---|
 | Einträge | Suchen und filtern (der Filter **Nicht mehr gültig** listet geschlossene Einträge), den Editor öffnen, Inhalt, Wichtigkeit und Gültigkeitszeit bearbeiten, den Verlauf ansehen (Versionen und Ersetzungsketten mit ihren Gültigkeitszeiten), anheften oder lösen, löschen (weiches Löschen). |
 | Projekte | Beschreibungen, Alias-Namen, Alias-Kandidaten, das Korrekturprotokoll und die nur lesbare Projektzusammenfassung von Marshal. |
-| Karte | Wechsel zwischen einem kräftebasierten Graphen der Einträge und Kanten und einem PCA-Streudiagramm der Embeddings. Auf einem Handy zeigt die Karte stattdessen eine Liste. |
+| Karte | Wechsel zwischen einem Graphen der Einträge und ihrer Verknüpfungen und einem PCA-Streudiagramm der Embeddings. Im Graphen zoomst du mit dem Mausrad oder den Schaltflächen, verschiebst die Ansicht durch Ziehen des Hintergrunds und siehst mit **Alles zeigen** wieder alles. Ziehe einen Knoten, um ihn zu verschieben. Fahre über einen Eintrag oder fokussiere ihn, um ihn und seine Nachbarn hervorzuheben. Beim Hineinzoomen erscheinen mehr Beschriftungen. Die Eintragsarten in der Legende blendest du ein und aus. Ein beschrifteter Hintergrund fasst die Einträge jedes Projekts zusammen. Auf einem Handy zeigt die Karte stattdessen eine Liste. |
 | Prüfung | Vorschläge zum Annehmen oder Verwerfen, veraltete Einträge, offene Widersprüche und verwaiste Einträge. |
 
 Anheften geht nur hier (oder über die API); der Agent kann nicht anheften. Weich gelöschte Einträge sind von der Suche ausgeschlossen, bleiben aber in der Verlaufsansicht. Um einen Eintrag mit geänderter Identität zu ersetzen, nutzt du Ersetzen: Es legt einen neuen Eintrag mit einer Kante `supersedes` an.
+
+Ein Eintrag mit Verknüpfungen zeigt im Editor über der Liste der Verknüpfungen einen kleinen Graphen seiner Nachbarn (auch am Handy). Klicke auf einen Nachbarn, um ihn zu öffnen.
 
 Im Editor setzen **Gültig seit** und **Gültig bis** die Gültigkeitszeit. Lass **Gültig bis** leer, solange der Fakt noch gilt; wenn du das Feld leerst, öffnest du einen geschlossenen Eintrag wieder. Die Felder nutzen die Zeitzone deines Browsers.
 

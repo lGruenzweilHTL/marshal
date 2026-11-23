@@ -2,11 +2,17 @@ namespace Marshal.Abstractions.Memory;
 
 /// <summary>
 /// Whole-memory pictures for the memory view: the graph of live chunks and edges, and a 2D projection of their
-/// embeddings (first two principal components, computed server-side).
+/// embeddings (first two principal components, computed server-side), and a single chunk's neighbourhood.
 /// </summary>
 public interface IMemoryMaps
 {
     Task<MemoryGraph> GetGraphAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// A live chunk, its live direct neighbours (linked by an edge in either direction) and the edges between any two
+    /// of them; <see langword="null"/> when the chunk is missing, soft-deleted or another owner's.
+    /// </summary>
+    Task<MemoryGraph?> GetNeighbourhoodAsync(ChunkId id, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<MemoryScatterPoint>> GetScatterAsync(CancellationToken cancellationToken);
 }

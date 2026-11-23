@@ -65,10 +65,12 @@ For active projects, the turn also gets the project's summary (see [step 7](#use
 |---|---|
 | Chunks | Search and filter (the **No longer true** filter lists closed chunks), open the editor, edit content, importance and valid time, view history (versions and supersedes chains with their valid times), pin or unpin, delete (soft delete). |
 | Projects | Descriptions, aliases, alias candidates, the correction log and Marshal's read-only project summary. |
-| Map | Toggle between a force-directed graph of chunks and edges and a PCA scatter of embeddings. On a phone the map shows a list instead. |
+| Map | Toggle between a graph of chunks and their links and a PCA scatter of embeddings. In the graph, zoom with the wheel or the buttons, drag the background to pan, and use **Fit to view** to see everything again. Drag a node to move it. Hover or focus a chunk to highlight it and its neighbours. More labels appear as you zoom in. The legend's chunk types turn types on and off. A named backdrop groups each project's chunks. On a phone the map shows a list instead. |
 | Audit | Proposals to accept or dismiss, stale chunks, open contradictions and orphans. |
 
 Pinning is possible only here (or through the API); the agent cannot pin. Soft-deleted chunks are excluded from retrieval but stay in the history view. To replace a chunk with a changed identity, use supersede: it creates a new chunk with a `supersedes` edge.
+
+For a chunk with links, the editor shows a small graph of its neighbours above the links list (also on a phone). Click a neighbour to open it.
 
 In the editor, **True since** and **True until** set the valid time. Leave **True until** empty while the fact still holds; clearing it reopens a closed chunk. The fields use your browser's time zone.
 

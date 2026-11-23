@@ -27,6 +27,7 @@ import {
   useDesktop,
 } from '../ui'
 import ChunkType from './ChunkType.vue'
+import LocalGraph from './LocalGraph.vue'
 import { chunkTypes } from './memoryLabels'
 import { fromLocalInput, isClosed, toLocalInput } from './validTime'
 
@@ -287,6 +288,7 @@ const projectOptions = computed(() => projects.data.value ?? [])
             </LoadBoundary>
           </Section>
           <Section v-if="detail.data.value?.edges.length" :title="t('memory.editor.links')">
+            <LocalGraph v-if="id" :chunk-id="id" />
             <ListCard>
               <ListRow
                 v-for="edge in detail.data.value.edges"

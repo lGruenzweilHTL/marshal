@@ -1076,6 +1076,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/memory/chunks/{id}/graph": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * /memory/chunks/{id}/graph
+         * @description A live chunk, its live direct neighbours (edges in either direction) and the edges between them, for the local graph.
+         */
+        get: operations["GetMemoryChunkGraph"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/memory/audit": {
         parameters: {
             query?: never;
@@ -5763,6 +5783,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemoryHistoryEntry"][];
+                };
+            };
+        };
+    };
+    GetMemoryChunkGraph: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryGraph"];
                 };
             };
         };

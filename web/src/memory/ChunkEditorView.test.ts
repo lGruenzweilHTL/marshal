@@ -1,5 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import ChunkEditorView from './ChunkEditorView.vue'
 import { chunk, project, projectId } from './fixtures'
 import { FakeServer } from '../testing/fakeServer'
@@ -24,12 +24,30 @@ function server() {
     .on('GET', '/api/v1/memory/projects', 200, [project()])
     .on('GET', `/api/v1/memory/chunks/${id}`, 200, detail)
     .on('GET', `/api/v1/memory/chunks/${id}/history`, 200, history)
+    .on('GET', `/api/v1/memory/chunks/${id}/graph`, 200, neighbourhood(['PPPPPPPPPPPPPPPPPPPPPPPPPP']))
+}
+
+const node = (nodeId: string, title: string) => ({ id: nodeId, title, type: 'device', projectId: null, pinned: false, importance: 3 })
+function neighbourhood(neighbours: string[]) {
+  return {
+    nodes: [node(id, 'Voron nozzle'), ...neighbours.map((neighbour, index) => node(neighbour, `Neighbour ${index + 1}`))],
+    edges: neighbours.map((neighbour) => ({ from: id, to: neighbour, kind: 'relatesTo', createdAt: '2026-09-20T10:00:00Z' })),
+  }
+}
+
+// The graph canvas loads lazily: the dynamic import, then the data.
+async function settle() {
+  for (let round = 0; round < 3; round++) {
+    await flushPromises()
+    await vi.dynamicImportSettled()
+  }
+  await flushPromises()
 }
 
 async function mountEditor(fake: FakeServer, path = `/memory/chunks/${id}`) {
   const { options, router } = await mountOptions(fake, path)
   const wrapper = mount(ChunkEditorView, { ...options, attachTo: document.body })
-  await flushPromises()
+  await settle()
   return { wrapper, router }
 }
 
@@ -182,6 +200,48 @@ describe('ChunkEditorView', () => {
 
     expect(wrapper.get('[role="alert"]').text()).toContain('The content must have')
     expect((wrapper.get('textarea[name="content"]').element as HTMLTextAreaElement).value).toBe('0.6 mm nozzle.')
+  })
+
+  describe('local graph', () => {
+    const three = ['BBBBBBBBBBBBBBBBBBBBBBBBBB', 'CCCCCCCCCCCCCCCCCCCCCCCCCC', 'DDDDDDDDDDDDDDDDDDDDDDDDDD']
+    const linked = { ...detail, edges: three.map((to) => ({ from: id, to, kind: 'relatesTo', createdAt: '2026-09-20T10:00:00Z' })) }
+
+    it('shows the chunk at the centre with its three neighbours, above the links', async () => {
+      const fake = server().on('GET', `/api/v1/memory/chunks/${id}`, 200, linked).on('GET', `/api/v1/memory/chunks/${id}/graph`, 200, neighbourhood(three))
+      const { wrapper } = await mountEditor(fake)
+
+      const graph = wrapper.get('[data-test="local-graph"]')
+      expect(graph.findAll('[data-node]')).toHaveLength(4)
+      expect(graph.get('[data-centre="true"]').attributes('data-node')).toBe(id)
+      const html = wrapper.html()
+      expect(html.indexOf('data-test="local-graph"')).toBeLessThan(html.indexOf('data-test="edge"'))
+    })
+
+    it('opens a neighbour on click', async () => {
+      const fake = server().on('GET', `/api/v1/memory/chunks/${id}`, 200, linked).on('GET', `/api/v1/memory/chunks/${id}/graph`, 200, neighbourhood(three))
+      const { wrapper, router } = await mountEditor(fake)
+
+      await wrapper.get(`[data-test="local-graph"] [data-node="${three[1]}"]`).trigger('click')
+      await flushPromises()
+
+      expect(router.currentRoute.value.fullPath).toBe(`/memory/chunks/${three[1]}`)
+    })
+
+    it('is left out for a chunk without links', async () => {
+      const fake = server().on('GET', `/api/v1/memory/chunks/${id}`, 200, { ...detail, edges: [] })
+      const { wrapper } = await mountEditor(fake)
+
+      expect(wrapper.find('[data-test="local-graph"]').exists()).toBe(false)
+      expect(fake.count('GET', `/api/v1/memory/chunks/${id}/graph`)).toBe(0)
+    })
+
+    it('shows an inline error when the graph cannot load and keeps the links usable', async () => {
+      const fake = server().on('GET', `/api/v1/memory/chunks/${id}`, 200, linked).on('GET', `/api/v1/memory/chunks/${id}/graph`, 500, { title: 'Broken' })
+      const { wrapper } = await mountEditor(fake)
+
+      expect(wrapper.get('[data-test="local-graph"]').text()).toContain('Could not load')
+      expect(wrapper.findAll('[data-test="edge"]')).toHaveLength(3)
+    })
   })
 
   it('reports a missing chunk', async () => {

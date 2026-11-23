@@ -106,6 +106,16 @@ export const en = {
     phoneTitle: 'The map needs a larger screen',
     phoneBody: 'On a phone, memory is grouped by type. Open Marshal on a computer to see links.',
   },
+  graph: {
+    controls: 'Zoom',
+    zoomIn: 'Zoom in',
+    zoomOut: 'Zoom out',
+    fit: 'Fit to view',
+    filter: 'Show or hide chunk types',
+    localLabel: 'This chunk and its linked chunks',
+    localTitle: 'Neighbourhood',
+    centre: '{title} (this chunk)',
+  },
   audit: {
     intro: 'What needs a look: Marshal’s proposals, contradictions, chunks nobody uses and memory of deleted projects.',
     clean: { title: 'Nothing to review', body: 'No proposals, contradictions, stale chunks, orphans or broken links.' },
@@ -235,6 +245,16 @@ export const de: Catalog<typeof en> = {
     empty: 'Noch keine Erinnerungen.',
     phoneTitle: 'Die Karte braucht einen größeren Bildschirm',
     phoneBody: 'Am Telefon ist das Gedächtnis nach Art gruppiert. Öffne Marshal am Computer, um Verknüpfungen zu sehen.',
+  },
+  graph: {
+    controls: 'Zoom',
+    zoomIn: 'Vergrößern',
+    zoomOut: 'Verkleinern',
+    fit: 'Alles zeigen',
+    filter: 'Eintragsarten zeigen oder ausblenden',
+    localLabel: 'Dieser Eintrag und seine verknüpften Einträge',
+    localTitle: 'Umgebung',
+    centre: '{title} (dieser Eintrag)',
   },
   audit: {
     intro: 'Was einen Blick braucht: Vorschläge von Marshal, Widersprüche, ungenutzte Einträge und Gedächtnis gelöschter Projekte.',

@@ -2449,6 +2449,44 @@
         ]
       }
     },
+    "/api/v1/memory/chunks/{id}/graph": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "/memory/chunks/{id}/graph",
+        "description": "A live chunk, its live direct neighbours (edges in either direction) and the edges between them, for the local graph.",
+        "operationId": "GetMemoryChunkGraph",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryGraph"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/v1/memory/audit": {
       "get": {
         "tags": [

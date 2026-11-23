@@ -619,7 +619,112 @@ const edges: Schemas['MemoryEdge'][] = [
   { from: ids.chunk(6), to: ids.chunk(2), kind: 'relatesTo', createdAt: at(-2000) },
   { from: ids.chunk(1), to: ids.chunk(3), kind: 'relatesTo', createdAt: at(-1500) },
   { from: ids.chunk(8), to: ids.chunk(5), kind: 'contradicts', createdAt: at(-900) },
+  { from: ids.chunk(6), to: ids.chunk(9), kind: 'supersedes', createdAt: at(-800) },
 ]
+
+type GraphNode = Schemas['MemoryGraphNode']
+const graphNode = (item: Schemas['MemoryChunk']): GraphNode => ({ id: item.id, title: item.title, type: item.type, projectId: item.projectId, pinned: item.pinned, importance: item.importance })
+
+/**
+ * Chunks only the memory map shows: enough for both projects' backdrops, the label tiers (pinned, well linked and
+ * important chunks) and directed and contradicting links.
+ */
+const mapOnly: [number, GraphNode['type'], string, string | null, number, boolean][] = [
+  [20, 'procedure', 'Input shaping calibration', ids.voron, 4, false],
+  [21, 'fact', 'Stealthburner LED colours', ids.voron, 2, false],
+  [22, 'device', 'Klipper host (Pi 4)', ids.voron, 3, false],
+  [23, 'procedure', 'PETG print profile', ids.voron, 4, true],
+  [24, 'fact', 'Chamber reaches 45 °C', ids.voron, 2, false],
+  [25, 'event', 'Z belt replaced', ids.voron, 2, false],
+  [26, 'device', 'Dry box', ids.voron, 2, false],
+  [27, 'procedure', 'Filament change macro', ids.voron, 3, false],
+  [28, 'fact', 'Zone 3 pressure limit', ids.garden, 3, false],
+  [29, 'procedure', 'Winterize the valves', ids.garden, 3, false],
+  [30, 'device', 'Rain sensor', ids.garden, 2, false],
+  [31, 'event', 'Valve 2 replaced', ids.garden, 1, false],
+  [32, 'preference', 'Water before 7:00', ids.garden, 3, false],
+  [33, 'person', 'Markus (neighbour)', null, 2, false],
+  [34, 'fact', 'Wi-Fi in the garden shed is weak', null, 2, false],
+  [35, 'preference', 'Quiet hours 22:00 to 6:30', null, 4, true],
+  [36, 'event', 'Anna’s birthday', null, 3, false],
+  [37, 'fact', 'Resin printer in the basement', null, 1, false],
+  [38, 'preference', 'Metric units', null, 2, false],
+  [39, 'procedure', 'Weekly backup check', null, 3, false],
+]
+
+const mapOnlyEdges: [number, number, Schemas['ChunkEdgeKind']][] = [
+  [20, 2, 'dependsOn'],
+  [20, 6, 'relatesTo'],
+  [21, 2, 'relatesTo'],
+  [22, 2, 'relatesTo'],
+  [23, 1, 'dependsOn'],
+  [23, 3, 'relatesTo'],
+  [24, 23, 'relatesTo'],
+  [25, 2, 'relatesTo'],
+  [26, 1, 'relatesTo'],
+  [26, 23, 'relatesTo'],
+  [27, 22, 'dependsOn'],
+  [28, 7, 'relatesTo'],
+  [29, 7, 'dependsOn'],
+  [30, 7, 'relatesTo'],
+  [31, 7, 'relatesTo'],
+  [32, 7, 'relatesTo'],
+  [32, 30, 'relatesTo'],
+  [33, 30, 'relatesTo'],
+  [34, 30, 'contradicts'],
+  [35, 8, 'relatesTo'],
+  [35, 5, 'relatesTo'],
+  [36, 4, 'relatesTo'],
+  [37, 4, 'relatesTo'],
+  [39, 8, 'relatesTo'],
+]
+
+const graph: Schemas['MemoryGraph'] = {
+  nodes: [
+    ...chunks.map(graphNode),
+    ...mapOnly.map(([n, type, title, projectId, importance, pinned]) => ({ id: ids.chunk(n), title, type, projectId, pinned, importance })),
+  ],
+  edges: [...edges, ...mapOnlyEdges.map(([from, to, kind]) => ({ from: ids.chunk(from), to: ids.chunk(to), kind, createdAt: at(-from * 60) }))],
+}
+
+/** The neighbourhood of a chunk in `graph`: the chunk, its direct neighbours and the edges among them. */
+export function neighbourhood(id: string): Schemas['MemoryGraph'] {
+  const near = new Set([id])
+  for (const edge of graph.edges) {
+    if (edge.from === id) near.add(edge.to)
+    if (edge.to === id) near.add(edge.from)
+  }
+  return { nodes: graph.nodes.filter((node) => near.has(node.id)), edges: graph.edges.filter((edge) => near.has(edge.from) && near.has(edge.to)) }
+}
+
+/**
+ * A synthetic memory of `count` chunks in six projects, for checking that the graph stays smooth at this size
+ * (preview mode with `?graph=large`). Deterministic: the same count gives the same graph.
+ */
+export function largeGraph(count = 500): Schemas['MemoryGraph'] {
+  const types: GraphNode['type'][] = ['fact', 'preference', 'event', 'procedure', 'person', 'device']
+  const projectIds = Array.from({ length: 6 }, (_, index) => id(13, index + 1))
+  let seed = 7
+  const random = () => (seed = (seed * 1_103_515_245 + 12_345) % 2_147_483_648) / 2_147_483_648
+  const nodes: GraphNode[] = Array.from({ length: count }, (_, index) => ({
+    id: id(17, index + 1),
+    title: `Synthetic chunk ${index + 1}`,
+    type: types[index % types.length]!,
+    projectId: index % 4 === 0 ? null : projectIds[Math.floor(random() * projectIds.length)]!,
+    pinned: index % 97 === 0,
+    importance: 1 + Math.floor(random() * 5),
+  }))
+  const kinds: Schemas['ChunkEdgeKind'][] = ['relatesTo', 'relatesTo', 'relatesTo', 'dependsOn', 'supersedes', 'contradicts']
+  const edges: Schemas['MemoryEdge'][] = nodes.slice(1).flatMap((node, index) => {
+    // Mostly links within the project, sometimes across.
+    const sameProject = nodes.slice(0, index + 1).filter((other) => other.projectId === node.projectId)
+    const pool = random() < 0.8 && sameProject.length ? sameProject : nodes.slice(0, index + 1)
+    const links = 1 + Math.floor(random() * 2)
+    const targets = new Set(Array.from({ length: links }, () => pool[Math.floor(random() * pool.length)]!.id))
+    return [...targets].map((target) => ({ from: node.id, to: target, kind: kinds[Math.floor(random() * kinds.length)]!, createdAt: at(-index) }))
+  })
+  return { nodes, edges }
+}
 
 const projects: Schemas['ProjectView'][] = [
   {
@@ -988,10 +1093,8 @@ export const normal = {
     orphans: [chunks[4]!],
     danglingEdges: [],
   },
-  '/api/v1/memory/graph': {
-    nodes: chunks.map((item) => ({ id: item.id, title: item.title, type: item.type, projectId: item.projectId, pinned: item.pinned, importance: item.importance })),
-    edges,
-  },
+  '/api/v1/memory/graph': graph,
+  '/api/v1/memory/chunks/{id}/graph': neighbourhood(ids.chunk(3)),
   '/api/v1/memory/scatter': chunks.map((item, index) => ({
     id: item.id,
     title: item.title,

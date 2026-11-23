@@ -178,6 +178,9 @@ No mocking or assertion libraries — use hand-written fakes from `Marshal.Testi
 | `@resvg/resvg-js` | Build-time rendering of the PWA icon PNGs from the logo SVGs (`web/scripts/appAssets.ts`) |
 | `markdown-it` | Chat markdown rendering with HTML disabled and a same-origin-only image rule (ships its own types) |
 | `three` (+ `@types/three`, dev) | 3D artifact viewer (STL and 3MF loaders, orbit controls); lazy chunk, never in the entry chunk |
+| `d3-force` (+ `@types/d3-force`, dev) | Memory graph layout (Barnes–Hut many-body, link, collide, project anchors); positions only, Vue draws the SVG; exact pin |
+| `d3-zoom` (+ `@types/d3-zoom`, dev) | Zoom and pan on the memory graph's `<svg>`; exact pin |
+| `d3-selection`, `d3-transition` (+ `@types`, dev) | Attach `d3-zoom` to the `<svg>` and animate fit and zoom steps; already `d3-zoom` dependencies, declared because the code imports them; never used to change the DOM; exact pins |
 | `vitest`, `@vue/test-utils`, `jsdom` | Component tests (`npm test`) against a hand-written fake API server (`src/testing/fakeServer.ts`) |
 | `playwright` (dev, pinned to the `mcr.microsoft.com/playwright` image version) | Screenshot sweep and layout checks over preview mode (`npm run screenshots`); never downloads browsers |
 

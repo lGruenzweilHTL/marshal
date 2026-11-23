@@ -225,6 +225,40 @@ public sealed class MemoryApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Neighbourhood_ChunkItsNeighboursAndTheirEdges()
+    {
+        string old = await CreateAsync(new { scope = "general", type = "device", title = "Printer nozzle", content = "0.4 mm." });
+        await CreateAsync(new { scope = "general", type = "fact", title = "Unrelated", content = "Not linked." });
+        HttpResponseMessage superseded = await _browser.PostAsJsonAsync($"{Chunks}/{old}/supersede", new { scope = "general", type = "device", title = "Voron nozzle", content = "0.5 mm." }, Ct);
+        string successor = (await superseded.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("id").GetString()!;
+
+        HttpResponseMessage response = await _browser.GetAsync($"{Chunks}/{old}/graph", Ct);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        JsonElement graph = await response.Content.ReadFromJsonAsync<JsonElement>(Ct);
+        Assert.Equal(
+            new HashSet<string?> { old, successor },
+            graph.GetProperty("nodes").EnumerateArray().Select(node => node.GetProperty("id").GetString()).ToHashSet());
+        JsonElement edge = Assert.Single(graph.GetProperty("edges").EnumerateArray());
+        Assert.Equal((successor, old, "supersedes"), (edge.GetProperty("from").GetString(), edge.GetProperty("to").GetString(), edge.GetProperty("kind").GetString()));
+    }
+
+    [Fact]
+    public async Task Neighbourhood_UnknownOrOtherUsersChunk_NotFoundProblem()
+    {
+        string id = await CreateAsync(new { scope = "general", type = "fact", title = "Allergy", content = "Allergic to peanuts." });
+        (HttpClient other, _) = await Browser.SignInAsync(_factory, "user");
+
+        HttpResponseMessage unknown = await _browser.GetAsync($"{Chunks}/{new string('a', ChunkId.Length)}/graph", Ct);
+        HttpResponseMessage foreign = await other.GetAsync($"{Chunks}/{id}/graph", Ct);
+
+        Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
+        Assert.Equal("application/problem+json", unknown.Content.Headers.ContentType?.MediaType);
+        Assert.Equal(HttpStatusCode.NotFound, foreign.StatusCode);
+        Assert.Equal("application/problem+json", foreign.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
     public async Task Ownership_OtherUsersChunksAndProjectsAreNotFound()
     {
         string id = await CreateAsync(new { scope = "general", type = "fact", title = "Allergy", content = "Allergic to peanuts." });

@@ -19,9 +19,35 @@ public sealed class MemoryMaps(IDbContextFactory<MarshalDbContext> contexts, IEx
         HashSet<ChunkId> ids = [.. live.Select(chunk => chunk.Id)];
         List<ChunkEdge> edges = await db.ChunkEdges.AsNoTracking().ToListAsync(cancellationToken);
         return new MemoryGraph(
-            [.. live.Select(chunk => new MemoryGraphNode(chunk.Id, chunk.Title, chunk.Type, chunk.ProjectId, chunk.Pinned, chunk.Importance))],
+            [.. live.Select(ToNode)],
             [.. edges.Where(edge => ids.Contains(edge.FromId) && ids.Contains(edge.ToId)).Select(edge => new MemoryEdge(edge.FromId, edge.ToId, edge.Kind, edge.CreatedAt))]);
     }
+
+    public async Task<MemoryGraph?> GetNeighbourhoodAsync(ChunkId id, CancellationToken cancellationToken)
+    {
+        await using MarshalDbContext db = await contexts.CreateDbContextAsync(cancellationToken);
+        if (!await db.Chunks.AsNoTracking().AnyAsync(chunk => chunk.Id == id && chunk.DeletedAt == null, cancellationToken))
+            return null;
+
+        List<ChunkId> linked = await db.ChunkEdges.AsNoTracking()
+            .Where(edge => edge.FromId == id || edge.ToId == id)
+            .Select(edge => edge.FromId == id ? edge.ToId : edge.FromId)
+            .ToListAsync(cancellationToken);
+        List<ChunkId> candidates = [id, .. linked.Distinct()];
+        List<Chunk> live = await db.Chunks.AsNoTracking()
+            .Where(chunk => candidates.Contains(chunk.Id) && chunk.DeletedAt == null)
+            .ToListAsync(cancellationToken);
+        List<ChunkId> ids = [.. live.Select(chunk => chunk.Id)];
+        List<ChunkEdge> edges = await db.ChunkEdges.AsNoTracking()
+            .Where(edge => ids.Contains(edge.FromId) && ids.Contains(edge.ToId))
+            .ToListAsync(cancellationToken);
+        return new MemoryGraph(
+            [.. live.OrderBy(chunk => chunk.Id.Value, StringComparer.Ordinal).Select(ToNode)],
+            [.. edges.Select(edge => new MemoryEdge(edge.FromId, edge.ToId, edge.Kind, edge.CreatedAt))]);
+    }
+
+    private static MemoryGraphNode ToNode(Chunk chunk) =>
+        new(chunk.Id, chunk.Title, chunk.Type, chunk.ProjectId, chunk.Pinned, chunk.Importance);
 
     public async Task<IReadOnlyList<MemoryScatterPoint>> GetScatterAsync(CancellationToken cancellationToken)
     {

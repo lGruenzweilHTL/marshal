@@ -39,6 +39,8 @@ internal static class MemoryEndpoints
             .WithDescription("Writes a replacement with a new identity and a supersedes edge to the chunk.");
         memory.MapGet("/chunks/{id}/history", HistoryAsync).WithName("GetMemoryChunkHistory")
             .WithDescription("Predecessors, earlier versions and the current content, oldest first.");
+        memory.MapGet("/chunks/{id}/graph", NeighbourhoodAsync).WithName("GetMemoryChunkGraph")
+            .WithDescription("A live chunk, its live direct neighbours (edges in either direction) and the edges between them, for the local graph.");
         memory.MapGet("/audit", GetAuditAsync).WithName("GetMemoryAudit")
             .WithDescription("Stale chunks, open contradictions, orphans, dangling edges and open proposals.");
         memory.MapGet("/proposals", ListProposalsAsync).WithName("ListMemoryProposals")
@@ -195,6 +197,9 @@ internal static class MemoryEndpoints
 
     private static async Task<Ok<MemoryGraph>> GraphAsync(IMemoryMaps maps, CancellationToken ct) =>
         TypedResults.Ok(await maps.GetGraphAsync(ct));
+
+    private static async Task<Results<Ok<MemoryGraph>, ProblemHttpResult>> NeighbourhoodAsync(ChunkId id, IMemoryMaps maps, CancellationToken ct) =>
+        await maps.GetNeighbourhoodAsync(id, ct) is { } graph ? TypedResults.Ok(graph) : ChunkNotFound();
 
     private static async Task<Ok<IReadOnlyList<MemoryScatterPoint>>> ScatterAsync(IMemoryMaps maps, CancellationToken ct) =>
         TypedResults.Ok(await maps.GetScatterAsync(ct));

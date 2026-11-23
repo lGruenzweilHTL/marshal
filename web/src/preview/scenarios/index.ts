@@ -1,7 +1,7 @@
 import type { Schemas } from '../../api/client'
 import type { Language } from '../../i18n/catalog'
 import { eventStream, FakeServer, json } from '../../testing/fakeServer'
-import { anchor, conversationDetails, normal, runDetails } from './normal'
+import { anchor, conversationDetails, largeGraph, neighbourhood, normal, runDetails } from './normal'
 
 export const scenarios = ['normal', 'demo', 'empty', 'failing', 'offline'] as const
 export type ScenarioName = (typeof scenarios)[number]
@@ -83,6 +83,20 @@ export function createPreviewServer(scenario: ScenarioName, language: Language, 
       return json(200, shiftTimes(scenario === 'empty' ? emptied(path, body) : scenario === 'demo' ? demo(path, body) : body, offset))
     })
   }
+  server.handle('GET', '/api/v1/memory/graph', () => {
+    if (scenario === 'failing') return problem()
+    if (scenario === 'offline') throw new TypeError('Failed to fetch')
+    if (scenario === 'empty') return json(200, { nodes: [], edges: [] })
+    // `?graph=large` on the preview page swaps in 500 synthetic chunks, to check the graph's performance.
+    const large = typeof location !== 'undefined' && new URLSearchParams(location.search).get('graph') === 'large'
+    return json(200, shiftTimes(large ? largeGraph() : normal['/api/v1/memory/graph'], offset))
+  })
+  server.handle('GET', '/api/v1/memory/chunks/{id}/graph', (request) => {
+    if (scenario === 'failing') return problem()
+    if (scenario === 'offline') throw new TypeError('Failed to fetch')
+    if (scenario === 'empty') return json(404, { title: 'not found', code: 'memory.chunk_not_found', detail: 'The chunk does not exist.' })
+    return json(200, shiftTimes(neighbourhood(request.path.split('/').at(-2)!), offset))
+  })
   server.handle('GET', '/health', () => {
     if (scenario === 'offline') throw new TypeError('Failed to fetch')
     if (scenario === 'failing') return json(503, { status: 'unhealthy', checks: { database: { status: 'unhealthy', description: 'Database is locked.', warnings: null } } })
