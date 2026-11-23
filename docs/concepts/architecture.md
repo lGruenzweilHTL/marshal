@@ -36,7 +36,6 @@ Marshal runs as one ASP.NET container plus an optional, separate executor host:
 | `Marshal.Data` | EF Core on SQLite, migrations, owner-scoped query filters. |
 | `Marshal.ExecutorHost` | A separate service for coding sessions. It has its own image and deployment and is never referenced by Marshal. See [executor host](../installation/executor-host.md). |
 | `web/` | The Vue single-page app, built into the host's `wwwroot`. |
-| `ha/` | The Home Assistant custom component that makes Marshal a conversation agent for Assist. |
 
 Clients reach Marshal in three ways: Home Assistant Assist through the custom component (the main interface), the web UI, and the public API. All three use the same turn endpoint, `POST /api/v1/conversation/turns` (see [conversation API](../api/conversation.md)).
 

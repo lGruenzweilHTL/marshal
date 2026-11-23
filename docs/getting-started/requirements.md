@@ -32,7 +32,7 @@ Browser sessions require HTTPS. Marshal rejects the first-run setup and every st
 
 ## Home Assistant
 
-- Home Assistant 2026.9.0 or newer (the minimum in `hacs.json`).
+- Home Assistant 2026.9.0 or newer (the minimum in `hacs.json` of the `marshal-ha` repository).
 - A long-lived access token of an admin user if you want Marshal to read your home (`ha.tokenSecret`).
 - For voice: an Assist pipeline with speech-to-text and text-to-speech.
 

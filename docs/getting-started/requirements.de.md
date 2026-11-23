@@ -32,7 +32,7 @@ Browser-Sitzungen brauchen HTTPS. Marshal lehnt die Ersteinrichtung und jede zus
 
 ## Home Assistant
 
-- Home Assistant 2026.9.0 oder neuer (das Minimum in `hacs.json`).
+- Home Assistant 2026.9.0 oder neuer (das Minimum in `hacs.json` des Repositorys `marshal-ha`).
 - Ein langlebiges Zugriffstoken eines Admin-Benutzers, wenn Marshal dein Zuhause lesen soll (`ha.tokenSecret`).
 - Für Sprache: eine Assist-Pipeline mit Spracherkennung und Sprachausgabe.
 

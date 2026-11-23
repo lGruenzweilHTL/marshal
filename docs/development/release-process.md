@@ -10,7 +10,7 @@ How a Marshal release is built and published. There is no release automation yet
 ## Versions
 
 - App version: `<Version>` in `Directory.Build.props` (shown in the system view), or `-p:Version=<x.y.z>` at build time.
-- Home Assistant component: `version` in `ha/custom_components/marshal/manifest.json`, distributed through HACS (`ha/hacs.json`).
+- Home Assistant component: released from its own repository, `marshal-ha`, with its own version.
 - API versions are separate and live in code ([API versioning](api-versioning.md)). Docs versions follow the API version, not the app version (see `CLAUDE.md`).
 
 ## The image
@@ -28,10 +28,10 @@ The root `Dockerfile` builds one image, the API host plus the SPA:
 ## Release checklist
 
 ::: steps
-1. **Verify.** Every change is archived. All .NET test projects, `npm test`, `npm run build` and `uv run pytest` pass. Diagrams and docs match the code.
-2. **Version.** Set the app version, and the component version if `ha/` changed.
+1. **Verify.** Every change is archived. All .NET test projects, `npm test`, and `npm run build` pass. Diagrams and docs match the code.
+2. **Version.** Set the app version.
 3. **Changelog.** Move the `[Unreleased]` entries of `CHANGELOG.md` (Keep a Changelog) under the new version. Call out migrations, new API versions and config changes; the [upgrading guide](../installation/upgrading.md) must mention them.
-4. **Build and tag.** `docker build -t marshal:<version> .`, `git tag v<version>`, push both. HACS picks up the component from the tag.
+4. **Build and tag.** `docker build -t marshal:<version> .`, `git tag v<version>`, push both.
 :::
 
 ## Check that it works

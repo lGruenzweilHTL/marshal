@@ -10,7 +10,7 @@ Installiere die Custom-Integration von Marshal, damit Home Assistant Assist-Unte
 
 ## Bevor du anfängst
 
-- Home Assistant 2026.9.0 oder neuer (die Version in `hacs.json`).
+- Home Assistant 2026.9.0 oder neuer (die Version in `hacs.json` des Repositorys `marshal-ha`).
 - Eine laufende Marshal-Instanz, die Home Assistant über HTTP(S) erreicht und die API-Version 1 anbietet. Siehe [Home Assistant verbinden](../getting-started/connect-home-assistant.md).
 - Zugriff auf den Marshal-Host oder die Weboberfläche, um ein API-Token zu erstellen.
 
@@ -29,11 +29,11 @@ Installiere die Custom-Integration von Marshal, damit Home Assistant Assist-Unte
 
 2. **Kopiere die Integration in Home Assistant**
 
-   Die Integration liegt in `ha/custom_components/marshal` des Marshal-Repositorys. Wähle einen Weg.
+   Die Integration liegt in ihrem eigenen Repository `marshal-ha`. Wähle einen Weg.
 
-   **Von Hand.** Kopiere den Ordner `marshal` in den Ordner `custom_components` deiner Home-Assistant-Konfiguration, sodass `custom_components/marshal/manifest.json` existiert, und starte Home Assistant dann neu.
+   **Von Hand.** Kopiere `custom_components/marshal` aus diesem Repository in den Ordner `custom_components` deiner Home-Assistant-Konfiguration, sodass `custom_components/marshal/manifest.json` existiert, und starte Home Assistant dann neu.
 
-   **Benutzerdefiniertes Repository in HACS.** HACS installiert Integrationen aus einem Repository, das `custom_components/marshal/` in seiner Wurzel hat. Die Integration liegt derzeit in einem Unterordner des Marshal-Repositorys, HACS kann sie also erst installieren, wenn sie als eigenes Repository veröffentlicht ist. Ist es so weit, öffne HACS, wähle im Menü **Benutzerdefinierte Repositories**, füge die URL des Repositorys mit der Kategorie **Integration** hinzu, installiere **Marshal** und starte Home Assistant neu. Bis dahin nimm den Weg von Hand.
+   **Benutzerdefiniertes Repository in HACS.** Öffne HACS, wähle im Menü **Benutzerdefinierte Repositories**, füge die URL des Repositorys `marshal-ha` mit der Kategorie **Integration** hinzu, installiere **Marshal** und starte Home Assistant neu.
 
 3. **Füg die Integration hinzu**
 

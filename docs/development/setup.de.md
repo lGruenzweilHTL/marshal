@@ -11,7 +11,6 @@ Die Werkzeugversionen, die Marshal festlegt, und die Befehle, die einen Checkout
 |---|---|---|
 | .NET SDK | `10.0.101` oder ein späteres 10.0-Feature-Band | `global.json` (`rollForward: latestFeature`); wählt auch Microsoft.Testing.Platform |
 | Node.js | 22 | Die Stufe `node:22-alpine` im `Dockerfile`; `web/` hat kein Feld `engines` |
-| uv, Python | Python 3.14.2 oder neuer | `ha/pyproject.toml`, `ha/.python-version`; uv installiert den Interpreter |
 | Docker | aktuell | Testcontainers (IMAP, FreshRSS) und der Image-Build |
 
 ## Einen Checkout vorbereiten
@@ -25,11 +24,6 @@ dotnet build
 ```sh [web/]
 cd web
 npm ci
-```
-
-```sh [ha/]
-cd ha
-uv sync
 ```
 :::
 

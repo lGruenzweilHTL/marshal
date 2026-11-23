@@ -19,10 +19,6 @@ dotnet test --project tests/Marshal.Core.Tests --filter-method "*Confirm_Keyword
 npm test            # Vitest against src/testing/fakeServer.ts
 npm run build       # gen:types + vue-tsc + Vite: fails on unhandled API contract changes
 ```
-
-```sh [ha/]
-uv run pytest       # pytest-homeassistant-custom-component pins the HA version
-```
 :::
 
 ## Rules

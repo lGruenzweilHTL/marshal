@@ -119,7 +119,7 @@ Use a component where it fits the content, not for decoration:
 |---|---|
 | The numbered steps of a guide (`## Steps`) | `::: steps`, each step starting with what to do in bold |
 | Alternatives the reader picks one of (option A or B, container or source tree) | `::: tabs` with `== Label` lines |
-| The same file or setup for several products (Caddy, nginx, Traefik) or places (`.NET`, `web/`, `ha/`) | `::: code-group`; prefer it over consecutive headings with one code block each |
+| The same file or setup for several products (Caddy, nginx, Traefik) or places (`.NET`, `web/`) | `::: code-group`; prefer it over consecutive headings with one code block each |
 | The same example in several languages or tools (curl and Python) | `::: code-group` with the label in brackets after each language |
 | FAQ entries, long logs, edge cases | `::: details <question>` |
 | `## Related`, "where to go next" and lists of pages | `::: cards`, one link per line; add a line of text below a link only when the reason for the link is not the page's own description |

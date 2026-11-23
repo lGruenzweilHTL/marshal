@@ -15,7 +15,7 @@ context: |
     fast / standard / advisor with capability flags (vision, tools, context).
   - Web UI: Vue + Vite + TypeScript SPA, API client generated from OpenAPI,
     served same-origin by the ASP.NET host (BFF cookie auth, OIDC or local).
-  - HA integration: Python custom component (HACS) in ha/.
+  - HA integration: Python custom component (HACS) in its own repo, marshal-ha.
   - Deployment: single Docker image for Marshal (the coding executor is a
     separate service); /config (git-friendly files, camelCase keys,
     secret names only, values via ISecretStore)

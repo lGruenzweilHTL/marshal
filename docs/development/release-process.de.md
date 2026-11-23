@@ -10,7 +10,7 @@ Wie ein Release von Marshal gebaut und veröffentlicht wird. Eine Automatisierun
 ## Versionen
 
 - App-Version: `<Version>` in `Directory.Build.props` (in der Systemansicht sichtbar) oder `-p:Version=<x.y.z>` beim Build.
-- Home-Assistant-Komponente: `version` in `ha/custom_components/marshal/manifest.json`, verteilt über HACS (`ha/hacs.json`).
+- Home-Assistant-Komponente: wird aus ihrem eigenen Repository `marshal-ha` mit eigener Version veröffentlicht.
 - API-Versionen sind getrennt und stehen im Code ([API-Versionierung](api-versioning.md)). Doku-Versionen folgen der API-Version, nicht der App-Version (siehe `CLAUDE.md`).
 
 ## Das Image
@@ -28,10 +28,10 @@ Das `Dockerfile` im Wurzelverzeichnis baut ein Image, den API-Host plus die SPA:
 ## Checkliste für ein Release
 
 ::: steps
-1. **Prüfen.** Jede Änderung ist archiviert. Alle .NET-Testprojekte, `npm test`, `npm run build` und `uv run pytest` laufen durch. Diagramme und Doku passen zum Code.
-2. **Version.** Setz die App-Version und, wenn sich `ha/` geändert hat, die Version der Komponente.
+1. **Prüfen.** Jede Änderung ist archiviert. Alle .NET-Testprojekte, `npm test` und `npm run build` laufen durch. Diagramme und Doku passen zum Code.
+2. **Version.** Setz die App-Version.
 3. **Changelog.** Verschieb die Einträge unter `[Unreleased]` in `CHANGELOG.md` (Keep a Changelog) unter die neue Version. Nenn Migrationen, neue API-Versionen und Konfigurationsänderungen; die [Anleitung zum Aktualisieren](../installation/upgrading.md) muss sie erwähnen.
-4. **Bauen und taggen.** `docker build -t marshal:<version> .`, `git tag v<version>`, beides pushen. HACS übernimmt die Komponente aus dem Tag.
+4. **Bauen und taggen.** `docker build -t marshal:<version> .`, `git tag v<version>`, beides pushen.
 :::
 
 ## Prüfen, ob es funktioniert

@@ -83,9 +83,6 @@ web/                         Vue + Vite + TypeScript SPA (API client generated f
                              built into Marshal.Api's wwwroot by the Dockerfile; preview mode with a fake API
                              (src/preview/scenarios: normal, demo, empty, failing, offline), Playwright screenshot sweep
                              in scripts/screenshots.ts
-ha/                          custom_components/marshal (Python HA integration, HACS; may move to its own repo): Assist
-                             conversation entity, AI Task entity (POST /api/v1/ai-tasks), reauth flow; uv project (Python
-                             3.14 via .python-version), tests in ha/tests
 deploy/                      docker-compose.yml, config.example/ (example /config files: marshal.yaml, risk.yaml,
                              satellites.yaml, mcp/, skills/, templates/, tasks/ with the example briefing task);
                              Dockerfile at repo root
@@ -96,6 +93,9 @@ docs/                        user and contributor documentation (Clay Flavored M
 scripts/                     docs-openapi.mjs: copies web/openapi/v1.json for the docs' API v1 reference (Clay `generate`)
 openspec/                    specifications and changes
 ```
+
+The Home Assistant custom component (Assist conversation entity, AI Task entity) lives in its own repository,
+`marshal-ha`. It talks to Marshal only over the public API; changes to that contract must keep it working.
 
 Runtime volumes (not in git): `/config` (skills, templates, MCP servers, risk rules, satellites — git-friendly, no secrets) and `/data` (SQLite, Data Protection keys, backups, notes repo).
 
@@ -188,12 +188,6 @@ No mocking or assertion libraries — use hand-written fakes from `Marshal.Testi
 | Package | Purpose |
 |---|---|
 | `clay-doc` (Clay 5, always `npx clay-doc@5`) | Builds `docs/` into the documentation site: CFM components, link checks, API v1 reference and request cells from the OpenAPI document |
-
-**Python (`ha/`)**
-| Package | Purpose |
-|---|---|
-| `pytest-homeassistant-custom-component` | Tests for the HA custom integration (`uv run pytest` in `ha/`); pins the HA version tested against. The component itself has no requirements (it uses HA's shared aiohttp session) |
-| `hassil`, `home-assistant-intents`, `gazetteer-matcher`, `pymicro-vad`, `pyspeex-noise`, `mutagen`, `ha-ffmpeg`, `PyTurboJPEG` (dev) | Requirements of the HA components the tests set up (`conversation`, `assist_pipeline`, `tts`, `ai_task` with `camera`); keep in step with the pinned HA release |
 
 ## Conventions
 

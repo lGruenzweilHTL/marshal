@@ -26,10 +26,10 @@ Der Image-Build braucht Docker mit Compose und baut das Image aus dem Quellcode;
 
 | Element | Version | Quelle |
 |---|---|---|
-| Home Assistant | 2026.9.0 oder neuer | `homeassistant` in `ha/hacs.json`. |
-| Getestet gegen | 2026.9.4 | Gepinnt über `pytest-homeassistant-custom-component` 0.13.367 in `ha/pyproject.toml` und `ha/uv.lock`. |
-| Python für die Tests der Komponente | 3.14.2 oder neuer | `requires-python` in `ha/pyproject.toml`. |
-| Custom-Komponente von Marshal | 0.1.0 | `ha/custom_components/marshal/manifest.json` |
+| Home Assistant | 2026.9.0 oder neuer | `homeassistant` in `marshal-ha/hacs.json`. |
+| Getestet gegen | 2026.9.4 | Gepinnt über `pytest-homeassistant-custom-component` 0.13.367 in `marshal-ha/pyproject.toml` und `marshal-ha/uv.lock`. |
+| Python für die Tests der Komponente | 3.14.2 oder neuer | `requires-python` in `marshal-ha/pyproject.toml`. |
+| Custom-Komponente von Marshal | 0.1.0 | `marshal-ha/custom_components/marshal/manifest.json` |
 
 Die Komponente hat keine eigenen Python-Abhängigkeiten. Sie braucht die Integrationen `conversation` und `ai_task` und nutzt `assist_pipeline`, wenn vorhanden.
 

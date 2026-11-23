@@ -10,7 +10,7 @@ Install the Marshal custom integration so Home Assistant sends Assist conversati
 
 ## Before you start
 
-- Home Assistant 2026.9.0 or newer (the version in `hacs.json`).
+- Home Assistant 2026.9.0 or newer (the version in `hacs.json` of the `marshal-ha` repository).
 - A running Marshal instance that Home Assistant can reach over HTTP(S) and that serves API version 1. See [connect Home Assistant](../getting-started/connect-home-assistant.md).
 - Access to the Marshal host or web interface to create an API token.
 
@@ -29,11 +29,11 @@ Install the Marshal custom integration so Home Assistant sends Assist conversati
 
 2. **Copy the integration into Home Assistant**
 
-   The integration lives in `ha/custom_components/marshal` of the Marshal repository. Choose one way.
+   The integration lives in its own repository, `marshal-ha`. Choose one way.
 
-   **Manual.** Copy the `marshal` folder into the `custom_components` folder of your Home Assistant configuration, so that `custom_components/marshal/manifest.json` exists, then restart Home Assistant.
+   **Manual.** Copy `custom_components/marshal` from that repository into the `custom_components` folder of your Home Assistant configuration, so that `custom_components/marshal/manifest.json` exists, then restart Home Assistant.
 
-   **HACS custom repository.** HACS installs integrations from a repository that has `custom_components/marshal/` at its root. The integration currently sits in a subfolder of the Marshal repository, so HACS can install it only once it is published as its own repository. When it is, open HACS, choose **Custom repositories** from the menu, add the repository URL with the category **Integration**, install **Marshal** and restart Home Assistant. Until then, use the manual method.
+   **HACS custom repository.** Open HACS, choose **Custom repositories** from the menu, add the `marshal-ha` repository URL with the category **Integration**, install **Marshal** and restart Home Assistant.
 
 3. **Add the integration**
 

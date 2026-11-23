@@ -1,7 +1,7 @@
 ```mermaid
 sequenceDiagram
 %% Marshal: Sprach-Turn, Weg der Anfrage (deutsche Fassung von voice-turn-request.md)
-%% KEEP UP TO DATE: must match the conversation turn path (ha/ custom component, POST /api/v1/conversation/turns,
+%% KEEP UP TO DATE: must match the conversation turn path (marshal-ha custom component, POST /api/v1/conversation/turns,
 %% SSE). Update it together with voice-turn-request.md in the same change (see docs/diagrams/README.md).
 %% Keep every message on one short line: the site draws sequence diagrams at build time, and multi-line labels overlap.
     actor User as Benutzer

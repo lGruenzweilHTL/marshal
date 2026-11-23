@@ -18,7 +18,7 @@ Installiere die Marshal-Integration, gib ihr ein API-Token und wähle Marshal al
 ::: steps
 1. **Installiere die Integration**
 
-   Kopiere `ha/custom_components/marshal` aus dem Marshal-Repository in den Ordner `custom_components` deiner Home-Assistant-Konfiguration, sodass `custom_components/marshal/manifest.json` existiert. Starte Home Assistant neu. Zu HACS und Details siehe [die Komponente installieren](../home-assistant-component/installation.md).
+   Kopiere `custom_components/marshal` aus dem Repository `marshal-ha` in den Ordner `custom_components` deiner Home-Assistant-Konfiguration, sodass `custom_components/marshal/manifest.json` existiert. Starte Home Assistant neu. Zu HACS und Details siehe [die Komponente installieren](../home-assistant-component/installation.md).
 
 2. **Erstelle ein API-Token**
 

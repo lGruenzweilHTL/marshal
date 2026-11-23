@@ -1,10 +1,10 @@
 ```mermaid
 flowchart LR
 %% Marshal: runtime connections
-%% KEEP UP TO DATE: must match the clients and separate services that talk to Marshal (ha/, web/, MCP endpoint,
+%% KEEP UP TO DATE: must match the clients and separate services that talk to Marshal (marshal-ha, web/, MCP endpoint,
 %% executor host). Update it in the same change that adds or removes one or changes how it connects (see
 %% docs/diagrams/README.md).
-    HaComponent["ha/ custom component<br/>(Assist conversation agent)"]
+    HaComponent["marshal-ha custom component<br/>(Assist conversation agent)"]
     Web["web/ SPA<br/>(served by Marshal.Api)"]
     Companion["HA companion app<br/>(actionable push)"]
     McpClients["External MCP clients<br/>(Claude Code, VS Code)"]
